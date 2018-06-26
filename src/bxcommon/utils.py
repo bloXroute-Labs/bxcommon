@@ -344,9 +344,9 @@ class Log(object):
 
     def log_dumper(self):
         if self.use_stdout:
-            log_output = sys.stdout
+            output_dest = sys.stdout
         else:
-            log_output = open(self.filename, "a+")
+            output_dest = open(self.filename, "a+")
 
         alive = True
 
@@ -363,12 +363,12 @@ class Log(object):
                     self.log_size = 0
 
                 for msg in oldlog:
-                    log_output.write(msg)
+                    output_dest.write(msg)
 
                 self.bytes_written += oldsize
 
                 if options.FLUSH_LOG:
-                    log_output.flush()
+                    output_dest.flush()
 
                 # Checks whether we've been dumping to this logfile for a while
                 # and opens up a new file.
@@ -378,18 +378,18 @@ class Log(object):
                     self.last_rotation_time = now
                     self.filename = time.strftime("%Y-%m-%d-%H:%M:%S+0000-", time.gmtime()) + str(os.getpid()) + ".log"
 
-                    log_output.flush()
-                    log_output.close()
+                    output_dest.flush()
+                    output_dest.close()
 
                     with open("current.log", "w") as current_log:
                         current_log.write(self.filename)
 
-                    log_output = open(self.filename, "a+")
+                    output_dest = open(self.filename, "a+")
                     self.bytes_written = 0
 
         finally:
-            log_output.flush()
-            log_output.close()
+            output_dest.flush()
+            output_dest.close()
 
 
 _log = None
