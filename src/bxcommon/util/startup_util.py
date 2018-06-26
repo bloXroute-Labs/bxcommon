@@ -1,10 +1,16 @@
 import ConfigParser
 import argparse
+import os
 import socket
-
 import time
 
 # Some websites are blocked in certain jurisdictions, so we try multiple websites to see whichever one works.
+from bxcommon import utils
+
+# TODO much of this needs to be refactored into a config loader that
+# TODO   consumes args/files and returns a standard config
+
+# FIXME we need to move away from these external checks
 WEBSITES_TO_TRY = ['www.google.com', 'www.alibaba.com']
 
 ALL_PARAMS = [
@@ -16,6 +22,12 @@ ALL_PARAMS = [
     'log_path',
     'log_stdout'
 ]
+
+
+# Capture the process id for easy termination in multi-thread scenarios.
+def log_pid(file_name):
+    with open(file_name, "w") as f:
+        f.write(str(os.getpid()))
 
 
 # Returns the local internal IP address of the node.
@@ -93,6 +105,27 @@ def parse_peers(peers_string):
     return nodes
 
 
+# Parse the ip and port based on our args/file configs.
+def parse_addr(opts, params):
+    ip = opts.network_ip or params['my_ip']
+    assert ip is not None, "Your IP address is not specified in config.cfg or as --network-ip. Check that the '-n' " \
+                           "argument reflects the name of a section in config.cfg!"
+
+    port = int(opts.port or params['my_port'])
+
+    return ip, port
+
+
+# Configure the global logger.
+def init_logging(ip, port, opts, params):
+    utils.log_setmyname("%s:%d" % (ip, port))
+    log_path = opts.log_path or params['log_path']
+    use_stdout = opts.to_stdout or params['log_stdout']
+    utils.log_init(log_path, use_stdout)
+    utils.log_debug("My own IP for config purposes is {0}".format(ip))
+
+
+# Creates a common parser for gateway and relay.
 def get_default_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config-name",
