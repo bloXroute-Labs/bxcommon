@@ -1,10 +1,21 @@
 import ConfigParser
+import argparse
 import socket
 
 import time
 
 # Some websites are blocked in certain jurisdictions, so we try multiple websites to see whichever one works.
 WEBSITES_TO_TRY = ['www.google.com', 'www.alibaba.com']
+
+ALL_PARAMS = [
+    'my_ip',
+    'my_port',
+    'peers',
+    'my_idx',
+    'manager_idx',
+    'log_path',
+    'log_stdout'
+]
 
 
 # Returns the local internal IP address of the node.
@@ -22,10 +33,14 @@ def get_my_ip():
     raise Exception("Could not find any local name!")
 
 
-# Parse the config filename and return a params dictionary with the params from ALL_PARAMS
-def parse_config_file(filename, localname, params):
+# Parse the config filename and return a params dictionary with the params from ALL_PARAMS and extras
+def parse_config_file(filename, localname, extra_params=None):
     client_config = ConfigParser.ConfigParser()
     client_config.read(filename)
+
+    params = ALL_PARAMS
+    if extra_params:
+        params += extra_params
 
     config_params = {}
     for param_name in params:
@@ -76,3 +91,17 @@ def parse_peers(peers_string):
             nodes[peer_idx] = (peer_ip, peer_port)
 
     return nodes
+
+
+def get_default_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config-name",
+                        help="Name of section to read from config.cfg. By default will read a section using this node's"
+                             " local ip. Not needed if you specify the other options.")
+    parser.add_argument("-n", "--network-ip", help="Network ip of this node")
+    parser.add_argument("-p", "--peers", help="Peering string to override peers of config.cfg")
+    parser.add_argument("-P", "--port", help="What port to listen on")
+    parser.add_argument("-l", "--log-path", help="Path to store logfiles in")
+    parser.add_argument("-o", "--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode")
+
+    return parser
