@@ -47,8 +47,8 @@ def get_my_ip():
 
 # Parse the config filename and return a params dictionary with the params from ALL_PARAMS and extras
 def parse_config_file(filename, localname, extra_params=None):
-    client_config = ConfigParser.ConfigParser()
-    client_config.read(filename)
+    config_parser = ConfigParser.ConfigParser()
+    config_parser.read(filename)
 
     params = ALL_PARAMS
     if extra_params:
@@ -56,23 +56,23 @@ def parse_config_file(filename, localname, extra_params=None):
 
     config_params = {}
     for param_name in params:
-        config_params[param_name] = getparam(client_config, localname, param_name)
+        config_params[param_name] = getparam(config_parser, localname, param_name)
 
-    return client_config, config_params
+    return config_parser, config_params
 
 
 # Gets the param "pname" from the config file.
 # If the param exists under the localname, we use that one. Otherwise, we use
 # the param under default.
-def getparam(client_config, local_name, param_name):
-    if not client_config:
+def getparam(config_parser, local_name, param_name):
+    if not config_parser:
         return None
 
     try:
-        return client_config.get(local_name, param_name)
+        return config_parser.get(local_name, param_name)
     except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
         try:
-            return client_config.get("default", param_name)
+            return config_parser.get("default", param_name)
         except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
             return None
 
@@ -126,7 +126,7 @@ def init_logging(ip, port, opts, params):
 
 
 # Creates a common parser for gateway and relay.
-def get_default_parser():
+def get_base_arg_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config-name",
                         help="Name of section to read from config.cfg. By default will read a section using this node's"
