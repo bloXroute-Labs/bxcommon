@@ -6,7 +6,7 @@ jobs:
       - image: circleci/python:2.7
     steps:
       - attach_workspace:
-          at: ~/common
+          at: ~/ws
       - checkout:
           path:
             "bxcommon"
@@ -21,6 +21,10 @@ jobs:
           key: deps1-{{ .Branch }}-{{ checksum "bxcommon/requirements.txt" }}
           paths:
             - "venv"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - venv
       - run: # run tests
           name: Tests
           command: |
@@ -36,12 +40,12 @@ jobs:
   build:
     docker:
       - image: circleci/python:2.7
-    working_directory: ~/common
+    working_directory: ~/ws
 
     steps:
       - checkout
       - attach_workspace:
-          at: ~/common
+          at: ~/ws
       - run:
           name: Package
           command: 'echo "Yay develop build!"'
@@ -49,12 +53,12 @@ jobs:
   build-prod:
     docker:
       - image: circleci/python:2.7
-    working_directory: ~/common
+    working_directory: ~/ws
 
     steps:
       - checkout
       - attach_workspace:
-          at: ~/common
+          at: ~/ws
       - run:
           name: Package
           command: 'echo "Yay master build!"'
