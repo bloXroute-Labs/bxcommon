@@ -16,7 +16,7 @@ jobs:
           command: |
             python -m virtualenv venv
             . venv/bin/activate
-            pip install -r bxgateway/requirements.txt
+            pip install -r bxcommon/requirements.txt
       - save_cache: # special step to save dependency cache
           key: deps1-{{ .Branch }}-{{ checksum "bxcommon/requirements.txt" }}
           paths:
