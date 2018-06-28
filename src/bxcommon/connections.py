@@ -1,10 +1,11 @@
 import errno
 import hashlib
 import select
+import signal
 import socket
+from collections import defaultdict
 
-from enum import Enum
-
+from bxcommon.messages import PongMessage, AckMessage
 from bxcommon.utils import *
 
 MAX_CONN_BY_IP = 30  # Maximum number of connections that an IP address can have
@@ -35,7 +36,186 @@ MAX_SEND_QUEUE_SIZE = 5000
 MAX_MESSAGE_HISTORY = 5000
 
 
+class AbstractConnection(object):
+    def __init__(self, sock, address, node, from_me=False, setup=False):
+        self.sock = sock
+        self.fileno = sock.fileno()
+
+        # (IP, Port) at time of socket creation. We may get a new application level port in
+        # the version message if the connection is not from me.
+        self.peer_ip, self.peer_port = address
+        self.my_ip = node.server_ip
+        self.my_port = node.server_port
+
+        self.from_me = from_me  # Whether or not I initiated the connection
+        self.setup = setup  # Whether or not I set up this connection
+
+        self.outputbuf = OutputBuffer()
+        self.inputbuf = InputBuffer()
+        self.node = node
+
+        self.is_persistent = False
+        self.sendable = False  # Whether or not I can send more bytes on this socket.
+        self.state = ConnectionState.CONNECTING
+
+        # Temporary buffers to receive the contents of the recv call.
+        self.recv_buf = bytearray(RECV_BUFSIZE)
+
+        # Number of bad messages I've received in a row.
+        self.num_bad_messages = 0
+
+        self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
+
+    def is_sendable(self):
+        return self.sendable
+
+    # Marks a connection as 'sendable', that is, there is room in the outgoing send buffer, and a send call can succeed.
+    # Only gets unmarked when the outgoing send buffer is full.
+    def mark_sendable(self):
+        self.sendable = True
+
+    #########################
+    # Receiving bytes logic #
+    #########################
+
+    # Collect input from the socket and store it in the inputbuffer until either the socket is drained
+    # or the throttling limits are hit.
+    def collect_input(self):
+        log_debug("Collecting input from {0}".format(self.peer_desc))
+        collect_input = True
+
+        while collect_input:
+            # Read from the socket and store it into the recv buffer.
+            try:
+                bytes_read = self.sock.recv_into(self.recv_buf, RECV_BUFSIZE)
+            except socket.error as e:
+                if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
+                    log_debug("Received errno {0} with msg {1} on connection {2}. Stop collecting input"
+                              .format(e.errno, e.strerror, self.peer_desc))
+                    break
+                elif e.errno in [errno.EINTR]:
+                    # we were interrupted, try again
+                    log_debug("Received errno {0} with msg {1}, recv on {2} failed. Continuing recv."
+                              .format(e.errno, e.strerror, self.peer_desc))
+                    continue
+                elif e.errno in [errno.ECONNREFUSED]:
+                    # Fatal errors for the connections
+                    log_debug("Received errno {0} with msg {1}, recv on {2} failed. Closing connection and retrying..."
+                              .format(e.errno, e.strerror, self.peer_desc))
+                    self.state |= ConnectionState.MARK_FOR_CLOSE
+                    return
+                elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
+                    # Perform orderly shutdown
+                    self.state |= ConnectionState.MARK_FOR_CLOSE
+                    return
+                elif e.errno in [errno.EFAULT, errno.EINVAL, errno.ENOTCONN, errno.ENOMEM]:
+                    # Should never happen errors
+                    log_err("Received errno {0} with msg {1}, recv on {2} failed. This should never happen..."
+                            .format(e.errno, e.strerror, self.peer_desc))
+                    return
+                else:
+                    raise e
+
+            piece = self.recv_buf[:bytes_read]
+            log_debug("Got {0} bytes from {2}. They were: {1}".format(bytes_read, repr(piece), self.peer_desc))
+
+            # A 0 length recv is an orderly shutdown.
+            if bytes_read == 0:
+                self.state |= ConnectionState.MARK_FOR_CLOSE
+                return
+            else:
+                self.inputbuf.add_bytes(piece)
+
+    # Send bytes to the peer on the given buffer. Return the number of bytes sent.
+    # buf must obey the output buffer read interface which has three properties:
+    def send_bytes_on_buffer(self, buf, send_one_msg=False):
+        total_bytes_written = 0
+        byteswritten = 0
+
+        # Send on the socket until either the socket is full or we have nothing else to send.
+        while self.sendable and buf.has_more_bytes() > 0 and (not send_one_msg or buf.at_msg_boundary()):
+            try:
+                byteswritten = self.sock.send(buf.get_buffer())
+                total_bytes_written += byteswritten
+            except socket.error as e:
+                if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOBUFS]:
+                    # Normal operation
+                    log_debug("Got {0}. Done sending to {1}. Marking as not sendable."
+                              .format(e.strerror, self.peer_desc))
+                    self.sendable = False
+                elif e.errno in [errno.EINTR]:
+                    # Try again later errors
+                    log_debug("Got {0}. Send to {1} failed, trying again...".format(e.strerror, self.peer_desc))
+                    continue
+                elif e.errno in [errno.EACCES, errno.ECONNRESET, errno.EPIPE, errno.EHOSTUNREACH]:
+                    # Fatal errors for the connection
+                    log_debug("Got {0}, send to {1} failed, closing connection.".format(e.strerror, self.peer_desc))
+                    self.state |= ConnectionState.MARK_FOR_CLOSE
+                    return 0
+                elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
+                    # Perform orderly shutdown
+                    self.state = ConnectionState.MARK_FOR_CLOSE
+                    return 0
+                elif e.errno in [errno.EDESTADDRREQ, errno.EFAULT, errno.EINVAL,
+                                 errno.EISCONN, errno.EMSGSIZE, errno.ENOTCONN, errno.ENOTSOCK]:
+                    # Should never happen errors
+                    log_debug("Got {0}, send to {1} failed. Should not have happened..."
+                              .format(e.strerror, self.peer_desc))
+                    exit(1)
+                elif e.errno in [errno.ENOMEM]:
+                    # Fatal errors for the node
+                    log_debug("Got {0}, send to {1} failed. Fatal error! Shutting down node."
+                              .format(e.strerror, self.peer_desc))
+                    exit(1)
+                else:
+                    raise e
+
+            buf.advance_buffer(byteswritten)
+            byteswritten = 0
+
+        return total_bytes_written
+
+        # Handle a Hello Message
+
+    def msg_hello(self, msg):
+        self.state |= ConnectionState.HELLO_RECVD
+        self.enqueue_msg(AckMessage())
+
+        # Handle an Ack Message
+
+    def msg_ack(self, msg):
+        self.state |= ConnectionState.HELLO_ACKD
+
+    def msg_ping(self, msg):
+        self.enqueue_msg(PongMessage(msg.nonce()))
+
+    def msg_pong(self, msg):
+        pass
+
+
 class AbstractClient(object):
+    def __init__(self, server_ip, server_port):
+        self.server_ip = server_ip
+        self.server_port = server_port
+        self.epoll = select.epoll()
+        self.connection_pool = ConnectionPool()
+        self.send_pings = False
+
+        self.num_retries_by_ip = defaultdict(lambda: 0)
+
+        # set up the server sockets for bitcoind and www/json
+        self.serversocket = self.create_server_socket('0.0.0.0',
+                                                      self.server_port)
+        self.serversocketfd = self.serversocket.fileno()
+
+        # Handle termination gracefully
+        signal.signal(signal.SIGTERM, self.kill_node)
+        signal.signal(signal.SIGINT, self.kill_node)
+
+        # Event handling queue for delayed events
+        self.alarm_queue = AlarmQueue()
+
+        self.tx_manager = TransactionManager(self)
 
     # Create and initialize a nonblocking server socket with at most 50 connections in its backlog,
     #   bound to an interface and port
@@ -67,7 +247,7 @@ class AbstractClient(object):
     # Make a new conn_cls instance who is connected to (ip, port) and schedule connection_timeout to check its status.
     # If setup is False, then sock is an already established socket. Otherwise, we must initialize and set up socket.
     # If trusted is True, the instance should be marked as a trusted connection.
-    def init_client_socket(self, conn_cls, ip, port, sock=None, setup=False):
+    def init_client_socket(self, conn_cls, ip, port, sock=None, setup=False, timeout_ping=False):
         log_debug("Initiating connection to {0}:{1}.".format(ip, port))
 
         # If we're already connected to the remote peer, log the event and ignore it.
@@ -137,8 +317,119 @@ class AbstractClient(object):
                   .format(ip, port, sock.fileno(), conn_obj.state))
         return
 
+    # Check if the connection is established.
+    # If it is not established, we give up for untrusted connections and try again for trusted connections.
+    def connection_timeout(self, conn):
+        log_debug("Connection timeout, on connection with {0}".format(conn.peer_desc))
 
-class ConnectionState():
+        if conn.state & ConnectionState.ESTABLISHED:
+            log_debug("Turns out connection was initialized, carrying on with {0}".format(conn.peer_desc))
+            self.alarm_queue.register_alarm(60, conn.send_ping)
+            return 0
+
+        if conn.state & ConnectionState.MARK_FOR_CLOSE:
+            log_debug("We're already closing the connection to {0} (or have closed it). Ignoring timeout."
+                      .format(conn.peer_desc))
+            return 0
+
+        # Clean up the old connection and retry it if it is trusted
+        log_debug("destroying old socket with {0}".format(conn.peer_desc))
+        self.destroy_conn(conn.sock.fileno())
+
+        # It is init_client_socket's job to schedule this function.
+        return 0
+
+    # Retrys the init_client_socket call
+    # Returns 0 to be allowed as a function for the AlarmQueue and not be rescheduled
+    def retry_init_client_socket(self, sock, conn_cls, ip, port, setup):
+        self.num_retries_by_ip[ip] += 1
+        if self.num_retries_by_ip[ip] >= MAX_RETRIES:
+            del self.num_retries_by_ip[ip]
+            log_debug("Not retrying connection to {0}:{1}- maximum connections exceeded!".format(ip, port))
+            return 0
+        else:
+            log_debug("Retrying connection to {0}:{1}.".format(ip, port))
+            self.init_client_socket(conn_cls, ip, port, sock, setup)
+        return 0
+
+
+# A group of connections with active sockets
+class ConnectionPool(object):
+    INITIAL_FILENO = 5000
+
+    def __init__(self):
+        self.byfileno = [None] * ConnectionPool.INITIAL_FILENO
+        self.len_fileno = ConnectionPool.INITIAL_FILENO
+
+        self.byipport = {}
+        self.count_conn_by_ip = defaultdict(lambda: 0)
+        self.num_peer_conn = 0
+
+    # Add a connection for tracking.
+    # Throws an AssertionError if there already exists a connection to the same
+    # (ip, port) pair.
+    def add(self, fileno, ip, port, conn):
+        assert (ip, port) not in self.byipport
+
+        while fileno > self.len_fileno:
+            self.byfileno.extend([None] * ConnectionPool.INITIAL_FILENO)
+            self.len_fileno += ConnectionPool.INITIAL_FILENO
+
+        self.byfileno[fileno] = conn
+        self.byipport[(ip, port)] = conn
+        self.count_conn_by_ip[ip] += 1
+
+    # Checks whether we have a connection to (ip, port) or not
+    def has_connection(self, ip, port):
+        return (ip, port) in self.byipport
+
+    # Gets the connection by (ip, port).
+    # Throws a KeyError if no such connection exists
+    def get_byipport(self, ip, port):
+        return self.byipport[(ip, port)]
+
+    # Gets the connection by fileno.
+    # Returns None if the fileno does not exist.
+    def get_byfileno(self, fileno):
+        if fileno > self.len_fileno:
+            return None
+
+        return self.byfileno[fileno]
+
+    # Get the number of connections to this ip address.
+    def get_num_conn_by_ip(self, ip):
+        if ip in self.count_conn_by_ip:
+            return self.count_conn_by_ip[ip]
+        return 0
+
+    # Delete this connection from the connection pool
+    def delete(self, conn):
+        # Remove conn from the dictionaries
+        self.byfileno[conn.fileno] = None
+        del self.byipport[(conn.peer_ip, conn.peer_port)]
+
+        # Decrement the count- if it's 0, we delete the key.
+        if self.count_conn_by_ip[conn.peer_ip] == 1:
+            del self.count_conn_by_ip[conn.peer_ip]
+        else:
+            self.count_conn_by_ip[conn.peer_ip] -= 1
+
+    # Delete this connection given its fileno.
+    def delete_byfileno(self, fileno):
+        return self.delete(self.byfileno[fileno])
+
+    # Iterates through all connection objects in this connection pool
+    def __iter__(self):
+        for conn in self.byfileno:
+            if conn is not None:
+                yield conn
+
+    # Returns the number of connections in our pool
+    def __len__(self):
+        return len(self.byipport)
+
+
+class ConnectionState(object):
     CONNECTING = 0b000000000  # Received EINPROGRESS when calling socket.connect
     INITIALIZED = 0b000000001
     HELLO_RECVD = 0b000000010  # Received version message from the remote end
