@@ -5,6 +5,7 @@ import signal
 import socket
 from collections import defaultdict
 
+from bxcommon.blx_exceptions import TerminationError
 from bxcommon.messages import PongMessage, AckMessage
 from bxcommon.utils import *
 
@@ -207,7 +208,6 @@ class AbstractClient(object):
         self.serversocket = self.create_server_socket('0.0.0.0',
                                                       self.server_port)
         self.serversocketfd = self.serversocket.fileno()
-
         # Handle termination gracefully
         signal.signal(signal.SIGTERM, self.kill_node)
         signal.signal(signal.SIGINT, self.kill_node)
@@ -219,6 +219,14 @@ class AbstractClient(object):
 
     def get_connection_class(self):
         raise NotImplementedError()
+
+    # Create a connection object from this Node to (ip, port)
+    def create_conn(self, ip, port):
+        ip = socket.gethostbyname(ip)
+        log_debug("Connecting to " + ip + ":" + str(port))
+
+        # init_client_socket will do all of the work given the ip address.
+        self.init_client_socket(self.get_connection_class(), ip, port, setup=True)
 
     # Handles incoming connections on the server socket
     # Only allows MAX_CONN_BY_IP connections from each IP address to be initialized.
@@ -441,11 +449,28 @@ class AbstractClient(object):
             self.init_client_socket(conn_cls, ip, port, sock, setup)
         return 0
 
+    # Cleans up system resources used by this node.
+    def cleanup_node(self):
+        log_err("Node is closing! Closing everything.")
+
+        # Clean up server sockets.
+        self.epoll.unregister(self.serversocket.fileno())
+        self.serversocket.close()
+
+        # Clean up client sockets.
+        for conn in self.connection_pool:
+            self.destroy_conn(conn.fileno, teardown=True)
+
+        self.epoll.close()
+
+    # Kills the node immediately
+    def kill_node(self, _signum, _stack):
+        raise TerminationError("Node killed.")
+
     def connect_to_peers(self):
         raise NotImplementedError()
 
     # Main loop of this Node. Returns when Node crashes or is stopped.
-    # Connects to the relay_nodes
     # Handles events as they get triggered by epoll.
     # Fires alarms that get scheduled.
     def run(self):
@@ -511,6 +536,28 @@ class AbstractClient(object):
         # Handle shutdown of this node.
         finally:
             self.cleanup_node()
+
+    # Clean up the associated connection and update all data structures tracking it.
+    # We also retry trusted connections since they can never be destroyed.
+    # If teardown is True, then we do not retry trusted connections and just tear everything down.
+    def destroy_conn(self, fileno, teardown=False):
+        conn = self.connection_pool.get_byfileno(fileno)
+        log_debug("Breaking connection to {0}".format(conn.peer_desc))
+
+        # Get rid of the connection from the epoll and the connection pool.
+        self.epoll.unregister(fileno)
+        self.connection_pool.delete(conn)
+
+        conn.close()
+
+        if self.can_retry_after_desroy(teardown, conn):
+            log_debug("Retrying connection to {0}".format(conn.peer_desc))
+            self.alarm_queue.register_alarm(
+                FAST_RETRY, self.retry_init_client_socket, None,
+                conn.__class__, conn.peer_ip, conn.peer_port, True)
+
+    def can_retry_after_desroy(self, teardown, conn):
+        raise NotImplementedError()
 
 
 # A group of connections with active sockets
