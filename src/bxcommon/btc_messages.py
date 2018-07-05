@@ -10,7 +10,7 @@ import random
 import socket
 import struct
 
-from btc_exceptions import *
+from exceptions import *
 from utils import *
 
 magic_dict = {

@@ -6,7 +6,7 @@
 import hashlib
 import struct
 
-from blx_exceptions import *
+from exceptions import *
 from utils import *
 
 sha256 = hashlib.sha256

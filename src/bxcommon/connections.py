@@ -5,8 +5,8 @@ import signal
 import socket
 from collections import defaultdict
 
-from bxcommon.blx_exceptions import TerminationError
-from bxcommon.messages import PongMessage, AckMessage
+from exceptions import *
+from bxcommon.messages import PongMessage, AckMessage, Message, HDR_COMMON_OFF
 from bxcommon.utils import *
 
 MAX_CONN_BY_IP = 30  # Maximum number of connections that an IP address can have
@@ -75,9 +75,23 @@ class AbstractConnection(object):
     def mark_sendable(self):
         self.sendable = True
 
-    #########################
-    # Receiving bytes logic #
-    #########################
+    # Pop the next message off of the buffer given the message length.
+    # Preserve invariant of self.inputbuf always containing the start of a valid message.
+    def pop_next_message(self, payload_len, msg_type=Message, hdr_size=HDR_COMMON_OFF):
+        try:
+            msg_len = hdr_size + payload_len
+            msg_contents = self.inputbuf.remove_bytes(msg_len)
+            return msg_type.parse(msg_contents)
+        except UnrecognizedCommandError as e:
+            log_err("Unrecognized command on {0}. Error Message: {1}".format(self.peer_desc, e.msg))
+            log_debug("Src: {0} Raw data: {1}".format(self.peer_desc, e.raw_data))
+            return None
+
+        except PayloadLenError as e:
+            log_err("ParseError on connection {0}.".format(self.peer_desc))
+            log_debug("ParseError message: {0}".format(e.msg))
+            self.state |= ConnectionState.MARK_FOR_CLOSE  # Close, no retry.
+            return None
 
     # Collect input from the socket and store it in the inputbuffer until either the socket is drained
     # or the throttling limits are hit.
