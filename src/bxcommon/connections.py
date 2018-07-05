@@ -67,13 +67,13 @@ class AbstractConnection(object):
 
         self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
 
-    def is_sendable(self):
-        return self.sendable
-
     # Marks a connection as 'sendable', that is, there is room in the outgoing send buffer, and a send call can succeed.
     # Only gets unmarked when the outgoing send buffer is full.
     def mark_sendable(self):
         self.sendable = True
+
+    def can_send_queued(self):
+        return self.sendable
 
     def pre_process_msg(self, msg_cls):
         is_full_msg, msg_type, payload_len = msg_cls.peek_message(self.inputbuf)
@@ -81,6 +81,37 @@ class AbstractConnection(object):
         log_debug("XXX: Starting to get message of type {0}. Is full: {1}".format(msg_type, is_full_msg))
 
         return is_full_msg, msg_type, payload_len
+
+        # Enqueues the contents of a Message instance, msg, to our outputbuf and attempts to send it if the underlying
+        #   socket has room in the send buffer.
+
+    def enqueue_msg(self, msg):
+        if self.state & ConnectionState.MARK_FOR_CLOSE:
+            return
+
+        self.outputbuf.enqueue_msgbytes(msg.rawbytes())
+
+        if self.can_send_queued():
+            self.send()
+
+        # Enqueues the raw bytes of a message, msg_bytes, to our outputbuf and attempts to send it if the underlying socket
+        #   has room in the send buffer.
+
+    def enqueue_msg_bytes(self, msg_bytes):
+        if self.state & ConnectionState.MARK_FOR_CLOSE:
+            return
+
+        size = len(msg_bytes)
+
+        log_debug("Adding message of length {0} to {1}'s outputbuf".format(size, self.peer_desc))
+
+        self.outputbuf.enqueue_msgbytes(msg_bytes)
+
+        if self.can_send_queued():
+            self.send()
+
+    def send(self):
+        raise NotImplementedError()
 
     # Receives and processes the next bytes on the socket's inputbuffer.
     # Returns 0 in order to avoid being rescheduled if this was an alarm.
@@ -256,6 +287,22 @@ class AbstractConnection(object):
 
     def msg_pong(self, msg):
         pass
+
+    # Receive a transaction assignment from txhash -> shortid
+    def msg_txassign(self, msg):
+        tx_hash = msg.tx_hash()
+
+        log_debug("Processing txassign message")
+        if self.node.tx_manager.get_txid(tx_hash) == -1:
+            log_debug("Assigning {0} to sid {1}".format(msg.tx_hash(), msg.short_id()))
+            self.node.tx_manager.assign_tx_to_sid(tx_hash, msg.short_id(), time.time())
+            return tx_hash
+
+        return None
+
+    def close(self):
+        log_debug("Closing connection to {0}".format(self.peer_desc))
+        self.sock.close()
 
 
 class AbstractClient(object):
