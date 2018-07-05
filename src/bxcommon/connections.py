@@ -5,9 +5,9 @@ import signal
 import socket
 from collections import defaultdict
 
-from exceptions import *
 from bxcommon.messages import PongMessage, AckMessage, Message, HDR_COMMON_OFF
 from bxcommon.utils import *
+from exceptions import *
 
 MAX_CONN_BY_IP = 30  # Maximum number of connections that an IP address can have
 
@@ -74,6 +74,56 @@ class AbstractConnection(object):
     # Only gets unmarked when the outgoing send buffer is full.
     def mark_sendable(self):
         self.sendable = True
+
+    def pre_process_msg(self, msg_cls):
+        is_full_msg, msg_type, payload_len = msg_cls.peek_message(self.inputbuf)
+
+        log_debug("XXX: Starting to get message of type {0}. Is full: {1}".format(msg_type, is_full_msg))
+
+        return is_full_msg, msg_type, payload_len
+
+    # Receives and processes the next bytes on the socket's inputbuffer.
+    # Returns 0 in order to avoid being rescheduled if this was an alarm.
+    def recv(self, msg_cls=Message, hello_msgs=['hello', 'ack']):
+        self.collect_input()
+
+        while True:
+            if self.state & ConnectionState.MARK_FOR_CLOSE:
+                return 0
+
+            is_full_msg, msg_type, payload_len = self.pre_process_msg(msg_cls)
+
+            if not is_full_msg:
+                break
+
+            # Full messages must be a version or verack if the connection isn't established yet.
+            msg = self.pop_next_message(payload_len)
+            # If there was some error in parsing this message, then continue the loop.
+            if msg is None:
+                if self.num_bad_messages == MAX_BAD_MESSAGES:
+                    log_debug("Got enough bad messages! Marking connection from {0} closed".format(self.peer_desc))
+                    self.state |= ConnectionState.MARK_FOR_CLOSE
+                    return 0  # I have MAX_BAD_MESSAGES messages that failed to parse in a row.
+
+                self.num_bad_messages += 1
+                continue
+
+            self.num_bad_messages = 0
+
+            if not (self.state & ConnectionState.ESTABLISHED) and msg_type not in hello_msgs:
+                log_err("Connection to {0} not established and got {1} message!  Closing."
+                        .format(self.peer_desc, msg_type))
+                self.state |= ConnectionState.MARK_FOR_CLOSE
+                return 0
+
+            log_debug("Received message of type {0} from {1}".format(msg_type, self.peer_desc))
+
+            if msg_type in self.message_handlers:
+                msg_handler = self.message_handlers[msg_type]
+                msg_handler(msg)
+
+        log_debug("Done receiving from {0}".format(self.peer_desc))
+        return 0
 
     # Pop the next message off of the buffer given the message length.
     # Preserve invariant of self.inputbuf always containing the start of a valid message.
