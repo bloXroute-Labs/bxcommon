@@ -48,8 +48,7 @@ class AbstractNode(object):
         self.num_retries_by_ip = defaultdict(lambda: 0)
 
         # set up the server sockets for bitcoind and www/json
-        self.serversocket = self.listen_on_address('0.0.0.0',
-                                                   self.server_port)
+        self.serversocket = self.listen_on_address('0.0.0.0', self.server_port)
         self.serversocketfd = self.serversocket.fileno()
         # Handle termination gracefully
         signal.signal(signal.SIGTERM, self.kill_node)
@@ -59,6 +58,8 @@ class AbstractNode(object):
         self.alarm_queue = AlarmQueue()
 
         self.tx_manager = TransactionManager(self)
+
+        log_verbose("initialized node state")
 
     # Create and initialize a nonblocking server socket with at most 50 connections in its backlog,
     #   bound to an interface and port
@@ -183,6 +184,17 @@ class AbstractNode(object):
 
         except socket.error:
             pass
+
+    # Broadcasts message msg to every connection except requester.
+    def broadcast(self, msg, broadcasting_conn):
+        if broadcasting_conn is not None:
+            log_debug("Broadcasting message to everyone from {0}".format(broadcasting_conn.peer_desc))
+        else:
+            log_debug("Broadcasting message to everyone")
+
+        for conn in self.connection_pool:
+            if conn.state & ConnectionState.ESTABLISHED and conn != broadcasting_conn:
+                conn.enqueue_msg(msg)
 
     # Cleans up system resources used by this node.
     def cleanup_node(self):
