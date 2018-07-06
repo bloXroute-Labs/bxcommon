@@ -37,7 +37,7 @@ MAX_SEND_QUEUE_SIZE = 5000
 MAX_MESSAGE_HISTORY = 5000
 
 
-class AbstractClient(object):
+class AbstractNode(object):
     def __init__(self, server_ip, server_port):
         self.server_ip = server_ip
         self.server_port = server_port
@@ -162,7 +162,7 @@ class AbstractClient(object):
 
     # Handles incoming connections on the server socket
     # Only allows MAX_CONN_BY_IP connections from each IP address to be initialized.
-    def handle_serversocket_connections(self):
+    def handle_incoming_connections(self):
         log_verbose("new connection establishment starting")
         try:
             while True:
@@ -294,7 +294,7 @@ class AbstractClient(object):
 
                     # handle incoming connection on the server port
                     elif fileno == self.serversocketfd:
-                        self.handle_serversocket_connections()
+                        self.handle_incoming_connections()
 
                     else:
                         assert False, "Connection not handled!"
