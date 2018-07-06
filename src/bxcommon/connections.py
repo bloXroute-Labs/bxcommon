@@ -48,8 +48,8 @@ class AbstractClient(object):
         self.num_retries_by_ip = defaultdict(lambda: 0)
 
         # set up the server sockets for bitcoind and www/json
-        self.serversocket = self.create_server_socket('0.0.0.0',
-                                                      self.server_port)
+        self.serversocket = self.listen_on_address('0.0.0.0',
+                                                   self.server_port)
         self.serversocketfd = self.serversocket.fileno()
         # Handle termination gracefully
         signal.signal(signal.SIGTERM, self.kill_node)
@@ -64,33 +64,33 @@ class AbstractClient(object):
     #   bound to an interface and port
     # Exit the program if there's an unrecoverable socket error (e.g. no more kernel memory)
     # Reraise the exception if it's unexpected.
-    def create_server_socket(self, intf, serverport):
+    def listen_on_address(self, ip, serverport):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        log_debug("Creating a server socket on {0}:{1}".format(intf, serverport))
+        log_debug("Creating a server socket on {0}:{1}".format(ip, serverport))
 
         try:
-            s.bind((intf, serverport))
+            s.bind((ip, serverport))
             s.listen(50)
             s.setblocking(0)
             self.epoll.register(s.fileno(), select.EPOLLIN | select.EPOLLET)
-            log_debug("Finished creating a server socket on {0}:{1}".format(intf, serverport))
+            log_debug("Finished creating a server socket on {0}:{1}".format(ip, serverport))
             return s
 
         except socket.error as e:
             if e.errno in [errno.EACCES, errno.EADDRINUSE, errno.EADDRNOTAVAIL, errno.ENOMEM, errno.EOPNOTSUPP]:
                 log_crash("Fatal error: " + str(e.errno) + " " + e.strerror +
-                          " Occurred while setting up serversocket on {0}:{1}. Exiting...".format(intf, serverport))
+                          " Occurred while setting up serversocket on {0}:{1}. Exiting...".format(ip, serverport))
                 exit(1)
             else:
                 log_crash("Fatal error: " + str(e.errno) + " " + e.strerror +
-                          " Occurred while setting up serversocket on {0}:{1}. Reraising".format(intf, serverport))
+                          " Occurred while setting up serversocket on {0}:{1}. Reraising".format(ip, serverport))
                 raise e
 
     # Make a new conn_cls instance who is connected to (ip, port) and schedule connection_timeout to check its status.
     # If setup is False, then sock is an already established socket. Otherwise, we must initialize and set up socket.
     # If trusted is True, the instance should be marked as a trusted connection.
-    def init_client_socket(self, conn_cls, ip, port, sock=None, setup=False, timeout_ping=False):
+    def connect_to_address(self, conn_cls, ip, port, sock=None, setup=False):
         log_debug("Initiating connection to {0}:{1}.".format(ip, port))
 
         # If we're already connected to the remote peer, log the event and ignore it.
@@ -124,7 +124,7 @@ class AbstractClient(object):
                     raise RuntimeError('FIXME')
 
                     # FIXME conn_obj and trusted are not defined, delete trust, alarm register call and test
-                    # log_err("Node.init_client_socket",
+                    # log_err("Node.connect_to_address",
                     #         "Connection to {0}:{1} failed. Got errno {2} with msg {3}. Retry?: {4}"
                     #         .format(ip, port, e.errno, e.strerror, conn_obj.trusted))
                     # if trusted:
@@ -178,8 +178,8 @@ class AbstractClient(object):
                     log_debug("Establishing connection number {0} from {1}"
                               .format(self.connection_pool.get_num_conn_by_ip(ip), ip))
                     # The trusted bit here will be set when we get the application layer address.
-                    conn_cls = self.get_connection_class()
-                    self.init_client_socket(conn_cls, address[0], address[1], new_socket, setup=False)
+                    conn_cls = self.get_connection_class(ip)
+                    self.connect_to_address(conn_cls, address[0], address[1], new_socket, setup=False)
 
         except socket.error:
             pass
@@ -215,7 +215,7 @@ class AbstractClient(object):
 
         conn.close()
 
-        if self.can_retry_after_desroy(teardown, conn):
+        if self.can_retry_after_destroy(teardown, conn):
             log_debug("Retrying connection to {0}".format(conn.peer_desc))
             self.alarm_queue.register_alarm(
                 FAST_RETRY, self.retry_init_client_socket, None,
@@ -240,10 +240,10 @@ class AbstractClient(object):
         log_debug("destroying old socket with {0}".format(conn.peer_desc))
         self.destroy_conn(conn.sock.fileno())
 
-        # It is init_client_socket's job to schedule this function.
+        # It is connect_to_address's job to schedule this function.
         return 0
 
-    # Retrys the init_client_socket call
+    # Retrys the connect_to_address call
     # Returns 0 to be allowed as a function for the AlarmQueue and not be rescheduled
     def retry_init_client_socket(self, sock, conn_cls, ip, port, setup):
         self.num_retries_by_ip[ip] += 1
@@ -253,7 +253,7 @@ class AbstractClient(object):
             return 0
         else:
             log_debug("Retrying connection to {0}:{1}.".format(ip, port))
-            self.init_client_socket(conn_cls, ip, port, sock, setup)
+            self.connect_to_address(conn_cls, ip, port, sock, setup)
         return 0
 
     # Main loop of this Node. Returns when Node crashes or is stopped.
@@ -323,20 +323,11 @@ class AbstractClient(object):
         finally:
             self.cleanup_node()
 
-    def can_retry_after_desroy(self, teardown, conn):
+    def can_retry_after_destroy(self, teardown, conn):
         raise NotImplementedError()
 
-    def get_connection_class(self):
+    def get_connection_class(self, ip=None):
         raise NotImplementedError()
-
-    # Create a connection object from this Node to (ip, port)
-    # TODO HERE, DEDUP THIS and continue combing out the rest of the file
-    def create_conn(self, ip, port):
-        ip = socket.gethostbyname(ip)
-        log_debug("Connecting to " + ip + ":" + str(port))
-
-        # init_client_socket will do all of the work given the ip address.
-        self.init_client_socket(self.get_connection_class(), ip, port, setup=True)
 
     def connect_to_peers(self):
         raise NotImplementedError()
