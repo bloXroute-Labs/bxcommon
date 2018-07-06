@@ -47,3 +47,8 @@ ENABLE_LOGGING = True
 HEIGHT_DIFFERENCE = 100
 
 FLUSH_LOG = False
+
+# The length of everything in the header minus the checksum
+HDR_COMMON_OFF = 16
+# Length of a sha256 hash
+HASH_LEN = 32

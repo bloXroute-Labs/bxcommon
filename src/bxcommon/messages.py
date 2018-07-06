@@ -6,19 +6,16 @@
 import hashlib
 import struct
 
+from bxcommon.constants import HDR_COMMON_OFF
 from exceptions import *
 from utils import *
 
 sha256 = hashlib.sha256
 
+
 ##
 # MESSAGE CLASSES
 ##
-
-# The length of everything in the header minus the checksum
-HDR_COMMON_OFF = 16
-# Length of a sha256 hash
-HASH_LEN = 32
 
 
 class Message(object):

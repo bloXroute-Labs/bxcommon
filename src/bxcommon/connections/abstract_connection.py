@@ -2,10 +2,10 @@ import errno
 import socket
 import time
 
-from bxcommon.constants import MAX_BAD_MESSAGES, RECV_BUFSIZE
+from bxcommon.constants import MAX_BAD_MESSAGES, RECV_BUFSIZE, HDR_COMMON_OFF
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.exceptions import UnrecognizedCommandError, PayloadLenError
-from bxcommon.messages import Message, HDR_COMMON_OFF, AckMessage, PongMessage
+from bxcommon.messages import Message, AckMessage, PongMessage
 from bxcommon.utils import OutputBuffer, InputBuffer, log_debug, log_err
 
 
