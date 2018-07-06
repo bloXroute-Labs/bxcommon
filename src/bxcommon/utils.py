@@ -14,7 +14,7 @@ from threading import Condition, Lock, Thread
 
 from pympler import muppy, summary, tracker
 
-import options
+import bxcommon.constants
 
 DUMP_LOG = False
 MAX_ERR_QUEUE_SIZE = 30
@@ -323,11 +323,11 @@ class Log(object):
             with open("current.log", "w") as log_file:
                 log_file.write(self.filename)
 
-        if options.ENABLE_LOGGING:
+        if bxcommon.constants.ENABLE_LOGGING:
             self.dumper.start()
 
     def write(self, msg):
-        if options.ENABLE_LOGGING:
+        if bxcommon.constants.ENABLE_LOGGING:
             with self.lock:
                 self.log.append(msg)
                 self.log_size += len(msg)
@@ -367,7 +367,7 @@ class Log(object):
 
                 self.bytes_written += oldsize
 
-                if options.FLUSH_LOG:
+                if bxcommon.constants.FLUSH_LOG:
                     output_dest.flush()
 
                 # Checks whether we've been dumping to this logfile for a while
@@ -632,14 +632,14 @@ class HeapProfiler(object):
 
     def __init__(self):
         print "options.PROFILING:"
-        print options.PROFILING
+        print bxcommon.constants.PROFILING
 
-        if not options.PROFILING:
+        if not bxcommon.constants.PROFILING:
             self.profiling = False
             return
 
         print "options.PROFILING:"
-        print options.PROFILING
+        print bxcommon.constants.PROFILING
         self.profiling = True
         self.filename = ""
         self.last_rotation_time = time.time()

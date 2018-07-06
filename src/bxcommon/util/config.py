@@ -138,3 +138,8 @@ def get_base_arg_parser():
     parser.add_argument("-o", "--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode")
 
     return parser
+
+
+def crash():
+    exit(1)
+  
