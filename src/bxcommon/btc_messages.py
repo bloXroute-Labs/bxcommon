@@ -10,7 +10,8 @@ import random
 import socket
 import struct
 
-from btc_exceptions import *
+from bxcommon.util.object_hash import BTCObjectHash
+from exceptions import *
 from utils import *
 
 magic_dict = {
@@ -29,8 +30,8 @@ def get_magic_number(networkname):
 sha256 = hashlib.sha256
 
 # The length of everything in the header minus the checksum
-BCH_HEADER_MINUS_CHECKSUM = 20
-BCH_HDR_COMMON_OFF = 24
+BTC_HEADER_MINUS_CHECKSUM = 20
+BTC_HDR_COMMON_OFF = 24
 BLOCK_HDR_SIZE = 81
 # Length of a sha256 hash
 HASH_LEN = 32
@@ -54,7 +55,7 @@ class BTCMessage(object):
 
         magic_num = magic if magic not in magic_dict else magic_dict[magic]
         checksum = sha256(
-            sha256(self._memoryview[BCH_HDR_COMMON_OFF:payload_len + BCH_HDR_COMMON_OFF]).digest()).digest()
+            sha256(self._memoryview[BTC_HDR_COMMON_OFF:payload_len + BTC_HDR_COMMON_OFF]).digest()).digest()
 
         off = 0
         struct.pack_into('<L12sL', buf, off, magic_num, command, payload_len)
@@ -72,17 +73,17 @@ class BTCMessage(object):
         if self._payload_len is None:
             self._payload_len = struct.unpack_from('<L', self.buf, 16)[0]
 
-        if self._payload_len + BCH_HDR_COMMON_OFF == len(self.buf):
+        if self._payload_len + BTC_HDR_COMMON_OFF == len(self.buf):
             return self._memoryview
         else:
-            return self._memoryview[0:self._payload_len + BCH_HDR_COMMON_OFF]
+            return self._memoryview[0:self._payload_len + BTC_HDR_COMMON_OFF]
 
     # peek at message, return (is_a_full_message, magic, command, length)
     # input_buffer is an instance of InputBuffer
     @staticmethod
     def peek_message(input_buffer):
-        buf = input_buffer.peek_message(BCH_HEADER_MINUS_CHECKSUM)
-        if len(buf) < BCH_HEADER_MINUS_CHECKSUM:
+        buf = input_buffer.peek_message(BTC_HEADER_MINUS_CHECKSUM)
+        if len(buf) < BTC_HEADER_MINUS_CHECKSUM:
             return False, None, None
 
         _magic, _command, _payload_len = struct.unpack_from('<L12sL', buf, 0)
@@ -94,7 +95,7 @@ class BTCMessage(object):
     # parse a full message
     @staticmethod
     def parse(buf):
-        if len(buf) < BCH_HEADER_MINUS_CHECKSUM:
+        if len(buf) < BTC_HEADER_MINUS_CHECKSUM:
             return None
 
         _magic, _command, _payload_len = struct.unpack_from('<L12sL', buf, 0)
@@ -109,7 +110,7 @@ class BTCMessage(object):
                     _payload_len, len(buf)))
 
         if _checksum != sha256(sha256(
-                buf[BCH_HDR_COMMON_OFF:_payload_len + BCH_HDR_COMMON_OFF]).digest()).digest()[0:4]:
+                buf[BTC_HDR_COMMON_OFF:_payload_len + BTC_HDR_COMMON_OFF]).digest()).digest()[0:4]:
             log_err("Checksum for packet doesn't match!")
             raise ChecksumError("Checksum for packet doesn't match! ", "Raw data: %s" % repr(buf))
 
@@ -137,7 +138,7 @@ class BTCMessage(object):
 
     def payload(self):
         if self._payload is None:
-            self._payload = self.buf[BCH_HDR_COMMON_OFF:self.payload_len() + BCH_HDR_COMMON_OFF]
+            self._payload = self.buf[BTC_HDR_COMMON_OFF:self.payload_len() + BTC_HDR_COMMON_OFF]
         return self._payload
 
     @staticmethod
@@ -224,7 +225,7 @@ class VersionBTCMessage(BTCMessage):
             buf = bytearray(109 + len(user_agent))
             self.buf = buf
 
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             struct.pack_into('<IQQQ', buf, off, version, services, int(time.time()), 1)
             off += 28
             buf[off:off + 18] = ipaddrport_to_btcbytearray(dst_ip, dst_port)
@@ -237,7 +238,7 @@ class VersionBTCMessage(BTCMessage):
             off += 8 + len(user_agent) + 1 + 4
             # we do not send or parse the relay boolean. if present, we benignly ignore it.
 
-            BTCMessage.__init__(self, magic, 'version', off - BCH_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, 'version', off - BTC_HDR_COMMON_OFF, buf)
 
         else:
             self.buf = buf
@@ -250,7 +251,7 @@ class VersionBTCMessage(BTCMessage):
 
     def version(self):
         if self._version is None:
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             self._version, self._services, self._timestamp = struct.unpack_from('<IQQ', self.buf, off)
 
         return self._version
@@ -268,7 +269,7 @@ class VersionBTCMessage(BTCMessage):
 
     def dst_ip(self):
         if self._dst_ip is None:
-            dst_ip_off = BCH_HDR_COMMON_OFF + 28
+            dst_ip_off = BTC_HDR_COMMON_OFF + 28
             self._dst_ip, self._dst_port = btcbytearray_to_ipaddrport(self.buf[dst_ip_off:dst_ip_off + 18])
         return self._dst_ip
 
@@ -279,7 +280,7 @@ class VersionBTCMessage(BTCMessage):
 
     def src_ip(self):
         if self._src_ip is None:
-            src_ip_off = BCH_HDR_COMMON_OFF + 54
+            src_ip_off = BTC_HDR_COMMON_OFF + 54
             self._src_ip, self._src_port = btcbytearray_to_ipaddrport(self.buf[src_ip_off:src_ip_off + 18])
         return self._src_ip
 
@@ -290,13 +291,13 @@ class VersionBTCMessage(BTCMessage):
 
     def nonce(self):
         if self._nonce is None:
-            nonce_off = BCH_HDR_COMMON_OFF + 72
+            nonce_off = BTC_HDR_COMMON_OFF + 72
             self._nonce = struct.unpack_from('<Q', self.buf, nonce_off)[0]
         return self._nonce
 
     def user_agent(self):
         if self._user_agent is None:
-            user_agent_off = BCH_HDR_COMMON_OFF + 80
+            user_agent_off = BTC_HDR_COMMON_OFF + 80
             self._user_agent = struct.unpack_from('%dp' % (len(self.buf) - user_agent_off,), self.buf, user_agent_off)[
                 0]
             height_off = user_agent_off + len(self._user_agent) + 1
@@ -312,7 +313,7 @@ class VersionBTCMessage(BTCMessage):
 class VerAckBTCMessage(BTCMessage):
     def __init__(self, magic=None, buf=None):
         if buf is None:
-            buf = bytearray(BCH_HDR_COMMON_OFF)
+            buf = bytearray(BTC_HDR_COMMON_OFF)
             self.buf = buf
 
             BTCMessage.__init__(self, magic, 'verack', 0, buf)
@@ -326,14 +327,14 @@ class VerAckBTCMessage(BTCMessage):
 class PingBTCMessage(BTCMessage):
     def __init__(self, magic=None, buf=None):
         if buf is None:
-            buf = bytearray(BCH_HDR_COMMON_OFF + 8)
+            buf = bytearray(BTC_HDR_COMMON_OFF + 8)
             self.buf = buf
 
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             struct.pack_into('<Q', buf, off, random.randint(0, sys.maxint))
             off += 8
 
-            BTCMessage.__init__(self, magic, 'ping', off - BCH_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, 'ping', off - BTC_HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(buf)
@@ -344,28 +345,28 @@ class PingBTCMessage(BTCMessage):
 
     def nonce(self):
         if self._nonce is None:
-            if len(self.buf) == BCH_HDR_COMMON_OFF:
+            if len(self.buf) == BTC_HDR_COMMON_OFF:
                 self._nonce = -1
-            elif len(self.buf) == BCH_HDR_COMMON_OFF + 4:
-                self._nonce = struct.unpack_from('<L', self.buf, BCH_HDR_COMMON_OFF)[0]
+            elif len(self.buf) == BTC_HDR_COMMON_OFF + 4:
+                self._nonce = struct.unpack_from('<L', self.buf, BTC_HDR_COMMON_OFF)[0]
             else:
-                self._nonce = struct.unpack_from('<Q', self.buf, BCH_HDR_COMMON_OFF)[0]
+                self._nonce = struct.unpack_from('<Q', self.buf, BTC_HDR_COMMON_OFF)[0]
         return self._nonce
 
 
 class PongBTCMessage(BTCMessage):
     def __init__(self, magic=None, nonce=None, buf=None):
         if buf is None:
-            buf = bytearray(BCH_HDR_COMMON_OFF + 8)
+            buf = bytearray(BTC_HDR_COMMON_OFF + 8)
             self.buf = buf
 
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
 
             if nonce != -1:
                 struct.pack_into('<Q', buf, off, nonce)
                 off += 8
 
-            BTCMessage.__init__(self, magic, 'pong', off - BCH_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, 'pong', off - BTC_HDR_COMMON_OFF, buf)
 
         else:
             self.buf = buf
@@ -377,10 +378,10 @@ class PongBTCMessage(BTCMessage):
 
     def nonce(self):
         if self._nonce is None:
-            if len(self.buf) == BCH_HDR_COMMON_OFF:
+            if len(self.buf) == BTC_HDR_COMMON_OFF:
                 self._nonce = -1
             else:
-                self._nonce = struct.unpack_from('<Q', self.buf, BCH_HDR_COMMON_OFF)[0]
+                self._nonce = struct.unpack_from('<Q', self.buf, BTC_HDR_COMMON_OFF)[0]
         return self._nonce
 
 
@@ -388,7 +389,7 @@ class GetAddrBTCMessage(BTCMessage):
     def __init__(self, magic=None, buf=None):
         if buf is None:
             # We only construct empty getaddr messages.
-            buf = bytearray(BCH_HDR_COMMON_OFF)
+            buf = bytearray(BTC_HDR_COMMON_OFF)
             self.buf = buf
 
             BTCMessage.__init__(self, magic, 'getaddr', 0, buf)
@@ -404,10 +405,10 @@ class AddrBTCMessage(BTCMessage):
     # FIXME addrs arg is sharing global state
     def __init__(self, magic=None, addrs=[], buf=None):
         if buf is None:
-            buf = bytearray(BCH_HDR_COMMON_OFF + 9 + len(addrs) * (4 + 18))
+            buf = bytearray(BTC_HDR_COMMON_OFF + 9 + len(addrs) * (4 + 18))
             self.buf = buf
 
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             off += pack_int_to_btcvarint(len(addrs), buf, off)
 
             for triplet in addrs:
@@ -418,7 +419,7 @@ class AddrBTCMessage(BTCMessage):
                 buf[off:off + 18] = ipaddrport_to_btcbytearray(triplet[1], triplet[2])
                 off += 18
 
-            BTCMessage.__init__(self, magic, 'addr', off - BCH_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, 'addr', off - BTC_HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(buf)
@@ -428,7 +429,7 @@ class AddrBTCMessage(BTCMessage):
     def __iter__(self):
         raise RuntimeError('FIXME')
         # FIXME buf is not defined, change to self.buf and test
-        # off = BCH_HDR_COMMON_OFF
+        # off = BTC_HDR_COMMON_OFF
         # count, size = btcvarint_to_int(buf, off)
         # off += size
         #
@@ -445,10 +446,10 @@ class InventoryBTCMessages(BTCMessage):
     def __init__(self, magic=None, inv_vect=None, command=None, buf=None):
         if buf is None:
             buf = bytearray(
-                BCH_HDR_COMMON_OFF + 9 + 36 * len(inv_vect))  # we conservatively allocate the max space for varint
+                BTC_HDR_COMMON_OFF + 9 + 36 * len(inv_vect))  # we conservatively allocate the max space for varint
             self.buf = buf
 
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             off += pack_int_to_btcvarint(len(inv_vect), buf, off)
 
             for inv_item in inv_vect:
@@ -457,7 +458,7 @@ class InventoryBTCMessages(BTCMessage):
                 buf[off:off + 32] = inv_item[1].get_big_endian()
                 off += 32
 
-            BTCMessage.__init__(self, magic, command, off - BCH_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, command, off - BTC_HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(buf)
@@ -465,12 +466,12 @@ class InventoryBTCMessages(BTCMessage):
             self._payload = None
 
     def count(self):
-        off = BCH_HDR_COMMON_OFF
+        off = BTC_HDR_COMMON_OFF
         num_items, size = btcvarint_to_int(self.buf, off)
         return num_items
 
     def __iter__(self):
-        off = BCH_HDR_COMMON_OFF
+        off = BTC_HDR_COMMON_OFF
         num_items, size = btcvarint_to_int(self.buf, off)
         off += size
         self._num_items = num_items
@@ -503,10 +504,10 @@ class DataBTCMessage(BTCMessage):
     def __init__(self, magic=None, version=None, hashes=[],
                  hash_stop=None, command=None, buf=None):
         if buf is None:
-            buf = bytearray(BCH_HDR_COMMON_OFF + 9 + (len(hashes) + 1) * 32)
+            buf = bytearray(BTC_HDR_COMMON_OFF + 9 + (len(hashes) + 1) * 32)
             self.buf = buf
 
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             struct.pack_into('<I', buf, off, version)
             off += 4
             off += pack_int_to_btcvarint(len(hashes), buf, off)
@@ -518,7 +519,7 @@ class DataBTCMessage(BTCMessage):
             buf[off:off + 32] = hash_stop.get_big_endian()
             off += 32
 
-            BTCMessage.__init__(self, magic, command, off - BCH_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, command, off - BTC_HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(buf)
@@ -529,20 +530,20 @@ class DataBTCMessage(BTCMessage):
 
     def version(self):
         if self._version is None:
-            self._version = struct.unpack_from('<I', self.buf, BCH_HDR_COMMON_OFF)
+            self._version = struct.unpack_from('<I', self.buf, BTC_HDR_COMMON_OFF)
         return self._version
 
     def hash_count(self):
         if self._hash_count is None:
             raise RuntimeError('FIXME')
             # FIXME buf is not defined, should be self.buf, fix and test
-            # off = BCH_HDR_COMMON_OFF + 4
+            # off = BTC_HDR_COMMON_OFF + 4
             # self._hash_count, size = btcvarint_to_int(buf, off)
 
         return self._hash_count
 
     def __iter__(self):
-        off = BCH_HDR_COMMON_OFF + 4  # For the version field.
+        off = BTC_HDR_COMMON_OFF + 4  # For the version field.
         b_count, size = btcvarint_to_int(self.buf, off)
         off += size
 
@@ -551,7 +552,7 @@ class DataBTCMessage(BTCMessage):
             off += 32
 
     def hash_stop(self):
-        return BTCObjectHash(buf=self.buf, offset=BCH_HDR_COMMON_OFF + self.payload_len() - 32, length=HASH_LEN)
+        return BTCObjectHash(buf=self.buf, offset=BTC_HDR_COMMON_OFF + self.payload_len() - 32, length=HASH_LEN)
 
 
 class GetHeadersBTCMessage(DataBTCMessage):
@@ -639,10 +640,10 @@ class TxBTCMessage(BTCMessage):
     #   add magic as argument and test
     def __init__(self, version=None, tx_in=None, tx_out=None, lock_time=None, buf=None):
         if buf is None:
-            buf = bytearray(BCH_HDR_COMMON_OFF + 2 * 9 + 8)
+            buf = bytearray(BTC_HDR_COMMON_OFF + 2 * 9 + 8)
             self.buf = buf
 
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             struct.pack_into('<I', buf, off, version)
             off += 4
             off += pack_int_to_btcvarint(len(tx_in), buf, off)
@@ -665,7 +666,7 @@ class TxBTCMessage(BTCMessage):
             off += 4
 
             # FIXME magic is undefined
-            # BTCMessage.__init__(self, magic, 'tx', off-BCH_HDR_COMMON_OFF, buf)
+            # BTCMessage.__init__(self, magic, 'tx', off-BTC_HDR_COMMON_OFF, buf)
             raise RuntimeError('FIXME')
         else:
             self.buf = buf
@@ -683,13 +684,13 @@ class TxBTCMessage(BTCMessage):
 
     def version(self):
         if self._version is None:
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             self._version = struct.unpack_from('<I', self.buf, off)
         return self._version
 
     def tx_in(self):
         if self._tx_in is None:
-            off = BCH_HDR_COMMON_OFF + 4
+            off = BTC_HDR_COMMON_OFF + 4
             self._tx_in_count, size = btcvarint_to_int(self.buf, off)
             off += size
             self._tx_in = []
@@ -742,58 +743,8 @@ class TxBTCMessage(BTCMessage):
         return self.payload()
 
 
-# Any object with an already hashed value. binary[offset:offset_length] must be the little endian representation
-# of the object hash. buf[offset:offset+len] must be the big endian representation.
-# The key invariant is that the last 4 bytes (binary[offset_lengh-4:offset_length]) must be uniformly randomly
-# distributed.
-class BTCObjectHash(object):
-    def __init__(self, buf=None, offset=0, length=0, binary=None):
-        if buf is not None:
-            if isinstance(buf, bytearray):
-                self.binary = buf[offset:offset + length]
-            else:  # In case this is a memoryview.
-                self.binary = bytearray(buf[offset:offset + length])
-            self.binary = self.binary[::-1]
-        else:
-            self.binary = binary
-
-        # This is where the big endian format will be stored
-        self._buf = None
-        self._hash = struct.unpack("<L", self.binary[-4:])[0]
-        self._full_str = None
-
-    def __hash__(self):
-        return self._hash
-
-    def __cmp__(self, id1):
-        if id1 is None or self.binary > id1.binary:
-            return -1
-        elif self.binary < id1.binary:
-            return 1
-        return 0
-
-    def __repr__(self):
-        return repr(self.binary)
-
-    def __getitem__(self, arg):
-        return self.binary.__getitem__(arg)
-
-    def full_string(self):
-        if self._full_str is None:
-            self._full_str = str(self.binary)
-        return self._full_str
-
-    def get_little_endian(self):
-        return self.binary
-
-    def get_big_endian(self):
-        if self._buf is None:
-            self._buf = self.binary[::-1]
-        return self._buf
-
-
 def pack_block_message(buf, magic, block_header, txns):
-    off = BCH_HDR_COMMON_OFF
+    off = BTC_HDR_COMMON_OFF
     buf[off:off + 80] = block_header
     off += 80
     num_txns = len(txns)
@@ -804,7 +755,7 @@ def pack_block_message(buf, magic, block_header, txns):
         buf[off:off + len(tx_buf)] = tx_buf
         off += len(tx_buf)
 
-    return BTCMessage(magic, 'block', off - BCH_HDR_COMMON_OFF, buf)
+    return BTCMessage(magic, 'block', off - BTC_HDR_COMMON_OFF, buf)
 
 
 class BlockBTCMessage(BTCMessage):
@@ -812,10 +763,10 @@ class BlockBTCMessage(BTCMessage):
                  timestamp=None, bits=None, nonce=None, txns=None, buf=None):
         if buf is None:
             total_tx_size = sum(len(tx) for tx in txns)
-            buf = bytearray(BCH_HDR_COMMON_OFF + 80 + 9 + total_tx_size)
+            buf = bytearray(BTC_HDR_COMMON_OFF + 80 + 9 + total_tx_size)
             self.buf = buf
 
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             struct.pack_into('<I', buf, off, version)
             off += 4
             buf[off:off + 32] = prev_block.get_little_endian()
@@ -830,7 +781,7 @@ class BlockBTCMessage(BTCMessage):
                 buf[off:off + len(tx)] = tx
                 off += len(tx)
 
-            BTCMessage.__init__(self, magic, 'block', off - BCH_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, 'block', off - BTC_HDR_COMMON_OFF, buf)
         else:
             assert not isinstance(buf, str)
             self.buf = buf
@@ -844,7 +795,7 @@ class BlockBTCMessage(BTCMessage):
 
     def version(self):
         if self._version is None:
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             self._version = struct.unpack_from('<I', self.buf, off)[0]
             off += 4
             self._prev_block = BTCObjectHash(self.buf, off, 32)
@@ -913,19 +864,19 @@ class BlockBTCMessage(BTCMessage):
 
     def block_hash(self):
         if self._hash_val is None:
-            header = self._memoryview[BCH_HDR_COMMON_OFF:BCH_HDR_COMMON_OFF + BLOCK_HDR_SIZE - 1]
+            header = self._memoryview[BTC_HDR_COMMON_OFF:BTC_HDR_COMMON_OFF + BLOCK_HDR_SIZE - 1]
             raw_hash = sha256(sha256(header).digest()).digest()
             self._hash_val = BTCObjectHash(buf=raw_hash, length=HASH_LEN)
         return self._hash_val
 
     @staticmethod
     def peek_block(input_buffer):
-        buf = input_buffer.peek_message(BCH_HDR_COMMON_OFF + BLOCK_HDR_SIZE - 1)
+        buf = input_buffer.peek_message(BTC_HDR_COMMON_OFF + BLOCK_HDR_SIZE - 1)
         is_here = False
-        if input_buffer.length < BCH_HDR_COMMON_OFF + BLOCK_HDR_SIZE - 1:
+        if input_buffer.length < BTC_HDR_COMMON_OFF + BLOCK_HDR_SIZE - 1:
             return is_here, None, None
 
-        header = buf[BCH_HDR_COMMON_OFF:BCH_HDR_COMMON_OFF + BLOCK_HDR_SIZE - 1]
+        header = buf[BTC_HDR_COMMON_OFF:BTC_HDR_COMMON_OFF + BLOCK_HDR_SIZE - 1]
         raw_hash = sha256(sha256(header).digest()).digest()
         payload_len = struct.unpack_from('<L', buf, 16)[0]
         is_here = True
@@ -1007,16 +958,16 @@ class BlockHeader(object):
 class HeadersBTCMessage(BTCMessage):
     def __init__(self, magic=None, headers=None, buf=None):
         if buf is None:
-            buf = bytearray(BCH_HDR_COMMON_OFF + 9 + len(headers) * 81)
+            buf = bytearray(BTC_HDR_COMMON_OFF + 9 + len(headers) * 81)
             self.buf = buf
 
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             off += pack_int_to_btcvarint(len(headers), buf, off)
             for header in headers:
                 buf[off:off + 81] = header
                 off += 81
 
-            BTCMessage.__init__(self, magic, 'headers', off - BCH_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, 'headers', off - BTC_HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(self.buf)
@@ -1029,7 +980,7 @@ class HeadersBTCMessage(BTCMessage):
         if self._header_count is None:
             raise RuntimeError('FIXME')
             # FIXME buf is undefined, change to self.buf and test
-            # off = BCH_HDR_COMMON_OFF
+            # off = BTC_HDR_COMMON_OFF
             # self._header_count, size = btcvarint_to_int(buf, off)
 
         return self._header_count
@@ -1037,7 +988,7 @@ class HeadersBTCMessage(BTCMessage):
     def __iter__(self):
         raise RuntimeError('FIXME')
         # FIXME buf is undefined, change to self.buf and test
-        # off = BCH_HDR_COMMON_OFF
+        # off = BTC_HDR_COMMON_OFF
         # self._header_count, size = btcvarint_to_int(buf, off)
         # off += size
         # for _ in xrange(self._header_count):
@@ -1058,10 +1009,10 @@ class RejectBTCMessage(BTCMessage):
 
     def __init__(self, magic=None, message=None, ccode=None, reason=None, b_data=None, buf=None):
         if buf is None:
-            buf = bytearray(BCH_HDR_COMMON_OFF + 9 + len(message) + 1 + 9 + len(reason) + len(b_data))
+            buf = bytearray(BTC_HDR_COMMON_OFF + 9 + len(message) + 1 + 9 + len(reason) + len(b_data))
             self.buf = buf
 
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             struct.pack_into('<%dpB' % (len(message) + 1,), buf, off, message, ccode)
             off += len(message) + 1 + 1
             struct.pack_into('<%dp' % (len(reason) + 1,), buf, off, reason)
@@ -1069,7 +1020,7 @@ class RejectBTCMessage(BTCMessage):
             buf[off:off + len(b_data)] = b_data
             off += len(b_data)
 
-            BTCMessage.__init__(self, magic, 'reject', off - BCH_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, 'reject', off - BTC_HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(buf)
@@ -1080,7 +1031,7 @@ class RejectBTCMessage(BTCMessage):
 
     def message(self):
         if self._message is None:
-            off = BCH_HDR_COMMON_OFF
+            off = BTC_HDR_COMMON_OFF
             self._message = struct.unpack_from('%dp' % (len(self.buf) - off,), self.buf, off)[0]
             off += len(self._message) + 1
             self._ccode = struct.unpack_from('B', self.buf, off)[0]
@@ -1109,7 +1060,7 @@ class RejectBTCMessage(BTCMessage):
 class SendHeadersBTCMessage(BTCMessage):
     def __init__(self, magic=None, buf=None):
         if buf is None:
-            buf = bytearray(BCH_HDR_COMMON_OFF)
+            buf = bytearray(BTC_HDR_COMMON_OFF)
             self.buf = buf
 
             BTCMessage.__init__(self, magic, 'sendheaders', 0, buf)
