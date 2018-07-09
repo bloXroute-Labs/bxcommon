@@ -2,8 +2,8 @@ import errno
 import socket
 import time
 
-from bxcommon.constants import MAX_BAD_MESSAGES, RECV_BUFSIZE, HDR_COMMON_OFF
 from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.constants import MAX_BAD_MESSAGES, RECV_BUFSIZE, HDR_COMMON_OFF
 from bxcommon.exceptions import UnrecognizedCommandError, PayloadLenError
 from bxcommon.messages import Message, AckMessage, PongMessage
 from bxcommon.utils import OutputBuffer, InputBuffer, log_debug, log_err
@@ -66,8 +66,8 @@ class AbstractConnection(object):
         if self.can_send_queued():
             self.send()
 
-        # Enqueues the raw bytes of a message, msg_bytes, to our outputbuf and attempts to send it if the underlying socket
-        #   has room in the send buffer.
+        # Enqueues the raw bytes of a message, msg_bytes, to our outputbuf and attempts to send it if the
+        #   underlying socket has room in the send buffer.
 
     def enqueue_msg_bytes(self, msg_bytes):
         if self.state & ConnectionState.MARK_FOR_CLOSE:

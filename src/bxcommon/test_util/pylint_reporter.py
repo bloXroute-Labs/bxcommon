@@ -45,8 +45,8 @@ class _PyLintWritable(object):
     def __init__(self):
         self.content = []
 
-    def write(self, st):
-        self.content.append(st)
+    def write(self, str_content):
+        self.content.append(str_content)
 
     def read(self):
         return self.content

@@ -26,8 +26,8 @@ ALL_PARAMS = [
 
 # Capture the process id for easy termination in multi-thread scenarios.
 def log_pid(file_name):
-    with open(file_name, "w") as f:
-        f.write(str(os.getpid()))
+    with open(file_name, "w") as writable_file:
+        writable_file.write(str(os.getpid()))
 
 
 # Returns the local internal IP address of the node.
