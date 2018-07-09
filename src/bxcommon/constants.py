@@ -1,7 +1,3 @@
-import hashlib
-
-sha256 = hashlib.sha256
-
 MAX_CONN_BY_IP = 30  # Maximum number of connections that an IP address can have
 
 CONNECTION_TIMEOUT = 30  # Number of seconds that we wait to retry a connection.
