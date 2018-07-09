@@ -29,7 +29,7 @@ jobs:
           name: Tests
           command: |
             . venv/bin/activate
-            cd bxcommon/test/
+            cd bxcommon
             PYTHONPATH=./src/ \
             PYLINTRC_PATH=./pylintrc \
             python -m unittest discover --verbose -s ./test -t ./test
