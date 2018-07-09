@@ -29,10 +29,10 @@ jobs:
           name: Tests
           command: |
             . venv/bin/activate
-            cd bxcommon
-            PYTHONPATH=./src/ \
-            PYLINTRC_PATH=./pylintrc \
-            python -m unittest discover --verbose -s ./test -t ./test
+            cd bxcommon/test/
+            PYTHONPATH=../../bxcommon/src/ \
+            PYLINTRC_PATH=../../bxcommon/pylintrc \
+            python -m unittest discover --verbose
       - store_artifacts:
           path: test-reports/
           destination: tr1
