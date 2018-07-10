@@ -29,7 +29,6 @@ class ObjectHash(object):
         return self.binary.__getitem__(arg)
 
 
-
 class BTCObjectHash(object):
     def __init__(self, buf=None, offset=0, length=0, binary=None):
         if buf is not None:

@@ -5,12 +5,13 @@ import socket
 import time
 
 # Some websites are blocked in certain jurisdictions, so we try multiple websites to see whichever one works.
-from bxcommon import utils
 
 # TODO much of this needs to be refactored into a config loader that
 # TODO   consumes args/files and returns a standard config
 
 # FIXME we need to move away from these external checks
+from bxcommon.utils import logger
+
 WEBSITES_TO_TRY = ['www.google.com', 'www.alibaba.com']
 
 ALL_PARAMS = [
@@ -118,11 +119,11 @@ def parse_addr(opts, params):
 
 # Configure the global logger.
 def init_logging(ip, port, opts, params):
-    utils.log_setmyname("%s:%d" % (ip, port))
+    logger.log_setmyname("%s:%d" % (ip, port))
     log_path = opts.log_path or params['log_path']
     use_stdout = opts.to_stdout or params['log_stdout']
-    utils.log_init(log_path, use_stdout)
-    utils.log_debug("My own IP for config purposes is {0}".format(ip))
+    logger.log_init(log_path, use_stdout)
+    logger.debug("My own IP for config purposes is {0}".format(ip))
 
 
 # Creates a common parser for gateway and relay.
@@ -138,8 +139,3 @@ def get_base_arg_parser():
     parser.add_argument("-o", "--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode")
 
     return parser
-
-
-def crash():
-    exit(1)
-  

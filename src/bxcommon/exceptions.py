@@ -21,8 +21,7 @@ class UnrecognizedCommandError(ParseError):
 
 
 class PayloadLenError(ParseError):
-    def __init__(self, msg):
-        super(PayloadLenError, self).__init__(msg)
+    pass
 
 
 class ChecksumError(ParseError):
@@ -33,5 +32,4 @@ class ChecksumError(ParseError):
 
 
 class TerminationError(Exception):
-    def __init__(self, msg):
-        super(TerminationError, self).__init__(msg)
+    pass
