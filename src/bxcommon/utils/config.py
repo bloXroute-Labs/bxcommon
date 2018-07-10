@@ -10,7 +10,7 @@ import time
 # TODO   consumes args/files and returns a standard config
 
 # FIXME we need to move away from these external checks
-from bxcommon.util import logger
+from bxcommon.utils import logger
 
 WEBSITES_TO_TRY = ['www.google.com', 'www.alibaba.com']
 
@@ -123,7 +123,7 @@ def init_logging(ip, port, opts, params):
     log_path = opts.log_path or params['log_path']
     use_stdout = opts.to_stdout or params['log_stdout']
     logger.log_init(log_path, use_stdout)
-    logger.log_debug("My own IP for config purposes is {0}".format(ip))
+    logger.debug("My own IP for config purposes is {0}".format(ip))
 
 
 # Creates a common parser for gateway and relay.

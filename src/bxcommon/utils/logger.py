@@ -130,10 +130,10 @@ class LogLevel(object):
         pass
 
     DEBUG = 0
-    VERBOSE = 10
-    WARNING = 20
+    INFO = 10
+    WARN = 20
     ERROR = 30
-    CRASH = 40
+    FATAL = 40
 
 
 # Logging helper functions
@@ -167,7 +167,7 @@ def log(level, logtype, msg, log_time):
         _hostname, logtype, log_time.strftime("%Y-%m-%d-%H:%M:%S+%f"), msg)
 
     # Store all error messages to be sent to the frontend
-    if level > LogLevel.WARNING:
+    if level > LogLevel.WARN:
         error_msgs.append(logmsg)
 
     if len(error_msgs) > MAX_ERR_QUEUE_SIZE:
@@ -176,25 +176,25 @@ def log(level, logtype, msg, log_time):
     _log.write(logmsg)
 
     # Print out crash logs to the console for easy debugging.
-    if DUMP_LOG or level == LogLevel.CRASH:
+    if DUMP_LOG or level == LogLevel.FATAL:
         sys.stdout.write(logmsg)
 
 
-def log_debug(msg):
+def debug(msg):
     log(LogLevel.DEBUG, "DEBUG  ", msg, datetime.utcnow())
 
 
-def log_err(msg):
+def error(msg):
     log(LogLevel.ERROR, "ERROR  ", msg, datetime.utcnow())
 
 
-def log_warning(msg):
-    log(LogLevel.WARNING, "WARNING", msg, datetime.utcnow())
+def fatal(msg):
+    log(LogLevel.FATAL, "FATAL  ", msg, datetime.utcnow())
 
 
-def log_crash(msg):
-    log(LogLevel.CRASH, "CRASH  ", msg, datetime.utcnow())
+def info(msg):
+    log(LogLevel.INFO, "INFO  ", msg, datetime.utcnow())
 
 
-def log_verbose(msg):
-    log(LogLevel.VERBOSE, "VERBOSE", msg, datetime.utcnow())
+def warn(msg):
+    log(LogLevel.WARN, "WARN  ", msg, datetime.utcnow())

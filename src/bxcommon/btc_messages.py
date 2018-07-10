@@ -9,11 +9,12 @@ import hashlib
 import random
 import socket
 import struct
+import sys
+import time
 
-from bxcommon.util.logger import log_err
-from bxcommon.util.object_hash import BTCObjectHash
+from bxcommon.utils import logger
+from bxcommon.utils.object_hash import BTCObjectHash
 from exceptions import *
-from utils import *
 
 magic_dict = {
     'main': 0xD9B4BEF9,
@@ -104,7 +105,7 @@ class BTCMessage(object):
         _checksum = buf[20:24]
 
         if _payload_len != len(buf) - 24:
-            log_err("Payload length does not match buffer size! Payload is %d. Buffer is %d bytes long" % (
+            logger.error("Payload length does not match buffer size! Payload is %d. Buffer is %d bytes long" % (
                 _payload_len, len(buf)))
             raise PayloadLenError(
                 "Payload length does not match buffer size! Payload is %d. Buffer is %d bytes long" % (
@@ -112,7 +113,7 @@ class BTCMessage(object):
 
         if _checksum != sha256(sha256(
                 buf[BTC_HDR_COMMON_OFF:_payload_len + BTC_HDR_COMMON_OFF]).digest()).digest()[0:4]:
-            log_err("Checksum for packet doesn't match!")
+            logger.error("Checksum for packet doesn't match!")
             raise ChecksumError("Checksum for packet doesn't match! ", "Raw data: %s" % repr(buf))
 
         if _command not in message_types:

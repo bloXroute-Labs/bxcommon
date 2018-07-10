@@ -4,7 +4,6 @@ import time
 from pympler import tracker, muppy, summary
 
 from bxcommon.constants import PROFILING
-from bxcommon.util.logger import log_debug
 
 
 ##
@@ -31,7 +30,7 @@ class HeapProfiler(object):
         tracker.SummaryTracker()
 
     def dump_profile(self):
-        log_debug("Dumping heap profile!")
+        logger.log_debug("Dumping heap profile!")
 
         # Assumption is that no one else will be printing while profiling is happening
         self.filename = "profiler-" + time.strftime("%Y-%m-%d-%H:%M:%S+0000", time.gmtime()) + ".prof"

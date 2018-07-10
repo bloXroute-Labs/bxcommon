@@ -1,8 +1,6 @@
 import time
 from heapq import heappop, heappush
 
-from bxcommon.util.logger import log_debug
-
 
 ##
 # Transaction to ID Management
@@ -10,6 +8,9 @@ from bxcommon.util.logger import log_debug
 
 # A manager for the transaction mappings
 # We assume in this class that no more than MAX_ID unassigned transactions exist at a time
+from bxcommon.utils import logger
+
+
 class TransactionManager(object):
     # Size of a short id
     # If this is changed, make sure to change it in the TxAssignMessage
@@ -112,14 +113,14 @@ class TransactionManager(object):
                 self.unassigned_hashes.add(tx_hash)
             return -1
         elif tx_hash not in self.txhash_to_sid:
-            log_debug("XXX: Adding {0} to tx_hash mapping".format(tx_hash))
+            logger.debug("XXX: Adding {0} to tx_hash mapping".format(tx_hash))
             sid, tx_time = self.get_and_increment_id()
             self.assign_tx_to_sid(tx_hash, sid, tx_time)
             return sid
 
     def get_txid(self, tx_hash):
         if tx_hash in self.txhash_to_sid:
-            log_debug("XXX: Found the tx_hash in my mappings!")
+            logger.debug("XXX: Found the tx_hash in my mappings!")
             return self.txhash_to_sid[tx_hash]
 
         return -1
@@ -130,8 +131,8 @@ class TransactionManager(object):
 
             if tx_hash in self.hash_to_contents:
                 return self.hash_to_contents[tx_hash]
-            log_debug("Looking for hash: " + repr(tx_hash))
-            log_debug("Could not find hash: " + repr(self.hash_to_contents.keys()[0:10]))
+            logger.debug("Looking for hash: " + repr(tx_hash))
+            logger.debug("Could not find hash: " + repr(self.hash_to_contents.keys()[0:10]))
 
         return None
 

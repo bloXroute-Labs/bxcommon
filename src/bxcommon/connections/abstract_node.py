@@ -4,13 +4,13 @@ import signal
 import socket
 from collections import defaultdict
 
-from bxcommon.constants import MAX_CONN_BY_IP, CONNECTION_TIMEOUT, FAST_RETRY, MAX_RETRIES, RETRY_INTERVAL
-from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_pool import ConnectionPool
+from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.constants import MAX_CONN_BY_IP, CONNECTION_TIMEOUT, FAST_RETRY, MAX_RETRIES, RETRY_INTERVAL
 from bxcommon.exceptions import TerminationError
-from bxcommon.utils import AlarmQueue
-from bxcommon.util.logger import log_debug, log_err, log_crash, log_verbose
 from bxcommon.transactions.transaction_manager import TransactionManager
+from bxcommon.utils import logger
+from bxcommon.utils.alarm import AlarmQueue
 
 
 class AbstractNode(object):
@@ -35,7 +35,7 @@ class AbstractNode(object):
 
         self.tx_manager = TransactionManager(self)
 
-        log_verbose("initialized node state")
+        logger.info("initialized node state")
 
     # Create and initialize a nonblocking server socket with at most 50 connections in its backlog,
     #   bound to an interface and port
@@ -44,35 +44,36 @@ class AbstractNode(object):
     def listen_on_address(self, ip, serverport):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        log_debug("Creating a server socket on {0}:{1}".format(ip, serverport))
+        logger.debug("Creating a server socket on {0}:{1}".format(ip, serverport))
 
         try:
             s.bind((ip, serverport))
             s.listen(50)
             s.setblocking(0)
             self.epoll.register(s.fileno(), select.EPOLLIN | select.EPOLLET)
-            log_debug("Finished creating a server socket on {0}:{1}".format(ip, serverport))
+            logger.debug("Finished creating a server socket on {0}:{1}".format(ip, serverport))
             return s
 
         except socket.error as e:
             if e.errno in [errno.EACCES, errno.EADDRINUSE, errno.EADDRNOTAVAIL, errno.ENOMEM, errno.EOPNOTSUPP]:
-                log_crash("Fatal error: " + str(e.errno) + " " + e.strerror +
-                          " Occurred while setting up serversocket on {0}:{1}. Exiting...".format(ip, serverport))
+                logger.fatal("Fatal error: " + str(e.errno) + " " + e.strerror +
+                                 " Occurred while setting up serversocket on {0}:{1}. Exiting..."
+                             .format(ip, serverport))
                 exit(1)
             else:
-                log_crash("Fatal error: " + str(e.errno) + " " + e.strerror +
-                          " Occurred while setting up serversocket on {0}:{1}. Reraising".format(ip, serverport))
+                logger.fatal("Fatal error: " + str(e.errno) + " " + e.strerror +
+                                 " Occurred while setting up serversocket on {0}:{1}. Reraising".format(ip, serverport))
                 raise e
 
     # Make a new conn_cls instance who is connected to (ip, port) and schedule connection_timeout to check its status.
     # If setup is False, then sock is an already established socket. Otherwise, we must initialize and set up socket.
     # If trusted is True, the instance should be marked as a trusted connection.
     def connect_to_address(self, conn_cls, ip, port, sock=None, setup=False):
-        log_debug("Initiating connection to {0}:{1}.".format(ip, port))
+        logger.debug("Initiating connection to {0}:{1}.".format(ip, port))
 
         # If we're already connected to the remote peer, log the event and ignore it.
         if self.connection_pool.has_connection(ip, port):
-            log_err("Connection to {0}:{1} already exists!".format(ip, port))
+            logger.error("Connection to {0}:{1} already exists!".format(ip, port))
             if sock is not None:
                 try:
                     sock.close()
@@ -93,15 +94,15 @@ class AbstractNode(object):
                 sock.connect((ip, port))
             except socket.error as e:
                 if e.errno in [errno.EPERM, errno.EADDRINUSE]:
-                    log_err("Connection to {0}:{1} failed! Got errno {2} with msg {3}."
-                            .format(ip, port, e.errno, e.strerror))
+                    logger.error("Connection to {0}:{1} failed! Got errno {2} with msg {3}."
+                                 .format(ip, port, e.errno, e.strerror))
                     return
                 elif e.errno in [errno.EAGAIN, errno.ECONNREFUSED, errno.EINTR, errno.EISCONN, errno.ENETUNREACH,
                                  errno.ETIMEDOUT]:
                     raise RuntimeError('FIXME')
 
                     # FIXME conn_obj and trusted are not defined, delete trust, alarm register call and test
-                    # log_err("Node.connect_to_address",
+                    # logger.error("Node.connect_to_address",
                     #         "Connection to {0}:{1} failed. Got errno {2} with msg {3}. Retry?: {4}"
                     #         .format(ip, port, e.errno, e.strerror, conn_obj.trusted))
                     # if trusted:
@@ -110,10 +111,10 @@ class AbstractNode(object):
                     # return
                 elif e.errno in [errno.EALREADY]:
                     # Can never happen because this thread is the only one using the socket.
-                    log_err("Got EALREADY while connecting to {0}:{1}.".format(ip, port))
+                    logger.error("Got EALREADY while connecting to {0}:{1}.".format(ip, port))
                     exit(1)
                 elif e.errno in [errno.EINPROGRESS]:
-                    log_debug("Got EINPROGRESS on {0}:{1}. Will wait for ready outputbuf.".format(ip, port))
+                    logger.debug("Got EINPROGRESS on {0}:{1}. Will wait for ready outputbuf.".format(ip, port))
                     initialized = False
                 else:
                     raise e
@@ -133,27 +134,27 @@ class AbstractNode(object):
         self.epoll.register(sock.fileno(),
                             select.EPOLLOUT | select.EPOLLIN | select.EPOLLERR | select.EPOLLHUP | select.EPOLLET)
 
-        log_debug("Connected {0}:{1} on file descriptor {2} with state {3}"
-                  .format(ip, port, sock.fileno(), conn_obj.state))
+        logger.debug("Connected {0}:{1} on file descriptor {2} with state {3}"
+                     .format(ip, port, sock.fileno(), conn_obj.state))
         return
 
     # Handles incoming connections on the server socket
     # Only allows MAX_CONN_BY_IP connections from each IP address to be initialized.
     def handle_incoming_connections(self):
-        log_verbose("new connection establishment starting")
+        logger.info("new connection establishment starting")
         try:
             while True:
                 new_socket, address = self.serversocket.accept()
-                log_debug("new connection from {0}".format(address))
+                logger.debug("new connection from {0}".format(address))
                 ip = address[0]
 
                 # If we have too many connections, then we close this new socket and move on.
                 if self.connection_pool.get_num_conn_by_ip(ip) >= MAX_CONN_BY_IP:
-                    log_err("The IP {0} has too many connections! Closing...".format(ip))
+                    logger.error("The IP {0} has too many connections! Closing...".format(ip))
                     new_socket.close()
                 else:
-                    log_debug("Establishing connection number {0} from {1}"
-                              .format(self.connection_pool.get_num_conn_by_ip(ip), ip))
+                    logger.debug("Establishing connection number {0} from {1}"
+                                 .format(self.connection_pool.get_num_conn_by_ip(ip), ip))
                     # The trusted bit here will be set when we get the application layer address.
                     conn_cls = self.get_connection_class(ip)
                     self.connect_to_address(conn_cls, address[0], address[1], new_socket, setup=False)
@@ -164,9 +165,9 @@ class AbstractNode(object):
     # Broadcasts message msg to every connection except requester.
     def broadcast(self, msg, broadcasting_conn):
         if broadcasting_conn is not None:
-            log_debug("Broadcasting message to everyone from {0}".format(broadcasting_conn.peer_desc))
+            logger.debug("Broadcasting message to everyone from {0}".format(broadcasting_conn.peer_desc))
         else:
-            log_debug("Broadcasting message to everyone")
+            logger.debug("Broadcasting message to everyone")
 
         for conn in self.connection_pool:
             if conn.state & ConnectionState.ESTABLISHED and conn != broadcasting_conn:
@@ -174,7 +175,7 @@ class AbstractNode(object):
 
     # Cleans up system resources used by this node.
     def cleanup_node(self):
-        log_err("Node is closing! Closing everything.")
+        logger.error("Node is closing! Closing everything.")
 
         # Clean up server sockets.
         self.epoll.unregister(self.serversocket.fileno())
@@ -195,7 +196,7 @@ class AbstractNode(object):
     # If teardown is True, then we do not retry trusted connections and just tear everything down.
     def destroy_conn(self, fileno, teardown=False):
         conn = self.connection_pool.get_byfileno(fileno)
-        log_debug("Breaking connection to {0}".format(conn.peer_desc))
+        logger.debug("Breaking connection to {0}".format(conn.peer_desc))
 
         # Get rid of the connection from the epoll and the connection pool.
         self.epoll.unregister(fileno)
@@ -204,7 +205,7 @@ class AbstractNode(object):
         conn.close()
 
         if self.can_retry_after_destroy(teardown, conn):
-            log_debug("Retrying connection to {0}".format(conn.peer_desc))
+            logger.debug("Retrying connection to {0}".format(conn.peer_desc))
             self.alarm_queue.register_alarm(
                 FAST_RETRY, self.retry_init_client_socket, None,
                 conn.__class__, conn.peer_ip, conn.peer_port, True)
@@ -212,20 +213,20 @@ class AbstractNode(object):
     # Check if the connection is established.
     # If it is not established, we give up for untrusted connections and try again for trusted connections.
     def connection_timeout(self, conn):
-        log_debug("Connection timeout, on connection with {0}".format(conn.peer_desc))
+        logger.debug("Connection timeout, on connection with {0}".format(conn.peer_desc))
 
         if conn.state & ConnectionState.ESTABLISHED:
-            log_debug("Turns out connection was initialized, carrying on with {0}".format(conn.peer_desc))
+            logger.debug("Turns out connection was initialized, carrying on with {0}".format(conn.peer_desc))
             self.alarm_queue.register_alarm(60, conn.send_ping)
             return 0
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            log_debug("We're already closing the connection to {0} (or have closed it). Ignoring timeout."
-                      .format(conn.peer_desc))
+            logger.debug("We're already closing the connection to {0} (or have closed it). Ignoring timeout."
+                         .format(conn.peer_desc))
             return 0
 
         # Clean up the old connection and retry it if it is trusted
-        log_debug("destroying old socket with {0}".format(conn.peer_desc))
+        logger.debug("destroying old socket with {0}".format(conn.peer_desc))
         self.destroy_conn(conn.sock.fileno())
 
         # It is connect_to_address's job to schedule this function.
@@ -237,10 +238,10 @@ class AbstractNode(object):
         self.num_retries_by_ip[ip] += 1
         if self.num_retries_by_ip[ip] >= MAX_RETRIES:
             del self.num_retries_by_ip[ip]
-            log_debug("Not retrying connection to {0}:{1}- maximum connections exceeded!".format(ip, port))
+            logger.debug("Not retrying connection to {0}:{1}- maximum connections exceeded!".format(ip, port))
             return 0
         else:
-            log_debug("Retrying connection to {0}:{1}.".format(ip, port))
+            logger.debug("Retrying connection to {0}:{1}.".format(ip, port))
             self.connect_to_address(conn_cls, ip, port, sock, setup)
         return 0
 
@@ -258,7 +259,7 @@ class AbstractNode(object):
                     events = self.epoll.poll(timeout)
                 except IOError as ioe:
                     if ioe.errno == errno.EINTR:
-                        log_verbose("got interrupted in epoll")
+                        logger.info("got interrupted in epoll")
                         continue
                     raise ioe
 
@@ -294,12 +295,12 @@ class AbstractNode(object):
                         conn = self.connection_pool.get_byfileno(fileno)
 
                         if event & select.EPOLLIN and not conn.state & ConnectionState.MARK_FOR_CLOSE:
-                            # log_debug("Node.run", "recv event on {0}".format(conn.peer_desc))
+                            # logger.debug("Node.run", "recv event on {0}".format(conn.peer_desc))
                             conn.recv()
 
                         # Done processing. Close socket if it got put on the blacklist or was marked for close.
                         if conn.state & ConnectionState.MARK_FOR_CLOSE:
-                            log_debug("Connection to {0} closing".format(conn.peer_desc))
+                            logger.debug("Connection to {0} closing".format(conn.peer_desc))
                             self.destroy_conn(fileno)
                             if conn.is_persistent:
                                 self.alarm_queue.register_alarm(RETRY_INTERVAL, self.retry_init_client_socket, None,

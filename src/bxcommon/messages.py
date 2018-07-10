@@ -7,8 +7,8 @@ import hashlib
 import struct
 
 from bxcommon.constants import HDR_COMMON_OFF
-from bxcommon.util.logger import log_err
-from bxcommon.util.object_hash import ObjectHash
+from bxcommon.utils import logger
+from bxcommon.utils.object_hash import ObjectHash
 from exceptions import *
 
 sha256 = hashlib.sha256
@@ -67,7 +67,7 @@ class Message(object):
         _msg_type = _msg_type.rstrip('\x00')
 
         if _payload_len != len(buf) - HDR_COMMON_OFF:
-            log_err("Payload length does not match buffer size! Payload is %d. Buffer is %d bytes long" % (
+            logger.error("Payload length does not match buffer size! Payload is %d. Buffer is %d bytes long" % (
                 _payload_len, len(buf)))
             raise PayloadLenError(
                 "Payload length does not match buffer size! Payload is %d. Buffer is %d bytes long" % (
