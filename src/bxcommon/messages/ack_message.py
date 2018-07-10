@@ -11,6 +11,6 @@ class AckMessage(Message):
             Message.__init__(self, 'ack', 0, buf)
         else:
             self.buf = buf
-            self._memoryview = memoryview(buf)
+            self._memoryview = memoryview(self.buf)
             self._command = self._payload_len = None
             self._payload = None
