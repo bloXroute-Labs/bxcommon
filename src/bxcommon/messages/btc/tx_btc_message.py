@@ -6,8 +6,8 @@ from bxcommon.messages.btc.btc_message import BTCMessage
 from bxcommon.messages.btc.btc_messages_util import pack_int_to_btcvarint, btcvarint_to_int
 from bxcommon.utils.object_hash import BTCObjectHash
 
-
 sha256 = hashlib.sha256
+
 
 def pack_outpoint(hash_val, index, buf, off):
     return struct.pack_into('<32cI', buf, off, hash_val, index)
