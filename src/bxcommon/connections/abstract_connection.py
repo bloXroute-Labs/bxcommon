@@ -38,6 +38,8 @@ class AbstractConnection(object):
         self.num_bad_messages = 0
 
         self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
+        
+        self.message_handlers = None
 
     # Marks a connection as 'sendable', that is, there is room in the outgoing send buffer, and a send call can succeed.
     # Only gets unmarked when the outgoing send buffer is full.
