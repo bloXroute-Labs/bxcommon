@@ -6,7 +6,6 @@ from bxcommon.messages.btc.btc_message import BTCMessage
 from bxcommon.messages.btc.btc_messages_util import btcvarint_to_int, pack_int_to_btcvarint
 from bxcommon.utils.object_hash import BTCObjectHash
 
-
 sha256 = hashlib.sha256
 
 

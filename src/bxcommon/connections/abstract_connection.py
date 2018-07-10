@@ -6,8 +6,8 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.constants import MAX_BAD_MESSAGES, RECV_BUFSIZE, HDR_COMMON_OFF
 from bxcommon.exceptions import UnrecognizedCommandError, PayloadLenError
 from bxcommon.messages.ack_message import AckMessage
-from bxcommon.messages.pong_message import PongMessage
 from bxcommon.messages.message import Message
+from bxcommon.messages.pong_message import PongMessage
 from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
@@ -176,7 +176,7 @@ class AbstractConnection(object):
                     # Fatal errors for the connections
                     logger.debug(
                         "Received errno {0} with msg {1}, recv on {2} failed. Closing connection and retrying..."
-                        .format(e.errno, e.strerror, self.peer_desc))
+                            .format(e.errno, e.strerror, self.peer_desc))
                     self.state |= ConnectionState.MARK_FOR_CLOSE
                     return
                 elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:

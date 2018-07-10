@@ -1,10 +1,6 @@
 from collections import deque
 
 
-##
-# The Outputbuffer Interface ##
-##
-
 # There are three key functions on the outputbuffer read interface. This should also
 # be implemented by the cut through sink interface.
 #   - has_more_bytes(): Whether or not there are more bytes in this buffer.

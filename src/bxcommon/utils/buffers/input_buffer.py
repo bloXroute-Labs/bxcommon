@@ -1,9 +1,6 @@
 from collections import deque
 
 
-##
-# The Inputbuffer Interface
-##
 class InputBuffer(object):
     def __init__(self):
         self.input_list = deque()

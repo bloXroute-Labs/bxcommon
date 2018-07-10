@@ -4,14 +4,13 @@ import os
 import socket
 import time
 
-# Some websites are blocked in certain jurisdictions, so we try multiple websites to see whichever one works.
+from bxcommon.utils import logger
 
 # TODO much of this needs to be refactored into a config loader that
 # TODO   consumes args/files and returns a standard config
 
 # FIXME we need to move away from these external checks
-from bxcommon.utils import logger
-
+# Some websites are blocked in certain jurisdictions, so we try multiple websites to see whichever one works.
 WEBSITES_TO_TRY = ['www.google.com', 'www.alibaba.com']
 
 ALL_PARAMS = [
