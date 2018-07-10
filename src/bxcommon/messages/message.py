@@ -2,7 +2,7 @@ import struct
 
 from bxcommon.constants import HDR_COMMON_OFF
 from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
-from bxcommon.messages_new import message_types_loader
+from bxcommon.messages import message_types_loader
 from bxcommon.utils import logger
 
 

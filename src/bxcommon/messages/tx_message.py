@@ -1,4 +1,4 @@
-from bxcommon.messages_new.blob_message import BlobMessage
+from bxcommon.messages.blob_message import BlobMessage
 
 
 class TxMessage(BlobMessage):
