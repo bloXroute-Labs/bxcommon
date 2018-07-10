@@ -10,6 +10,7 @@ import random
 import socket
 import struct
 
+from bxcommon.util.logger import log_err
 from bxcommon.util.object_hash import BTCObjectHash
 from exceptions import *
 from utils import *

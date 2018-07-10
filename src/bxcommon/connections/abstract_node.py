@@ -8,7 +8,9 @@ from bxcommon.constants import MAX_CONN_BY_IP, CONNECTION_TIMEOUT, FAST_RETRY, M
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.exceptions import TerminationError
-from bxcommon.utils import AlarmQueue, TransactionManager, log_verbose, log_debug, log_crash, log_err
+from bxcommon.utils import AlarmQueue
+from bxcommon.util.logger import log_debug, log_err, log_crash, log_verbose
+from bxcommon.transactions.transaction_manager import TransactionManager
 
 
 class AbstractNode(object):

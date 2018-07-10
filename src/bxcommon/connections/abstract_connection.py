@@ -6,7 +6,8 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.constants import MAX_BAD_MESSAGES, RECV_BUFSIZE, HDR_COMMON_OFF
 from bxcommon.exceptions import UnrecognizedCommandError, PayloadLenError
 from bxcommon.messages import Message, AckMessage, PongMessage
-from bxcommon.utils import OutputBuffer, InputBuffer, log_debug, log_err
+from bxcommon.utils import OutputBuffer, InputBuffer
+from bxcommon.util.logger import log_debug, log_err
 
 
 class AbstractConnection(object):

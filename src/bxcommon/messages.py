@@ -7,9 +7,9 @@ import hashlib
 import struct
 
 from bxcommon.constants import HDR_COMMON_OFF
+from bxcommon.util.logger import log_err
 from bxcommon.util.object_hash import ObjectHash
 from exceptions import *
-from utils import *
 
 sha256 = hashlib.sha256
 
