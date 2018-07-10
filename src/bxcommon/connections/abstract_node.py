@@ -217,7 +217,10 @@ class AbstractNode(object):
 
         if conn.state & ConnectionState.ESTABLISHED:
             logger.debug("Turns out connection was initialized, carrying on with {0}".format(conn.peer_desc))
-            self.alarm_queue.register_alarm(60, conn.send_ping)
+
+            if self.send_pings:
+                self.alarm_queue.register_alarm(60, conn.send_ping)
+
             return 0
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
