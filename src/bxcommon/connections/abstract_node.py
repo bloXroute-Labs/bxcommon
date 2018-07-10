@@ -57,12 +57,12 @@ class AbstractNode(object):
         except socket.error as e:
             if e.errno in [errno.EACCES, errno.EADDRINUSE, errno.EADDRNOTAVAIL, errno.ENOMEM, errno.EOPNOTSUPP]:
                 logger.fatal("Fatal error: " + str(e.errno) + " " + e.strerror +
-                                 " Occurred while setting up serversocket on {0}:{1}. Exiting..."
+                             " Occurred while setting up serversocket on {0}:{1}. Exiting..."
                              .format(ip, serverport))
                 exit(1)
             else:
                 logger.fatal("Fatal error: " + str(e.errno) + " " + e.strerror +
-                                 " Occurred while setting up serversocket on {0}:{1}. Reraising".format(ip, serverport))
+                             " Occurred while setting up serversocket on {0}:{1}. Reraising".format(ip, serverport))
                 raise e
 
     # Make a new conn_cls instance who is connected to (ip, port) and schedule connection_timeout to check its status.

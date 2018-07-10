@@ -4,10 +4,6 @@ from heapq import heappush, heappop
 from bxcommon.utils import logger
 
 
-##
-# The Alarm Interface
-##
-
 # Queue for events that take place at some time in the future.
 class AlarmQueue(object):
     REMOVED = -1

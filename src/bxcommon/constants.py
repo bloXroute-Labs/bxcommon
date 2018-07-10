@@ -74,3 +74,9 @@ BTC_CASH_SERVICES = 33
 BTC_OBJTYPE_TX = 1
 BTC_OBJTYPE_BLOCK = 2
 BTC_OBJTYPE_FILTERED_BLOCK = 3
+
+CUT_THROUGH_TIMEOUT = 60  # Maximum time (in seconds) that we wait for the remote to send us this block
+MGR_DELETE_DELAY = 100  # Time (in seconds) we wait until we delete this manager from our node.
+
+MIN_PYLINT_SCORE = 9.5
+ENV_PYLINTRC_PATH = "PYLINTRC_PATH"

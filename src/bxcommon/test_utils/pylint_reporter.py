@@ -4,8 +4,7 @@ import re
 from pylint import lint
 from pylint.reporters.text import TextReporter
 
-MIN_PYLINT_SCORE = 9.5
-ENV_PYLINTRC_PATH = "PYLINTRC_PATH"
+from bxcommon.constants import ENV_PYLINTRC_PATH
 
 pylintrc_path = os.environ.get(ENV_PYLINTRC_PATH, None)
 

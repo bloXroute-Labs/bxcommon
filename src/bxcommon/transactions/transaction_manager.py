@@ -1,16 +1,11 @@
 import time
 from heapq import heappop, heappush
 
-
-##
-# Transaction to ID Management
-##
-
-# A manager for the transaction mappings
-# We assume in this class that no more than MAX_ID unassigned transactions exist at a time
 from bxcommon.utils import logger
 
 
+# A manager for the transaction mappings
+# We assume in this class that no more than MAX_ID unassigned transactions exist at a time
 class TransactionManager(object):
     # Size of a short id
     # If this is changed, make sure to change it in the TxAssignMessage

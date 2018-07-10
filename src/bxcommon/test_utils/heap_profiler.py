@@ -4,11 +4,12 @@ import time
 from pympler import tracker, muppy, summary
 
 from bxcommon.constants import PROFILING
-
-
 ##
 # The Memory Profiling Interface
 ##
+from bxcommon.utils import logger
+
+
 class HeapProfiler(object):
     PROFILE_START = 0  # Time to start profiling
     PROFILE_INTERVAL = 300  # Profiling interval (in seconds)
@@ -30,7 +31,7 @@ class HeapProfiler(object):
         tracker.SummaryTracker()
 
     def dump_profile(self):
-        logger.log_debug("Dumping heap profile!")
+        logger.debug("Dumping heap profile!")
 
         # Assumption is that no one else will be printing while profiling is happening
         self.filename = "profiler-" + time.strftime("%Y-%m-%d-%H:%M:%S+0000", time.gmtime()) + ".prof"
