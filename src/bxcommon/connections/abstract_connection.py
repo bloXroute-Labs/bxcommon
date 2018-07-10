@@ -5,7 +5,9 @@ import time
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.constants import MAX_BAD_MESSAGES, RECV_BUFSIZE, HDR_COMMON_OFF
 from bxcommon.exceptions import UnrecognizedCommandError, PayloadLenError
-from bxcommon.messages import Message, AckMessage, PongMessage
+from bxcommon.messages_new.ack_message import AckMessage
+from bxcommon.messages_new.pong_message import PongMessage
+from bxcommon.messages_new.message import Message
 from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
