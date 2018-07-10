@@ -1,5 +1,5 @@
 from bxcommon.constants import HDR_COMMON_OFF
-from bxcommon.messages_new.message import Message
+from bxcommon.messages.message import Message
 
 
 class AckMessage(Message):

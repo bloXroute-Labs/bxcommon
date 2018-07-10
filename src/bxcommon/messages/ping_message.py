@@ -1,11 +1,10 @@
 import struct
 
 from bxcommon.constants import HDR_COMMON_OFF
-from bxcommon.messages_new.message import Message
+from bxcommon.messages.message import Message
 
 
-# XXX: Duplicated from Ping
-class PongMessage(Message):
+class PingMessage(Message):
     def __init__(self, nonce=None, buf=None):
         if buf is None:
             buf = bytearray(HDR_COMMON_OFF + 8)
@@ -13,7 +12,7 @@ class PongMessage(Message):
             struct.pack_into('<Q', buf, off, nonce)
             off += 8
 
-            Message.__init__(self, 'pong', off - HDR_COMMON_OFF, buf)
+            Message.__init__(self, 'ping', off - HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(buf)
