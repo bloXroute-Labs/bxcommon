@@ -5,7 +5,7 @@ import sys
 from bxcommon.constants import BTC_HDR_COMMON_OFF
 from bxcommon.messages.btc.btc_message import BTCMessage
 
-
+# FIXME dedup this against pongbtcmessage
 class PingBTCMessage(BTCMessage):
     def __init__(self, magic=None, buf=None):
         if buf is None:

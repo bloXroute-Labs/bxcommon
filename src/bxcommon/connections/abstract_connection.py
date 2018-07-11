@@ -174,9 +174,9 @@ class AbstractConnection(object):
                     continue
                 elif e.errno in [errno.ECONNREFUSED]:
                     # Fatal errors for the connections
-                    logger.debug(
-                        "Received errno {0} with msg {1}, recv on {2} failed. Closing connection and retrying..."
-                            .format(e.errno, e.strerror, self.peer_desc))
+                    logger.debug("Received errno {0} with msg {1}, recv on {2} failed. "
+                                 "Closing connection and retrying..."
+                                 .format(e.errno, e.strerror, self.peer_desc))
                     self.state |= ConnectionState.MARK_FOR_CLOSE
                     return
                 elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:

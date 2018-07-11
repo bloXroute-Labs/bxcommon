@@ -24,6 +24,7 @@ def pack_block_message(buf, magic, block_header, txns):
     return BTCMessage(magic, 'block', off - BTC_HDR_COMMON_OFF, buf)
 
 
+# FIXME, there's a lot of duplicate code between here and BlockHeader
 class BlockBTCMessage(BTCMessage):
     def __init__(self, magic=None, version=None, prev_block=None, merkle_root=None,
                  timestamp=None, bits=None, nonce=None, txns=None, buf=None):
