@@ -3,14 +3,8 @@ import time
 
 from bxcommon.messages.broadcast_message import BroadcastMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.test_utils.mocks.mock_alarm_queue import MockAlarmQueue
 from bxcommon.transactions.missing_transactions_manager import MissingTransactionsManager
-
-class MockAlarmQueue():
-    def __init__(self):
-        self.alarms = []
-
-    def register_alarm(self, fire_delay, fn, *args):
-        self.alarms.append((fire_delay,fn))
 
 class MissingTransactionsManagerTest(AbstractTestCase):
 

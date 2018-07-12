@@ -262,7 +262,7 @@ class AbstractConnection(object):
         self.state |= ConnectionState.HELLO_ACKD
 
     def msg_ping(self, msg):
-        self.enqueue_msg(PongMessage(msg.nonce()))
+        self.enqueue_msg(PongMessage())
 
     def msg_pong(self, msg):
         pass
