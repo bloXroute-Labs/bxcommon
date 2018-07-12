@@ -27,9 +27,9 @@ class TxsDetailsMessageTests(AbstractTestCase):
 
         parsed_txs_info = parsed_msg.txs_info()
 
-        self.assertTrue(len(parsed_txs_info) == len(txs_info))
+        self.assertEqual(len(parsed_txs_info), len(txs_info))
 
         for index in range(len(txs_info)):
-            self.assertTrue(parsed_txs_info[index][0] == txs_info[index][0])
-            self.assertTrue(parsed_txs_info[index][1] == txs_info[index][1])
-            self.assertTrue(parsed_txs_info[index][2] == txs_info[index][2])
+            self.assertEqual(parsed_txs_info[index][0], txs_info[index][0])
+            self.assertEqual(parsed_txs_info[index][1], txs_info[index][1])
+            self.assertEqual(parsed_txs_info[index][2], txs_info[index][2])
