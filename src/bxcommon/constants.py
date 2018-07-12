@@ -46,8 +46,12 @@ FLUSH_LOG = False
 
 # The length of everything in the header minus the checksum
 HDR_COMMON_OFF = 16
+
 # Length of a sha256 hash
 HASH_LEN = 32
+
+# Size of integer in bytes
+INT_LEN = 4
 
 btc_magic_numbers = {
     'main': 0xD9B4BEF9,
