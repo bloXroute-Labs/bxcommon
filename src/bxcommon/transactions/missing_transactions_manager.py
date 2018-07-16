@@ -57,9 +57,9 @@ class MissingTransactionsManager(object):
                 sid_index = sids.index(sid)
                 del sids[sid_index]
 
-                del self.sid_to_block_hash[sid]
+            del self.sid_to_block_hash[sid]
 
-                self._check_if_ready_for_retry(block_hash)
+            self._check_if_ready_for_retry(block_hash)
 
     def remove_tx_hash_if_missing(self, tx_hash):
         if tx_hash in self.tx_hash_to_block_hash:
@@ -73,9 +73,9 @@ class MissingTransactionsManager(object):
                 tx_hash_index = tx_hashes.index(tx_hash)
                 del tx_hashes[tx_hash_index]
 
-                del self.tx_hash_to_block_hash[tx_hash]
+            del self.tx_hash_to_block_hash[tx_hash]
 
-                self._check_if_ready_for_retry(block_hash)
+            self._check_if_ready_for_retry(block_hash)
 
     def remove_block_if_missing(self, block_hash):
         if block_hash in self.block_hash_to_msg:

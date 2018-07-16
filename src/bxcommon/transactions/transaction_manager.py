@@ -125,11 +125,11 @@ class TransactionManager(object):
             tx_hash = self.sid_to_txid[sid][1]
 
             if tx_hash in self.hash_to_contents:
-                return self.hash_to_contents[tx_hash]
+                return tx_hash, self.hash_to_contents[tx_hash]
             logger.debug("Looking for hash: " + repr(tx_hash))
             logger.debug("Could not find hash: " + repr(self.hash_to_contents.keys()[0:10]))
 
-        return None
+        return None, None
 
     # Returns True if
     def already_relayed(self, tx_hash):
