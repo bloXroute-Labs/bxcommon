@@ -118,7 +118,9 @@ class Log(object):
 
         finally:
             output_dest.flush()
-            output_dest.close()
+
+            if output_dest != sys.stdout:
+                output_dest.close()
 
 
 _log = None

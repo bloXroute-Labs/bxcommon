@@ -7,10 +7,8 @@ class AbstractTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        #logger.log_init(None, use_stdout=True)
-        pass
+        logger.log_init(None, use_stdout=True)
 
     @classmethod
     def tearDownClass(cls):
-        #logger.log_close()
-        pass
+        logger.log_close()
