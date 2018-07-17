@@ -37,7 +37,7 @@ class HeapProfiler(object):
         self.filename = "profiler-" + time.strftime("%Y-%m-%d-%H:%M:%S+0000", time.gmtime()) + ".prof"
 
         old_stdout = sys.stdout
-        #sys.stdout = open(self.filename, "a+")
+        sys.stdout = open(self.filename, "a+")
         print "################# BEGIN NEW HEAP SNAPSHOT #################"
         all_objects = muppy.get_objects()
         print "Printing diff at time: " + time.strftime("%Y-%m-%d-%H:%M:%S+0000", time.gmtime())
