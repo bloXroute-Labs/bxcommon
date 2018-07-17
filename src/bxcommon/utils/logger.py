@@ -75,7 +75,8 @@ class Log(object):
         if self.use_stdout:
             output_dest = sys.stdout
         else:
-            output_dest = open(self.filename, "a+")
+            #output_dest = open(self.filename, "a+")
+            output_dest = sys.stdout
 
         alive = True
 
