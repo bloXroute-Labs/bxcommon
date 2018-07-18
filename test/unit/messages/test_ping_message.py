@@ -2,6 +2,7 @@ from bxcommon.messages.message import Message
 from bxcommon.messages.ping_message import PingMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 
+
 class PingMessageTests(AbstractTestCase):
 
     def test_ping_message(self):
@@ -20,7 +21,3 @@ class PingMessageTests(AbstractTestCase):
 
         self.assertEqual(parsed_ping_message.msg_type(), 'ping')
         self.assertEqual(parsed_ping_message.payload_len(), 0)
-
-
-
-

@@ -2,6 +2,7 @@ from bxcommon.messages.message import Message
 from bxcommon.messages.pong_message import PongMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 
+
 class PongMessageTests(AbstractTestCase):
 
     def test_pong_message(self):
@@ -20,7 +21,3 @@ class PongMessageTests(AbstractTestCase):
 
         self.assertEqual(parsed_pong_message.msg_type(), 'pong')
         self.assertEqual(parsed_pong_message.payload_len(), 0)
-
-
-
-

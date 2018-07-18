@@ -1,6 +1,7 @@
 from bxcommon.messages.get_txs_details_message import GetTxsDetailsMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 
+
 class GetTxsDetailsMessageTests(AbstractTestCase):
 
     def test_get_txs_with_short_ids_message(self):

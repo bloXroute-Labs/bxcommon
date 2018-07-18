@@ -1,11 +1,8 @@
-import unittest
-
-from bxcommon import constants
-from bxcommon.utils import logger
-from bxcommon.utils.object_hash import ObjectHash
 from bxcommon.messages.txs_details_message import TxsDetailsMessage
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils import helpers
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.utils.object_hash import ObjectHash
+
 
 class TxsDetailsMessageTests(AbstractTestCase):
 

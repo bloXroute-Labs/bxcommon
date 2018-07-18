@@ -6,6 +6,7 @@ from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_alarm_queue import MockAlarmQueue
 from bxcommon.transactions.missing_transactions_manager import MissingTransactionsManager
 
+
 class MissingTransactionsManagerTest(AbstractTestCase):
 
     def setUp(self):
@@ -15,7 +16,6 @@ class MissingTransactionsManagerTest(AbstractTestCase):
         self.block_hashes = []
         self.unknown_tx_sids = []
         self.unknown_tx_hashes = []
-
 
     def test_on_broadcast_msg(self):
         self._add_broadcast_message()
@@ -60,7 +60,6 @@ class MissingTransactionsManagerTest(AbstractTestCase):
         for sid in self.unknown_tx_sids[0]:
             self.missing_tx_manager.remove_sid_if_missing(sid)
 
-
         for tx_hash in self.unknown_tx_hashes[0]:
             self.missing_tx_manager.remove_tx_hash_if_missing(tx_hash)
 
@@ -92,7 +91,6 @@ class MissingTransactionsManagerTest(AbstractTestCase):
 
         self.assertEqual(len(self.missing_tx_manager.msgs_ready_for_retry), 1)
         self.assertEqual(self.missing_tx_manager.msgs_ready_for_retry[0], self.msgs[0])
-
 
     def test_clean_up_old_messages__single_message(self):
         self.assertFalse(self.missing_tx_manager.cleanup_scheduled)
@@ -147,7 +145,7 @@ class MissingTransactionsManagerTest(AbstractTestCase):
 
         self.assertTrue(self.missing_tx_manager.cleanup_scheduled)
 
-        #verify that the latest block left
+        # verify that the latest block left
         self.assertNotIn(self.block_hashes[0], self.missing_tx_manager.block_hash_to_msg)
         self.assertIn(self.block_hashes[1], self.missing_tx_manager.block_hash_to_msg)
         self.assertTrue(self.missing_tx_manager.cleanup_scheduled)
@@ -171,7 +169,8 @@ class MissingTransactionsManagerTest(AbstractTestCase):
         self.assertEqual(len(self.missing_tx_manager.tx_hash_to_block_hash), existing_msgs_count * 2)
 
         self.missing_tx_manager \
-            .add_msg_with_missing_txs(self.msgs[-1], self.block_hashes[-1], self.unknown_tx_sids[-1][:], self.unknown_tx_hashes[-1][:])
+            .add_msg_with_missing_txs(self.msgs[-1], self.block_hashes[-1], self.unknown_tx_sids[-1][:],
+                                      self.unknown_tx_hashes[-1][:])
 
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_msg), existing_msgs_count + 1)
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_sids), existing_msgs_count + 1)
@@ -184,13 +183,14 @@ class MissingTransactionsManagerTest(AbstractTestCase):
 
         self.assertEqual(self.missing_tx_manager.block_hash_to_msg[self.block_hashes[-1]], self.msgs[-1])
         self.assertEqual(self.missing_tx_manager.block_hash_to_sids[self.block_hashes[-1]], self.unknown_tx_sids[-1])
-        self.assertEqual(self.missing_tx_manager.block_hash_to_tx_hashes[self.block_hashes[-1]], self.unknown_tx_hashes[-1])
+        self.assertEqual(self.missing_tx_manager.block_hash_to_tx_hashes[self.block_hashes[-1]],
+                         self.unknown_tx_hashes[-1])
 
         for sid in self.unknown_tx_sids[-1]:
             self.assertEqual(self.missing_tx_manager.sid_to_block_hash[sid], self.block_hashes[-1])
 
         for tx_hash in self.unknown_tx_hashes[-1]:
-            self.assertEqual(self.missing_tx_manager.tx_hash_to_block_hash[tx_hash] , self.block_hashes[-1])
+            self.assertEqual(self.missing_tx_manager.tx_hash_to_block_hash[tx_hash], self.block_hashes[-1])
 
     def _create_broadcast_msg(self):
         message_buffer = bytearray()
