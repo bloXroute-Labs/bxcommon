@@ -16,7 +16,7 @@ class AbstractCommunicationStrategy(object):
         """
         raise NotImplementedError()
 
-    def process_received_bytes(self, connection_id, bytes):
+    def process_received_bytes(self, connection_id, bytes_received):
         """
         Method called by Multiplexer when bytes received from connection
 
@@ -56,6 +56,6 @@ class AbstractCommunicationStrategy(object):
 
     def is_shutdown_requested(self):
         raise NotImplementedError()
-    
+
     def close(self):
         raise NotImplementedError()

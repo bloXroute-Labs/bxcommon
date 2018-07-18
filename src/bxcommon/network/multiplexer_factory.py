@@ -19,4 +19,3 @@ def create_multiplexer(communication_strategy):
         raise NotImplementedError("Multiplexer is not implemented for platform '{0}'.".format(platform))
 
     return multiplexer_cls(communication_strategy)
-

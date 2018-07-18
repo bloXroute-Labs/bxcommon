@@ -36,27 +36,25 @@ class EpollMultiplexer(AbstractMultiplexer):
                         socket_connection = self._socket_connections[fileno]
                         assert isinstance(socket_connection, SocketConnection)
 
-                        # Mark this connection for close if we received a POLLHUP. No other functions will be called
-                        #   on this connection.
-                        if event & select.EPOLLHUP:
-                            socket_connection.state.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                            self._communication_strategy.remove_connection(fileno)
+                        if socket_connection.is_server:
+                            self._handle_incoming_connections(socket_connection)
+                        else:
+                            # Mark this connection for close if we received a POLLHUP. No other functions will be called
+                            #   on this connection.
+                            if event & select.EPOLLHUP:
+                                socket_connection.state.set_state(SocketConnectionState.MARK_FOR_CLOSE)
+                                self._communication_strategy.remove_connection(fileno)
 
-                        if event & select.EPOLLOUT and \
-                                not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-                            # If connect received EINPROGRESS, we will receive an EPOLLOUT if connect succeeded
-                            if not socket_connection.state & SocketConnectionState.INITIALIZED:
-                                socket_connection.state = socket_connection.state | SocketConnectionState.INITIALIZED
+                            if event & select.EPOLLOUT and \
+                                    not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
+                                # If connect received EINPROGRESS, we will receive an EPOLLOUT if connect succeeded
+                                if not socket_connection.state & SocketConnectionState.INITIALIZED:
+                                    socket_connection.set_state(SocketConnectionState.INITIALIZED)
 
-                            # Mark the connection as sendable and send as much as we can from the outputbuffer.
-                            socket_connection.can_send = True
+                                # Mark the connection as sendable and send as much as we can from the outputbuffer.
+                                socket_connection.can_send = True
 
-                            self._send(socket_connection)
-
-                    # handle incoming connection on the server port
-                    elif socket_connection.is_server:
-                        self._handle_incoming_connections(socket_connection)
-
+                                self._send(socket_connection)
                     else:
                         assert False, "Connection not handled!"
 
