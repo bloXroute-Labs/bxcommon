@@ -92,7 +92,7 @@ class EpollMultiplexer(AbstractMultiplexer):
         super(EpollMultiplexer, self)._register_socket(socket_to_register, is_server)
 
         if is_server:
-            self._epoll.register(new_socket.fileno(), select.EPOLLIN | select.EPOLLET)
+            self._epoll.register(socket_to_register.fileno(), select.EPOLLIN | select.EPOLLET)
         else:
-            self._epoll.register(new_socket.fileno(),
+            self._epoll.register(socket_to_register.fileno(),
                                  select.EPOLLOUT | select.EPOLLIN | select.EPOLLERR | select.EPOLLHUP | select.EPOLLET)
