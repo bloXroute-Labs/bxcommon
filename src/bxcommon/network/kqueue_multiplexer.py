@@ -47,10 +47,10 @@ class KQueueMultiplexer(AbstractMultiplexer):
 
         self._kqueue.close()
 
-    def _register_socket(self, socket_to_register):
-            read_event = select.kevent(
-                socket_to_register, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
-            write_event = select.kevent(
-                socket_to_register, select.KQ_FILTER_WRITE, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
+    def _register_socket(self, socket_to_register, is_server=False, initialized=True):
+        read_event = select.kevent(
+            socket_to_register, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
+        write_event = select.kevent(
+            socket_to_register, select.KQ_FILTER_WRITE, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
 
-            self._kqueue.control([read_event, write_event], 0, 0)
+        self._kqueue.control([read_event, write_event], 0, 0)

@@ -8,8 +8,9 @@ from bxcommon.utils import logger
 
 
 class EpollMultiplexer(AbstractMultiplexer):
-    def __init__(self):
+    def __init__(self, communication_strategy):
 
+        super(EpollMultiplexer, self).__init__(communication_strategy)
         self._epoll = select.epoll()
 
     def run(self):
@@ -41,7 +42,8 @@ class EpollMultiplexer(AbstractMultiplexer):
                             socket_connection.state.set_state(SocketConnectionState.MARK_FOR_CLOSE)
                             self._communication_strategy.remove_connection(fileno)
 
-                        if event & select.EPOLLOUT and not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
+                        if event & select.EPOLLOUT and \
+                                not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
                             # If connect received EINPROGRESS, we will receive an EPOLLOUT if connect succeeded
                             if not socket_connection.state & SocketConnectionState.INITIALIZED:
                                 socket_connection.state = socket_connection.state | SocketConnectionState.INITIALIZED
@@ -67,12 +69,13 @@ class EpollMultiplexer(AbstractMultiplexer):
                     # we already handled the new connections above, no need to handle them again
                     if not socket_connection.is_server:
 
-                        if event & select.EPOLLIN and not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
+                        if event & select.EPOLLIN and \
+                                not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
                             self._receive(socket_connection)
 
                         # Done processing. Close socket if it got put on the blacklist or was marked for close.
                         if socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-                            logger.debug("Connection to {0} closing".format(socket_connection.id()))
+                            logger.debug("Connection to {0} closing".format(socket_connection.connection_id()))
                             socket_connection.close()
                             self._communication_strategy.remove_connection(fileno)
 
@@ -85,8 +88,8 @@ class EpollMultiplexer(AbstractMultiplexer):
 
         self._epoll.close()
 
-    def _register_socket(self, new_socket, is_server=False, initialized=True):
-        super(EpollMultiplexer, self)._register_socket(new_socket, is_server)
+    def _register_socket(self, socket_to_register, is_server=False, initialized=True):
+        super(EpollMultiplexer, self)._register_socket(socket_to_register, is_server)
 
         if is_server:
             self._epoll.register(new_socket.fileno(), select.EPOLLIN | select.EPOLLET)

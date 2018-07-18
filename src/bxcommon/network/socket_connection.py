@@ -13,7 +13,7 @@ class SocketConnection(object):
     def set_state(self, state):
         self.state |= state
 
-    def id(self):
+    def connection_id(self):
         return self.socket_instance.fileno()
 
     def close(self):

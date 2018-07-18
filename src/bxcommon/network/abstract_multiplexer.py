@@ -87,8 +87,6 @@ class AbstractMultiplexer(object):
 
         self._register_socket(sock, is_server=False, initialized=initialized)
 
-        return sock
-
     def close(self):
         self._communication_strategy.close()
 
@@ -109,7 +107,7 @@ class AbstractMultiplexer(object):
     def _receive(self, socket_connection):
         assert isinstance(socket_connection, SocketConnection)
 
-        connection_id = socket_connection.id()
+        connection_id = socket_connection.connection_id()
 
         logger.debug("Collecting input from {0}".format(connection_id))
         collect_input = True
@@ -160,7 +158,7 @@ class AbstractMultiplexer(object):
     def _send(self, socket_connection):
         assert isinstance(socket_connection, SocketConnection)
 
-        connection_id = socket_connection.id()
+        connection_id = socket_connection.connection_id()
 
         total_bytes_written = 0
         bytes_written = 0
@@ -173,7 +171,7 @@ class AbstractMultiplexer(object):
                 if not send_buffer:
                     break
 
-                bytes_written = socket_connection.socket_instance._send(send_buffer)
+                bytes_written = socket_connection.socket_instance.send(send_buffer)
             except socket.error as e:
                 if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOBUFS]:
                     # Normal operation
@@ -227,7 +225,7 @@ class AbstractMultiplexer(object):
         self._register_socket(client_socket)
 
     def _register_socket(self, socket_to_register, is_server=False, initialized=True):
-        socket_connection = SocketConnection(socket_to_register, is_server, initialized=initialized)
+        socket_connection = SocketConnection(socket_to_register, is_server)
 
         if initialized:
             socket_connection.set_state(SocketConnectionState.INITIALIZED)
