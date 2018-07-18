@@ -5,8 +5,8 @@ from bxcommon.messages.message import Message
 from bxcommon.utils import logger
 from bxcommon.utils.object_hash import ObjectHash
 
-class TxsDetailsMessage(Message):
 
+class TxsDetailsMessage(Message):
     """
     Message with tx details. Reply to GetTxsWithShortIdsMessage.
     """

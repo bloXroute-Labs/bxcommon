@@ -1,5 +1,3 @@
-import struct
-
 from bxcommon.constants import HDR_COMMON_OFF
 from bxcommon.messages.message import Message
 

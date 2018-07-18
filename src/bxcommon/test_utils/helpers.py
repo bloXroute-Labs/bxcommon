@@ -11,10 +11,11 @@ def generate_bytearray(size):
 
     return result
 
+
 def create_connection(connection_cls):
     if not issubclass(connection_cls, AbstractConnection):
         raise TypeError("{0} is not a subclass of AbstractConnection".format(connection_cls))
-    
+
     test_address = ('0.0.0.0', 8001)
     test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     mock_node = MockNode('0.0.0.0', 8002)

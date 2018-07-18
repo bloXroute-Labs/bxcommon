@@ -1,10 +1,10 @@
 import heapq
 import time
 
-from  bxcommon.utils import logger
+from bxcommon.utils import logger
+
 
 class MissingTransactionsManager(object):
-
     """
     Logic to handle scenario when blocRoute gateway receives bloxRoute block message with transaction sid and hash
     that it is not aware of.
@@ -114,7 +114,7 @@ class MissingTransactionsManager(object):
             self.msgs_ready_for_retry.append(msg)
 
     def _is_msg_ready_for_retry(self, block_hash):
-        return  len(self.block_hash_to_sids[block_hash]) == 0 and len(self.block_hash_to_tx_hashes[block_hash]) == 0
+        return len(self.block_hash_to_sids[block_hash]) == 0 and len(self.block_hash_to_tx_hashes[block_hash]) == 0
 
     def _remove_not_ready_msg(self, block_hash):
         if block_hash in self.block_hash_to_msg:

@@ -1,7 +1,7 @@
 import unittest
-from bxcommon import constants
 
 from bxcommon.utils import logger
+
 
 class AbstractTestCase(unittest.TestCase):
 
