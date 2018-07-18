@@ -11,7 +11,7 @@ from bxcommon.utils import logger
 class AbstractMultiplexer(object):
 
     def __init__(self, communication_strategy):
-        assert issubclass(AbstractCommunicationStrategy, communication_strategy)
+        assert isinstance(communication_strategy, AbstractCommunicationStrategy)
 
         self._communication_strategy = communication_strategy
         self._socket_connections = {}
@@ -90,7 +90,7 @@ class AbstractMultiplexer(object):
     def close(self):
         self._communication_strategy.close()
 
-        for socket_connection in self._socket_connections.iteritems():
+        for _, socket_connection in self._socket_connections.iteritems():
             socket_connection.close()
 
     def _handle_incoming_connections(self, socket_connection):
@@ -101,6 +101,7 @@ class AbstractMultiplexer(object):
                 logger.debug("new connection from {0}".format(address))
 
                 self._add_client_socket(new_socket)
+                self._communication_strategy.add_connection(new_socket.fileno())
         except socket.error:
             pass
 
@@ -213,7 +214,7 @@ class AbstractMultiplexer(object):
         return total_bytes_written
 
     def _send_all_connections(self):
-        for socket_connection in self._socket_connections.iteritems():
+        for _, socket_connection in self._socket_connections.iteritems():
             if socket_connection.can_send and not socket_connection.is_server:
                 self._send(socket_connection)
 

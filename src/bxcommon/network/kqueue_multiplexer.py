@@ -2,12 +2,13 @@ import select
 
 from bxcommon.network.abstract_multiplexer import AbstractMultiplexer
 from bxcommon.network.socket_connection import SocketConnection
+from bxcommon.utils import logger
 
 
 class KQueueMultiplexer(AbstractMultiplexer):
 
     def __init__(self, communication_strategy):
-        super(KQueueMultiplexer, self).__init__(self, communication_strategy)
+        super(KQueueMultiplexer, self).__init__(communication_strategy)
 
         self._kqueue = select.kqueue()
         self._kqueue.control([], 0, 0)
@@ -38,6 +39,10 @@ class KQueueMultiplexer(AbstractMultiplexer):
 
                 self._send_all_connections()
 
+                if self._communication_strategy.is_shutdown_requested():
+                    logger.debug("Ending KQueue loop. Shutdown has been requested.")
+                    break
+
                 timeout = self._communication_strategy.get_next_sleep_timeout()
         finally:
             self.close()
@@ -48,6 +53,8 @@ class KQueueMultiplexer(AbstractMultiplexer):
         self._kqueue.close()
 
     def _register_socket(self, socket_to_register, is_server=False, initialized=True):
+        super(KQueueMultiplexer, self)._register_socket(socket_to_register, is_server, initialized)
+
         read_event = select.kevent(
             socket_to_register, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
         write_event = select.kevent(

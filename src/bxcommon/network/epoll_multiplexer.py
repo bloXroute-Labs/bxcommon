@@ -79,6 +79,10 @@ class EpollMultiplexer(AbstractMultiplexer):
                             socket_connection.close()
                             self._communication_strategy.remove_connection(fileno)
 
+                if self._communication_strategy.is_shutdown_requested():
+                    logger.debug("Ending Epoll loop. Shutdown has been requested.")
+                    break
+
                 timeout = self._communication_strategy.get_next_sleep_timeout()
         finally:
             self.close()
