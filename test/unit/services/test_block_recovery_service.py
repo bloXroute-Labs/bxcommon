@@ -179,7 +179,7 @@ class BlockRecoveryManagerTest(AbstractTestCase):
         self.assertEqual(len(self.block_recovery_service.block_hash_to_sids), existing_msgs_count)
         self.assertEqual(len(self.block_recovery_service.block_hash_to_tx_hashes), existing_msgs_count)
 
-        self.assertEqual(len(self.block_recovery_service.block_add_times), existing_msgs_count)
+        self.assertEqual(len(self.block_recovery_service.blocks_expiration_queue), existing_msgs_count)
 
         self.assertEqual(len(self.block_recovery_service.sid_to_block_hash), existing_msgs_count * 3)
         self.assertEqual(len(self.block_recovery_service.tx_hash_to_block_hash), existing_msgs_count * 2)
@@ -192,7 +192,7 @@ class BlockRecoveryManagerTest(AbstractTestCase):
         self.assertEqual(len(self.block_recovery_service.block_hash_to_sids), existing_msgs_count + 1)
         self.assertEqual(len(self.block_recovery_service.block_hash_to_tx_hashes), existing_msgs_count + 1)
 
-        self.assertEqual(len(self.block_recovery_service.block_add_times), existing_msgs_count + 1)
+        self.assertEqual(len(self.block_recovery_service.blocks_expiration_queue), existing_msgs_count + 1)
 
         self.assertEqual(len(self.block_recovery_service.sid_to_block_hash), existing_msgs_count * 3 + 3)
         self.assertEqual(len(self.block_recovery_service.tx_hash_to_block_hash), existing_msgs_count * 2 + 2)

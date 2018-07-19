@@ -1,7 +1,5 @@
-import heapq
-import time
-
 from bxcommon import constants
+from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils import logger
 
 
@@ -18,7 +16,7 @@ class BlockRecoveryService(object):
         self.block_hash_to_tx_hashes = {}
         self.block_hash_to_msg = {}
 
-        self.block_add_times = []
+        self.blocks_expiration_queue = ExpirationQueue(constants.BROADCAST_MSG_EXPIRE_TIME)
 
         self.sid_to_block_hash = {}
         self.tx_hash_to_block_hash = {}
@@ -32,7 +30,7 @@ class BlockRecoveryService(object):
 
         self.block_hash_to_msg[block_hash] = msg
 
-        heapq.heappush(self.block_add_times, (time.time(), block_hash))
+        self.blocks_expiration_queue.add(block_hash)
 
         self.block_hash_to_sids[block_hash] = {}
         self.block_hash_to_tx_hashes[block_hash] = {}
@@ -83,14 +81,8 @@ class BlockRecoveryService(object):
     def cleanup_old_messages(self, clean_up_time=None):
         logger.debug("Unknown tx: Running clean up task.")
 
-        if clean_up_time is None:
-            clean_up_time = time.time()
-
-        while self.block_add_times and \
-                clean_up_time - self.block_add_times[0][0] > constants.BROADCAST_MSG_EXPIRE_TIME:
-            _, block_hash = heapq.heappop(self.block_add_times)
-
-            self._remove_not_recovered_msg(block_hash)
+        self.blocks_expiration_queue.remove_expired(current_time=clean_up_time,
+                                                    remove_callback=self._remove_not_recovered_msg)
 
         if self.block_hash_to_msg:
             return constants.BROADCAST_MSG_EXPIRE_TIME
