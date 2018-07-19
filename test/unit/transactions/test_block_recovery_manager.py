@@ -1,51 +1,52 @@
 import os
 import time
 
+from bxcommon import constants
 from bxcommon.messages.broadcast_message import BroadcastMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_alarm_queue import MockAlarmQueue
-from bxcommon.transactions.missing_transactions_manager import MissingTransactionsManager
+from bxcommon.transactions.block_recovery_manager import BlockRecoveryManager
 
 
-class MissingTransactionsManagerTest(AbstractTestCase):
+class BlockRecoveryManagerTest(AbstractTestCase):
 
     def setUp(self):
         self.alarm_queue = MockAlarmQueue()
-        self.missing_tx_manager = MissingTransactionsManager(self.alarm_queue)
+        self.missing_tx_manager = BlockRecoveryManager(self.alarm_queue)
         self.msgs = []
         self.block_hashes = []
         self.unknown_tx_sids = []
         self.unknown_tx_hashes = []
 
-    def test_on_broadcast_msg(self):
+    def test_add_block_msg(self):
         self._add_broadcast_message()
         self._add_broadcast_message(1)
         self._add_broadcast_message(2)
 
-    def test_remove_sid_if_missing(self):
+    def test_check_missing_sid(self):
         self._add_broadcast_message()
 
         sid = self.unknown_tx_sids[0][0]
 
-        self.missing_tx_manager.remove_sid_if_missing(sid)
+        self.missing_tx_manager.check_missing_sid(sid)
 
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_sids[self.block_hashes[0]]), 2)
         self.assertNotIn(sid, self.missing_tx_manager.sid_to_block_hash)
 
-    def test_remove_tx_hash_if_missing(self):
+    def test_check_missing_tx_hash(self):
         self._add_broadcast_message()
 
         tx_hash = self.unknown_tx_hashes[0][0]
 
-        self.missing_tx_manager.remove_tx_hash_if_missing(tx_hash)
+        self.missing_tx_manager.check_missing_tx_hash(tx_hash)
 
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_tx_hashes[self.block_hashes[0]]), 1)
         self.assertNotIn(tx_hash, self.missing_tx_manager.tx_hash_to_block_hash)
 
-    def test_remove_block_if_missing(self):
+    def test_cancel_recovery_for_block(self):
         self._add_broadcast_message()
 
-        self.missing_tx_manager.remove_block_if_missing(self.block_hashes[0])
+        self.missing_tx_manager.cancel_recovery_for_block(self.block_hashes[0])
 
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_msg), 0)
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_sids), 0)
@@ -54,14 +55,16 @@ class MissingTransactionsManagerTest(AbstractTestCase):
         self.assertEqual(len(self.missing_tx_manager.sid_to_block_hash), 0)
         self.assertEqual(len(self.missing_tx_manager.tx_hash_to_block_hash), 0)
 
-    def test_msgs_ready_for_retry__sids_arrive_first(self):
+    def test_recovered_msgs__sids_arrive_first(self):
         self._add_broadcast_message()
 
+        # Missing sids arrive first
         for sid in self.unknown_tx_sids[0]:
-            self.missing_tx_manager.remove_sid_if_missing(sid)
+            self.missing_tx_manager.check_missing_sid(sid)
 
+        # Then tx hashes arrive
         for tx_hash in self.unknown_tx_hashes[0]:
-            self.missing_tx_manager.remove_tx_hash_if_missing(tx_hash)
+            self.missing_tx_manager.check_missing_tx_hash(tx_hash)
 
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_msg), 0)
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_sids), 0)
@@ -70,77 +73,90 @@ class MissingTransactionsManagerTest(AbstractTestCase):
         self.assertEqual(len(self.missing_tx_manager.sid_to_block_hash), 0)
         self.assertEqual(len(self.missing_tx_manager.tx_hash_to_block_hash), 0)
 
-        self.assertEqual(len(self.missing_tx_manager.msgs_ready_for_retry), 1)
-        self.assertEqual(self.missing_tx_manager.msgs_ready_for_retry[0], self.msgs[0])
+        self.assertEqual(len(self.missing_tx_manager.recovered_msgs), 1)
+        self.assertEqual(self.missing_tx_manager.recovered_msgs[0], self.msgs[0])
 
-    def test_msgs_ready_for_retry__tx_contents_arrive_first(self):
+    def test_recovered_msgs__tx_contents_arrive_first(self):
         self._add_broadcast_message()
 
-        for sid in self.unknown_tx_sids[0]:
-            self.missing_tx_manager.remove_sid_if_missing(sid)
-
+        # Missing tx hashes arrive first
         for tx_hash in self.unknown_tx_hashes[0]:
-            self.missing_tx_manager.remove_tx_hash_if_missing(tx_hash)
+            self.missing_tx_manager.check_missing_tx_hash(tx_hash)
 
+        # Then missing sids arrive
+        for sid in self.unknown_tx_sids[0]:
+            self.missing_tx_manager.check_missing_sid(sid)
+
+        # Verify that no txs all blocks missing
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_msg), 0)
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_sids), 0)
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_tx_hashes), 0)
-
         self.assertEqual(len(self.missing_tx_manager.sid_to_block_hash), 0)
         self.assertEqual(len(self.missing_tx_manager.tx_hash_to_block_hash), 0)
 
-        self.assertEqual(len(self.missing_tx_manager.msgs_ready_for_retry), 1)
-        self.assertEqual(self.missing_tx_manager.msgs_ready_for_retry[0], self.msgs[0])
+        # Verify that message is ready for retry
+        self.assertEqual(len(self.missing_tx_manager.recovered_msgs), 1)
+        self.assertEqual(self.missing_tx_manager.recovered_msgs[0], self.msgs[0])
 
     def test_clean_up_old_messages__single_message(self):
         self.assertFalse(self.missing_tx_manager.cleanup_scheduled)
         self.assertEqual(len(self.alarm_queue.alarms), 0)
 
+        # Adding missing message
         self._add_broadcast_message()
 
+        # Verify that clean up is scheduled
         self.assertEqual(len(self.alarm_queue.alarms), 1)
-        self.assertEqual(self.alarm_queue.alarms[0][0], MissingTransactionsManager.MAX_VALID_TIME)
+        self.assertEqual(self.alarm_queue.alarms[0][0], constants.BROADCAST_MSG_EXPIRE_TIME)
         self.assertEqual(self.alarm_queue.alarms[0][1], self.missing_tx_manager.cleanup_old_messages)
 
         self.assertTrue(self.missing_tx_manager.cleanup_scheduled)
 
-        self.missing_tx_manager.cleanup_old_messages(time.time() + 30)
+        # Run clean up before message expires and check that it is still there
+        self.missing_tx_manager.cleanup_old_messages(time.time() + constants.BROADCAST_MSG_EXPIRE_TIME / 2)
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_msg), 1)
         self.assertTrue(self.missing_tx_manager.cleanup_scheduled)
 
-        self.missing_tx_manager.cleanup_old_messages(time.time() + 61)
+        # Run clean up after message expires and check that it is removed
+        self.missing_tx_manager.cleanup_old_messages(time.time() + constants.BROADCAST_MSG_EXPIRE_TIME + 1)
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_msg), 0)
         self.assertFalse(self.missing_tx_manager.cleanup_scheduled)
 
-    def test_clean_up_ready_for_retry_messages(self):
-        self.assertTrue(len(self.missing_tx_manager.msgs_ready_for_retry) == 0)
+    def test_clean_up_recovered_messages(self):
+        self.assertTrue(len(self.missing_tx_manager.recovered_msgs) == 0)
 
-        self.missing_tx_manager.msgs_ready_for_retry.append(self._create_broadcast_msg())
-        self.missing_tx_manager.msgs_ready_for_retry.append(self._create_broadcast_msg())
-        self.missing_tx_manager.msgs_ready_for_retry.append(self._create_broadcast_msg())
+        # Adding ready to retry messages
+        self.missing_tx_manager.recovered_msgs.append(self._create_broadcast_msg())
+        self.missing_tx_manager.recovered_msgs.append(self._create_broadcast_msg())
+        self.missing_tx_manager.recovered_msgs.append(self._create_broadcast_msg())
 
-        self.assertEqual(len(self.missing_tx_manager.msgs_ready_for_retry), 3)
+        self.assertEqual(len(self.missing_tx_manager.recovered_msgs), 3)
 
-        self.missing_tx_manager.clean_up_ready_for_retry_messages()
+        # Removing ready to retry messages and verify that they are removed
+        self.missing_tx_manager.clean_up_recovered_messages()
 
-        self.assertEqual(len(self.missing_tx_manager.msgs_ready_for_retry), 0)
+        self.assertEqual(len(self.missing_tx_manager.recovered_msgs), 0)
 
     def test_clean_up_old_messages__multiple_messages(self):
         self.assertFalse(self.missing_tx_manager.cleanup_scheduled)
         self.assertEqual(len(self.alarm_queue.alarms), 0)
 
+        # Adding to messages with 2 seconds difference between them
         self._add_broadcast_message()
         time.sleep(2)
         self._add_broadcast_message(1)
 
+        # Verify that clean up scheduled
         self.assertEqual(len(self.alarm_queue.alarms), 1)
-        self.assertEqual(self.alarm_queue.alarms[0][0], MissingTransactionsManager.MAX_VALID_TIME)
+        self.assertEqual(self.alarm_queue.alarms[0][0], constants.BROADCAST_MSG_EXPIRE_TIME)
         self.assertEqual(self.alarm_queue.alarms[0][1], self.missing_tx_manager.cleanup_old_messages)
 
-        self.missing_tx_manager.cleanup_old_messages(time.time() + 30)
+        # Verify that both messages are there before the first one expires
+        self.missing_tx_manager.cleanup_old_messages(time.time() + constants.BROADCAST_MSG_EXPIRE_TIME / 2)
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_msg), 2)
 
-        self.missing_tx_manager.cleanup_old_messages(time.time() + 58)
+        # Verify that first message is remove and the second left 2 seconds before second message expires
+        self.missing_tx_manager.cleanup_old_messages(time.time() + constants.BROADCAST_MSG_EXPIRE_TIME - 2)
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_msg), 1)
 
         self.assertTrue(self.missing_tx_manager.cleanup_scheduled)
@@ -169,7 +185,7 @@ class MissingTransactionsManagerTest(AbstractTestCase):
         self.assertEqual(len(self.missing_tx_manager.tx_hash_to_block_hash), existing_msgs_count * 2)
 
         self.missing_tx_manager \
-            .add_msg_with_missing_txs(self.msgs[-1], self.block_hashes[-1], self.unknown_tx_sids[-1][:],
+            .add_block_msg(self.msgs[-1], self.block_hashes[-1], self.unknown_tx_sids[-1][:],
                                       self.unknown_tx_hashes[-1][:])
 
         self.assertEqual(len(self.missing_tx_manager.block_hash_to_msg), existing_msgs_count + 1)
@@ -182,9 +198,9 @@ class MissingTransactionsManagerTest(AbstractTestCase):
         self.assertEqual(len(self.missing_tx_manager.tx_hash_to_block_hash), existing_msgs_count * 2 + 2)
 
         self.assertEqual(self.missing_tx_manager.block_hash_to_msg[self.block_hashes[-1]], self.msgs[-1])
-        self.assertEqual(self.missing_tx_manager.block_hash_to_sids[self.block_hashes[-1]], self.unknown_tx_sids[-1])
-        self.assertEqual(self.missing_tx_manager.block_hash_to_tx_hashes[self.block_hashes[-1]],
-                         self.unknown_tx_hashes[-1])
+        self.assertEqual(self.missing_tx_manager.block_hash_to_sids[self.block_hashes[-1]].keys(), self.unknown_tx_sids[-1])
+        self.assertEqual(self.missing_tx_manager.block_hash_to_tx_hashes[self.block_hashes[-1]].keys().sort(),
+                         self.unknown_tx_hashes[-1].sort())
 
         for sid in self.unknown_tx_sids[-1]:
             self.assertEqual(self.missing_tx_manager.sid_to_block_hash[sid], self.block_hashes[-1])

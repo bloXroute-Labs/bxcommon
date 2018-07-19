@@ -1,4 +1,4 @@
-class MockAlarmQueue():
+class MockAlarmQueue(object):
     def __init__(self):
         self.alarms = []
 

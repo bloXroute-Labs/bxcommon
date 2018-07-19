@@ -17,7 +17,7 @@ class GetTxsDetailsMessageTests(AbstractTestCase):
 
         self.assertTrue(parsed_msg)
 
-        parsed_short_ids = parsed_msg.short_ids()
+        parsed_short_ids = parsed_msg.get_short_ids()
 
         self.assertEqual(len(parsed_short_ids), len(short_ids))
 

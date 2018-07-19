@@ -51,7 +51,10 @@ HDR_COMMON_OFF = 16
 HASH_LEN = 32
 
 # Size of integer in bytes
-INT_LEN = 4
+INTEGER_SIZE_IN_BYTES = 4
+
+# Expiration time for block broadcast message if transactions info is missing
+BROADCAST_MSG_EXPIRE_TIME = 60
 
 btc_magic_numbers = {
     'main': 0xD9B4BEF9,

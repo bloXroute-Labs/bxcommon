@@ -7,12 +7,13 @@ from bxcommon.utils.object_hash import ObjectHash
 class TxsDetailsMessageTests(AbstractTestCase):
 
     def test_txs_with_short_ids_message(self):
-        txs_info = []
-        txs_info.append((10, ObjectHash(helpers.generate_bytearray(32)), helpers.generate_bytearray(251)))
-        txs_info.append((23, ObjectHash(helpers.generate_bytearray(32)), helpers.generate_bytearray(303)))
-        txs_info.append((74, ObjectHash(helpers.generate_bytearray(32)), helpers.generate_bytearray(567)))
+        txs_info = [
+            (111, ObjectHash(helpers.generate_bytearray(32)), helpers.generate_bytearray(200)),
+            (222, ObjectHash(helpers.generate_bytearray(32)), helpers.generate_bytearray(300)),
+            (333, ObjectHash(helpers.generate_bytearray(32)), helpers.generate_bytearray(400))
+        ]
 
-        msg = TxsDetailsMessage(txs_info=txs_info)
+        msg = TxsDetailsMessage(txs_details=txs_info)
 
         msg_bytes = msg.rawbytes()
 
@@ -22,7 +23,7 @@ class TxsDetailsMessageTests(AbstractTestCase):
 
         self.assertTrue(parsed_msg)
 
-        parsed_txs_info = parsed_msg.txs_info()
+        parsed_txs_info = parsed_msg.get_txs_details()
 
         self.assertEqual(len(parsed_txs_info), len(txs_info))
 
