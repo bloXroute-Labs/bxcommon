@@ -6,7 +6,7 @@ from bxcommon.messages.message import Message
 
 class GetTxsDetailsMessage(Message):
     """
-    Message used to request information about transactions with specified short ids.
+    Message used to request information about services with specified short ids.
     Node needs to reply with TxsWithShortIdsMessage
     """
 

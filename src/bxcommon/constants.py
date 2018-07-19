@@ -53,7 +53,7 @@ HASH_LEN = 32
 # Size of integer in bytes
 INTEGER_SIZE_IN_BYTES = 4
 
-# Expiration time for block broadcast message if transactions info is missing
+# Expiration time for block broadcast message if services info is missing
 BROADCAST_MSG_EXPIRE_TIME = 60
 
 btc_magic_numbers = {

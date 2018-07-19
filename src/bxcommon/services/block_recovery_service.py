@@ -5,7 +5,7 @@ from bxcommon import constants
 from bxcommon.utils import logger
 
 
-class BlockRecoveryManager(object):
+class BlockRecoveryService(object):
     """
     Logic to handle scenario when blocRoute gateway receives bloxRoute block message with transaction sid and hash
     that it is not aware of.

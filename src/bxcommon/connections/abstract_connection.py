@@ -272,9 +272,9 @@ class AbstractConnection(object):
         tx_hash = msg.tx_hash()
 
         logger.debug("Processing txassign message")
-        if self.node.tx_manager.get_txid(tx_hash) == -1:
+        if self.node.tx_service.get_txid(tx_hash) == -1:
             logger.debug("Assigning {0} to sid {1}".format(msg.tx_hash(), msg.short_id()))
-            self.node.tx_manager.assign_tx_to_sid(tx_hash, msg.short_id(), time.time())
+            self.node.tx_service.assign_tx_to_sid(tx_hash, msg.short_id(), time.time())
             return tx_hash
 
         return None
