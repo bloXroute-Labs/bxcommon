@@ -26,7 +26,7 @@ class BlockRecoveryService(object):
         self.cleanup_scheduled = False
 
     def add_block_msg(self, msg, block_hash, unknown_tx_sids, unknown_tx_contents):
-        logger.debug("Unknown tx: Tracking block with unknown txs. Block hash {0}".format(block_hash))
+        logger.debug("Block recovery: Tracking block with unknown txs. Block hash {0}".format(block_hash))
 
         self.block_hash_to_msg[block_hash] = msg
 
@@ -47,7 +47,7 @@ class BlockRecoveryService(object):
 
     def check_missing_sid(self, sid):
         if sid in self.sid_to_block_hash:
-            logger.debug("Unknown tx: Received previously unknown tx sid {0}.".format(sid))
+            logger.debug("Block recovery: Received previously unknown tx sid {0}.".format(sid))
 
             block_hash = self.sid_to_block_hash[sid]
 
@@ -61,7 +61,7 @@ class BlockRecoveryService(object):
 
     def check_missing_tx_hash(self, tx_hash):
         if tx_hash in self.tx_hash_to_block_hash:
-            logger.debug("Unknown tx: Received previously unknown tx hash {0}.".format(tx_hash))
+            logger.debug("Block recovery: Received previously unknown tx hash {0}.".format(tx_hash))
 
             block_hash = self.tx_hash_to_block_hash[tx_hash]
 
@@ -75,11 +75,11 @@ class BlockRecoveryService(object):
 
     def cancel_recovery_for_block(self, block_hash):
         if block_hash in self.block_hash_to_msg:
-            logger.debug("Unknown tx: Received block {0} from. Stop tracking block unknown txs.".format(block_hash))
+            logger.debug("Block recovery: Received block {0} from. Stop tracking block unknown txs.".format(block_hash))
             self._remove_not_recovered_msg(block_hash)
 
     def cleanup_old_messages(self, clean_up_time=None):
-        logger.debug("Unknown tx: Running clean up task.")
+        logger.debug("Block recovery: Running clean up task.")
 
         self.blocks_expiration_queue.remove_expired(current_time=clean_up_time,
                                                     remove_callback=self._remove_not_recovered_msg)
@@ -92,13 +92,13 @@ class BlockRecoveryService(object):
         return 0
 
     def clean_up_recovered_messages(self):
-        logger.debug("Unknown tx: Removing all of ready to retry messages. {0} messages."
+        logger.debug("Block recovery: Removing all of ready to retry messages. {0} messages."
                      .format(len(self.recovered_msgs)))
         del self.recovered_msgs[:]
 
     def _check_if_recovered(self, block_hash):
         if self._is_msg_recovered(block_hash):
-            logger.debug("Unknown tx: Block {0} is ready for retry.".format(block_hash))
+            logger.debug("Block recovery: Block {0} is ready for retry.".format(block_hash))
             msg = self.block_hash_to_msg[block_hash]
             self._remove_not_recovered_msg(block_hash)
             self.recovered_msgs.append(msg)
@@ -108,7 +108,7 @@ class BlockRecoveryService(object):
 
     def _remove_not_recovered_msg(self, block_hash):
         if block_hash in self.block_hash_to_msg:
-            logger.debug("Unknown tx: Removing block with hash {0}".format(block_hash))
+            logger.debug("Block recovery: Removing block with hash {0}".format(block_hash))
 
             del self.block_hash_to_msg[block_hash]
 
@@ -126,7 +126,7 @@ class BlockRecoveryService(object):
 
     def _schedule_cleanup(self):
         if not self.cleanup_scheduled and self.block_hash_to_msg:
-            logger.debug("Unknown tx: Scheduling unknown tx blocks clean up in {0} seconds."
+            logger.debug("Block recovery: Scheduling unknown tx blocks clean up in {0} seconds."
                          .format(constants.BROADCAST_MSG_EXPIRE_TIME))
             self.alarm_queue.register_alarm(constants.BROADCAST_MSG_EXPIRE_TIME, self.cleanup_old_messages)
             self.cleanup_scheduled = True

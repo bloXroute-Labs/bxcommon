@@ -79,7 +79,7 @@ class TxsDetailsMessage(Message):
         txs_count, = struct.unpack_from('<L', self.buf, off)
         off += constants.INTEGER_SIZE_IN_BYTES
 
-        logger.debug("Unknown tx: received {0} txs in the message.".format(txs_count))
+        logger.debug("Block recovery: received {0} txs in the message.".format(txs_count))
 
         for tx_index in range(txs_count):
             tx_sid, = struct.unpack_from('<L', self.buf, off)
