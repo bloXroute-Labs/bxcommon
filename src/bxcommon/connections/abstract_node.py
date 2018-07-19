@@ -8,7 +8,7 @@ from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.constants import MAX_CONN_BY_IP, CONNECTION_TIMEOUT, FAST_RETRY, MAX_RETRIES, RETRY_INTERVAL
 from bxcommon.exceptions import TerminationError
-from bxcommon.transactions.transaction_manager import TransactionManager
+from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import logger
 from bxcommon.utils.alarm import AlarmQueue
 
@@ -33,7 +33,7 @@ class AbstractNode(object):
         # Event handling queue for delayed events
         self.alarm_queue = AlarmQueue()
 
-        self.tx_manager = TransactionManager(self)
+        self.tx_service = TransactionService(self)
 
         logger.info("initialized node state")
 

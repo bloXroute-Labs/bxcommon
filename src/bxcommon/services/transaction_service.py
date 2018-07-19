@@ -1,12 +1,12 @@
 import time
-from heapq import heappop, heappush
 
+from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils import logger
 
 
 # A manager for the transaction mappings
-# We assume in this class that no more than MAX_ID unassigned transactions exist at a time
-class TransactionManager(object):
+# We assume in this class that no more than MAX_ID unassigned services exist at a time
+class TransactionService(object):
     # Size of a short id
     # If this is changed, make sure to change it in the TxAssignMessage
     SHORT_ID_SIZE = 4
@@ -32,15 +32,15 @@ class TransactionManager(object):
         self.sid_to_txid = {}
         self.hash_to_contents = {}
         self.unassigned_hashes = set()
-        self.tx_assignment_times = []
+        self.tx_assignment_expire_queue = ExpirationQueue(TransactionService.MAX_VALID_TIME)
         self.tx_assign_alarm_scheduled = False
 
         self.relayed_txns = set()
-        self.tx_relay_times = []
+        self.tx_relay_expire_queue = ExpirationQueue(TransactionService.MAX_VALID_TIME)
 
         self.prev_id = -1
 
-        self.node.alarm_queue.register_alarm(TransactionManager.INITIAL_DELAY, self.assign_initial_ids)
+        self.node.alarm_queue.register_alarm(TransactionService.INITIAL_DELAY, self.assign_initial_ids)
 
     def assign_initial_ids(self):
         assert self.prev_id == -1
@@ -53,8 +53,8 @@ class TransactionManager(object):
             #     sid, tx_time = self.get_and_increment_id()
             #     self._assign_tx_to_sid(tx_hash, sid, tx_time)
 
-        if self.tx_assignment_times:
-            self.node.alarm_queue.register_alarm(TransactionManager.MAX_VALID_TIME, self.expire_old_ids)
+        if self.tx_assignment_expire_queue:
+            self.node.alarm_queue.register_alarm(TransactionService.MAX_VALID_TIME, self.expire_old_ids)
             self.tx_assign_alarm_scheduled = True
         self.unassigned_hashes = None
 
@@ -63,29 +63,28 @@ class TransactionManager(object):
         while self.prev_id in self.sid_to_txid:
             self.prev_id += 1
 
-            if self.prev_id > TransactionManager.MAX_ID:
-                self.prev_id -= TransactionManager.MAX_ID
+            if self.prev_id > TransactionService.MAX_ID:
+                self.prev_id -= TransactionService.MAX_ID
 
         return self.prev_id, time.time()
 
     def expire_old_ids(self):
-        now = time.time()
-        while self.tx_assignment_times and \
-                now - self.tx_assignment_times[0][0] > TransactionManager.MAX_VALID_TIME:
-            tx_id = heappop(self.tx_assignment_times)
-            tx_hash = tx_id[1]
+        self.tx_assignment_expire_queue.remove_expired(remove_callback=self.remove_tx_id)
 
-            if tx_hash != TransactionManager.NULL_TX:
-                sid = self.txhash_to_sid[tx_hash]
-                del self.txhash_to_sid[tx_hash]
-                del self.sid_to_txid[sid]
-
-        if self.tx_assignment_times:
+        if self.tx_assignment_expire_queue:
             # Reschedule this function to be fired again after MAX_VALID_TIME seconds
-            return TransactionManager.MAX_VALID_TIME
+            return TransactionService.MAX_VALID_TIME
         else:
             self.tx_assign_alarm_scheduled = False
             return 0
+
+    def remove_tx_id(self, tx_id):
+        tx_hash = tx_id[1]
+
+        if tx_hash != TransactionService.NULL_TX:
+            sid = self.txhash_to_sid[tx_hash]
+            del self.txhash_to_sid[tx_hash]
+            del self.sid_to_txid[sid]
 
     # Assigns the transaction to the given short id
     def assign_tx_to_sid(self, tx_hash, sid, tx_time):
@@ -93,16 +92,17 @@ class TransactionManager(object):
 
         self.txhash_to_sid[tx_hash] = sid
         self.sid_to_txid[sid] = txid
-        heappush(self.tx_assignment_times, txid)
+
+        self.tx_assignment_expire_queue.add(txid)
 
         if not self.tx_assign_alarm_scheduled:
-            self.node.alarm_queue.register_alarm(TransactionManager.MAX_VALID_TIME, self.expire_old_ids)
+            self.node.alarm_queue.register_alarm(TransactionService.MAX_VALID_TIME, self.expire_old_ids)
             self.tx_assign_alarm_scheduled = True
 
     def assign_tx_to_id(self, tx_hash):
         assert self.node.is_manager
 
-        # Not done waiting for the initial transactions to come through
+        # Not done waiting for the initial services to come through
         if self.unassigned_hashes is not None:
             if tx_hash not in self.unassigned_hashes:
                 self.unassigned_hashes.add(tx_hash)
@@ -125,11 +125,11 @@ class TransactionManager(object):
             tx_hash = self.sid_to_txid[sid][1]
 
             if tx_hash in self.hash_to_contents:
-                return self.hash_to_contents[tx_hash]
+                return tx_hash, self.hash_to_contents[tx_hash]
             logger.debug("Looking for hash: " + repr(tx_hash))
             logger.debug("Could not find hash: " + repr(self.hash_to_contents.keys()[0:10]))
 
-        return None
+        return None, None
 
     # Returns True if
     def already_relayed(self, tx_hash):
@@ -137,16 +137,11 @@ class TransactionManager(object):
             return True
         else:
             self.relayed_txns.add(tx_hash)
-            heappush(self.tx_relay_times, [time.time(), tx_hash])
-            self.node.alarm_queue.register_approx_alarm(2 * TransactionManager.MAX_VALID_TIME,
-                                                        TransactionManager.MAX_VALID_TIME, self.cleanup_relayed)
+            self.tx_relay_expire_queue.add(tx_hash)
+            self.node.alarm_queue.register_approx_alarm(2 * TransactionService.MAX_VALID_TIME,
+                                                        TransactionService.MAX_VALID_TIME, self.cleanup_relayed)
             return False
 
     def cleanup_relayed(self):
-        now = time.time()
-        while self.tx_relay_times and \
-                now - self.tx_relay_times[0][0] > TransactionManager.MAX_VALID_TIME:
-            _, txhash = heappop(self.tx_relay_times)
-            self.relayed_txns.remove(txhash)
-
+        self.tx_relay_expire_queue.remove_expired(remove_callback=self.relayed_txns.remove)
         return 0

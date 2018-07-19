@@ -18,6 +18,8 @@ def get_message_types():
     from bxcommon.messages.pong_message import PongMessage
     from bxcommon.messages.tx_assign_message import TxAssignMessage
     from bxcommon.messages.tx_message import TxMessage
+    from bxcommon.messages.get_txs_details_message import GetTxsDetailsMessage
+    from bxcommon.messages.txs_details_message import TxsDetailsMessage
 
     _msg_types = {
         'hello': HelloMessage,
@@ -27,6 +29,8 @@ def get_message_types():
         'broadcast': BroadcastMessage,
         'tx': TxMessage,
         'txassign': TxAssignMessage,
+        'gettxs': GetTxsDetailsMessage,
+        'txs': TxsDetailsMessage
     }
 
     return _msg_types
