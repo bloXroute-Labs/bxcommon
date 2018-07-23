@@ -88,7 +88,13 @@ class AlarmQueue(object):
     def time_to_next_alarm(self):
         if not self.alarms:
             return True, -1  # Nothing to do
-        return False, self.alarms[0][0] - time.time()
+
+        time_to_alarm = self.alarms[0][0] - time.time()
+
+        if time_to_alarm < 0:
+            time_to_alarm = 0.1
+
+        return False, time_to_alarm
 
     # Fires all alarms that have timed out on alarm_queue.
     # If the sender knows that some alarm will fire, then they can set has_alarm to be True.

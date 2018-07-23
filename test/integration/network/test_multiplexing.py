@@ -1,4 +1,6 @@
+import heapq
 import os
+import time
 import unittest
 from threading import Thread
 
@@ -9,22 +11,30 @@ from bxcommon.utils import logger
 
 class SenderCommunicationStrategy(AbstractCommunicationStrategy):
     def __init__(self, send_bytes):
+        super(SenderCommunicationStrategy, self).__init__()
+
         self.send_bytes = send_bytes
         self.memory_view = memoryview(self.send_bytes)
         self.bytes_sent = 0
         self.finished_sending = False
         self.closed = False
+        self.timeout_triggered_loops = 0
 
-    def add_connection(self, connection_id):
+        self.enqueue_connection('0.0.0.0', 8002)
+
+    def get_server_address(self):
+        return ('0.0.0.0', 8001)
+
+    def on_connection_added(self, connection_id):
         pass
 
-    def remove_connection(self, connection_id):
+    def on_connection_closed(self, connection_id):
         pass
 
-    def process_received_bytes(self, client_id, bytes):
+    def on_receive(self, client_id, bytes):
         pass
 
-    def get_next_bytes_to_send(self, connection_id):
+    def on_send(self, connection_id):
         print("Sender: get_next_bytes_to_send called. connection id {0}".format(connection_id))
         if self.bytes_sent >= len(self.send_bytes):
             logger.debug("All bytes sent. Total bytes sent {0}".format(len(self.send_bytes)))
@@ -32,59 +42,81 @@ class SenderCommunicationStrategy(AbstractCommunicationStrategy):
 
         return self.memory_view[self.bytes_sent:]
 
-    def advance_sent_bytes(self, connection_id, bytes_sent):
+    def on_sent(self, connection_id, bytes_sent):
         print("Sender: advance_sent_bytes called. connection id {0}. bytes sent {1}".format(connection_id, bytes_sent))
         self.bytes_sent += bytes_sent
 
-    def get_next_sleep_timeout(self):
+    def on_first_sleep(self):
+        print("Sender: on_first_sleep called.")
+        None
+
+    def on_sleep(self, triggered_by_timeout):
         print("Sender: get_next_sleep_timeout called.")
-        return None
 
-    def is_shutdown_requested(self):
+        if triggered_by_timeout:
+            self.timeout_triggered_loops += 1
+        return 1
+
+    def on_chance_to_exit(self):
         print("Sender: is_shutdown_requested called.")
-        return self.finished_sending
+        return self.finished_sending and self.timeout_triggered_loops > 0
 
-    def close(self):
+    def on_close(self):
         print("Sender: close called.")
         self.closed = True
 
 
 class ReceiverCommunicationStrategy(AbstractCommunicationStrategy):
     def __init__(self):
+        super(ReceiverCommunicationStrategy, self).__init__()
+        
         self.connections = []
         self.receive_buffers = {}
         self.finished_receiving = False
         self.closed = False
 
-    def add_connection(self, connection_id):
+        self.timeout_triggered_loops = 0
+
+    def get_server_address(self):
+        return ('0.0.0.0', 8002)
+
+    def on_connection_added(self, connection_id):
         print("Receiver: add_connection called. Connection id {0}".format(connection_id))
         self.connections.append(connection_id)
         self.receive_buffers[connection_id] = bytearray(0)
 
-    def remove_connection(self, connection_id):
+    def on_connection_closed(self, connection_id):
         print("Receiver: remove_connection called.".format(connection_id))
         self.finished_receiving = True
 
-    def process_received_bytes(self, connection_id, bytes_received):
+    def on_receive(self, connection_id, bytes_received):
         print("Receiver: process_received_bytes called. {0} bytes received from connection {1}"
               .format(len(bytes_received), connection_id))
         self.receive_buffers[connection_id] += bytes_received
 
-    def get_next_bytes_to_send(self, connection_id):
+    def on_send(self, connection_id):
         pass
 
-    def advance_sent_bytes(self, connection_id, bytes_sent):
+    def on_sent(self, connection_id, bytes_sent):
         pass
 
-    def get_next_sleep_timeout(self):
-        print("Receiver: get_next_sleep_timeout called.")
+    def on_first_sleep(self):
+        print("Receiver: on_first_sleep called.")
         None
 
-    def is_shutdown_requested(self):
+    def on_sleep(self, triggered_by_timeout):
+        print("Receiver: get_next_sleep_timeout called.")
+
+        if triggered_by_timeout:
+            self.timeout_triggered_loops += 1
+
+        return None
+
+    def on_chance_to_exit(self):
         print("Receiver: is_shutdown_requested called.")
         return self.finished_receiving
 
-    def close(self):
+    def on_close(self):
         print("Receiver: close called.")
         self.closed = True
 
@@ -112,14 +144,8 @@ class MultiplexingTest(unittest.TestCase):
         sender_multiplexer = create_multiplexer(sender_strategy)
 
         try:
-            print("Starting server on receiver")
-            receiver_multiplexer.start_server(8001)
-
             print("Starting event loop on receiver")
             receiver_thread.start()
-
-            print("Connecting server to receiver")
-            sender_multiplexer.connect_to_server('0.0.0.0', 8001)
 
             print("Starting event loop on sender")
             sender_multiplexer.run()
@@ -132,17 +158,18 @@ class MultiplexingTest(unittest.TestCase):
             bytes_received = receiver_strategy.receive_buffers[receiver_strategy.connections[0]]
             self.assertEqual(bytes_received, send_bytes)
 
-            self.assertTrue(sender_strategy.is_shutdown_requested())
-            self.assertTrue(receiver_strategy.is_shutdown_requested)
+            self.assertTrue(sender_strategy.on_chance_to_exit())
+            self.assertTrue(receiver_strategy.on_chance_to_exit)
             self.assertTrue(sender_strategy.closed)
             self.assertTrue(receiver_strategy.closed)
+            self.assertTrue(sender_strategy.timeout_triggered_loops > 0)
+            self.assertEqual(receiver_strategy.timeout_triggered_loops, 0)
         finally:
-            pass
-            # receiver_multiplexer.close()
-            # sender_multiplexer.close()
-            #
-            # if receiver_thread.is_alive():
-            #     receiver_thread.join()
+            receiver_multiplexer.close()
+            sender_multiplexer.close()
+
+            if receiver_thread.is_alive():
+                receiver_thread.join()
 
 
 

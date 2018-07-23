@@ -20,7 +20,18 @@ class AbstractMultiplexer(object):
     def run(self):
         raise NotImplementedError()
 
-    def start_server(self, listen_port, ip="0.0.0.0"):
+    def close(self):
+        self._communication_strategy.on_close()
+
+        for _, socket_connection in self._socket_connections.iteritems():
+            socket_connection.close()
+
+    def _start_server(self):
+
+        server_address = self._communication_strategy.get_server_address()
+
+        ip = server_address[0]
+        listen_port = server_address[1]
 
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -47,7 +58,14 @@ class AbstractMultiplexer(object):
                              " Occurred while setting up server socket on {0}:{1}. Re-raising".format(ip, listen_port))
                 raise e
 
-    def connect_to_server(self, ip, port):
+    def _establish_outbound_connections(self):
+        address =  self._communication_strategy.get_new_connection_address()
+
+        while address is not None:
+            self._connect_to_server(address[0], address[1])
+            address = self._communication_strategy.get_new_connection_address()
+
+    def _connect_to_server(self, ip, port):
         sock = None
 
         initialized = True  # True if socket is connected. False otherwise.
@@ -87,12 +105,6 @@ class AbstractMultiplexer(object):
 
         self._register_socket(sock, is_server=False, initialized=initialized)
 
-    def close(self):
-        self._communication_strategy.close()
-
-        for _, socket_connection in self._socket_connections.iteritems():
-            socket_connection.close()
-
     def _handle_incoming_connections(self, socket_connection):
         logger.info("new connection establishment starting")
         try:
@@ -101,7 +113,7 @@ class AbstractMultiplexer(object):
                 logger.debug("new connection from {0}".format(address))
 
                 self._add_client_socket(new_socket)
-                self._communication_strategy.add_connection(new_socket.fileno())
+                self._communication_strategy.on_connection_added(new_socket.fileno())
         except socket.error:
             pass
 
@@ -151,10 +163,10 @@ class AbstractMultiplexer(object):
 
             if bytes_read == 0:
                 socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                self._communication_strategy.remove_connection(connection_id)
+                self._communication_strategy.on_connection_closed(connection_id)
                 return
             else:
-                self._communication_strategy.process_received_bytes(connection_id, piece)
+                self._communication_strategy.on_receive(connection_id, piece)
 
     def _send(self, socket_connection):
         assert isinstance(socket_connection, SocketConnection)
@@ -167,7 +179,7 @@ class AbstractMultiplexer(object):
         # Send on the socket until either the socket is full or we have nothing else to send.
         while socket_connection.can_send:
             try:
-                send_buffer = self._communication_strategy.get_next_bytes_to_send(connection_id)
+                send_buffer = self._communication_strategy.on_send(connection_id)
 
                 if not send_buffer:
                     break
@@ -207,7 +219,7 @@ class AbstractMultiplexer(object):
                     raise e
 
             total_bytes_written += bytes_written
-            self._communication_strategy.advance_sent_bytes(connection_id, bytes_written)
+            self._communication_strategy.on_sent(connection_id, bytes_written)
 
             bytes_written = 0
 

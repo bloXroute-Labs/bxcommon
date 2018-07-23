@@ -9,15 +9,25 @@ from bxcommon.utils import logger
 
 class EpollMultiplexer(AbstractMultiplexer):
     def __init__(self, communication_strategy):
-
+        logger.debug("Before contructor")
         super(EpollMultiplexer, self).__init__(communication_strategy)
         self._epoll = select.epoll()
+        logger.debug("After contructor")
 
     def run(self):
+        logger.debug("Start multiplexer loop")
+
         try:
-            timeout = self._communication_strategy.get_next_sleep_timeout()
+            self._start_server()
+
+            timeout = self._communication_strategy.on_first_sleep()
 
             while True:
+                self._establish_outbound_connections()
+
+                if True == True:
+                    break
+
                 # Grab all events.
                 try:
                     if timeout is None:
@@ -43,7 +53,7 @@ class EpollMultiplexer(AbstractMultiplexer):
                             #   on this connection.
                             if event & select.EPOLLHUP:
                                 socket_connection.state.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                                self._communication_strategy.remove_connection(fileno)
+                                self._communication_strategy.on_connection_closed(fileno)
 
                             if event & select.EPOLLOUT and \
                                     not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
@@ -75,13 +85,13 @@ class EpollMultiplexer(AbstractMultiplexer):
                         if socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
                             logger.debug("Connection to {0} closing".format(socket_connection.connection_id()))
                             socket_connection.close()
-                            self._communication_strategy.remove_connection(fileno)
+                            self._communication_strategy.on_connection_closed(fileno)
 
-                if self._communication_strategy.is_shutdown_requested():
+                if self._communication_strategy.on_chance_to_exit():
                     logger.debug("Ending Epoll loop. Shutdown has been requested.")
                     break
 
-                timeout = self._communication_strategy.get_next_sleep_timeout()
+                timeout = self._communication_strategy.on_sleep(not events)
         finally:
             self.close()
 

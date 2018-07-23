@@ -16,9 +16,13 @@ class KQueueMultiplexer(AbstractMultiplexer):
 
     def run(self):
         try:
-            timeout = self._communication_strategy.get_next_sleep_timeout()
+            self._start_server()
+
+            timeout = self._communication_strategy.on_first_sleep()
 
             while True:
+                self._establish_outbound_connections()
+
                 events = self._kqueue.control([], 1000, timeout)
 
                 for event in events:
@@ -39,11 +43,11 @@ class KQueueMultiplexer(AbstractMultiplexer):
 
                 self._send_all_connections()
 
-                if self._communication_strategy.is_shutdown_requested():
+                if self._communication_strategy.on_chance_to_exit():
                     logger.debug("Ending KQueue loop. Shutdown has been requested.")
                     break
 
-                timeout = self._communication_strategy.get_next_sleep_timeout()
+                timeout = self._communication_strategy.on_sleep(not events)
         finally:
             self.close()
 
