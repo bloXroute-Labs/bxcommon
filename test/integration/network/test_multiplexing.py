@@ -25,16 +25,16 @@ class SenderCommunicationStrategy(AbstractCommunicationStrategy):
     def get_server_address(self):
         return ('0.0.0.0', 8001)
 
-    def on_connection_added(self, connection_id):
+    def on_connection_added(self, connection_id, port, ip, from_me):
         pass
 
     def on_connection_closed(self, connection_id):
         pass
 
-    def on_receive(self, client_id, bytes):
+    def on_bytes_received(self, client_id, bytes):
         pass
 
-    def on_send(self, connection_id):
+    def get_bytes_to_send(self, connection_id):
         print("Sender: get_next_bytes_to_send called. connection id {0}".format(connection_id))
         if self.bytes_sent >= len(self.send_bytes):
             logger.debug("All bytes sent. Total bytes sent {0}".format(len(self.send_bytes)))
@@ -42,26 +42,22 @@ class SenderCommunicationStrategy(AbstractCommunicationStrategy):
 
         return self.memory_view[self.bytes_sent:]
 
-    def on_sent(self, connection_id, bytes_sent):
+    def on_bytes_sent(self, connection_id, bytes_sent):
         print("Sender: advance_sent_bytes called. connection id {0}. bytes sent {1}".format(connection_id, bytes_sent))
         self.bytes_sent += bytes_sent
 
-    def on_first_sleep(self):
-        print("Sender: on_first_sleep called.")
-        None
-
-    def on_sleep(self, triggered_by_timeout):
+    def get_sleep_timeout(self, triggered_by_timeout, first_call=False):
         print("Sender: get_next_sleep_timeout called.")
 
         if triggered_by_timeout:
             self.timeout_triggered_loops += 1
         return 1
 
-    def on_chance_to_exit(self):
+    def force_exit(self):
         print("Sender: is_shutdown_requested called.")
         return self.finished_sending and self.timeout_triggered_loops > 0
 
-    def on_close(self):
+    def close(self):
         print("Sender: close called.")
         self.closed = True
 
@@ -80,7 +76,7 @@ class ReceiverCommunicationStrategy(AbstractCommunicationStrategy):
     def get_server_address(self):
         return ('0.0.0.0', 8002)
 
-    def on_connection_added(self, connection_id):
+    def on_connection_added(self, connection_id, port, ip, from_me):
         print("Receiver: add_connection called. Connection id {0}".format(connection_id))
         self.connections.append(connection_id)
         self.receive_buffers[connection_id] = bytearray(0)
@@ -89,34 +85,30 @@ class ReceiverCommunicationStrategy(AbstractCommunicationStrategy):
         print("Receiver: remove_connection called.".format(connection_id))
         self.finished_receiving = True
 
-    def on_receive(self, connection_id, bytes_received):
+    def on_bytes_received(self, connection_id, bytes_received):
         print("Receiver: process_received_bytes called. {0} bytes received from connection {1}"
               .format(len(bytes_received), connection_id))
         self.receive_buffers[connection_id] += bytes_received
 
-    def on_send(self, connection_id):
+    def get_bytes_to_send(self, connection_id):
         pass
 
-    def on_sent(self, connection_id, bytes_sent):
+    def on_bytes_sent(self, connection_id, bytes_sent):
         pass
 
-    def on_first_sleep(self):
-        print("Receiver: on_first_sleep called.")
-        None
-
-    def on_sleep(self, triggered_by_timeout):
-        print("Receiver: get_next_sleep_timeout called.")
+    def get_sleep_timeout(self, triggered_by_timeout, first_call=False):
+        print("Receiver: get_sleep_timeout called.")
 
         if triggered_by_timeout:
             self.timeout_triggered_loops += 1
 
         return None
 
-    def on_chance_to_exit(self):
+    def force_exit(self):
         print("Receiver: is_shutdown_requested called.")
         return self.finished_receiving
 
-    def on_close(self):
+    def close(self):
         print("Receiver: close called.")
         self.closed = True
 
@@ -158,8 +150,8 @@ class MultiplexingTest(unittest.TestCase):
             bytes_received = receiver_strategy.receive_buffers[receiver_strategy.connections[0]]
             self.assertEqual(bytes_received, send_bytes)
 
-            self.assertTrue(sender_strategy.on_chance_to_exit())
-            self.assertTrue(receiver_strategy.on_chance_to_exit)
+            self.assertTrue(sender_strategy.force_exit())
+            self.assertTrue(receiver_strategy.force_exit)
             self.assertTrue(sender_strategy.closed)
             self.assertTrue(receiver_strategy.closed)
             self.assertTrue(sender_strategy.timeout_triggered_loops > 0)

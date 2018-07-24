@@ -18,13 +18,34 @@ class AbstractMultiplexer(object):
         self._receive_buf = bytearray(constants.RECV_BUFSIZE)
 
     def run(self):
-        raise NotImplementedError()
+        logger.debug("Start multiplexer loop")
+
+        try:
+            self._start_server()
+
+            timeout = self._communication_strategy.get_sleep_timeout(triggered_by_timeout=False, first_call=True)
+
+            while True:
+                self._establish_outbound_connections()
+
+                events_count = self._process_events(timeout)
+
+                if self._communication_strategy.force_exit():
+                    logger.debug("Ending events loop. Shutdown has been requested.")
+                    break
+
+                timeout = self._communication_strategy.get_sleep_timeout(events_count == 0)
+        finally:
+            self.close()
 
     def close(self):
-        self._communication_strategy.on_close()
+        self._communication_strategy.close()
 
         for _, socket_connection in self._socket_connections.iteritems():
             socket_connection.close()
+
+    def _process_events(self, timeout):
+        raise NotImplementedError()
 
     def _start_server(self):
 
@@ -59,12 +80,12 @@ class AbstractMultiplexer(object):
                 raise e
 
     def _establish_outbound_connections(self):
-        address =  self._communication_strategy.get_new_connection_address()
+        address =  self._communication_strategy.pop_next_connection_address()
 
         while address is not None:
             self._connect_to_server(address[0], address[1])
             print "Connected to {0}, {1}".format(address[0], address[1])
-            address = self._communication_strategy.get_new_connection_address()
+            address = self._communication_strategy.pop_next_connection_address()
 
     def _connect_to_server(self, ip, port):
         sock = None
@@ -169,7 +190,7 @@ class AbstractMultiplexer(object):
                 self._communication_strategy.on_connection_closed(connection_id)
                 return
             else:
-                self._communication_strategy.on_receive(connection_id, piece)
+                self._communication_strategy.on_bytes_received(connection_id, piece)
 
     def _send(self, socket_connection):
         assert isinstance(socket_connection, SocketConnection)
@@ -182,7 +203,7 @@ class AbstractMultiplexer(object):
         # Send on the socket until either the socket is full or we have nothing else to send.
         while socket_connection.can_send:
             try:
-                send_buffer = self._communication_strategy.on_send(connection_id)
+                send_buffer = self._communication_strategy.get_bytes_to_send(connection_id)
 
                 if not send_buffer:
                     break
@@ -222,7 +243,7 @@ class AbstractMultiplexer(object):
                     raise e
 
             total_bytes_written += bytes_written
-            self._communication_strategy.on_sent(connection_id, bytes_written)
+            self._communication_strategy.on_bytes_sent(connection_id, bytes_written)
 
             bytes_written = 0
 

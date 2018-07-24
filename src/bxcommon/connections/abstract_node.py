@@ -47,7 +47,7 @@ class AbstractNode(AbstractCommunicationStrategy):
     def on_connection_closed(self, connection_id):
         self.destroy_conn(connection_id)
 
-    def on_receive(self, connection_id, bytes_received):
+    def on_bytes_received(self, connection_id, bytes_received):
         conn = self.connection_pool.get_byfileno(connection_id)
 
         if conn is None:
@@ -55,7 +55,7 @@ class AbstractNode(AbstractCommunicationStrategy):
 
         conn.on_receive(bytes_received)
 
-    def on_send(self, connection_id):
+    def get_bytes_to_send(self, connection_id):
         conn = self.connection_pool.get_byfileno(connection_id)
 
         if conn is None:
@@ -63,25 +63,25 @@ class AbstractNode(AbstractCommunicationStrategy):
 
         return conn.get_bytes_to_send()
 
-    def on_sent(self, connection_id, bytes_sent):
+    def on_bytes_sent(self, connection_id, bytes_sent):
         conn = self.connection_pool.get_byfileno(connection_id)
         return conn.on_sent(bytes_sent)
 
-    def on_first_sleep(self):
-        _, timeout = self.alarm_queue.time_to_next_alarm()
+    def get_sleep_timeout(self, triggered_by_timeout, first_call=False):
+        if first_call:
+            _, timeout = self.alarm_queue.time_to_next_alarm()
 
-        if timeout < 0:
-            timeout = 0.1
+            if timeout < 0:
+                timeout = 0.1
 
-        return timeout
+            return timeout
+        else:
+            return self.alarm_queue.fire_ready_alarms(triggered_by_timeout)
 
-    def on_sleep(self, triggered_by_timeout):
-        return self.alarm_queue.fire_ready_alarms(triggered_by_timeout)
-
-    def on_chance_to_exit(self):
+    def force_exit(self):
         pass
 
-    def on_close(self):
+    def close(self):
         logger.error("Node is closing! Closing everything.")
 
         for conn in self.connection_pool:
