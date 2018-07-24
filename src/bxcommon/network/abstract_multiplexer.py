@@ -42,7 +42,7 @@ class AbstractMultiplexer(object):
             server_socket.listen(50)
             server_socket.setblocking(0)
 
-            self._register_socket(server_socket, is_server=True)
+            self._register_socket(server_socket, server_address, is_server=True)
 
             logger.debug("Finished creating a server socket on {0}:{1}".format(ip, listen_port))
             return server_socket
@@ -63,6 +63,7 @@ class AbstractMultiplexer(object):
 
         while address is not None:
             self._connect_to_server(address[0], address[1])
+            print "Connected to {0}, {1}".format(address[0], address[1])
             address = self._communication_strategy.get_new_connection_address()
 
     def _connect_to_server(self, ip, port):
@@ -103,7 +104,7 @@ class AbstractMultiplexer(object):
             else:
                 raise e
 
-        self._register_socket(sock, is_server=False, initialized=initialized)
+        self._register_socket(sock, (ip, port), is_server=False, initialized=initialized, from_me=True)
 
     def _handle_incoming_connections(self, socket_connection):
         logger.info("new connection establishment starting")
@@ -112,8 +113,10 @@ class AbstractMultiplexer(object):
                 new_socket, address = socket_connection.socket_instance.accept()
                 logger.debug("new connection from {0}".format(address))
 
-                self._add_client_socket(new_socket)
-                self._communication_strategy.on_connection_added(new_socket.fileno())
+                new_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                new_socket.setblocking(0)
+
+                self._register_socket(new_socket, address, is_server=False, initialized=True, from_me=False)
         except socket.error:
             pass
 
@@ -230,17 +233,13 @@ class AbstractMultiplexer(object):
             if socket_connection.can_send and not socket_connection.is_server:
                 self._send(socket_connection)
 
-    def _add_client_socket(self, client_socket):
-        # Even if we didn't set up this socket, we still need to make it nonblocking.
-        client_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        client_socket.setblocking(0)
-
-        self._register_socket(client_socket)
-
-    def _register_socket(self, socket_to_register, is_server=False, initialized=True):
-        socket_connection = SocketConnection(socket_to_register, is_server)
+    def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):
+        socket_connection = SocketConnection(new_socket, is_server)
 
         if initialized:
             socket_connection.set_state(SocketConnectionState.INITIALIZED)
 
-        self._socket_connections[socket_to_register.fileno()] = socket_connection
+        self._socket_connections[new_socket.fileno()] = socket_connection
+
+        if not is_server:
+            self._communication_strategy.on_connection_added(new_socket.fileno(), address[0], address[1], from_me)

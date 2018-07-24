@@ -14,9 +14,8 @@ from bxcommon.utils.buffers.output_buffer import OutputBuffer
 
 
 class AbstractConnection(object):
-    def __init__(self, sock, address, node, from_me=False, setup=False):
-        self.sock = sock
-        self.fileno = sock.fileno()
+    def __init__(self, connection_id, address, node, from_me=False, setup=False):
+        self.fileno = connection_id
 
         # (IP, Port) at time of socket creation. We may get a new application level port in
         # the version message if the connection is not from me.
@@ -94,8 +93,6 @@ class AbstractConnection(object):
     # Receives and processes the next bytes on the socket's inputbuffer.
     # Returns 0 in order to avoid being rescheduled if this was an alarm.
     def recv(self, msg_cls=Message, hello_msgs=['hello', 'ack']):
-        self.collect_input()
-
         while True:
             if self.state & ConnectionState.MARK_FOR_CLOSE:
                 return 0
@@ -119,11 +116,11 @@ class AbstractConnection(object):
 
             self.num_bad_messages = 0
 
-            if not (self.state & ConnectionState.ESTABLISHED) and msg_type not in hello_msgs:
-                logger.error("Connection to {0} not established and got {1} message!  Closing."
-                             .format(self.peer_desc, msg_type))
-                self.state |= ConnectionState.MARK_FOR_CLOSE
-                return 0
+            # if not (self.state & ConnectionState.ESTABLISHED) and msg_type not in hello_msgs:
+            #     logger.error("Connection to {0} not established and got {1} message!  Closing."
+            #                  .format(self.peer_desc, msg_type))
+            #     self.state |= ConnectionState.MARK_FOR_CLOSE
+            #     return 0
 
             logger.debug("Received message of type {0} from {1}".format(msg_type, self.peer_desc))
 
@@ -152,105 +149,22 @@ class AbstractConnection(object):
             self.state |= ConnectionState.MARK_FOR_CLOSE  # Close, no retry.
             return None
 
-    # Collect input from the socket and store it in the inputbuffer until either the socket is drained
-    # or the throttling limits are hit.
-    def collect_input(self):
-        logger.debug("Collecting input from {0}".format(self.peer_desc))
-        collect_input = True
+    def get_bytes_on_buffer(self, buf, send_one_msg=False):
+        if buf.has_more_bytes() > 0 and (not send_one_msg or buf.at_msg_boundary()):
+            return buf.get_buffer()
 
-        while collect_input:
-            # Read from the socket and store it into the recv buffer.
-            try:
-                bytes_read = self.sock.recv_into(self.recv_buf, RECV_BUFSIZE)
-            except socket.error as e:
-                if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
-                    logger.debug("Received errno {0} with msg {1} on connection {2}. Stop collecting input"
-                                 .format(e.errno, e.strerror, self.peer_desc))
-                    break
-                elif e.errno in [errno.EINTR]:
-                    # we were interrupted, try again
-                    logger.debug("Received errno {0} with msg {1}, recv on {2} failed. Continuing recv."
-                                 .format(e.errno, e.strerror, self.peer_desc))
-                    continue
-                elif e.errno in [errno.ECONNREFUSED]:
-                    # Fatal errors for the connections
-                    logger.debug("Received errno {0} with msg {1}, recv on {2} failed. "
-                                 "Closing connection and retrying..."
-                                 .format(e.errno, e.strerror, self.peer_desc))
-                    self.state |= ConnectionState.MARK_FOR_CLOSE
-                    return
-                elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
-                    # Perform orderly shutdown
-                    self.state |= ConnectionState.MARK_FOR_CLOSE
-                    return
-                elif e.errno in [errno.EFAULT, errno.EINVAL, errno.ENOTCONN, errno.ENOMEM]:
-                    # Should never happen errors
-                    logger.error("Received errno {0} with msg {1}, recv on {2} failed. This should never happen..."
-                                 .format(e.errno, e.strerror, self.peer_desc))
-                    return
-                else:
-                    raise e
+    def advance_bytes_on_buffer(self, buf, bytes_written):
+        buf.advance_buffer(bytes_written)
 
-            piece = self.recv_buf[:bytes_read]
-            logger.debug("Got {0} bytes from {2}. They were: {1}".format(bytes_read, repr(piece), self.peer_desc))
+    def on_receive(self, bytes_received):
+        self.inputbuf.add_bytes(bytes_received)
+        self.recv()
 
-            # A 0 length recv is an orderly shutdown.
-            if bytes_read == 0:
-                self.state |= ConnectionState.MARK_FOR_CLOSE
-                return
-            else:
-                self.inputbuf.add_bytes(piece)
+    def get_bytes_to_send(self):
+        return self.get_bytes_on_buffer(self.outputbuf)
 
-    # Send bytes to the peer on the given buffer. Return the number of bytes sent.
-    # buf must obey the output buffer read interface which has three properties:
-    def send_bytes_on_buffer(self, buf, send_one_msg=False):
-        total_bytes_written = 0
-        byteswritten = 0
-
-        # Send on the socket until either the socket is full or we have nothing else to send.
-        while self.sendable and buf.has_more_bytes() > 0 and (not send_one_msg or buf.at_msg_boundary()):
-            try:
-                byteswritten = self.sock.send(buf.get_buffer())
-                total_bytes_written += byteswritten
-            except socket.error as e:
-                if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOBUFS]:
-                    # Normal operation
-                    logger.debug("Got {0}. Done sending to {1}. Marking as not sendable."
-                                 .format(e.strerror, self.peer_desc))
-                    self.sendable = False
-                elif e.errno in [errno.EINTR]:
-                    # Try again later errors
-                    logger.debug("Got {0}. Send to {1} failed, trying again...".format(e.strerror, self.peer_desc))
-                    continue
-                elif e.errno in [errno.EACCES, errno.ECONNRESET, errno.EPIPE, errno.EHOSTUNREACH]:
-                    # Fatal errors for the connection
-                    logger.debug("Got {0}, send to {1} failed, closing connection.".format(e.strerror, self.peer_desc))
-                    self.state |= ConnectionState.MARK_FOR_CLOSE
-                    return 0
-                elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
-                    # Perform orderly shutdown
-                    self.state = ConnectionState.MARK_FOR_CLOSE
-                    return 0
-                elif e.errno in [errno.EDESTADDRREQ, errno.EFAULT, errno.EINVAL,
-                                 errno.EISCONN, errno.EMSGSIZE, errno.ENOTCONN, errno.ENOTSOCK]:
-                    # Should never happen errors
-                    logger.debug("Got {0}, send to {1} failed. Should not have happened..."
-                                 .format(e.strerror, self.peer_desc))
-                    exit(1)
-                elif e.errno in [errno.ENOMEM]:
-                    # Fatal errors for the node
-                    logger.debug("Got {0}, send to {1} failed. Fatal error! Shutting down node."
-                                 .format(e.strerror, self.peer_desc))
-                    exit(1)
-                else:
-                    raise e
-
-            buf.advance_buffer(byteswritten)
-            byteswritten = 0
-
-        return total_bytes_written
-
-        # Handle a Hello Message
+    def on_sent(self, bytes_sent):
+        self.advance_bytes_on_buffer(self.outputbuf, bytes_sent)
 
     def msg_hello(self, msg):
         self.state |= ConnectionState.HELLO_RECVD
@@ -280,5 +194,4 @@ class AbstractConnection(object):
         return None
 
     def close(self):
-        logger.debug("Closing connection to {0}".format(self.peer_desc))
-        self.sock.close()
+        pass

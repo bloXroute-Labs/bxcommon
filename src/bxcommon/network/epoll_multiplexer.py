@@ -25,9 +25,6 @@ class EpollMultiplexer(AbstractMultiplexer):
             while True:
                 self._establish_outbound_connections()
 
-                if True == True:
-                    break
-
                 # Grab all events.
                 try:
                     if timeout is None:
@@ -52,7 +49,7 @@ class EpollMultiplexer(AbstractMultiplexer):
                             # Mark this connection for close if we received a POLLHUP. No other functions will be called
                             #   on this connection.
                             if event & select.EPOLLHUP:
-                                socket_connection.state.set_state(SocketConnectionState.MARK_FOR_CLOSE)
+                                socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
                                 self._communication_strategy.on_connection_closed(fileno)
 
                             if event & select.EPOLLOUT and \
@@ -100,11 +97,11 @@ class EpollMultiplexer(AbstractMultiplexer):
 
         self._epoll.close()
 
-    def _register_socket(self, socket_to_register, is_server=False, initialized=True):
-        super(EpollMultiplexer, self)._register_socket(socket_to_register, is_server)
+    def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):
+        super(EpollMultiplexer, self)._register_socket(new_socket, address, is_server, initialized, from_me)
 
         if is_server:
-            self._epoll.register(socket_to_register.fileno(), select.EPOLLIN | select.EPOLLET)
+            self._epoll.register(new_socket.fileno(), select.EPOLLIN | select.EPOLLET)
         else:
-            self._epoll.register(socket_to_register.fileno(),
+            self._epoll.register(new_socket.fileno(),
                                  select.EPOLLOUT | select.EPOLLIN | select.EPOLLERR | select.EPOLLHUP | select.EPOLLET)

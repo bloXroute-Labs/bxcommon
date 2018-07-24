@@ -1,7 +1,9 @@
 import select
+import sys
 
 from bxcommon.network.abstract_multiplexer import AbstractMultiplexer
 from bxcommon.network.socket_connection import SocketConnection
+from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.utils import logger
 
 
@@ -37,7 +39,12 @@ class KQueueMultiplexer(AbstractMultiplexer):
                     elif event.filter == select.KQ_FILTER_READ:
                         self._receive(socket_connection)
 
-                    elif event.filter == select.KQ_FILTER_WRITE:
+                    elif event.filter == select.KQ_FILTER_WRITE and \
+                            not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
+
+                        if not socket_connection.state & SocketConnectionState.INITIALIZED:
+                            socket_connection.set_state(SocketConnectionState.INITIALIZED)
+
                         socket_connection.can_send = True
                         self._send(socket_connection)
 
@@ -56,12 +63,12 @@ class KQueueMultiplexer(AbstractMultiplexer):
 
         self._kqueue.close()
 
-    def _register_socket(self, socket_to_register, is_server=False, initialized=True):
-        super(KQueueMultiplexer, self)._register_socket(socket_to_register, is_server, initialized)
+    def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):
+        super(KQueueMultiplexer, self)._register_socket(new_socket, address, is_server, initialized, from_me)
 
         read_event = select.kevent(
-            socket_to_register, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
+            new_socket, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
         write_event = select.kevent(
-            socket_to_register, select.KQ_FILTER_WRITE, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
+            new_socket, select.KQ_FILTER_WRITE, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
 
         self._kqueue.control([read_event, write_event], 0, 0)

@@ -48,19 +48,31 @@ class AbstractNode(AbstractCommunicationStrategy):
         self.destroy_conn(connection_id)
 
     def on_receive(self, connection_id, bytes_received):
-        # TODO: Call connection method here
-        pass
+        conn = self.connection_pool.get_byfileno(connection_id)
+
+        if conn is None:
+            return
+
+        conn.on_receive(bytes_received)
 
     def on_send(self, connection_id):
-        # TODO: Call connection method here
-        pass
+        conn = self.connection_pool.get_byfileno(connection_id)
+
+        if conn is None:
+            return None
+
+        return conn.get_bytes_to_send()
 
     def on_sent(self, connection_id, bytes_sent):
-        # TODO: Call connection method here
-        pass
+        conn = self.connection_pool.get_byfileno(connection_id)
+        return conn.on_sent(bytes_sent)
 
     def on_first_sleep(self):
         _, timeout = self.alarm_queue.time_to_next_alarm()
+
+        if timeout < 0:
+            timeout = 0.1
+
         return timeout
 
     def on_sleep(self, triggered_by_timeout):
@@ -78,9 +90,9 @@ class AbstractNode(AbstractCommunicationStrategy):
     # End AbstractCommunicationStrategy methods override
 
     def add_connection(self, connection_id, ip, port, from_me):
-        conn_cls = self.get_connection_class()
+        conn_cls = self.get_connection_class(ip=ip, port=port)
 
-        conn_obj = conn_cls((ip, port), self, from_me=from_me)
+        conn_obj = conn_cls(connection_id, (ip, port), self, from_me=from_me)
 
         # Make the connection object publicly accessible
         self.connection_pool.add(connection_id, ip, port, conn_obj)
@@ -114,17 +126,17 @@ class AbstractNode(AbstractCommunicationStrategy):
         If teardown is True, then we do not retry trusted connections and just tear everything down.
         """
 
+        logger.debug("Breaking connection to {0}".format(fileno))
         conn = self.connection_pool.get_byfileno(fileno)
-        logger.debug("Breaking connection to {0}".format(conn.peer_desc))
 
-        self.connection_pool.delete(conn)
-
-        conn.on_close()
+        if conn is not None:
+            self.connection_pool.delete(conn)
+            conn.close()
 
     def can_retry_after_destroy(self, teardown, conn):
         raise NotImplementedError()
 
-    def get_connection_class(self, ip=None):
+    def get_connection_class(self, ip=None, port=None):
         raise NotImplementedError()
 
     def configure_peers(self):

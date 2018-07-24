@@ -46,7 +46,7 @@ class AlarmQueue(object):
         alarm_id[-1] = AlarmQueue.REMOVED
 
         # Remove unnecessary alarms from the queue.
-        while self.alarms[0][-1] == AlarmQueue.REMOVED:
+        while self.alarms and self.alarms[0][-1] == AlarmQueue.REMOVED:
             heappop(self.alarms)
 
     def fire_alarms(self):
@@ -87,12 +87,9 @@ class AlarmQueue(object):
     # Return tuple indicating <alarm queue empty, timeout>
     def time_to_next_alarm(self):
         if not self.alarms:
-            return True, -1  # Nothing to do
+            return True, None  # Nothing to do
 
         time_to_alarm = self.alarms[0][0] - time.time()
-
-        if time_to_alarm < 0:
-            time_to_alarm = 0.1
 
         return False, time_to_alarm
 
@@ -101,6 +98,7 @@ class AlarmQueue(object):
     # Returns the timeout to the next alarm, -1 if there are no new alarms.
     def fire_ready_alarms(self, has_alarm):
         alarmq_empty, time_to_next_alarm = self.time_to_next_alarm()
+
         if has_alarm or (not alarmq_empty and time_to_next_alarm <= 0):
             # logger.debug("AlarmQueue.fire_ready_alarms", "A timeout occurred")
             while not alarmq_empty and time_to_next_alarm <= 0:
