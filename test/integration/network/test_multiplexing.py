@@ -1,6 +1,4 @@
-import heapq
 import os
-import time
 import unittest
 from threading import Thread
 
@@ -20,10 +18,11 @@ class SenderCommunicationStrategy(AbstractCommunicationStrategy):
         self.closed = False
         self.timeout_triggered_loops = 0
 
-        self.enqueue_connection('0.0.0.0', 8002)
-
     def get_server_address(self):
         return ('0.0.0.0', 8001)
+
+    def get_peers_addresses(self):
+        return [('0.0.0.0', 8002)]
 
     def on_connection_added(self, connection_id, port, ip, from_me):
         pass
@@ -65,7 +64,7 @@ class SenderCommunicationStrategy(AbstractCommunicationStrategy):
 class ReceiverCommunicationStrategy(AbstractCommunicationStrategy):
     def __init__(self):
         super(ReceiverCommunicationStrategy, self).__init__()
-        
+
         self.connections = []
         self.receive_buffers = {}
         self.finished_receiving = False
@@ -75,6 +74,9 @@ class ReceiverCommunicationStrategy(AbstractCommunicationStrategy):
 
     def get_server_address(self):
         return ('0.0.0.0', 8002)
+
+    def get_peers_addresses(self):
+        return None
 
     def on_connection_added(self, connection_id, port, ip, from_me):
         print("Receiver: add_connection called. Connection id {0}".format(connection_id))
@@ -162,10 +164,3 @@ class MultiplexingTest(unittest.TestCase):
 
             if receiver_thread.is_alive():
                 receiver_thread.join()
-
-
-
-
-
-
-

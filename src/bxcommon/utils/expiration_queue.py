@@ -1,6 +1,7 @@
 import heapq
 import time
 
+
 class ExpirationQueue(object):
     def __init__(self, time_to_live_sec):
         self.time_to_live_sec = time_to_live_sec

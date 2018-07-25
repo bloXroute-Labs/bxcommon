@@ -3,9 +3,9 @@ import time
 
 from bxcommon import constants
 from bxcommon.messages.broadcast_message import BroadcastMessage
+from bxcommon.services.block_recovery_service import BlockRecoveryService
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_alarm_queue import MockAlarmQueue
-from bxcommon.services.block_recovery_service import BlockRecoveryService
 
 
 class BlockRecoveryManagerTest(AbstractTestCase):
@@ -186,7 +186,7 @@ class BlockRecoveryManagerTest(AbstractTestCase):
 
         self.block_recovery_service \
             .add_block_msg(self.msgs[-1], self.block_hashes[-1], self.unknown_tx_sids[-1][:],
-                                      self.unknown_tx_hashes[-1][:])
+                           self.unknown_tx_hashes[-1][:])
 
         self.assertEqual(len(self.block_recovery_service.block_hash_to_msg), existing_msgs_count + 1)
         self.assertEqual(len(self.block_recovery_service.block_hash_to_sids), existing_msgs_count + 1)
@@ -198,7 +198,8 @@ class BlockRecoveryManagerTest(AbstractTestCase):
         self.assertEqual(len(self.block_recovery_service.tx_hash_to_block_hash), existing_msgs_count * 2 + 2)
 
         self.assertEqual(self.block_recovery_service.block_hash_to_msg[self.block_hashes[-1]], self.msgs[-1])
-        self.assertEqual(self.block_recovery_service.block_hash_to_sids[self.block_hashes[-1]].keys(), self.unknown_tx_sids[-1])
+        self.assertEqual(self.block_recovery_service.block_hash_to_sids[self.block_hashes[-1]].keys(),
+                         self.unknown_tx_sids[-1])
         self.assertEqual(self.block_recovery_service.block_hash_to_tx_hashes[self.block_hashes[-1]].keys().sort(),
                          self.unknown_tx_hashes[-1].sort())
 

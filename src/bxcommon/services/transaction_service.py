@@ -1,7 +1,7 @@
 import time
 
-from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils import logger
+from bxcommon.utils.expiration_queue import ExpirationQueue
 
 
 # A manager for the transaction mappings

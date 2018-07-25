@@ -23,16 +23,18 @@ class AbstractMultiplexer(object):
         try:
             self._start_server()
 
+            self._connect_to_peers()
+
             timeout = self._communication_strategy.get_sleep_timeout(triggered_by_timeout=False, first_call=True)
 
             while True:
-                self._establish_outbound_connections()
-
                 events_count = self._process_events(timeout)
 
                 if self._communication_strategy.force_exit():
                     logger.debug("Ending events loop. Shutdown has been requested.")
                     break
+
+                self._establish_new_outbound_connections()
 
                 timeout = self._communication_strategy.get_sleep_timeout(events_count == 0)
         finally:
@@ -79,8 +81,15 @@ class AbstractMultiplexer(object):
                              " Occurred while setting up server socket on {0}:{1}. Re-raising".format(ip, listen_port))
                 raise e
 
-    def _establish_outbound_connections(self):
-        address =  self._communication_strategy.pop_next_connection_address()
+    def _connect_to_peers(self):
+        peers_addresses = self._communication_strategy.get_peers_addresses()
+
+        if peers_addresses:
+            for address in peers_addresses:
+                self._connect_to_server(address[0], address[1])
+
+    def _establish_new_outbound_connections(self):
+        address = self._communication_strategy.pop_next_connection_address()
 
         while address is not None:
             self._connect_to_server(address[0], address[1])

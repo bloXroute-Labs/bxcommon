@@ -1,5 +1,6 @@
 import heapq
 
+
 class AbstractCommunicationStrategy(object):
     def __init__(self):
         self.connection_queue = []
@@ -10,14 +11,23 @@ class AbstractCommunicationStrategy(object):
 
         :return: tuple (ip, port)
         """
-        
+
+        raise NotImplementedError()
+
+    def get_peers_addresses(self):
+        """
+        Returns list of peers addresses that multiplexer needs to connect to on start up
+
+        :return: list of tuples (ip, port)
+        """
+
         raise NotImplementedError()
 
     def enqueue_connection(self, ip, port):
         """
         Add address to the queue of outbound connections
         """
-        
+
         heapq.heappush(self.connection_queue, (ip, port))
 
     def pop_next_connection_address(self):

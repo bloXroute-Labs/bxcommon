@@ -1,6 +1,6 @@
 from bxcommon import constants
-from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils import logger
+from bxcommon.utils.expiration_queue import ExpirationQueue
 
 
 class BlockRecoveryService(object):
