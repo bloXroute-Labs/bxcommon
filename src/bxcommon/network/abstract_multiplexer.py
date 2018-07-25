@@ -30,13 +30,13 @@ class AbstractMultiplexer(object):
             while True:
                 self._process_disconnect_requests()
 
-                events_count = self._process_events(timeout)
-
-                self._send_all_connections()
-
                 if self._communication_strategy.force_exit():
                     logger.debug("Ending events loop. Shutdown has been requested.")
                     break
+
+                events_count = self._process_events(timeout)
+
+                self._send_all_connections()
 
                 self._process_new_connections_requests()
 
@@ -107,8 +107,10 @@ class AbstractMultiplexer(object):
             if connection_id in self._socket_connections:
                 socket_connection = self._socket_connections[connection_id]
 
-                if not socket_connection.state & SocketConnectionState.INITIALIZED:
+                if not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
                     socket_connection.close()
+                    self._communication_strategy.on_connection_closed(connection_id)
+            connection_id = self._communication_strategy.pop_next_disconnect_connection()
 
     def _connect_to_server(self, ip, port):
         sock = None
@@ -224,7 +226,7 @@ class AbstractMultiplexer(object):
         bytes_written = 0
 
         # Send on the socket until either the socket is full or we have nothing else to send.
-        while socket_connection.can_send:
+        while socket_connection.can_send and not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
             try:
                 send_buffer = self._communication_strategy.get_bytes_to_send(connection_id)
 
