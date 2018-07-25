@@ -43,8 +43,6 @@ class KQueueMultiplexer(AbstractMultiplexer):
                 socket_connection.can_send = True
                 self._send(socket_connection)
 
-        self._send_all_connections()
-
         return len(events)
 
     def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):

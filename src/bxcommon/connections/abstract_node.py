@@ -58,6 +58,7 @@ class AbstractNode(AbstractCommunicationStrategy):
             logger.warn("Initialized connection not in pool. Connection id {0}".format(connection_id))
             return None
 
+        logger.debug("Connection {0} has been initialized.".format(conn.peer_desc))
         conn.state |= ConnectionState.INITIALIZED
 
     def on_connection_closed(self, connection_id):

@@ -32,6 +32,8 @@ class AbstractMultiplexer(object):
 
                 events_count = self._process_events(timeout)
 
+                self._send_all_connections()
+
                 if self._communication_strategy.force_exit():
                     logger.debug("Ending events loop. Shutdown has been requested.")
                     break

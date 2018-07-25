@@ -74,12 +74,6 @@ class EpollMultiplexer(AbstractMultiplexer):
                         not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
                     self._receive(socket_connection)
 
-                # Done processing. Close socket if it got put on the blacklist or was marked for close.
-                if socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-                    logger.debug("Connection to {0} closing".format(socket_connection.connection_id()))
-                    socket_connection.close()
-                    self._communication_strategy.on_connection_closed(fileno)
-
         return len(events)
 
     def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):
