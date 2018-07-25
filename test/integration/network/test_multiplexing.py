@@ -17,6 +17,7 @@ class SenderCommunicationStrategy(AbstractCommunicationStrategy):
         self.finished_sending = False
         self.closed = False
         self.timeout_triggered_loops = 0
+        self.initialized = False
 
     def get_server_address(self):
         return ('0.0.0.0', 8001)
@@ -26,6 +27,9 @@ class SenderCommunicationStrategy(AbstractCommunicationStrategy):
 
     def on_connection_added(self, connection_id, port, ip, from_me):
         pass
+
+    def on_connection_initialized(self, connection_id):
+        self.initialized = True
 
     def on_connection_closed(self, connection_id):
         pass
@@ -69,6 +73,7 @@ class ReceiverCommunicationStrategy(AbstractCommunicationStrategy):
         self.receive_buffers = {}
         self.finished_receiving = False
         self.closed = False
+        self.initialized = False
 
         self.timeout_triggered_loops = 0
 
@@ -82,6 +87,9 @@ class ReceiverCommunicationStrategy(AbstractCommunicationStrategy):
         print("Receiver: add_connection called. Connection id {0}".format(connection_id))
         self.connections.append(connection_id)
         self.receive_buffers[connection_id] = bytearray(0)
+
+    def on_connection_initialized(self, connection_id):
+        self.initialized = True
 
     def on_connection_closed(self, connection_id):
         print("Receiver: remove_connection called.".format(connection_id))
@@ -156,6 +164,8 @@ class MultiplexingTest(unittest.TestCase):
             self.assertTrue(receiver_strategy.force_exit)
             self.assertTrue(sender_strategy.closed)
             self.assertTrue(receiver_strategy.closed)
+            self.assertTrue(sender_strategy.initialized)
+            self.assertTrue(receiver_strategy.initialized)
             self.assertTrue(sender_strategy.timeout_triggered_loops > 0)
             self.assertEqual(receiver_strategy.timeout_triggered_loops, 0)
         finally:
