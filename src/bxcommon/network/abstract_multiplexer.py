@@ -28,13 +28,15 @@ class AbstractMultiplexer(object):
             timeout = self._communication_strategy.get_sleep_timeout(triggered_by_timeout=False, first_call=True)
 
             while True:
+                self._process_disconnect_requests()
+
                 events_count = self._process_events(timeout)
 
                 if self._communication_strategy.force_exit():
                     logger.debug("Ending events loop. Shutdown has been requested.")
                     break
 
-                self._establish_new_outbound_connections()
+                self._process_new_connections_requests()
 
                 timeout = self._communication_strategy.get_sleep_timeout(events_count == 0)
         finally:
@@ -88,13 +90,23 @@ class AbstractMultiplexer(object):
             for address in peers_addresses:
                 self._connect_to_server(address[0], address[1])
 
-    def _establish_new_outbound_connections(self):
+    def _process_new_connections_requests(self):
         address = self._communication_strategy.pop_next_connection_address()
 
         while address is not None:
             self._connect_to_server(address[0], address[1])
             print "Connected to {0}, {1}".format(address[0], address[1])
             address = self._communication_strategy.pop_next_connection_address()
+
+    def _process_disconnect_requests(self):
+        connection_id = self._communication_strategy.pop_next_disconnect_connection()
+
+        while connection_id is not None:
+            if connection_id in self._socket_connections:
+                socket_connection = self._socket_connections[connection_id]
+
+                if not socket_connection.state & SocketConnectionState.INITIALIZED:
+                    socket_connection.close()
 
     def _connect_to_server(self, ip, port):
         sock = None
@@ -273,3 +285,6 @@ class AbstractMultiplexer(object):
 
         if not is_server:
             self._communication_strategy.on_connection_added(new_socket.fileno(), address[0], address[1], from_me)
+
+            if initialized:
+                self._communication_strategy.on_connection_initialized(new_socket.fileno())

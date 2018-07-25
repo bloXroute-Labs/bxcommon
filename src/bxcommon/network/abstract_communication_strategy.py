@@ -4,6 +4,8 @@ import heapq
 class AbstractCommunicationStrategy(object):
     def __init__(self):
         self.connection_queue = []
+        self.disconnect_queue = []
+
 
     def get_server_address(self):
         """
@@ -30,6 +32,13 @@ class AbstractCommunicationStrategy(object):
 
         heapq.heappush(self.connection_queue, (ip, port))
 
+    def enqueue_disconnect(self, connection_id):
+        """
+        Add address to the queue of connections to disconnect
+        """
+
+        heapq.heappush(self.disconnect_queue, connection_id)
+
     def pop_next_connection_address(self):
         """
         Get next address from the queue of outbound connections
@@ -42,6 +51,18 @@ class AbstractCommunicationStrategy(object):
 
         return None
 
+    def pop_next_disconnect_connection(self):
+        """
+        Get next connection id from the queue of disconnect connections
+
+        :return: tuple (ip, port)
+        """
+
+        if self.disconnect_queue:
+            return heapq.heappop(self.disconnect_queue)
+
+        return None
+
     def on_connection_added(self, connection_id, ip, port, from_me):
         """
         Method called by Multiplexer when new client connection is accepted
@@ -51,6 +72,15 @@ class AbstractCommunicationStrategy(object):
         :param port: port of new connection
         :param from_me: flag indicating if this is outbound connection
         :return:
+        """
+
+        raise NotImplementedError()
+
+    def on_connection_initialized(self, connection_id):
+        """
+        Method called by Multiplexer when new client connection is initialized
+
+        :param connection_id: id of connection
         """
 
         raise NotImplementedError()

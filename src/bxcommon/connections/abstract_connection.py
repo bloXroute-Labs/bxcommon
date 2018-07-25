@@ -38,10 +38,16 @@ class AbstractConnection(object):
         self.message_handlers = None
 
     def add_received_bytes(self, bytes_received):
+        if self.state & ConnectionState.MARK_FOR_CLOSE:
+            return
+
         self.inputbuf.add_bytes(bytes_received)
         self.process_message()
 
     def get_bytes_to_send(self):
+        if self.state & ConnectionState.MARK_FOR_CLOSE:
+            return None
+
         return self.get_bytes_on_buffer(self.outputbuf)
 
     def advance_sent_bytes(self, bytes_sent):
@@ -197,4 +203,4 @@ class AbstractConnection(object):
         return None
 
     def close(self):
-        pass
+        self.state |= ConnectionState.MARK_FOR_CLOSE

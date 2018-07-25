@@ -38,6 +38,7 @@ class KQueueMultiplexer(AbstractMultiplexer):
 
                 if not socket_connection.state & SocketConnectionState.INITIALIZED:
                     socket_connection.set_state(SocketConnectionState.INITIALIZED)
+                    self._communication_strategy.on_connection_initialized(event.ident)
 
                 socket_connection.can_send = True
                 self._send(socket_connection)

@@ -52,6 +52,7 @@ class EpollMultiplexer(AbstractMultiplexer):
                         # If connect received EINPROGRESS, we will receive an EPOLLOUT if connect succeeded
                         if not socket_connection.state & SocketConnectionState.INITIALIZED:
                             socket_connection.set_state(SocketConnectionState.INITIALIZED)
+                            self._communication_strategy.on_connection_initialized(fileno)
 
                         # Mark the connection as sendable and send as much as we can from the outputbuffer.
                         socket_connection.can_send = True

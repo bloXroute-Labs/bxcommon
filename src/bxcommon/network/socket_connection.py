@@ -17,4 +17,5 @@ class SocketConnection(object):
         return self.socket_instance.fileno()
 
     def close(self):
+        self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
         self.socket_instance.close()
