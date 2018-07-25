@@ -79,6 +79,9 @@ class AbstractNode(AbstractCommunicationStrategy):
 
         conn.add_received_bytes(bytes_received)
 
+        if conn.state & ConnectionState.MARK_FOR_CLOSE:
+            self._destroy_conn(conn, teardown=True)
+
     def get_bytes_to_send(self, connection_id):
         conn = self.connection_pool.get_byfileno(connection_id)
 
@@ -95,7 +98,7 @@ class AbstractNode(AbstractCommunicationStrategy):
             logger.warn("Bytes sent call for connection not in pool. Connection id {0}".format(connection_id))
             return None
 
-        return conn.advance_sent_bytes(bytes_sent)
+        conn.advance_sent_bytes(bytes_sent)
 
     def get_sleep_timeout(self, triggered_by_timeout, first_call=False):
         if first_call:
