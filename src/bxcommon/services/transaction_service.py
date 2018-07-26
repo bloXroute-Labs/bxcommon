@@ -121,6 +121,8 @@ class TransactionService(object):
         return -1
 
     def get_tx_from_sid(self, sid):
+        tx_hash = None
+
         if sid in self.sid_to_txid:
             tx_hash = self.sid_to_txid[sid][1]
 
@@ -129,7 +131,7 @@ class TransactionService(object):
             logger.debug("Looking for hash: " + repr(tx_hash))
             logger.debug("Could not find hash: " + repr(self.hash_to_contents.keys()[0:10]))
 
-        return None, None
+        return tx_hash, None
 
     # Returns True if
     def already_relayed(self, tx_hash):
