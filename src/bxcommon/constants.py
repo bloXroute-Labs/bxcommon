@@ -54,7 +54,7 @@ SHA256_HASH_LEN = 32
 UL_INT_SIZE_IN_BYTES = 4
 
 # Expiration time for block broadcast message if services info is missing
-MISSING_BLOCK_EPXIRE_TIME = 60
+MISSING_BLOCK_EXPIRE_TIME = 60
 
 btc_magic_numbers = {
     'main': 0xD9B4BEF9,

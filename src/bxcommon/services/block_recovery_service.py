@@ -20,7 +20,7 @@ class BlockRecoveryService(object):
 
         self.block_hash_to_msg = {}
 
-        self.blocks_expiration_queue = ExpirationQueue(constants.MISSING_BLOCK_EPXIRE_TIME)
+        self.blocks_expiration_queue = ExpirationQueue(constants.MISSING_BLOCK_EXPIRE_TIME)
 
         self.sid_to_block_hash = {}
         self.tx_hash_to_block_hash = {}
@@ -89,7 +89,7 @@ class BlockRecoveryService(object):
                                                     remove_callback=self._remove_not_recovered_msg)
 
         if self.block_hash_to_msg:
-            return constants.MISSING_BLOCK_EPXIRE_TIME
+            return constants.MISSING_BLOCK_EXPIRE_TIME
 
         # disable clean up until receive the next msg with unknown tx
         self.cleanup_scheduled = False
@@ -131,6 +131,6 @@ class BlockRecoveryService(object):
     def _schedule_cleanup(self):
         if not self.cleanup_scheduled and self.block_hash_to_msg:
             logger.debug("Block recovery: Scheduling unknown tx blocks clean up in {0} seconds."
-                         .format(constants.MISSING_BLOCK_EPXIRE_TIME))
-            self.alarm_queue.register_alarm(constants.MISSING_BLOCK_EPXIRE_TIME, self.cleanup_old_messages)
+                         .format(constants.MISSING_BLOCK_EXPIRE_TIME))
+            self.alarm_queue.register_alarm(constants.MISSING_BLOCK_EXPIRE_TIME, self.cleanup_old_messages)
             self.cleanup_scheduled = True
