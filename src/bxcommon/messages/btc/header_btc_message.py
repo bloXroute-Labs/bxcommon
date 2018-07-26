@@ -10,7 +10,7 @@ sha256 = hashlib.sha256
 
 
 # A BlockHeader is the first 80 bytes of the corresponding block message payload
-# terminated by a null byte (\x00) to signify that there are no transactions.
+# terminated by a null byte (\x00) to signify that there are no services.
 # FIXME, there's a lot of duplicate code between here and BlockBTCMessage
 class BlockHeader(object):
     def __init__(self, buf=None, version=None, prev_block=None, merkle_root=None,
