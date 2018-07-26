@@ -48,13 +48,13 @@ FLUSH_LOG = False
 HDR_COMMON_OFF = 16
 
 # Length of a sha256 hash
-HASH_LEN = 32
+SHA256_HASH_LEN = 32
 
 # Size of integer in bytes
-INTEGER_SIZE_IN_BYTES = 4
+UL_INT_SIZE_IN_BYTES = 4
 
 # Expiration time for block broadcast message if services info is missing
-BROADCAST_MSG_EXPIRE_TIME = 60
+MISSING_BLOCK_EPXIRE_TIME = 60
 
 btc_magic_numbers = {
     'main': 0xD9B4BEF9,

@@ -4,7 +4,7 @@ from bxcommon import constants
 from bxcommon.messages.message import Message
 
 
-class GetTxsDetailsMessage(Message):
+class GetTxsMessage(Message):
     """
     Message used to request information about services with specified short ids.
     Node needs to reply with TxsWithShortIdsMessage
@@ -21,7 +21,7 @@ class GetTxsDetailsMessage(Message):
 
         if buf is None:
             buf = self._short_ids_to_bytes(short_ids)
-            super(GetTxsDetailsMessage, self).__init__('gettxs', len(buf) - constants.HDR_COMMON_OFF, buf)
+            super(GetTxsMessage, self).__init__('gettxs', len(buf) - constants.HDR_COMMON_OFF, buf)
         else:
             if isinstance(buf, str):
                 raise TypeError("Buffer can't be string")
@@ -37,19 +37,19 @@ class GetTxsDetailsMessage(Message):
         return self._short_ids
 
     def _short_ids_to_bytes(self, short_ids):
-        msg_size = constants.HDR_COMMON_OFF + constants.INTEGER_SIZE_IN_BYTES + \
-                   len(short_ids) * constants.INTEGER_SIZE_IN_BYTES
+        msg_size = constants.HDR_COMMON_OFF + constants.UL_INT_SIZE_IN_BYTES + \
+                   len(short_ids) * constants.UL_INT_SIZE_IN_BYTES
 
         buf = bytearray(msg_size)
 
         off = constants.HDR_COMMON_OFF
 
         struct.pack_into('<L', buf, off, len(short_ids))
-        off += constants.INTEGER_SIZE_IN_BYTES
+        off += constants.UL_INT_SIZE_IN_BYTES
 
         for short_id in short_ids:
             struct.pack_into('<L', buf, off, short_id)
-            off += constants.INTEGER_SIZE_IN_BYTES
+            off += constants.UL_INT_SIZE_IN_BYTES
 
         return buf
 
@@ -59,11 +59,11 @@ class GetTxsDetailsMessage(Message):
         off = constants.HDR_COMMON_OFF
 
         short_ids_count, = struct.unpack_from('<L', self.buf, off)
-        off += constants.INTEGER_SIZE_IN_BYTES
+        off += constants.UL_INT_SIZE_IN_BYTES
 
         for index in range(short_ids_count):
             short_id, = struct.unpack_from('<L', self.buf, off)
             short_ids.append(short_id)
-            off += constants.INTEGER_SIZE_IN_BYTES
+            off += constants.UL_INT_SIZE_IN_BYTES
 
         self._short_ids = short_ids

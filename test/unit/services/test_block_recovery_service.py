@@ -3,9 +3,9 @@ import time
 
 from bxcommon import constants
 from bxcommon.messages.broadcast_message import BroadcastMessage
+from bxcommon.services.block_recovery_service import BlockRecoveryService
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_alarm_queue import MockAlarmQueue
-from bxcommon.services.block_recovery_service import BlockRecoveryService
 
 
 class BlockRecoveryManagerTest(AbstractTestCase):
@@ -107,18 +107,18 @@ class BlockRecoveryManagerTest(AbstractTestCase):
 
         # Verify that clean up is scheduled
         self.assertEqual(len(self.alarm_queue.alarms), 1)
-        self.assertEqual(self.alarm_queue.alarms[0][0], constants.BROADCAST_MSG_EXPIRE_TIME)
+        self.assertEqual(self.alarm_queue.alarms[0][0], constants.MISSING_BLOCK_EPXIRE_TIME)
         self.assertEqual(self.alarm_queue.alarms[0][1], self.block_recovery_service.cleanup_old_messages)
 
         self.assertTrue(self.block_recovery_service.cleanup_scheduled)
 
         # Run clean up before message expires and check that it is still there
-        self.block_recovery_service.cleanup_old_messages(time.time() + constants.BROADCAST_MSG_EXPIRE_TIME / 2)
+        self.block_recovery_service.cleanup_old_messages(time.time() + constants.MISSING_BLOCK_EPXIRE_TIME / 2)
         self.assertEqual(len(self.block_recovery_service.block_hash_to_msg), 1)
         self.assertTrue(self.block_recovery_service.cleanup_scheduled)
 
         # Run clean up after message expires and check that it is removed
-        self.block_recovery_service.cleanup_old_messages(time.time() + constants.BROADCAST_MSG_EXPIRE_TIME + 1)
+        self.block_recovery_service.cleanup_old_messages(time.time() + constants.MISSING_BLOCK_EPXIRE_TIME + 1)
         self.assertEqual(len(self.block_recovery_service.block_hash_to_msg), 0)
         self.assertFalse(self.block_recovery_service.cleanup_scheduled)
 
@@ -148,15 +148,15 @@ class BlockRecoveryManagerTest(AbstractTestCase):
 
         # Verify that clean up scheduled
         self.assertEqual(len(self.alarm_queue.alarms), 1)
-        self.assertEqual(self.alarm_queue.alarms[0][0], constants.BROADCAST_MSG_EXPIRE_TIME)
+        self.assertEqual(self.alarm_queue.alarms[0][0], constants.MISSING_BLOCK_EPXIRE_TIME)
         self.assertEqual(self.alarm_queue.alarms[0][1], self.block_recovery_service.cleanup_old_messages)
 
         # Verify that both messages are there before the first one expires
-        self.block_recovery_service.cleanup_old_messages(time.time() + constants.BROADCAST_MSG_EXPIRE_TIME / 2)
+        self.block_recovery_service.cleanup_old_messages(time.time() + constants.MISSING_BLOCK_EPXIRE_TIME / 2)
         self.assertEqual(len(self.block_recovery_service.block_hash_to_msg), 2)
 
         # Verify that first message is remove and the second left 2 seconds before second message expires
-        self.block_recovery_service.cleanup_old_messages(time.time() + constants.BROADCAST_MSG_EXPIRE_TIME - 2)
+        self.block_recovery_service.cleanup_old_messages(time.time() + constants.MISSING_BLOCK_EPXIRE_TIME - 2)
         self.assertEqual(len(self.block_recovery_service.block_hash_to_msg), 1)
 
         self.assertTrue(self.block_recovery_service.cleanup_scheduled)
@@ -186,7 +186,7 @@ class BlockRecoveryManagerTest(AbstractTestCase):
 
         self.block_recovery_service \
             .add_block_msg(self.msgs[-1], self.block_hashes[-1], self.unknown_tx_sids[-1][:],
-                                      self.unknown_tx_hashes[-1][:])
+                           self.unknown_tx_hashes[-1][:])
 
         self.assertEqual(len(self.block_recovery_service.block_hash_to_msg), existing_msgs_count + 1)
         self.assertEqual(len(self.block_recovery_service.block_hash_to_sids), existing_msgs_count + 1)
@@ -198,9 +198,10 @@ class BlockRecoveryManagerTest(AbstractTestCase):
         self.assertEqual(len(self.block_recovery_service.tx_hash_to_block_hash), existing_msgs_count * 2 + 2)
 
         self.assertEqual(self.block_recovery_service.block_hash_to_msg[self.block_hashes[-1]], self.msgs[-1])
-        self.assertEqual(self.block_recovery_service.block_hash_to_sids[self.block_hashes[-1]].keys(), self.unknown_tx_sids[-1])
-        self.assertEqual(self.block_recovery_service.block_hash_to_tx_hashes[self.block_hashes[-1]].keys().sort(),
-                         self.unknown_tx_hashes[-1].sort())
+        self.assertEqual(self.block_recovery_service.block_hash_to_sids[self.block_hashes[-1]],
+                         set(self.unknown_tx_sids[-1]))
+        self.assertEqual(self.block_recovery_service.block_hash_to_tx_hashes[self.block_hashes[-1]],
+                         set(self.unknown_tx_hashes[-1]))
 
         for sid in self.unknown_tx_sids[-1]:
             self.assertEqual(self.block_recovery_service.sid_to_block_hash[sid], self.block_hashes[-1])
