@@ -133,6 +133,32 @@ class TransactionService(object):
 
         return tx_hash, None
 
+    def get_tx_details_from_sids(self, short_ids):
+        """
+        Finds details for transactions with short ids
+
+        :param short_ids: array of transactions short ids
+        :return: array of tuples (short id, tx hash, tx contents)
+        """
+
+        txs_details = []
+
+        for short_id in short_ids:
+            if short_id in self.node.tx_service.sid_to_txid:
+                tx_hash = self.node.tx_service.sid_to_txid[short_id][1]
+
+                if tx_hash in self.node.tx_service.hash_to_contents:
+                    tx = self.node.tx_service.hash_to_contents[tx_hash]
+
+                    txs_details.append((short_id, tx_hash, tx))
+                else:
+                    logger.debug(
+                        "Block recovery: Contents of tx by short id {0} is unknown by server.".format(short_id))
+            else:
+                logger.debug("Block recovery: Short id {0} requested by client is unknown by server.".format(short_id))
+
+        return txs_details
+
     # Returns True if
     def already_relayed(self, tx_hash):
         if tx_hash in self.relayed_txns:

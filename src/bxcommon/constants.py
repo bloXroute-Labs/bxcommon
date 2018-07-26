@@ -87,3 +87,5 @@ MGR_DELETE_DELAY = 100  # Time (in seconds) we wait until we delete this manager
 
 MIN_PYLINT_SCORE = 9.5
 ENV_PYLINTRC_PATH = "PYLINTRC_PATH"
+
+RELAY_PING_INTERVAL_SEC = 60
