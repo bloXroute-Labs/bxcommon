@@ -46,8 +46,15 @@ FLUSH_LOG = False
 
 # The length of everything in the header minus the checksum
 HDR_COMMON_OFF = 16
+
 # Length of a sha256 hash
-HASH_LEN = 32
+SHA256_HASH_LEN = 32
+
+# Size of integer in bytes
+UL_INT_SIZE_IN_BYTES = 4
+
+# Expiration time for block broadcast message if services info is missing
+MISSING_BLOCK_EXPIRE_TIME = 60
 
 btc_magic_numbers = {
     'main': 0xD9B4BEF9,
@@ -80,3 +87,5 @@ MGR_DELETE_DELAY = 100  # Time (in seconds) we wait until we delete this manager
 
 MIN_PYLINT_SCORE = 9.5
 ENV_PYLINTRC_PATH = "PYLINTRC_PATH"
+
+RELAY_PING_INTERVAL_SEC = 60
