@@ -38,13 +38,13 @@ class AbstractConnection(object):
         self.message_handlers = None
 
     def add_received_bytes(self, bytes_received):
-        assert self.state & ConnectionState.MARK_FOR_CLOSE
+        assert not self.state & ConnectionState.MARK_FOR_CLOSE
 
         self.inputbuf.add_bytes(bytes_received)
         self.process_message()
 
     def get_bytes_to_send(self):
-        assert self.state & ConnectionState.MARK_FOR_CLOSE
+        assert not self.state & ConnectionState.MARK_FOR_CLOSE
 
         return self.get_bytes_on_buffer(self.outputbuf)
 
