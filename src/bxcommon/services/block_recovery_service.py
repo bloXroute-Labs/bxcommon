@@ -5,18 +5,22 @@ from bxcommon.utils.expiration_queue import ExpirationQueue
 
 class BlockRecoveryService(object):
     """
-    Logic to handle scenario when blocRoute gateway receives bloxRoute block message with transaction sid and hash
+    Logic to handle scenario when gateway receives block message with transaction sid and hash
     that it is not aware of.
     """
 
     def __init__(self, alarm_queue):
         self.alarm_queue = alarm_queue
 
+        # block hash -> set of sids
         self.block_hash_to_sids = {}
+
+        # block hash -> set of tx hashes
         self.block_hash_to_tx_hashes = {}
+
         self.block_hash_to_msg = {}
 
-        self.blocks_expiration_queue = ExpirationQueue(constants.BROADCAST_MSG_EXPIRE_TIME)
+        self.blocks_expiration_queue = ExpirationQueue(constants.MISSING_BLOCK_EXPIRE_TIME)
 
         self.sid_to_block_hash = {}
         self.tx_hash_to_block_hash = {}
@@ -32,16 +36,16 @@ class BlockRecoveryService(object):
 
         self.blocks_expiration_queue.add(block_hash)
 
-        self.block_hash_to_sids[block_hash] = {}
-        self.block_hash_to_tx_hashes[block_hash] = {}
+        self.block_hash_to_sids[block_hash] = set()
+        self.block_hash_to_tx_hashes[block_hash] = set()
 
         for sid in unknown_tx_sids:
             self.sid_to_block_hash[sid] = block_hash
-            self.block_hash_to_sids[block_hash][sid] = True
+            self.block_hash_to_sids[block_hash].add(sid)
 
         for tx_hash in unknown_tx_contents:
             self.tx_hash_to_block_hash[tx_hash] = block_hash
-            self.block_hash_to_tx_hashes[block_hash][tx_hash] = True
+            self.block_hash_to_tx_hashes[block_hash].add(tx_hash)
 
         self._schedule_cleanup()
 
@@ -53,7 +57,7 @@ class BlockRecoveryService(object):
 
             if block_hash in self.block_hash_to_sids:
                 if sid in self.block_hash_to_sids[block_hash]:
-                    del self.block_hash_to_sids[block_hash][sid]
+                    self.block_hash_to_sids[block_hash].discard(sid)
 
             del self.sid_to_block_hash[sid]
 
@@ -67,7 +71,7 @@ class BlockRecoveryService(object):
 
             if block_hash in self.block_hash_to_tx_hashes:
                 if tx_hash in self.block_hash_to_tx_hashes[block_hash]:
-                    del self.block_hash_to_tx_hashes[block_hash][tx_hash]
+                    self.block_hash_to_tx_hashes[block_hash].discard(tx_hash)
 
             del self.tx_hash_to_block_hash[tx_hash]
 
@@ -85,7 +89,7 @@ class BlockRecoveryService(object):
                                                     remove_callback=self._remove_not_recovered_msg)
 
         if self.block_hash_to_msg:
-            return constants.BROADCAST_MSG_EXPIRE_TIME
+            return constants.MISSING_BLOCK_EXPIRE_TIME
 
         # disable clean up until receive the next msg with unknown tx
         self.cleanup_scheduled = False
@@ -127,6 +131,6 @@ class BlockRecoveryService(object):
     def _schedule_cleanup(self):
         if not self.cleanup_scheduled and self.block_hash_to_msg:
             logger.debug("Block recovery: Scheduling unknown tx blocks clean up in {0} seconds."
-                         .format(constants.BROADCAST_MSG_EXPIRE_TIME))
-            self.alarm_queue.register_alarm(constants.BROADCAST_MSG_EXPIRE_TIME, self.cleanup_old_messages)
+                         .format(constants.MISSING_BLOCK_EXPIRE_TIME))
+            self.alarm_queue.register_alarm(constants.MISSING_BLOCK_EXPIRE_TIME, self.cleanup_old_messages)
             self.cleanup_scheduled = True

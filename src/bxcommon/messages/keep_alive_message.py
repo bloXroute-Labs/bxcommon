@@ -7,6 +7,7 @@ class KeepAliveMessage(Message):
         if buf is None:
             buf = bytearray(HDR_COMMON_OFF)
 
+            # Payload len = off - HDR_COMMON_OFF = 0
             Message.__init__(self, msg_type=msg_type, payload_len=0, buf=buf)
         else:
             self.buf = buf

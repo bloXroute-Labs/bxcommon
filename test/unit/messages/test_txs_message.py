@@ -1,10 +1,10 @@
-from bxcommon.messages.txs_details_message import TxsDetailsMessage
+from bxcommon.messages.txs_message import TxsMessage
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.object_hash import ObjectHash
 
 
-class TxsDetailsMessageTests(AbstractTestCase):
+class TxsMessageTests(AbstractTestCase):
 
     def test_txs_with_short_ids_message(self):
         txs_info = [
@@ -13,17 +13,17 @@ class TxsDetailsMessageTests(AbstractTestCase):
             (333, ObjectHash(helpers.generate_bytearray(32)), helpers.generate_bytearray(400))
         ]
 
-        msg = TxsDetailsMessage(txs_details=txs_info)
+        msg = TxsMessage(txs=txs_info)
 
         msg_bytes = msg.rawbytes()
 
         self.assertTrue(msg_bytes)
 
-        parsed_msg = TxsDetailsMessage(buf=msg_bytes)
+        parsed_msg = TxsMessage(buf=msg_bytes)
 
         self.assertTrue(parsed_msg)
 
-        parsed_txs_info = parsed_msg.get_txs_details()
+        parsed_txs_info = parsed_msg.get_txs()
 
         self.assertEqual(len(parsed_txs_info), len(txs_info))
 
