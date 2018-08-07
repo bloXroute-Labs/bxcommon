@@ -42,38 +42,38 @@ class TestCommunicationStrategy(AbstractCommunicationStrategy):
 
         return peer_addresses
 
-    def on_connection_added(self, connection_id, port, ip, from_me):
-        print("Node {0}: Add_connection call. Connection id {1}".format(self.port, connection_id))
-        self.connections.append((connection_id, port, ip, from_me))
-        self.receive_buffers[connection_id] = bytearray(0)
+    def on_connection_added(self, fileno, port, ip, from_me):
+        print("Node {0}: Add_connection call. Fileno {1}".format(self.port, fileno))
+        self.connections.append((fileno, port, ip, from_me))
+        self.receive_buffers[fileno] = bytearray(0)
 
-    def on_connection_initialized(self, connection_id):
+    def on_connection_initialized(self, fileno):
         self.initialized = True
 
-    def on_connection_closed(self, connection_id):
-        print("Node {0}: on_connection_closed call. connection id {1}".format(self.port, connection_id))
+    def on_connection_closed(self, fileno):
+        print("Node {0}: on_connection_closed call. Fileno {1}".format(self.port, fileno))
         self.ready_to_close = True
 
-    def get_bytes_to_send(self, connection_id):
-        print("Node {0}: get_bytes_to_send call. connection id {1}".format(self.port, connection_id))
+    def get_bytes_to_send(self, fileno):
+        print("Node {0}: get_bytes_to_send call. Fileno {1}".format(self.port, fileno))
         if self.bytes_sent >= len(self.send_bytes):
             logger.debug("All bytes sent. Total bytes sent {0}".format(len(self.send_bytes)))
             self.finished_sending = True
 
         return self.memory_view[self.bytes_sent:]
 
-    def on_bytes_sent(self, connection_id, bytes_sent):
-        print("Node {0}: on_bytes_sent call. connection id {1}. bytes sent {2}"
-              .format(self.port, connection_id, bytes_sent))
+    def on_bytes_sent(self, fileno, bytes_sent):
+        print("Node {0}: on_bytes_sent call. Fileno {1}. bytes sent {2}"
+              .format(self.port, fileno, bytes_sent))
         self.bytes_sent += bytes_sent
 
         if len(self.send_bytes) == self.bytes_sent:
             self.ready_to_close = True
 
-    def on_bytes_received(self, connection_id, bytes_received):
+    def on_bytes_received(self, fileno, bytes_received):
         print("Node {0}: on_bytes_received call. {1} bytes received from connection {2}"
-              .format(self.port, len(bytes_received), connection_id))
-        self.receive_buffers[connection_id] += bytes_received
+              .format(self.port, len(bytes_received), fileno))
+        self.receive_buffers[fileno] += bytes_received
 
     def get_sleep_timeout(self, triggered_by_timeout, first_call=False):
         print("Node {0}: get_sleep_timeout called.".format(self.port))

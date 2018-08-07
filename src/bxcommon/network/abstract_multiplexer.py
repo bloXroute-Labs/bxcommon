@@ -9,6 +9,12 @@ from bxcommon.utils import logger
 
 
 class AbstractMultiplexer(object):
+    """
+    Class is responsible for effective network communication.
+    All network related code must be part of this class or its descendants.
+    Takes instance of AbstractCommunicationStrategy and calls its corresponding methods whenever it is optimal time to
+    send, receive, connect or disconnect.
+    """
 
     def __init__(self, communication_strategy):
         assert isinstance(communication_strategy, AbstractCommunicationStrategy)
@@ -18,6 +24,10 @@ class AbstractMultiplexer(object):
         self._receive_buf = bytearray(constants.RECV_BUFSIZE)
 
     def run(self):
+        """
+        Starts multiplexer processing loop
+        """
+
         logger.debug("Start multiplexer loop")
 
         try:
@@ -45,6 +55,10 @@ class AbstractMultiplexer(object):
             self.close()
 
     def close(self):
+        """
+        Closes multiplexer and related resources
+        """
+
         self._communication_strategy.close()
 
         for _, socket_connection in self._socket_connections.iteritems():
@@ -101,16 +115,16 @@ class AbstractMultiplexer(object):
             address = self._communication_strategy.pop_next_connection_address()
 
     def _process_disconnect_requests(self):
-        connection_id = self._communication_strategy.pop_next_disconnect_connection()
+        fileno = self._communication_strategy.pop_next_disconnect_connection()
 
-        while connection_id is not None:
-            if connection_id in self._socket_connections:
-                socket_connection = self._socket_connections[connection_id]
+        while fileno is not None:
+            if fileno in self._socket_connections:
+                socket_connection = self._socket_connections[fileno]
 
                 if not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
                     socket_connection.close()
-                    self._communication_strategy.on_connection_closed(connection_id)
-            connection_id = self._communication_strategy.pop_next_disconnect_connection()
+                    self._communication_strategy.on_connection_closed(fileno)
+            fileno = self._communication_strategy.pop_next_disconnect_connection()
 
     def _connect_to_server(self, ip, port):
         sock = None
@@ -169,9 +183,9 @@ class AbstractMultiplexer(object):
     def _receive(self, socket_connection):
         assert isinstance(socket_connection, SocketConnection)
 
-        connection_id = socket_connection.connection_id()
+        fileno = socket_connection.fileno()
 
-        logger.debug("Collecting input from {0}".format(connection_id))
+        logger.debug("Collecting input from {0}".format(fileno))
         collect_input = True
 
         while collect_input:
@@ -181,18 +195,18 @@ class AbstractMultiplexer(object):
             except socket.error as e:
                 if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
                     logger.debug("Received errno {0} with msg {1} on connection {2}. Stop collecting input"
-                                 .format(e.errno, e.strerror, connection_id))
+                                 .format(e.errno, e.strerror, fileno))
                     break
                 elif e.errno in [errno.EINTR]:
                     # we were interrupted, try again
                     logger.debug("Received errno {0} with msg {1}, receive on {2} failed. Continuing recv."
-                                 .format(e.errno, e.strerror, connection_id))
+                                 .format(e.errno, e.strerror, fileno))
                     continue
                 elif e.errno in [errno.ECONNREFUSED]:
                     # Fatal errors for the connections
                     logger.debug("Received errno {0} with msg {1}, receive on {2} failed. "
                                  "Closing connection and retrying..."
-                                 .format(e.errno, e.strerror, connection_id))
+                                 .format(e.errno, e.strerror, fileno))
                     socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
                     return
                 elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
@@ -202,25 +216,25 @@ class AbstractMultiplexer(object):
                 elif e.errno in [errno.EFAULT, errno.EINVAL, errno.ENOTCONN, errno.ENOMEM]:
                     # Should never happen errors
                     logger.error("Received errno {0} with msg {1}, receive on {2} failed. This should never happen..."
-                                 .format(e.errno, e.strerror, connection_id))
+                                 .format(e.errno, e.strerror, fileno))
                     return
                 else:
                     raise e
 
             piece = self._receive_buf[:bytes_read]
-            logger.debug("Got {0} bytes from {2}. They were: {1}".format(bytes_read, repr(piece), connection_id))
+            logger.debug("Got {0} bytes from {2}. They were: {1}".format(bytes_read, repr(piece), fileno))
 
             if bytes_read == 0:
                 socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                self._communication_strategy.on_connection_closed(connection_id)
+                self._communication_strategy.on_connection_closed(fileno)
                 return
             else:
-                self._communication_strategy.on_bytes_received(connection_id, piece)
+                self._communication_strategy.on_bytes_received(fileno, piece)
 
     def _send(self, socket_connection):
         assert isinstance(socket_connection, SocketConnection)
 
-        connection_id = socket_connection.connection_id()
+        fileno = socket_connection.fileno()
 
         total_bytes_written = 0
         bytes_written = 0
@@ -228,7 +242,7 @@ class AbstractMultiplexer(object):
         # Send on the socket until either the socket is full or we have nothing else to send.
         while socket_connection.can_send and not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
             try:
-                send_buffer = self._communication_strategy.get_bytes_to_send(connection_id)
+                send_buffer = self._communication_strategy.get_bytes_to_send(fileno)
 
                 if not send_buffer:
                     break
@@ -238,15 +252,15 @@ class AbstractMultiplexer(object):
                 if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOBUFS]:
                     # Normal operation
                     logger.debug("Got {0}. Done sending to {1}. Marking as not sendable."
-                                 .format(e.strerror, connection_id))
+                                 .format(e.strerror, fileno))
                     socket_connection.can_send = False
                 elif e.errno in [errno.EINTR]:
                     # Try again later errors
-                    logger.debug("Got {0}. Send to {1} failed, trying again...".format(e.strerror, connection_id))
+                    logger.debug("Got {0}. Send to {1} failed, trying again...".format(e.strerror, fileno))
                     continue
                 elif e.errno in [errno.EACCES, errno.ECONNRESET, errno.EPIPE, errno.EHOSTUNREACH]:
                     # Fatal errors for the connection
-                    logger.debug("Got {0}, send to {1} failed, closing connection.".format(e.strerror, connection_id))
+                    logger.debug("Got {0}, send to {1} failed, closing connection.".format(e.strerror, fileno))
                     socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
                     return 0
                 elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
@@ -257,18 +271,18 @@ class AbstractMultiplexer(object):
                                  errno.EISCONN, errno.EMSGSIZE, errno.ENOTCONN, errno.ENOTSOCK]:
                     # Should never happen errors
                     logger.debug("Got {0}, send to {1} failed. Should not have happened..."
-                                 .format(e.strerror, connection_id))
+                                 .format(e.strerror, fileno))
                     exit(1)
                 elif e.errno in [errno.ENOMEM]:
                     # Fatal errors for the node
                     logger.debug("Got {0}, send to {1} failed. Fatal error! Shutting down node."
-                                 .format(e.strerror, connection_id))
+                                 .format(e.strerror, fileno))
                     exit(1)
                 else:
                     raise e
 
             total_bytes_written += bytes_written
-            self._communication_strategy.on_bytes_sent(connection_id, bytes_written)
+            self._communication_strategy.on_bytes_sent(fileno, bytes_written)
 
             bytes_written = 0
 

@@ -42,39 +42,42 @@ class AbstractNode(AbstractCommunicationStrategy):
     def get_peers_addresses(self):
         raise NotImplementedError()
 
-    def on_connection_added(self, connection_id, ip, port, from_me):
+    def on_connection_added(self, fileno, ip, port, from_me):
 
         # If we're already connected to the remote peer, log the event and request disconnect.
         if self.connection_pool.has_connection(ip, port):
             logger.error("Connection to {0}:{1} already exists!".format(ip, port))
-            self.enqueue_disconnect(connection_id)
+            self.enqueue_disconnect(fileno)
         else:
-            self._add_connection(connection_id, ip, port, from_me)
+            self._add_connection(fileno, ip, port, from_me)
 
-    def on_connection_initialized(self, connection_id):
-        conn = self.connection_pool.get_byfileno(connection_id)
+    def on_connection_initialized(self, fileno):
+        conn = self.connection_pool.get_byfileno(fileno)
 
         if conn is None:
-            logger.warn("Initialized connection not in pool. Connection id {0}".format(connection_id))
+            logger.warn("Initialized connection not in pool. Fileno {0}".format(fileno))
             return None
 
         logger.debug("Connection {0} has been initialized.".format(conn.peer_desc))
         conn.state |= ConnectionState.INITIALIZED
 
-    def on_connection_closed(self, connection_id):
-        conn = self.connection_pool.get_byfileno(connection_id)
+    def on_connection_closed(self, fileno):
+        conn = self.connection_pool.get_byfileno(fileno)
 
         if conn is None:
-            logger.warn("Closed connection not in pool. Connection id {0}".format(connection_id))
+            logger.warn("Closed connection not in pool. Fileno {0}".format(fileno))
             return None
 
         self._destroy_conn(conn)
 
-    def on_bytes_received(self, connection_id, bytes_received):
-        conn = self.connection_pool.get_byfileno(connection_id)
+    def on_bytes_received(self, fileno, bytes_received):
+        conn = self.connection_pool.get_byfileno(fileno)
 
         if conn is None:
-            logger.warn("Received bytes for connection not in pool. Connection id {0}".format(connection_id))
+            logger.warn("Received bytes for connection not in pool. Fileno {0}".format(fileno))
+            return
+
+        if conn.state & ConnectionState.MARK_FOR_CLOSE:
             return
 
         conn.add_received_bytes(bytes_received)
@@ -82,20 +85,23 @@ class AbstractNode(AbstractCommunicationStrategy):
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
             self._destroy_conn(conn, teardown=True)
 
-    def get_bytes_to_send(self, connection_id):
-        conn = self.connection_pool.get_byfileno(connection_id)
+    def get_bytes_to_send(self, fileno):
+        conn = self.connection_pool.get_byfileno(fileno)
 
         if conn is None:
-            logger.warn("Request to get bytes for connection not in pool. Connection id {0}".format(connection_id))
+            logger.warn("Request to get bytes for connection not in pool. Fileno {0}".format(fileno))
+            return None
+
+        if conn.state & ConnectionState.MARK_FOR_CLOSE:
             return None
 
         return conn.get_bytes_to_send()
 
-    def on_bytes_sent(self, connection_id, bytes_sent):
-        conn = self.connection_pool.get_byfileno(connection_id)
+    def on_bytes_sent(self, fileno, bytes_sent):
+        conn = self.connection_pool.get_byfileno(fileno)
 
         if conn is None:
-            logger.warn("Bytes sent call for connection not in pool. Connection id {0}".format(connection_id))
+            logger.warn("Bytes sent call for connection not in pool. Fileno {0}".format(fileno))
             return None
 
         conn.advance_sent_bytes(bytes_sent)
@@ -143,18 +149,18 @@ class AbstractNode(AbstractCommunicationStrategy):
     def get_connection_class(self, ip=None, port=None):
         raise NotImplementedError()
 
-    def _add_connection(self, connection_id, ip, port, from_me):
+    def _add_connection(self, fileno, ip, port, from_me):
         conn_cls = self.get_connection_class(ip=ip, port=port)
 
-        conn_obj = conn_cls(connection_id, (ip, port), self, from_me=from_me)
+        conn_obj = conn_cls(fileno, (ip, port), self, from_me=from_me)
 
         self.alarm_queue.register_alarm(CONNECTION_TIMEOUT, self._connection_timeout, conn_obj)
 
         # Make the connection object publicly accessible
-        self.connection_pool.add(connection_id, ip, port, conn_obj)
+        self.connection_pool.add(fileno, ip, port, conn_obj)
 
         logger.debug("Connected {0}:{1} on file descriptor {2} with state {3}"
-                     .format(ip, port, connection_id, conn_obj.state))
+                     .format(ip, port, fileno, conn_obj.state))
 
     def _connection_timeout(self, conn):
         """

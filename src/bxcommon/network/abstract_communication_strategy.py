@@ -2,6 +2,12 @@ import heapq
 
 
 class AbstractCommunicationStrategy(object):
+    """
+    The class defines set of method for strategy class that is being passed to AbstractMultiplexer
+    Multiplexer call corresponding methods of strategy class whenever it is proper time to send, receive,
+    connect or disconnect.
+    """
+
     def __init__(self):
         self.connection_queue = []
         self.disconnect_queue = []
@@ -32,12 +38,12 @@ class AbstractCommunicationStrategy(object):
 
         heapq.heappush(self.connection_queue, (ip, port))
 
-    def enqueue_disconnect(self, connection_id):
+    def enqueue_disconnect(self, fileno):
         """
         Add address to the queue of connections to disconnect
         """
 
-        heapq.heappush(self.disconnect_queue, connection_id)
+        heapq.heappush(self.disconnect_queue, fileno)
 
     def pop_next_connection_address(self):
         """
@@ -53,7 +59,7 @@ class AbstractCommunicationStrategy(object):
 
     def pop_next_disconnect_connection(self):
         """
-        Get next connection id from the queue of disconnect connections
+        Get next Fileno from the queue of disconnect connections
 
         :return: tuple (ip, port)
         """
@@ -63,11 +69,11 @@ class AbstractCommunicationStrategy(object):
 
         return None
 
-    def on_connection_added(self, connection_id, ip, port, from_me):
+    def on_connection_added(self, fileno, ip, port, from_me):
         """
         Method called by Multiplexer when new client connection is accepted
 
-        :param connection_id: id of connection
+        :param fileno: id of connection
         :param ip: IP of new connection
         :param port: port of new connection
         :param from_me: flag indicating if this is outbound connection
@@ -76,47 +82,47 @@ class AbstractCommunicationStrategy(object):
 
         raise NotImplementedError()
 
-    def on_connection_initialized(self, connection_id):
+    def on_connection_initialized(self, fileno):
         """
         Method called by Multiplexer when new client connection is initialized
 
-        :param connection_id: id of connection
+        :param fileno: id of connection
         """
 
         raise NotImplementedError()
 
-    def on_connection_closed(self, connection_id):
+    def on_connection_closed(self, fileno):
         """
         Method called by Multiplexer when connection is disconnected
 
-        :param connection_id: id of connection
+        :param fileno: id of connection
         """
         raise NotImplementedError()
 
-    def on_bytes_received(self, connection_id, bytes_received):
+    def on_bytes_received(self, fileno, bytes_received):
         """
         Method called by Multiplexer when bytes received from connection
 
-        :param connection_id: id of connection
+        :param fileno: id of connection
         """
 
         raise NotImplementedError()
 
-    def get_bytes_to_send(self, connection_id):
+    def get_bytes_to_send(self, fileno):
         """
         Method called by Multiplexer when it is chance to send bytes on connection
 
-        :param connection_id: id of connection
+        :param fileno: id of connection
         :return: array of bytes
         """
 
         raise NotImplementedError()
 
-    def on_bytes_sent(self, connection_id, bytes_sent):
+    def on_bytes_sent(self, fileno, bytes_sent):
         """
         Method called by Multiplexer after bytes sent on connection
 
-        :param connection_id: id of connection
+        :param fileno: id of connection
         """
 
         raise NotImplementedError()

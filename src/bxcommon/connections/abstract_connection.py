@@ -12,8 +12,8 @@ from bxcommon.utils.buffers.output_buffer import OutputBuffer
 
 
 class AbstractConnection(object):
-    def __init__(self, connection_id, address, node, from_me=False):
-        self.fileno = connection_id
+    def __init__(self, fileno, address, node, from_me=False):
+        self.fileno = fileno
 
         # (IP, Port) at time of socket creation. We may get a new application level port in
         # the version message if the connection is not from me.
@@ -38,15 +38,13 @@ class AbstractConnection(object):
         self.message_handlers = None
 
     def add_received_bytes(self, bytes_received):
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
-            return
+        assert self.state & ConnectionState.MARK_FOR_CLOSE
 
         self.inputbuf.add_bytes(bytes_received)
         self.process_message()
 
     def get_bytes_to_send(self):
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
-            return None
+        assert self.state & ConnectionState.MARK_FOR_CLOSE
 
         return self.get_bytes_on_buffer(self.outputbuf)
 
