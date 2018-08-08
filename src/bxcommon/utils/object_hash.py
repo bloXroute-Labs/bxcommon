@@ -16,9 +16,9 @@ class ObjectHash(object):
         return self._hash
 
     def __cmp__(self, id1):
-        if id1 is None or self.binary > id1.binary:
+        if id1 is None or self.binary < id1.binary:
             return -1
-        elif self.binary < id1.binary:
+        elif self.binary > id1.binary:
             return 1
         return 0
 
