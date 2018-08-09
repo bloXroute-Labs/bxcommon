@@ -1,5 +1,7 @@
 import select
+import sys
 
+from bxcommon import constants
 from bxcommon.network.abstract_multiplexer import AbstractMultiplexer
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.socket_connection_state import SocketConnectionState
@@ -11,6 +13,8 @@ class KQueueMultiplexer(AbstractMultiplexer):
         super(KQueueMultiplexer, self).__init__(communication_strategy)
 
         self._kqueue = select.kqueue()
+
+        # initialize kqueue with empty list of events. do not pull any events and continue immediately
         self._kqueue.control([], 0, 0)
 
     def close(self):
@@ -19,7 +23,9 @@ class KQueueMultiplexer(AbstractMultiplexer):
         self._kqueue.close()
 
     def _process_events(self, timeout):
-        events = self._kqueue.control([], 1000, timeout)
+
+        # get all available events from kqueue or wait until timeout. do not add any new events ([] is empty).
+        events = self._kqueue.control([], constants.MAX_KQUEUE_EVENTS_COUNT, timeout)
 
         for event in events:
             assert event.ident in self._socket_connections
@@ -53,4 +59,5 @@ class KQueueMultiplexer(AbstractMultiplexer):
         write_event = select.kevent(
             new_socket, select.KQ_FILTER_WRITE, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
 
+        # add new events to listen. do not pull any events from kqeue and continue immediately.
         self._kqueue.control([read_event, write_event], 0, 0)

@@ -37,7 +37,7 @@ class AbstractNode(AbstractCommunicationStrategy):
     # Begin AbstractCommunicationStrategy implementation
 
     def get_server_address(self):
-        return (self.server_ip, self.server_port)
+        return self.server_ip, self.server_port
 
     def get_peers_addresses(self):
         raise NotImplementedError()

@@ -4,6 +4,7 @@ from threading import Thread
 
 from bxcommon.network.abstract_communication_strategy import AbstractCommunicationStrategy
 from bxcommon.network.multiplexer_factory import create_multiplexer
+from bxcommon.test_utils import helpers
 from bxcommon.test_utils.helpers import generate_bytearray
 from bxcommon.utils import logger
 
@@ -136,13 +137,15 @@ class MultiplexingTest(unittest.TestCase):
             sender_multiplexer.close()
 
     def test_multiplexing__delayed_connect(self):
-        receiver_strategy = TestCommunicationStrategy(8001, [], 0.01)
+        receiver_port = helpers.get_free_port()
+        receiver_strategy = TestCommunicationStrategy(receiver_port, [], 0.01)
         receiver_multiplexer = create_multiplexer(receiver_strategy)
         receiver_thread = Thread(target=receiver_multiplexer.run)
 
         send_bytes = generate_bytearray(1000)
 
-        sender_strategy = TestCommunicationStrategy(8002, [], 0.01, send_bytes)
+        sender_port = helpers.get_free_port()
+        sender_strategy = TestCommunicationStrategy(sender_port, [], 0.01, send_bytes)
         sender_multiplexer = create_multiplexer(sender_strategy)
         sender_thread = Thread(target=sender_multiplexer.run)
 
@@ -178,11 +181,13 @@ class MultiplexingTest(unittest.TestCase):
             sender_multiplexer.close()
 
     def test_multiplexing__disconnect(self):
-        receiver_strategy = TestCommunicationStrategy(8001, [], 0.01)
+        receiver_port = helpers.get_free_port()
+        receiver_strategy = TestCommunicationStrategy(receiver_port, [], 0.01)
         receiver_multiplexer = create_multiplexer(receiver_strategy)
         receiver_thread = Thread(target=receiver_multiplexer.run)
 
-        sender_strategy = TestCommunicationStrategy(8002, [8001], 0.01)
+        sender_port = helpers.get_free_port()
+        sender_strategy = TestCommunicationStrategy(sender_port, [receiver_port], 0.01)
         sender_multiplexer = create_multiplexer(sender_strategy)
         sender_thread = Thread(target=sender_multiplexer.run)
 
@@ -212,7 +217,6 @@ class MultiplexingTest(unittest.TestCase):
 
             receiver_multiplexer.close()
             sender_multiplexer.close()
-
 
     def _validate_successful_run(self, send_bytes, sender_strategy, receiver_strategy, sender_multiplexer,
                                  receiver_multiplexer):

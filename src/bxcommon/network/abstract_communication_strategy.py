@@ -12,7 +12,6 @@ class AbstractCommunicationStrategy(object):
         self.connection_queue = []
         self.disconnect_queue = []
 
-
     def get_server_address(self):
         """
         Returns the address of the current server

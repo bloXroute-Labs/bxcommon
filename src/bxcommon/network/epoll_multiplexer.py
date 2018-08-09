@@ -9,10 +9,8 @@ from bxcommon.utils import logger
 
 class EpollMultiplexer(AbstractMultiplexer):
     def __init__(self, communication_strategy):
-        logger.debug("Before contructor")
         super(EpollMultiplexer, self).__init__(communication_strategy)
         self._epoll = select.epoll()
-        logger.debug("After contructor")
 
     def close(self):
         super(EpollMultiplexer, self).close()

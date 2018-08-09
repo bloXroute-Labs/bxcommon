@@ -1,18 +1,20 @@
 from sys import platform
 
+from bxcommon import constants
 from bxcommon.network.abstract_communication_strategy import AbstractCommunicationStrategy
 from bxcommon.network.epoll_multiplexer import EpollMultiplexer
 from bxcommon.network.kqueue_multiplexer import KQueueMultiplexer
 
 
 def create_multiplexer(communication_strategy):
-    assert isinstance(communication_strategy, AbstractCommunicationStrategy)
+    if not isinstance(communication_strategy, AbstractCommunicationStrategy):
+        raise ValueError("Type inherited from AbstractCommunicationStrategy is expected.")
 
     multiplexer_cls = None
 
-    if platform.startswith("linux"):
+    if platform.startswith(constants.PLATFORM_LINUX):
         multiplexer_cls = EpollMultiplexer
-    elif platform == "darwin":
+    elif platform == constants.PLATFORM_MAC:
         multiplexer_cls = KQueueMultiplexer
 
     if multiplexer_cls is None:
