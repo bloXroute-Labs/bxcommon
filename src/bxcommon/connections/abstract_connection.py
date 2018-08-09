@@ -1,9 +1,7 @@
-import errno
-import socket
 import time
 
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import MAX_BAD_MESSAGES, RECV_BUFSIZE, HDR_COMMON_OFF
+from bxcommon.constants import MAX_BAD_MESSAGES, HDR_COMMON_OFF
 from bxcommon.exceptions import UnrecognizedCommandError, PayloadLenError
 from bxcommon.messages.ack_message import AckMessage
 from bxcommon.messages.message import Message
@@ -14,9 +12,8 @@ from bxcommon.utils.buffers.output_buffer import OutputBuffer
 
 
 class AbstractConnection(object):
-    def __init__(self, sock, address, node, from_me=False, setup=False):
-        self.sock = sock
-        self.fileno = sock.fileno()
+    def __init__(self, fileno, address, node, from_me=False):
+        self.fileno = fileno
 
         # (IP, Port) at time of socket creation. We may get a new application level port in
         # the version message if the connection is not from me.
@@ -25,18 +22,13 @@ class AbstractConnection(object):
         self.my_port = node.server_port
 
         self.from_me = from_me  # Whether or not I initiated the connection
-        self.setup = setup  # Whether or not I set up this connection
 
         self.outputbuf = OutputBuffer()
         self.inputbuf = InputBuffer()
         self.node = node
 
         self.is_persistent = False
-        self.sendable = False  # Whether or not I can send more bytes on this socket.
         self.state = ConnectionState.CONNECTING
-
-        # Temporary buffers to receive the contents of the recv call.
-        self.recv_buf = bytearray(RECV_BUFSIZE)
 
         # Number of bad messages I've received in a row.
         self.num_bad_messages = 0
@@ -45,13 +37,19 @@ class AbstractConnection(object):
 
         self.message_handlers = None
 
-    # Marks a connection as 'sendable', that is, there is room in the outgoing send buffer, and a send call can succeed.
-    # Only gets unmarked when the outgoing send buffer is full.
-    def mark_sendable(self):
-        self.sendable = True
+    def add_received_bytes(self, bytes_received):
+        assert not self.state & ConnectionState.MARK_FOR_CLOSE
 
-    def can_send_queued(self):
-        return self.sendable
+        self.inputbuf.add_bytes(bytes_received)
+        self.process_message()
+
+    def get_bytes_to_send(self):
+        assert not self.state & ConnectionState.MARK_FOR_CLOSE
+
+        return self.get_bytes_on_buffer(self.outputbuf)
+
+    def advance_sent_bytes(self, bytes_sent):
+        self.advance_bytes_on_buffer(self.outputbuf, bytes_sent)
 
     def pre_process_msg(self, msg_cls):
         is_full_msg, msg_type, payload_len = msg_cls.peek_message(self.inputbuf)
@@ -60,22 +58,27 @@ class AbstractConnection(object):
 
         return is_full_msg, msg_type, payload_len
 
-        # Enqueues the contents of a Message instance, msg, to our outputbuf and attempts to send it if the underlying
-        #   socket has room in the send buffer.
-
     def enqueue_msg(self, msg):
+        """
+        Enqueues the contents of a Message instance, msg, to our outputbuf and attempts to send it if the underlying
+        socket has room in the send buffer.
+
+        :param msg: message
+        """
+
         if self.state & ConnectionState.MARK_FOR_CLOSE:
             return
 
         self.outputbuf.enqueue_msgbytes(msg.rawbytes())
 
-        if self.can_send_queued():
-            self.send()
-
-        # Enqueues the raw bytes of a message, msg_bytes, to our outputbuf and attempts to send it if the
-        #   underlying socket has room in the send buffer.
-
     def enqueue_msg_bytes(self, msg_bytes):
+        """
+        Enqueues the raw bytes of a message, msg_bytes, to our outputbuf and attempts to send it if the
+        underlying socket has room in the send buffer.
+
+        :param msg_bytes: message bytes
+        """
+
         if self.state & ConnectionState.MARK_FOR_CLOSE:
             return
 
@@ -85,16 +88,14 @@ class AbstractConnection(object):
 
         self.outputbuf.enqueue_msgbytes(msg_bytes)
 
-        if self.can_send_queued():
-            self.send()
+    def process_message(self, msg_cls=Message, hello_msgs=['hello', 'ack']):
+        """
+        Receives and processes the next bytes on the socket's inputbuffer.
+        Returns 0 in order to avoid being rescheduled if this was an alarm.
 
-    def send(self):
-        raise NotImplementedError()
-
-    # Receives and processes the next bytes on the socket's inputbuffer.
-    # Returns 0 in order to avoid being rescheduled if this was an alarm.
-    def recv(self, msg_cls=Message, hello_msgs=['hello', 'ack']):
-        self.collect_input()
+        :param msg_cls: class of message
+        :param hello_msgs: list of hello messages types
+        """
 
         while True:
             if self.state & ConnectionState.MARK_FOR_CLOSE:
@@ -134,9 +135,17 @@ class AbstractConnection(object):
         logger.debug("Done receiving from {0}".format(self.peer_desc))
         return 0
 
-    # Pop the next message off of the buffer given the message length.
-    # Preserve invariant of self.inputbuf always containing the start of a valid message.
     def pop_next_message(self, payload_len, msg_type=Message, hdr_size=HDR_COMMON_OFF):
+        """
+        Pop the next message off of the buffer given the message length.
+        Preserve invariant of self.inputbuf always containing the start of a valid message.
+
+        :param payload_len: length of payload
+        :param msg_type: message type string
+        :param hdr_size: size of header
+        :return: message object
+        """
+
         try:
             msg_len = hdr_size + payload_len
             msg_contents = self.inputbuf.remove_bytes(msg_len)
@@ -152,113 +161,22 @@ class AbstractConnection(object):
             self.state |= ConnectionState.MARK_FOR_CLOSE  # Close, no retry.
             return None
 
-    # Collect input from the socket and store it in the inputbuffer until either the socket is drained
-    # or the throttling limits are hit.
-    def collect_input(self):
-        logger.debug("Collecting input from {0}".format(self.peer_desc))
-        collect_input = True
+    def get_bytes_on_buffer(self, buf, send_one_msg=False):
+        if buf.has_more_bytes() > 0 and (not send_one_msg or buf.at_msg_boundary()):
+            return buf.get_buffer()
 
-        while collect_input:
-            # Read from the socket and store it into the recv buffer.
-            try:
-                bytes_read = self.sock.recv_into(self.recv_buf, RECV_BUFSIZE)
-            except socket.error as e:
-                if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
-                    logger.debug("Received errno {0} with msg {1} on connection {2}. Stop collecting input"
-                                 .format(e.errno, e.strerror, self.peer_desc))
-                    break
-                elif e.errno in [errno.EINTR]:
-                    # we were interrupted, try again
-                    logger.debug("Received errno {0} with msg {1}, recv on {2} failed. Continuing recv."
-                                 .format(e.errno, e.strerror, self.peer_desc))
-                    continue
-                elif e.errno in [errno.ECONNREFUSED]:
-                    # Fatal errors for the connections
-                    logger.debug("Received errno {0} with msg {1}, recv on {2} failed. "
-                                 "Closing connection and retrying..."
-                                 .format(e.errno, e.strerror, self.peer_desc))
-                    self.state |= ConnectionState.MARK_FOR_CLOSE
-                    return
-                elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
-                    # Perform orderly shutdown
-                    self.state |= ConnectionState.MARK_FOR_CLOSE
-                    return
-                elif e.errno in [errno.EFAULT, errno.EINVAL, errno.ENOTCONN, errno.ENOMEM]:
-                    # Should never happen errors
-                    logger.error("Received errno {0} with msg {1}, recv on {2} failed. This should never happen..."
-                                 .format(e.errno, e.strerror, self.peer_desc))
-                    return
-                else:
-                    raise e
-
-            piece = self.recv_buf[:bytes_read]
-            logger.debug("Got {0} bytes from {2}. They were: {1}".format(bytes_read, repr(piece), self.peer_desc))
-
-            # A 0 length recv is an orderly shutdown.
-            if bytes_read == 0:
-                self.state |= ConnectionState.MARK_FOR_CLOSE
-                return
-            else:
-                self.inputbuf.add_bytes(piece)
-
-    # Send bytes to the peer on the given buffer. Return the number of bytes sent.
-    # buf must obey the output buffer read interface which has three properties:
-    def send_bytes_on_buffer(self, buf, send_one_msg=False):
-        total_bytes_written = 0
-        byteswritten = 0
-
-        # Send on the socket until either the socket is full or we have nothing else to send.
-        while self.sendable and buf.has_more_bytes() > 0 and (not send_one_msg or buf.at_msg_boundary()):
-            try:
-                byteswritten = self.sock.send(buf.get_buffer())
-                total_bytes_written += byteswritten
-            except socket.error as e:
-                if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOBUFS]:
-                    # Normal operation
-                    logger.debug("Got {0}. Done sending to {1}. Marking as not sendable."
-                                 .format(e.strerror, self.peer_desc))
-                    self.sendable = False
-                elif e.errno in [errno.EINTR]:
-                    # Try again later errors
-                    logger.debug("Got {0}. Send to {1} failed, trying again...".format(e.strerror, self.peer_desc))
-                    continue
-                elif e.errno in [errno.EACCES, errno.ECONNRESET, errno.EPIPE, errno.EHOSTUNREACH]:
-                    # Fatal errors for the connection
-                    logger.debug("Got {0}, send to {1} failed, closing connection.".format(e.strerror, self.peer_desc))
-                    self.state |= ConnectionState.MARK_FOR_CLOSE
-                    return 0
-                elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
-                    # Perform orderly shutdown
-                    self.state = ConnectionState.MARK_FOR_CLOSE
-                    return 0
-                elif e.errno in [errno.EDESTADDRREQ, errno.EFAULT, errno.EINVAL,
-                                 errno.EISCONN, errno.EMSGSIZE, errno.ENOTCONN, errno.ENOTSOCK]:
-                    # Should never happen errors
-                    logger.debug("Got {0}, send to {1} failed. Should not have happened..."
-                                 .format(e.strerror, self.peer_desc))
-                    exit(1)
-                elif e.errno in [errno.ENOMEM]:
-                    # Fatal errors for the node
-                    logger.debug("Got {0}, send to {1} failed. Fatal error! Shutting down node."
-                                 .format(e.strerror, self.peer_desc))
-                    exit(1)
-                else:
-                    raise e
-
-            buf.advance_buffer(byteswritten)
-            byteswritten = 0
-
-        return total_bytes_written
-
-        # Handle a Hello Message
+    def advance_bytes_on_buffer(self, buf, bytes_written):
+        buf.advance_buffer(bytes_written)
 
     def msg_hello(self, msg):
         self.state |= ConnectionState.HELLO_RECVD
         self.enqueue_msg(AckMessage())
 
-        # Handle an Ack Message
-
     def msg_ack(self, msg):
+        """
+        Handle an Ack Message
+        """
+
         self.state |= ConnectionState.HELLO_ACKD
 
     def msg_ping(self, msg):
@@ -267,8 +185,11 @@ class AbstractConnection(object):
     def msg_pong(self, msg):
         pass
 
-    # Receive a transaction assignment from txhash -> shortid
     def msg_txassign(self, msg):
+        """
+        Receive a transaction assignment from txhash -> shortid
+        """
+
         tx_hash = msg.tx_hash()
 
         logger.debug("Processing txassign message")
@@ -280,5 +201,4 @@ class AbstractConnection(object):
         return None
 
     def close(self):
-        logger.debug("Closing connection to {0}".format(self.peer_desc))
-        self.sock.close()
+        self.state |= ConnectionState.MARK_FOR_CLOSE
