@@ -24,3 +24,11 @@ def create_connection(connection_cls):
     connection.idx = 1
 
     return connection
+
+
+def get_free_port():
+    sock = socket.socket()
+    sock.bind(('', 0))
+    ip, port = sock.getsockname()
+    sock.close()
+    return port

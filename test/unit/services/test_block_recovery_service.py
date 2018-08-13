@@ -198,6 +198,7 @@ class BlockRecoveryManagerTest(AbstractTestCase):
         self.assertEqual(len(self.block_recovery_service.tx_hash_to_block_hash), existing_msgs_count * 2 + 2)
 
         self.assertEqual(self.block_recovery_service.block_hash_to_msg[self.block_hashes[-1]], self.msgs[-1])
+
         self.assertEqual(self.block_recovery_service.block_hash_to_sids[self.block_hashes[-1]],
                          set(self.unknown_tx_sids[-1]))
         self.assertEqual(self.block_recovery_service.block_hash_to_tx_hashes[self.block_hashes[-1]],
