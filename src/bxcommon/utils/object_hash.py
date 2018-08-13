@@ -1,16 +1,21 @@
 import struct
+from bxcommon.constants import SHA256_HASH_LEN
+PARTIAL_HASH_LENGTH = 4
 
 
+#FIXME refactor to dedup code
 class ObjectHash(object):
     # binary is a memoryview or a bytearray
+    # we do not intend for the binary to mutate
     def __init__(self, binary):
-        assert len(binary) == 32
+        #
+        assert len(binary) == SHA256_HASH_LEN
 
         self.binary = binary
         if isinstance(self.binary, memoryview):
             self.binary = bytearray(binary)
 
-        self._hash = struct.unpack("<L", self.binary[-4:])[0]
+        self._hash = struct.unpack("<L", self.binary[-PARTIAL_HASH_LENGTH:])[0]
 
     def __hash__(self):
         return self._hash
@@ -42,16 +47,16 @@ class BTCObjectHash(object):
 
         # This is where the big endian format will be stored
         self._buf = None
-        self._hash = struct.unpack("<L", self.binary[-4:])[0]
+        self._hash = struct.unpack("<L", self.binary[-PARTIAL_HASH_LENGTH:])[0]
         self._full_str = None
 
     def __hash__(self):
         return self._hash
 
     def __cmp__(self, id1):
-        if id1 is None or self.binary > id1.binary:
+        if id1 is None or self.binary < id1.binary:
             return -1
-        elif self.binary < id1.binary:
+        elif self.binary > id1.binary:
             return 1
         return 0
 
