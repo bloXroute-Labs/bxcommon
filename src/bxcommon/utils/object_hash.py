@@ -1,5 +1,7 @@
 import struct
 from bxcommon.constants import SHA256_HASH_LEN
+# Used to take the last few characters of the SHA256 encryption as the hash function.
+# This is done because using the last characters of the SHA256 function provides major speed boosts.
 PARTIAL_HASH_LENGTH = 4
 
 
@@ -36,6 +38,7 @@ class ObjectHash(object):
 
 class BTCObjectHash(object):
     def __init__(self, buf=None, offset=0, length=0, binary=None):
+
         if buf is not None:
             if isinstance(buf, bytearray):
                 self.binary = buf[offset:offset + length]

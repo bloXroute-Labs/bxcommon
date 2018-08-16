@@ -40,17 +40,16 @@ class ObjectHashTests(unittest.TestCase):
         self.assertTrue(self.int_hash_all_0 < self.int_hash_31b)
 
     def test_get_item(self):
-        self.assertEqual(self.int_hash_31a[5], 5)
-        self.assertEqual(self.int_hash_31b[25], 25)
-        self.assertEqual(self.int_hash_32[10], 11)
-        self.assertEqual(self.int_hash_all_0[20], 0)
-
         int_list = [0] * SHA256_HASH_LEN
-        expected = 3
-        expected_index = 1
-        int_list[expected_index] = expected
+        expected_1 = 3
+        expected_index_1 = 1
+        expected_2 = 9
+        expected_index_2 = 8
+        int_list[expected_index_1] = expected_1
+        int_list[expected_index_2] = expected_2
         int_hash = ObjectHash(bytearray(int_list))
-        self.assertEqual(int_hash[expected_index], expected)
+        self.assertEqual(int_hash[expected_index_1], expected_1)
+        self.assertEqual(int_hash[expected_index_2], expected_2)
 
     def test_repr(self):
         self.assertEqual(repr(self.int_hash_31a), repr(self.int_hash_31b))
