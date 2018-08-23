@@ -13,9 +13,7 @@ class ObjectHash(object):
         #
         assert len(binary) == SHA256_HASH_LEN
 
-        self.binary = binary
-        if isinstance(self.binary, memoryview):
-            self.binary = bytearray(binary)
+        self.binary = bytearray(binary) if isinstance(binary, memoryview) else binary
 
         self._hash = struct.unpack("<L", self.binary[-PARTIAL_HASH_LENGTH:])[0]
 
@@ -38,7 +36,8 @@ class ObjectHash(object):
 
 class BTCObjectHash(object):
     def __init__(self, buf=None, offset=0, length=0, binary=None):
-        assert (binary is not None and len(binary) == 32) or (length == 32 and len(buf) >= offset + length)
+        if not ((binary is not None and len(binary) == 32) or (length == 32 and len(buf) >= offset + length)):
+            raise ValueError("Invalid inputs")
         if buf is not None:
             if isinstance(buf, bytearray):
                 self.binary = buf[offset:offset + length]
@@ -46,12 +45,9 @@ class BTCObjectHash(object):
                 self.binary = bytearray(buf[offset:offset + length])
             self.binary = self.binary[::-1]
         elif binary is not None:
-            if isinstance(binary, memoryview):
-                self.binary = bytearray(binary)
-            else:
-                self.binary = binary
+            self.binary = bytearray(binary) if isinstance(binary, memoryview) else binary
         else:
-            raise ValueError('No data was passed')
+            raise ValueError("No data was passed")
 
         # This is where the big endian format will be stored
         self._buf = None

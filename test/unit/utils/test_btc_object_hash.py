@@ -15,17 +15,17 @@ class ObjectHashTests(unittest.TestCase):
         self.int_hash_all_0 = BTCObjectHash(binary=bytearray([0] * SHA256_HASH_LEN))
 
     def test_init(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             BTCObjectHash(binary=bytearray([i for i in range(SHA256_HASH_LEN - 1)]))
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             BTCObjectHash(binary=bytearray())
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             BTCObjectHash(buf=self.to_63, offset=40)
         expected = self.int_hash_31a.binary
         actual = self.to_31
         self.assertEqual(expected, actual)
-        actual = BTCObjectHash(binary=memoryview(actual))
-        self.assertEqual(actual.binary, expected)
+        actual2 = BTCObjectHash(binary=memoryview(actual))
+        self.assertEqual(actual2.binary, expected)
         self.assertIsNotNone(hash(self.int_hash_all_0))
 
     def test_hash(self):
