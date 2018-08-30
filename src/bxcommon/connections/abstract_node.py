@@ -34,8 +34,6 @@ class AbstractNode(object):
 
         logger.info("initialized node state")
 
-    # Begin AbstractCommunicationStrategy implementation
-
     def get_server_address(self):
         return self.server_ip, self.server_port
 
@@ -126,8 +124,6 @@ class AbstractNode(object):
 
         for conn in self.connection_pool:
             self._destroy_conn(conn, teardown=True)
-
-    # End AbstractCommunicationStrategy implementation
 
     def broadcast(self, msg, broadcasting_conn):
         """

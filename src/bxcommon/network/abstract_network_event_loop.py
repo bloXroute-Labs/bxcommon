@@ -12,7 +12,7 @@ class AbstractNetworkEventLoop(object):
     """
     Class is responsible for effective network communication.
     All network related code must be part of this class or its descendants.
-    Takes instance of AbstractCommunicationStrategy and calls its corresponding methods whenever it is optimal time to
+    Takes instance of AbstractNode and calls its corresponding methods whenever it is optimal time to
     send, receive, connect or disconnect.
     """
 
