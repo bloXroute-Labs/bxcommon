@@ -1,19 +1,19 @@
 import signal
-from collections import defaultdict
+from collections import defaultdict, deque
 
 from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.constants import CONNECTION_TIMEOUT, FAST_RETRY, MAX_RETRIES, RETRY_INTERVAL
 from bxcommon.exceptions import TerminationError
-from bxcommon.network.abstract_communication_strategy import AbstractCommunicationStrategy
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import logger
 from bxcommon.utils.alarm import AlarmQueue
 
 
-class AbstractNode(AbstractCommunicationStrategy):
+class AbstractNode(object):
     def __init__(self, server_ip, server_port):
-        super(AbstractNode, self).__init__()
+        self.connection_queue = deque()
+        self.disconnect_queue = deque()
 
         self.server_ip = server_ip
         self.server_port = server_port
@@ -148,6 +148,43 @@ class AbstractNode(AbstractCommunicationStrategy):
 
     def get_connection_class(self, ip=None, port=None):
         raise NotImplementedError()
+
+    def enqueue_connection(self, ip, port):
+        """
+        Add address to the queue of outbound connections
+        """
+
+        self.connection_queue.append((ip, port))
+
+    def enqueue_disconnect(self, fileno):
+        """
+        Add address to the queue of connections to disconnect
+        """
+        self.disconnect_queue.append(fileno)
+
+    def pop_next_connection_address(self):
+        """
+        Get next address from the queue of outbound connections
+
+        :return: tuple (ip, port)
+        """
+
+        if self.connection_queue:
+            return self.connection_queue.popleft()
+
+        return None
+
+    def pop_next_disconnect_connection(self):
+        """
+        Get next Fileno from the queue of disconnect connections
+
+        :return: tuple (ip, port)
+        """
+
+        if self.disconnect_queue:
+            return self.disconnect_queue.popleft()
+
+        return None
 
     def _add_connection(self, fileno, ip, port, from_me):
         conn_cls = self.get_connection_class(ip=ip, port=port)

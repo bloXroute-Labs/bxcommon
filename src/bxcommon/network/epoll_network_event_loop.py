@@ -1,19 +1,19 @@
 import errno
 import select
 
-from bxcommon.network.abstract_multiplexer import AbstractMultiplexer
+from bxcommon.network.abstract_network_event_loop import AbstractNetworkEventLoop
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.utils import logger
 
 
-class EpollMultiplexer(AbstractMultiplexer):
-    def __init__(self, communication_strategy):
-        super(EpollMultiplexer, self).__init__(communication_strategy)
+class EpollNetworkEventLoop(AbstractNetworkEventLoop):
+    def __init__(self, node):
+        super(EpollNetworkEventLoop, self).__init__(node)
         self._epoll = select.epoll()
 
     def close(self):
-        super(EpollMultiplexer, self).close()
+        super(EpollNetworkEventLoop, self).close()
 
         self._epoll.close()
 
@@ -43,14 +43,14 @@ class EpollMultiplexer(AbstractMultiplexer):
                     #   on this connection.
                     if event & select.EPOLLHUP:
                         socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                        self._communication_strategy.on_connection_closed(fileno)
+                        self._node.on_connection_closed(fileno)
 
                     if event & select.EPOLLOUT and \
                             not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
                         # If connect received EINPROGRESS, we will receive an EPOLLOUT if connect succeeded
                         if not socket_connection.state & SocketConnectionState.INITIALIZED:
                             socket_connection.set_state(SocketConnectionState.INITIALIZED)
-                            self._communication_strategy.on_connection_initialized(fileno)
+                            self._node.on_connection_initialized(fileno)
 
                         # Mark the connection as sendable and send as much as we can from the outputbuffer.
                         socket_connection.can_send = True
@@ -75,7 +75,7 @@ class EpollMultiplexer(AbstractMultiplexer):
         return len(events)
 
     def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):
-        super(EpollMultiplexer, self)._register_socket(new_socket, address, is_server, initialized, from_me)
+        super(EpollNetworkEventLoop, self)._register_socket(new_socket, address, is_server, initialized, from_me)
 
         if is_server:
             self._epoll.register(new_socket.fileno(), select.EPOLLIN | select.EPOLLET)

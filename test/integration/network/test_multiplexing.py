@@ -2,16 +2,16 @@ import time
 import unittest
 from threading import Thread
 
-from bxcommon.network.abstract_communication_strategy import AbstractCommunicationStrategy
-from bxcommon.network.multiplexer_factory import create_multiplexer
+from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.network.network_event_loop_factory import create_event_loop
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.helpers import generate_bytearray
 from bxcommon.utils import logger
 
 
-class TestCommunicationStrategy(AbstractCommunicationStrategy):
+class TestCommunicationStrategy(AbstractNode):
     def __init__(self, port, peers_ports, timeout=None, send_bytes=None):
-        super(TestCommunicationStrategy, self).__init__()
+        super(TestCommunicationStrategy, self).__init__('0.0.0.0', port)
 
         self.port = port
         self.peers_ports = peers_ports
@@ -42,6 +42,12 @@ class TestCommunicationStrategy(AbstractCommunicationStrategy):
             peer_addresses.append(('0.0.0.0', peer_port))
 
         return peer_addresses
+
+    def can_retry_after_destroy(self, teardown, conn):
+        return False
+
+    def get_connection_class(self, ip=None, port=None):
+        return None
 
     def on_connection_added(self, fileno, port, ip, from_me):
         print("Node {0}: Add_connection call. Fileno {1}".format(self.port, fileno))
@@ -104,13 +110,13 @@ class MultiplexingTest(unittest.TestCase):
 
     def test_multiplexing__send(self):
         receiver_strategy = TestCommunicationStrategy(8001, [], 0.01)
-        receiver_multiplexer = create_multiplexer(receiver_strategy)
+        receiver_multiplexer = create_event_loop(receiver_strategy)
         receiver_thread = Thread(target=receiver_multiplexer.run)
 
         send_bytes = generate_bytearray(1000)
 
         sender_strategy = TestCommunicationStrategy(8002, [8001], None, send_bytes)
-        sender_multiplexer = create_multiplexer(sender_strategy)
+        sender_multiplexer = create_event_loop(sender_strategy)
 
         try:
             print("Starting event loop on receiver")
@@ -139,14 +145,14 @@ class MultiplexingTest(unittest.TestCase):
     def test_multiplexing__delayed_connect(self):
         receiver_port = helpers.get_free_port()
         receiver_strategy = TestCommunicationStrategy(receiver_port, [], 0.01)
-        receiver_multiplexer = create_multiplexer(receiver_strategy)
+        receiver_multiplexer = create_event_loop(receiver_strategy)
         receiver_thread = Thread(target=receiver_multiplexer.run)
 
         send_bytes = generate_bytearray(1000)
 
         sender_port = helpers.get_free_port()
         sender_strategy = TestCommunicationStrategy(sender_port, [], 0.01, send_bytes)
-        sender_multiplexer = create_multiplexer(sender_strategy)
+        sender_multiplexer = create_event_loop(sender_strategy)
         sender_thread = Thread(target=sender_multiplexer.run)
 
         try:
@@ -183,12 +189,12 @@ class MultiplexingTest(unittest.TestCase):
     def test_multiplexing__disconnect(self):
         receiver_port = helpers.get_free_port()
         receiver_strategy = TestCommunicationStrategy(receiver_port, [], 0.01)
-        receiver_multiplexer = create_multiplexer(receiver_strategy)
+        receiver_multiplexer = create_event_loop(receiver_strategy)
         receiver_thread = Thread(target=receiver_multiplexer.run)
 
         sender_port = helpers.get_free_port()
         sender_strategy = TestCommunicationStrategy(sender_port, [receiver_port], 0.01)
-        sender_multiplexer = create_multiplexer(sender_strategy)
+        sender_multiplexer = create_event_loop(sender_strategy)
         sender_thread = Thread(target=sender_multiplexer.run)
 
         try:

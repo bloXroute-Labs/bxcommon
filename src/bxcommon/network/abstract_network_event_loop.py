@@ -2,13 +2,13 @@ import errno
 import socket
 
 from bxcommon import constants
-from bxcommon.network.abstract_communication_strategy import AbstractCommunicationStrategy
+from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.utils import logger
 
 
-class AbstractMultiplexer(object):
+class AbstractNetworkEventLoop(object):
     """
     Class is responsible for effective network communication.
     All network related code must be part of this class or its descendants.
@@ -16,31 +16,31 @@ class AbstractMultiplexer(object):
     send, receive, connect or disconnect.
     """
 
-    def __init__(self, communication_strategy):
-        assert isinstance(communication_strategy, AbstractCommunicationStrategy)
+    def __init__(self, node):
+        assert isinstance(node, AbstractNode)
 
-        self._communication_strategy = communication_strategy
+        self._node = node
         self._socket_connections = {}
         self._receive_buf = bytearray(constants.RECV_BUFSIZE)
 
     def run(self):
         """
-        Starts multiplexer processing loop
+        Starts event_loop
         """
 
-        logger.debug("Start multiplexer loop")
+        logger.debug("Start network event loop")
 
         try:
             self._start_server()
 
             self._connect_to_peers()
 
-            timeout = self._communication_strategy.get_sleep_timeout(triggered_by_timeout=False, first_call=True)
+            timeout = self._node.get_sleep_timeout(triggered_by_timeout=False, first_call=True)
 
             while True:
                 self._process_disconnect_requests()
 
-                if self._communication_strategy.force_exit():
+                if self._node.force_exit():
                     logger.debug("Ending events loop. Shutdown has been requested.")
                     break
 
@@ -50,16 +50,16 @@ class AbstractMultiplexer(object):
 
                 self._process_new_connections_requests()
 
-                timeout = self._communication_strategy.get_sleep_timeout(events_count == 0)
+                timeout = self._node.get_sleep_timeout(events_count == 0)
         finally:
             self.close()
 
     def close(self):
         """
-        Closes multiplexer and related resources
+        Closes node and related resources
         """
 
-        self._communication_strategy.close()
+        self._node.close()
 
         for _, socket_connection in self._socket_connections.iteritems():
             socket_connection.close()
@@ -69,7 +69,7 @@ class AbstractMultiplexer(object):
 
     def _start_server(self):
 
-        server_address = self._communication_strategy.get_server_address()
+        server_address = self._node.get_server_address()
 
         ip = server_address[0]
         listen_port = server_address[1]
@@ -100,22 +100,22 @@ class AbstractMultiplexer(object):
                 raise e
 
     def _connect_to_peers(self):
-        peers_addresses = self._communication_strategy.get_peers_addresses()
+        peers_addresses = self._node.get_peers_addresses()
 
         if peers_addresses:
             for address in peers_addresses:
                 self._connect_to_server(address[0], address[1])
 
     def _process_new_connections_requests(self):
-        address = self._communication_strategy.pop_next_connection_address()
+        address = self._node.pop_next_connection_address()
 
         while address is not None:
             self._connect_to_server(address[0], address[1])
             print "Connected to {0}, {1}".format(address[0], address[1])
-            address = self._communication_strategy.pop_next_connection_address()
+            address = self._node.pop_next_connection_address()
 
     def _process_disconnect_requests(self):
-        fileno = self._communication_strategy.pop_next_disconnect_connection()
+        fileno = self._node.pop_next_disconnect_connection()
 
         while fileno is not None:
             if fileno in self._socket_connections:
@@ -123,8 +123,8 @@ class AbstractMultiplexer(object):
 
                 if not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
                     socket_connection.close()
-                    self._communication_strategy.on_connection_closed(fileno)
-            fileno = self._communication_strategy.pop_next_disconnect_connection()
+                    self._node.on_connection_closed(fileno)
+            fileno = self._node.pop_next_disconnect_connection()
 
     def _connect_to_server(self, ip, port):
         sock = None
@@ -226,10 +226,10 @@ class AbstractMultiplexer(object):
 
             if bytes_read == 0:
                 socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                self._communication_strategy.on_connection_closed(fileno)
+                self._node.on_connection_closed(fileno)
                 return
             else:
-                self._communication_strategy.on_bytes_received(fileno, piece)
+                self._node.on_bytes_received(fileno, piece)
 
     def _send(self, socket_connection):
         assert isinstance(socket_connection, SocketConnection)
@@ -242,7 +242,7 @@ class AbstractMultiplexer(object):
         # Send on the socket until either the socket is full or we have nothing else to send.
         while socket_connection.can_send and not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
             try:
-                send_buffer = self._communication_strategy.get_bytes_to_send(fileno)
+                send_buffer = self._node.get_bytes_to_send(fileno)
 
                 if not send_buffer:
                     break
@@ -282,7 +282,7 @@ class AbstractMultiplexer(object):
                     raise e
 
             total_bytes_written += bytes_written
-            self._communication_strategy.on_bytes_sent(fileno, bytes_written)
+            self._node.on_bytes_sent(fileno, bytes_written)
 
             bytes_written = 0
 
@@ -302,7 +302,7 @@ class AbstractMultiplexer(object):
         self._socket_connections[new_socket.fileno()] = socket_connection
 
         if not is_server:
-            self._communication_strategy.on_connection_added(new_socket.fileno(), address[0], address[1], from_me)
+            self._node.on_connection_added(new_socket.fileno(), address[0], address[1], from_me)
 
             if initialized:
-                self._communication_strategy.on_connection_initialized(new_socket.fileno())
+                self._node.on_connection_initialized(new_socket.fileno())
