@@ -2,15 +2,15 @@ import select
 import sys
 
 from bxcommon import constants
-from bxcommon.network.abstract_multiplexer import AbstractMultiplexer
+from bxcommon.network.abstract_network_event_loop import AbstractNetworkEventLoop
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.socket_connection_state import SocketConnectionState
 
 
-class KQueueMultiplexer(AbstractMultiplexer):
+class KQueueNetworkEventLoop(AbstractNetworkEventLoop):
 
-    def __init__(self, communication_strategy):
-        super(KQueueMultiplexer, self).__init__(communication_strategy)
+    def __init__(self, node):
+        super(KQueueNetworkEventLoop, self).__init__(node)
 
         self._kqueue = select.kqueue()
 
@@ -18,7 +18,7 @@ class KQueueMultiplexer(AbstractMultiplexer):
         self._kqueue.control([], 0, 0)
 
     def close(self):
-        super(KQueueMultiplexer, self).close()
+        super(KQueueNetworkEventLoop, self).close()
 
         self._kqueue.close()
 
@@ -44,7 +44,7 @@ class KQueueMultiplexer(AbstractMultiplexer):
 
                 if not socket_connection.state & SocketConnectionState.INITIALIZED:
                     socket_connection.set_state(SocketConnectionState.INITIALIZED)
-                    self._communication_strategy.on_connection_initialized(event.ident)
+                    self._node.on_connection_initialized(event.ident)
 
                 socket_connection.can_send = True
                 self._send(socket_connection)
@@ -52,7 +52,7 @@ class KQueueMultiplexer(AbstractMultiplexer):
         return len(events)
 
     def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):
-        super(KQueueMultiplexer, self)._register_socket(new_socket, address, is_server, initialized, from_me)
+        super(KQueueNetworkEventLoop, self)._register_socket(new_socket, address, is_server, initialized, from_me)
 
         read_event = select.kevent(
             new_socket, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)

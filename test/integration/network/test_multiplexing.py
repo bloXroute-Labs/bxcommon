@@ -2,16 +2,16 @@ import time
 import unittest
 from threading import Thread
 
-from bxcommon.network.abstract_communication_strategy import AbstractCommunicationStrategy
-from bxcommon.network.multiplexer_factory import create_multiplexer
+from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.network.network_event_loop_factory import create_event_loop
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.helpers import generate_bytearray
 from bxcommon.utils import logger
 
 
-class TestCommunicationStrategy(AbstractCommunicationStrategy):
+class TestNode(AbstractNode):
     def __init__(self, port, peers_ports, timeout=None, send_bytes=None):
-        super(TestCommunicationStrategy, self).__init__()
+        super(TestNode, self).__init__('0.0.0.0', port)
 
         self.port = port
         self.peers_ports = peers_ports
@@ -42,6 +42,12 @@ class TestCommunicationStrategy(AbstractCommunicationStrategy):
             peer_addresses.append(('0.0.0.0', peer_port))
 
         return peer_addresses
+
+    def can_retry_after_destroy(self, teardown, conn):
+        return False
+
+    def get_connection_class(self, ip=None, port=None):
+        return None
 
     def on_connection_added(self, fileno, port, ip, from_me):
         print("Node {0}: Add_connection call. Fileno {1}".format(self.port, fileno))
@@ -103,14 +109,14 @@ class MultiplexingTest(unittest.TestCase):
         logger.log_close()
 
     def test_multiplexing__send(self):
-        receiver_strategy = TestCommunicationStrategy(8001, [], 0.01)
-        receiver_multiplexer = create_multiplexer(receiver_strategy)
-        receiver_thread = Thread(target=receiver_multiplexer.run)
+        receiver_node = TestNode(8001, [], 0.01)
+        receiver_event_loop = create_event_loop(receiver_node)
+        receiver_thread = Thread(target=receiver_event_loop.run)
 
         send_bytes = generate_bytearray(1000)
 
-        sender_strategy = TestCommunicationStrategy(8002, [8001], None, send_bytes)
-        sender_multiplexer = create_multiplexer(sender_strategy)
+        sender_node = TestNode(8002, [8001], None, send_bytes)
+        sender_event_loop = create_event_loop(sender_node)
 
         try:
             print("Starting event loop on receiver")
@@ -119,35 +125,35 @@ class MultiplexingTest(unittest.TestCase):
             # let receiver run for 0.1 sec, more than timeout time
             time.sleep(0.1)
 
-            sender_multiplexer.run()
+            sender_event_loop.run()
 
             receiver_thread.join()
 
-            self._validate_successful_run(send_bytes, sender_strategy, receiver_strategy, sender_multiplexer,
-                                          receiver_multiplexer)
+            self._validate_successful_run(send_bytes, sender_node, receiver_node, sender_event_loop,
+                                          receiver_event_loop)
 
             # verify that sender does not have any timeout triggered loops and receiver does
-            self.assertEqual(sender_strategy.timeout_triggered_loops, 0)
-            self.assertTrue(receiver_strategy.timeout_triggered_loops > 0)
+            self.assertEqual(sender_node.timeout_triggered_loops, 0)
+            self.assertTrue(receiver_node.timeout_triggered_loops > 0)
         finally:
             if receiver_thread.is_alive():
                 receiver_thread.join()
 
-            receiver_multiplexer.close()
-            sender_multiplexer.close()
+            receiver_event_loop.close()
+            sender_event_loop.close()
 
     def test_multiplexing__delayed_connect(self):
         receiver_port = helpers.get_free_port()
-        receiver_strategy = TestCommunicationStrategy(receiver_port, [], 0.01)
-        receiver_multiplexer = create_multiplexer(receiver_strategy)
-        receiver_thread = Thread(target=receiver_multiplexer.run)
+        receiver_node = TestNode(receiver_port, [], 0.01)
+        receiver_event_loop = create_event_loop(receiver_node)
+        receiver_thread = Thread(target=receiver_event_loop.run)
 
         send_bytes = generate_bytearray(1000)
 
         sender_port = helpers.get_free_port()
-        sender_strategy = TestCommunicationStrategy(sender_port, [], 0.01, send_bytes)
-        sender_multiplexer = create_multiplexer(sender_strategy)
-        sender_thread = Thread(target=sender_multiplexer.run)
+        sender_node = TestNode(sender_port, [], 0.01, send_bytes)
+        sender_event_loop = create_event_loop(sender_node)
+        sender_thread = Thread(target=sender_event_loop.run)
 
         try:
             print("Starting event loop on receiver")
@@ -159,17 +165,17 @@ class MultiplexingTest(unittest.TestCase):
             # let threads run for 0.1 sec
             time.sleep(0.1)
 
-            self.assertEqual(len(receiver_strategy.connections), 0)
-            self.assertEqual(len(sender_strategy.connections), 0)
+            self.assertEqual(len(receiver_node.connections), 0)
+            self.assertEqual(len(sender_node.connections), 0)
 
             # request connection while clients are running
-            sender_strategy.enqueue_connection('0.0.0.0', receiver_strategy.port)
+            sender_node.enqueue_connection('0.0.0.0', receiver_node.port)
 
             receiver_thread.join()
             sender_thread.join()
 
-            self._validate_successful_run(send_bytes, sender_strategy, receiver_strategy, sender_multiplexer,
-                                          receiver_multiplexer)
+            self._validate_successful_run(send_bytes, sender_node, receiver_node, sender_event_loop,
+                                          receiver_event_loop)
         finally:
             if receiver_thread.is_alive():
                 receiver_thread.join()
@@ -177,19 +183,19 @@ class MultiplexingTest(unittest.TestCase):
             if sender_thread.is_alive():
                 sender_thread.join()
 
-            receiver_multiplexer.close()
-            sender_multiplexer.close()
+            receiver_event_loop.close()
+            sender_event_loop.close()
 
     def test_multiplexing__disconnect(self):
         receiver_port = helpers.get_free_port()
-        receiver_strategy = TestCommunicationStrategy(receiver_port, [], 0.01)
-        receiver_multiplexer = create_multiplexer(receiver_strategy)
-        receiver_thread = Thread(target=receiver_multiplexer.run)
+        receiver_node = TestNode(receiver_port, [], 0.01)
+        receiver_event_loop = create_event_loop(receiver_node)
+        receiver_thread = Thread(target=receiver_event_loop.run)
 
         sender_port = helpers.get_free_port()
-        sender_strategy = TestCommunicationStrategy(sender_port, [receiver_port], 0.01)
-        sender_multiplexer = create_multiplexer(sender_strategy)
-        sender_thread = Thread(target=sender_multiplexer.run)
+        sender_node = TestNode(sender_port, [receiver_port], 0.01)
+        sender_event_loop = create_event_loop(sender_node)
+        sender_thread = Thread(target=sender_event_loop.run)
 
         try:
             print("Starting event loop on receiver")
@@ -199,11 +205,11 @@ class MultiplexingTest(unittest.TestCase):
             # let threads run for 0.1 sec
             time.sleep(0.1)
 
-            self.assertEqual(len(receiver_strategy.connections), 1)
-            self.assertEqual(len(sender_strategy.connections), 1)
+            self.assertEqual(len(receiver_node.connections), 1)
+            self.assertEqual(len(sender_node.connections), 1)
 
             # request connection while clients are running
-            sender_strategy.enqueue_disconnect(sender_strategy.connections[0][0])
+            sender_node.enqueue_disconnect(sender_node.connections[0][0])
 
             # sender and receiver have to disconnect and exit
             receiver_thread.join()
@@ -215,30 +221,29 @@ class MultiplexingTest(unittest.TestCase):
             if sender_thread.is_alive():
                 sender_thread.join()
 
-            receiver_multiplexer.close()
-            sender_multiplexer.close()
+            receiver_event_loop.close()
+            sender_event_loop.close()
 
-    def _validate_successful_run(self, send_bytes, sender_strategy, receiver_strategy, sender_multiplexer,
-                                 receiver_multiplexer):
-        self.assertTrue(sender_strategy.bytes_sent, len(send_bytes))
+    def _validate_successful_run(self, send_bytes, sender_node, receiver_node, sender_event_loop, receiver_event_loop):
+        self.assertTrue(sender_node.bytes_sent, len(send_bytes))
 
-        self.assertTrue(len(sender_strategy.connections), 1)
-        self.assertTrue(len(sender_multiplexer._socket_connections), 1)
-        self.assertEqual(sender_strategy.connections[0][1], '0.0.0.0')
-        self.assertEqual(sender_strategy.connections[0][2], receiver_strategy.port)
-        self.assertEqual(sender_strategy.connections[0][3], True)
+        self.assertTrue(len(sender_node.connections), 1)
+        self.assertTrue(len(sender_event_loop._socket_connections), 1)
+        self.assertEqual(sender_node.connections[0][1], '0.0.0.0')
+        self.assertEqual(sender_node.connections[0][2], receiver_node.port)
+        self.assertEqual(sender_node.connections[0][3], True)
 
-        self.assertTrue(len(receiver_strategy.connections), 1)
-        self.assertTrue(len(receiver_multiplexer._socket_connections), 1)
-        self.assertEqual(receiver_strategy.connections[0][1], '127.0.0.1')
-        self.assertEqual(receiver_strategy.connections[0][3], False)
+        self.assertTrue(len(receiver_node.connections), 1)
+        self.assertTrue(len(receiver_event_loop._socket_connections), 1)
+        self.assertEqual(receiver_node.connections[0][1], '127.0.0.1')
+        self.assertEqual(receiver_node.connections[0][3], False)
 
-        bytes_received = receiver_strategy.receive_buffers[receiver_strategy.connections[0][0]]
+        bytes_received = receiver_node.receive_buffers[receiver_node.connections[0][0]]
         self.assertEqual(bytes_received, send_bytes)
 
-        self.assertTrue(sender_strategy.force_exit())
-        self.assertTrue(receiver_strategy.force_exit)
-        self.assertTrue(sender_strategy.closed)
-        self.assertTrue(receiver_strategy.closed)
-        self.assertTrue(sender_strategy.initialized)
-        self.assertTrue(receiver_strategy.initialized)
+        self.assertTrue(sender_node.force_exit())
+        self.assertTrue(receiver_node.force_exit)
+        self.assertTrue(sender_node.closed)
+        self.assertTrue(receiver_node.closed)
+        self.assertTrue(sender_node.initialized)
+        self.assertTrue(receiver_node.initialized)
