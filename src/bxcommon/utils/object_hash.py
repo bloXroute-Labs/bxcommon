@@ -5,7 +5,6 @@ from bxcommon.constants import SHA256_HASH_LEN
 PARTIAL_HASH_LENGTH = 4
 
 
-#FIXME refactor to dedup code
 class ObjectHash(object):
     # binary is a memoryview or a bytearray
     # we do not intend for the binary to mutate
@@ -34,10 +33,12 @@ class ObjectHash(object):
         return self.binary.__getitem__(arg)
 
 
-class BTCObjectHash(object):
+class BTCObjectHash(ObjectHash):
     def __init__(self, buf=None, offset=0, length=0, binary=None):
+
         if not ((binary is not None and len(binary) == 32) or (length == 32 and len(buf) >= offset + length)):
             raise ValueError("Invalid inputs")
+
         if buf is not None:
             if isinstance(buf, bytearray):
                 self.binary = buf[offset:offset + length]
@@ -49,26 +50,12 @@ class BTCObjectHash(object):
         else:
             raise ValueError("No data was passed")
 
+        super(BTCObjectHash, self).__init__(self.binary)
+
         # This is where the big endian format will be stored
         self._buf = None
         self._hash = struct.unpack("<L", self.binary[-PARTIAL_HASH_LENGTH:])[0]
         self._full_str = None
-
-    def __hash__(self):
-        return self._hash
-
-    def __cmp__(self, id1):
-        if id1 is None or self.binary < id1.binary:
-            return -1
-        elif self.binary > id1.binary:
-            return 1
-        return 0
-
-    def __repr__(self):
-        return repr(self.binary)
-
-    def __getitem__(self, arg):
-        return self.binary.__getitem__(arg)
 
     def full_string(self):
         if self._full_str is None:
