@@ -1,12 +1,7 @@
-import unittest
-
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.alarm import Alarm
-from bxcommon.utils import logger
-from mock import patch
 
 
-# TODO must mock logger
 class AlarmTests(AbstractTestCase):
 
     def setUp(self):
