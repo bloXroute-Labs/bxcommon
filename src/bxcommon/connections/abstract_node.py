@@ -20,6 +20,7 @@ class AbstractNode(object):
 
         self.connection_pool = ConnectionPool()
         self.send_pings = False
+        self.should_force_exit = False
 
         self.num_retries_by_ip = defaultdict(lambda: 0)
 
@@ -117,7 +118,13 @@ class AbstractNode(object):
             return self.alarm_queue.fire_ready_alarms(triggered_by_timeout)
 
     def force_exit(self):
-        pass
+        """
+        Indicates if node should trigger exit in event loop. Primarily used for testing.
+
+        Typically requires one additional socket call (e.g. connecting to this node via a socket)
+        to finish terminating the event loop.
+        """
+        return self.should_force_exit
 
     def close(self):
         logger.error("Node is closing! Closing everything.")
