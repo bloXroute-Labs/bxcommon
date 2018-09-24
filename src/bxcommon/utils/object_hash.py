@@ -10,7 +10,8 @@ class ObjectHash(object):
     # we do not intend for the binary to mutate
     def __init__(self, binary):
         #
-        assert len(binary) == SHA256_HASH_LEN
+        if len(binary) != SHA256_HASH_LEN:
+            raise ValueError("Binary has the wrong length.")
 
         self.binary = bytearray(binary) if isinstance(binary, memoryview) else binary
 
@@ -36,8 +37,11 @@ class ObjectHash(object):
 class BTCObjectHash(ObjectHash):
     def __init__(self, buf=None, offset=0, length=0, binary=None):
 
-        if not ((binary is not None and len(binary) == 32) or (length == 32 and len(buf) >= offset + length)):
-            raise ValueError("Invalid inputs")
+        from_binary = binary is not None and len(binary) == SHA256_HASH_LEN
+        from_buf = length == SHA256_HASH_LEN and len(buf) >= offset + length
+
+        if not (from_binary or from_buf):
+            raise ValueError("Either binary or buf must contain data.")
 
         if buf is not None:
             if isinstance(buf, bytearray):

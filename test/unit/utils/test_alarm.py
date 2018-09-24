@@ -5,10 +5,11 @@ from bxcommon.utils.alarm import Alarm
 class AlarmTests(AbstractTestCase):
 
     def setUp(self):
-        self.alarm = Alarm(self.function_to_pass, 1, 5)
+        self.args = (1, 5)
+        self.alarm = Alarm(self.function_to_pass, self.args[0], self.args[1])
 
     def test_init(self):
-        self.assertEqual(self.alarm.args, (1, 5))
+        self.assertEqual(self.alarm.args, self.args)
         self.assertEqual(self.alarm.fn, self.function_to_pass)
 
     def function_to_pass(self, first, second):

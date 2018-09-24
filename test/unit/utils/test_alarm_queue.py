@@ -1,12 +1,13 @@
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.alarm import Alarm, AlarmQueue
 import time
-
+from mock import MagicMock
 
 class AlarmQueueTest(AbstractTestCase):
 
     def setUp(self):
         self.alarm_queue = AlarmQueue()
+        self.time_manipulator = 0
 
     def function_to_pass(self, first, second):
         return first + second
@@ -41,7 +42,7 @@ class AlarmQueueTest(AbstractTestCase):
     def test_fire_alarms(self):
         self.alarm_queue.register_alarm(1, self.function_to_pass, 0, 0)
         self.alarm_queue.register_alarm(5, self.function_to_pass, 0, 0)
-        time.sleep(2)
+        time.time = MagicMock(return_value=time.time() + 2)
         self.alarm_queue.fire_alarms()
         self.assertEqual(1, len(self.alarm_queue.alarms))
 
@@ -49,13 +50,14 @@ class AlarmQueueTest(AbstractTestCase):
         self.alarm_queue.register_alarm(1, self.function_to_pass, 1, 5)
         self.assertEqual(1, len(self.alarm_queue.alarms))
         self.assertGreater(self.alarm_queue.time_to_next_alarm()[1], 0)
-        time.sleep(2)
+        time.time = MagicMock(return_value=time.time() + 2)
         self.assertLess(self.alarm_queue.time_to_next_alarm()[1], 0)
 
     def test_fire_ready_alarms(self):
         self.alarm_queue.register_alarm(1, self.function_to_pass, 0, 0)
         self.alarm_queue.register_alarm(5, self.function_to_pass, 0, 0)
-        time.sleep(2)
+        time.time = MagicMock(return_value=time.time() + 2)
         time_to_next_alarm = self.alarm_queue.fire_ready_alarms(False)
         self.assertEqual(1, len(self.alarm_queue.alarms))
         self.assertGreater(time_to_next_alarm, 0)
+
