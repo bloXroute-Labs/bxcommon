@@ -1,5 +1,6 @@
 import errno
 import socket
+from abc import abstractmethod, ABCMeta
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
@@ -9,6 +10,8 @@ from bxcommon.utils import logger
 
 
 class AbstractNetworkEventLoop(object):
+    __metaclass__ = ABCMeta
+
     """
     Class is responsible for effective network communication.
     All network related code must be part of this class or its descendants.
@@ -64,8 +67,9 @@ class AbstractNetworkEventLoop(object):
         for _, socket_connection in self._socket_connections.iteritems():
             socket_connection.close()
 
+    @abstractmethod
     def _process_events(self, timeout):
-        raise NotImplementedError()
+        pass
 
     def _start_server(self):
 
