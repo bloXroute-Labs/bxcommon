@@ -1,4 +1,5 @@
 import signal
+from abc import ABCMeta, abstractmethod
 from collections import defaultdict, deque
 
 from bxcommon.connections.connection_pool import ConnectionPool
@@ -11,6 +12,8 @@ from bxcommon.utils.alarm import AlarmQueue
 
 
 class AbstractNode(object):
+    __meta__ = ABCMeta
+
     def __init__(self, server_ip, server_port):
         self.connection_queue = deque()
         self.disconnect_queue = deque()
@@ -38,8 +41,9 @@ class AbstractNode(object):
     def get_server_address(self):
         return self.server_ip, self.server_port
 
+    @abstractmethod
     def get_peers_addresses(self):
-        raise NotImplementedError()
+        pass
 
     def on_connection_added(self, fileno, ip, port, from_me):
 
@@ -146,11 +150,13 @@ class AbstractNode(object):
             if conn.state & ConnectionState.ESTABLISHED and conn != broadcasting_conn:
                 conn.enqueue_msg(msg)
 
+    @abstractmethod
     def can_retry_after_destroy(self, teardown, conn):
-        raise NotImplementedError()
+        pass
 
+    @abstractmethod
     def get_connection_class(self, ip=None, port=None):
-        raise NotImplementedError()
+        pass
 
     def enqueue_connection(self, ip, port):
         """
