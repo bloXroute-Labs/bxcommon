@@ -45,7 +45,7 @@ jobs:
           command: |
             . venv/bin/activate
             cd bxcommon/test/integration
-            PYTHONPATH=../../../bxcommon/src/ \coverag
+            PYTHONPATH=../../../bxcommon/src/ \
             python -m unittest discover --verbose
       - run: # run pylint
           name: Lint Score
