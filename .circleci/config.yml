@@ -37,8 +37,8 @@ jobs:
           name: Check Coverage
           command: |
             . venv/bin/activate
-            cd bxrelay/test/unit
-            PYTHONPATH=../../../bxcommon/src/:../../src/ \
+            cd bxcommon/test/unit
+            PYTHONPATH=../../../bxcommon/src/ \
             coverage run */*.py && coverage report
       - run:
           name: Integration Tests
