@@ -143,7 +143,7 @@ class BlockRecoveryManagerTest(AbstractTestCase):
 
         # Adding to messages with 2 seconds difference between them
         self._add_broadcast_message()
-        time.time = MagicMock(return_value=time.time() + 2)
+        time.time = MagicMock(return_value=time.time() + 3)
         self._add_broadcast_message(1)
 
         # Verify that clean up scheduled
@@ -157,7 +157,7 @@ class BlockRecoveryManagerTest(AbstractTestCase):
 
         # Verify that first message is remove and the second left 2 seconds before second message expires
         self.block_recovery_service.cleanup_old_messages(time.time() + constants.MISSING_BLOCK_EXPIRE_TIME - 2)
-        self.assertEqual(len(self.block_recovery_service.block_hash_to_msg), 2)
+        self.assertEqual(len(self.block_recovery_service.block_hash_to_msg), 1)
 
         self.assertTrue(self.block_recovery_service.cleanup_scheduled)
 
