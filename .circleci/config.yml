@@ -39,13 +39,13 @@ jobs:
             . venv/bin/activate
             cd bxcommon/test/unit
             PYTHONPATH=../../../bxcommon/src/ \
-            coverage run */*.py && coverage report
+            coverage run --source=../../src -m unittest discover && coverage report
       - run:
           name: Integration Tests
           command: |
             . venv/bin/activate
             cd bxcommon/test/integration
-            PYTHONPATH=../../../bxcommon/src/ \
+            PYTHONPATH=../../../bxcommon/src/ \coverag
             python -m unittest discover --verbose
       - run: # run pylint
           name: Lint Score
