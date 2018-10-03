@@ -157,7 +157,7 @@ class BlockRecoveryManagerTest(AbstractTestCase):
 
         # Verify that first message is remove and the second left 2 seconds before second message expires
         self.block_recovery_service.cleanup_old_messages(time.time() + constants.MISSING_BLOCK_EXPIRE_TIME - 2)
-        self.assertEqual(len(self.block_recovery_service.block_hash_to_msg), 1)
+        self.assertEqual(len(self.block_recovery_service.block_hash_to_msg), 2)
 
         self.assertTrue(self.block_recovery_service.cleanup_scheduled)
 
