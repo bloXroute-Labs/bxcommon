@@ -13,9 +13,9 @@ class ObjectHashTests(unittest.TestCase):
         self.int_hash_all_0 = ObjectHash(bytearray([0] * SHA256_HASH_LEN))
 
     def test_init(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             ObjectHash(bytearray([i for i in range(SHA256_HASH_LEN - 1)]))
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             ObjectHash(bytearray())
 
         expected = self.int_hash_31a.binary

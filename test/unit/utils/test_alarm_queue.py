@@ -1,7 +1,7 @@
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.alarm import Alarm, AlarmQueue
 import time
-from unittest.mock import MagicMock
+from mock import MagicMock
 
 
 class AlarmQueueTest(AbstractTestCase):
