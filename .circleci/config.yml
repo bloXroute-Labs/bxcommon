@@ -31,7 +31,7 @@ jobs:
           command: |
             . venv/bin/activate
             cd bxcommon/test/unit
-            PYTHONPATH=../../../bxcommon/src/ \ PYTHONPATH=../../../bxcommon/src/ \
+            PYTHONPATH=../../../bxcommon/src/ \
             python -m unittest discover --verbose
       - run: # check coverage
           name: Check Coverage
