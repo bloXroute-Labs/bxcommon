@@ -95,3 +95,5 @@ PLATFORM_MAC = "darwin"
 
 MAX_KQUEUE_EVENTS_COUNT = 1000
 
+# expiration time of events in throughput service class
+EVENT_TIME_TO_LIVE = 600

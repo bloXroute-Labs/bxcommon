@@ -8,6 +8,9 @@ from bxcommon.utils import logger
 
 class Message(object):
     def __init__(self, msg_type=None, payload_len=None, buf=None):
+        if buf is None or len(buf) < 16:
+            raise ValueError("Buffer must be at least 16 in length.")
+
         self.buf = buf
         self._memoryview = memoryview(buf)
 
