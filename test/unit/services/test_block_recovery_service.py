@@ -8,6 +8,7 @@ from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_alarm_queue import MockAlarmQueue
 from mock import MagicMock
 
+
 class BlockRecoveryManagerTest(AbstractTestCase):
 
     def setUp(self):
