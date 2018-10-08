@@ -45,16 +45,16 @@ class BTCObjectHash(ObjectHash):
 
         if buf is not None:
             if isinstance(buf, bytearray):
-                self.binary = buf[offset:offset + length]
+                local_binary = buf[offset:offset + length]
             else:  # In case this is a memoryview.
-                self.binary = bytearray(buf[offset:offset + length])
-            self.binary = self.binary[::-1]
+                local_binary = bytearray(buf[offset:offset + length])
+            local_binary = local_binary[::-1]
         elif binary is not None:
-            self.binary = bytearray(binary) if isinstance(binary, memoryview) else binary
+            local_binary = binary
         else:
             raise ValueError("No data was passed")
 
-        super(BTCObjectHash, self).__init__(self.binary)
+        super(BTCObjectHash, self).__init__(local_binary)
 
         # This is where the big endian format will be stored
         self._buf = None
