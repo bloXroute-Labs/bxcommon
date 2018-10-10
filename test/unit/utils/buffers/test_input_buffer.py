@@ -20,13 +20,18 @@ class TestInputBuffer(unittest.TestCase):
             in_buf.endswith([5, 6])
         with self.assertRaises(ValueError):
             in_buf.endswith(bytearray([0, 1, 2, 3, 4, 5, 6]))
+        self.assertEqual(in_buf.endswith(bytearray(0)), True)
 
     def test_add_bytes(self):
         length_to_add = 12
         in_buf = InputBuffer()
-        piece = bytearray([1] * length_to_add)
-        in_buf.add_bytes(piece)
-        self.assertEqual(in_buf.length, length_to_add)
+        piece1 = bytearray([1] * length_to_add)
+        piece2 = bytearray([i for i in range(length_to_add)])
+        in_buf.add_bytes(piece1)
+        in_buf.add_bytes(piece2)
+
+        self.assertEqual(in_buf.length, 2 * length_to_add)
+        self.assertEqual(in_buf.input_list, deque([piece1, piece2]))
 
     def test_remove_bytes(self):
         in_buf = InputBuffer()

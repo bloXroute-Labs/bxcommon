@@ -18,8 +18,6 @@ class InputBuffer(object):
 
         return self.input_list[-1].endswith(suffix)
 
-
-
     # Adds a bytearray to the end of the input buffer.
     def add_bytes(self, piece):
         if not isinstance(piece, bytearray):
