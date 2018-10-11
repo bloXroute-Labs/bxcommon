@@ -47,7 +47,7 @@ class OutputBuffer(object):
         return self.index == 0
 
     def enqueue_msgbytes(self, msg_bytes):
-        if not isinstance(msg_bytes, bytearray):
+        if not isinstance(msg_bytes, bytearray) and not isinstance(msg_bytes, memoryview):
             raise ValueError("Msg_bytes must be a bytearray.")
 
         self.output_msgs.append(msg_bytes)

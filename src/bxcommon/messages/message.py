@@ -11,6 +11,15 @@ class Message(object):
         if buf is None or len(buf) < 16:
             raise ValueError("Buffer must be at least 16 in length.")
 
+        if not isinstance(payload_len, int):
+            raise ValueError("Payload_len must be an integer.")
+
+        if payload_len < 0:
+            raise ValueError("Payload_len must be a positive integer.")
+
+        if msg_type is None:
+            raise ValueError("Msg_type must be defined.")
+
         self.buf = buf
         self._memoryview = memoryview(buf)
 
@@ -24,8 +33,6 @@ class Message(object):
 
     # Returns a memoryview of the message.
     def rawbytes(self):
-        if self._payload_len is None:
-            self._payload_len, _ = struct.unpack_from('<L', self.buf, 12)
 
         if self._payload_len + HDR_COMMON_OFF == len(self.buf):
             return self._memoryview
@@ -76,8 +83,6 @@ class Message(object):
         return self._msg_type
 
     def payload_len(self):
-        if self._payload_len is None:
-            self._payload_len = struct.unpack_from('<L', self.buf, 12)[0]
         return self._payload_len
 
     def payload(self):
