@@ -19,6 +19,8 @@ class ConnectionPool(object):
     def add(self, fileno, ip, port, conn):
         assert (ip, port) not in self.byipport
 
+        #if()
+
         while fileno > self.len_fileno:
             self.byfileno.extend([None] * ConnectionPool.INITIAL_FILENO)
             self.len_fileno += ConnectionPool.INITIAL_FILENO
@@ -39,6 +41,8 @@ class ConnectionPool(object):
     # Gets the connection by fileno.
     # Returns None if the fileno does not exist.
     def get_byfileno(self, fileno):
+        if not isinstance(fileno, int) or fileno < 0:
+            raise ValueError("Fileno must be a non-negative int.")
         if fileno > self.len_fileno:
             return None
 
