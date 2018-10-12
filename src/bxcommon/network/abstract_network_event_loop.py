@@ -4,6 +4,7 @@ from abc import abstractmethod, ABCMeta
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.constants import LISTEN_ON_IP_ADDRESS
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.utils import logger
@@ -75,32 +76,31 @@ class AbstractNetworkEventLoop(object):
 
         server_address = self._node.get_server_address()
 
-        ip = server_address[0]
         listen_port = server_address[1]
 
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        logger.debug("Creating a server socket on {0}:{1}".format(ip, listen_port))
+        logger.debug("Creating a server socket on {0}:{1}".format(LISTEN_ON_IP_ADDRESS, listen_port))
 
         try:
-            server_socket.bind((ip, listen_port))
+            server_socket.bind((LISTEN_ON_IP_ADDRESS, listen_port))
             server_socket.listen(50)
             server_socket.setblocking(0)
 
-            self._register_socket(server_socket, server_address, is_server=True)
+            self._register_socket(server_socket, (LISTEN_ON_IP_ADDRESS, listen_port), is_server=True)
 
-            logger.debug("Finished creating a server socket on {0}:{1}".format(ip, listen_port))
+            logger.debug("Finished creating a server socket on {0}:{1}".format(LISTEN_ON_IP_ADDRESS, listen_port))
             return server_socket
 
         except socket.error as e:
             if e.errno in [errno.EACCES, errno.EADDRINUSE, errno.EADDRNOTAVAIL, errno.ENOMEM, errno.EOPNOTSUPP]:
                 logger.fatal("Fatal error: " + str(e.errno) + " " + e.strerror +
                              " Occurred while setting up server socket on {0}:{1}. Exiting..."
-                             .format(ip, listen_port))
+                             .format(LISTEN_ON_IP_ADDRESS, listen_port))
                 exit(1)
             else:
                 logger.fatal("Fatal error: " + str(e.errno) + " " + e.strerror +
-                             " Occurred while setting up server socket on {0}:{1}. Re-raising".format(ip, listen_port))
+                             " Occurred while setting up server socket on {0}:{1}. Re-raising".format(LISTEN_ON_IP_ADDRESS, listen_port))
                 raise e
 
     def _connect_to_peers(self):

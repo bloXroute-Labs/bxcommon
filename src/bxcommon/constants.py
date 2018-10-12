@@ -44,6 +44,8 @@ HEIGHT_DIFFERENCE = 100
 
 FLUSH_LOG = False
 
+LISTEN_ON_IP_ADDRESS = "0.0.0.0"
+
 # The length of everything in the header minus the checksum
 HDR_COMMON_OFF = 16
 
