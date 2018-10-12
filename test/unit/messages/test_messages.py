@@ -6,7 +6,15 @@ from bxcommon.exceptions import UnrecognizedCommandError, PayloadLenError
 from mock import MagicMock
 from bxcommon.messages import message_types_loader
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-
+from bxcommon.messages.ack_message import AckMessage
+from bxcommon.messages.broadcast_message import BroadcastMessage
+from bxcommon.messages.hello_message import HelloMessage
+from bxcommon.messages.ping_message import PingMessage
+from bxcommon.messages.pong_message import PongMessage
+from bxcommon.messages.tx_assign_message import TxAssignMessage
+from bxcommon.messages.tx_message import TxMessage
+from bxcommon.messages.get_txs_message import GetTxsMessage
+from bxcommon.messages.txs_message import TxsMessage
 
 class MessageTest(AbstractTestCase):
 
@@ -55,7 +63,20 @@ class MessageTest(AbstractTestCase):
         with self.assertRaises(UnrecognizedCommandError):
             Message.parse(self.message1.rawbytes())
 
-        message_types_loader.get_message_types = MagicMock(return_value={'example': MockMessage})
+        mock_msg_types = {
+            'hello': HelloMessage,
+            'ack': AckMessage,
+            'ping': PingMessage,
+            'pong': PongMessage,
+            'broadcast': BroadcastMessage,
+            'tx': TxMessage,
+            'txassign': TxAssignMessage,
+            'gettxs': GetTxsMessage,
+            'txs': TxsMessage,
+            'example': MockMessage
+        }
+
+        message_types_loader.get_message_types = MagicMock(return_value=mock_msg_types)
 
         mock_message1 = MockMessage(buf=self.buf1, payload_len=40, msg_type='example')
 
