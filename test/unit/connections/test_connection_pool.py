@@ -9,19 +9,16 @@ class ConnectionPoolTest(unittest.TestCase):
 
     def setUp(self):
         self.conn_pool1 = ConnectionPool()
-
         self.fileno1 = 1
         self.ip1 = '123.123.123.123'
         self.port1 = 1000
         self.node1 = MockNode('128.128.128.128', 1001)
         self.conn1 = MockConnection(self.fileno1, (self.ip1, self.port1), self.node1)
-
         self.fileno2 = 5
         self.ip2 = '234.234.234.234'
         self.port2 = 2000
         self.node2 = MockNode('321.321.321.321', 1003)
         self.conn2 = MockConnection(self.fileno2, (self.ip2, self.port2), self.node2)
-
         self.fileno3 = 6
         self.ip3 = '234.234.234.234'
         self.port3 = 3000
@@ -113,3 +110,4 @@ class ConnectionPoolTest(unittest.TestCase):
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
         self.conn_pool1.add(self.fileno2, self.ip2, self.port2, self.conn2)
         self.conn_pool1.add(self.fileno3, self.ip3, self.port3, self.conn3)
+

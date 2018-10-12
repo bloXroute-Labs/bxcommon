@@ -16,6 +16,7 @@ from bxcommon.messages.tx_message import TxMessage
 from bxcommon.messages.get_txs_message import GetTxsMessage
 from bxcommon.messages.txs_message import TxsMessage
 
+
 class MessageTest(AbstractTestCase):
 
     def setUp(self):
