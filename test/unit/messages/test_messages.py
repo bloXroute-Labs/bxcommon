@@ -1,5 +1,5 @@
 from bxcommon.test_utils.mocks.mock_message import MockMessage
-from bxcommon.messages.message import Message
+from bxcommon.messages.message import Message, parse, peek_message
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.constants import HDR_COMMON_OFF
 from bxcommon.exceptions import UnrecognizedCommandError, PayloadLenError
@@ -20,13 +20,6 @@ from bxcommon.messages.txs_message import TxsMessage
 class MessageTest(AbstractTestCase):
 
     def setUp(self):
-        with self.assertRaises(ValueError):
-            Message(msg_type=None, payload_len=20, buf=bytearray([i for i in range(40)]))
-        with self.assertRaises(ValueError):
-            Message(msg_type="hello", payload_len=-5, buf=bytearray([i for i in range(40)]))
-        with self.assertRaises(ValueError):
-            Message(msg_type="hello", payload_len=20, buf=bytearray([i for i in range(10)]))
-
         self.buf1 = bytearray([i for i in range(40)])
         self.payload_len1 = 20
         self.msg_type1 = "example"
@@ -37,6 +30,14 @@ class MessageTest(AbstractTestCase):
         self.message2 = Message(msg_type=self.msg_type2, payload_len=self.payload_len2, buf=self.buf2)
 
     def test_init(self):
+
+        with self.assertRaises(ValueError):
+            Message(msg_type=None, payload_len=20, buf=bytearray([i for i in range(40)]))
+        with self.assertRaises(ValueError):
+            Message(msg_type="hello", payload_len=-5, buf=bytearray([i for i in range(40)]))
+        with self.assertRaises(ValueError):
+            Message(msg_type="hello", payload_len=20, buf=bytearray([i for i in range(10)]))
+
         self.assertEqual(self.buf1, self.message1.buf)
         self.assertEqual(self.buf1, self.message1._memoryview)
         self.assertEqual(self.msg_type1, self.message1._msg_type)
@@ -44,25 +45,25 @@ class MessageTest(AbstractTestCase):
         self.assertEqual(self.payload_len1, self.message1._payload_len)
 
     def test_rawbytes(self):
-        self.assertEqual(type(self.message1.rawbytes()), memoryview)
-        self.assertEqual(self.message1._payload_len, 20)
+        self.assertIsInstance(self.message1.rawbytes(), memoryview)
+        self.assertEqual(20, self.message1._payload_len)
         message2_rawbytes = self.message2.rawbytes()
-        self.assertEqual(self.message2._payload_len, 50)
+        self.assertEqual(50, self.message2._payload_len)
         self.assertEqual(message2_rawbytes, memoryview(self.message2._memoryview))
 
     def test_peek_message(self):
         in_buf = InputBuffer()
-        self.assertEqual(Message.peek_message(in_buf), (False, None, None))
+        self.assertEqual((False, None, None), peek_message(in_buf))
         in_buf.add_bytes(self.message1.rawbytes())
-        self.assertEqual(Message.peek_message(in_buf), (True, self.msg_type1, self.payload_len1))
+        self.assertEqual((True, self.msg_type1, self.payload_len1), peek_message(in_buf))
 
         in_buf1 = InputBuffer()
         in_buf1.add_bytes(self.message2.rawbytes())
-        self.assertEqual(Message.peek_message(in_buf1), (False, self.msg_type2, self.payload_len2))
+        self.assertEqual((False, self.msg_type2, self.payload_len2), peek_message(in_buf1))
 
     def test_parse(self):
         with self.assertRaises(UnrecognizedCommandError):
-            Message.parse(self.message1.rawbytes())
+            parse(self.message1.rawbytes())
 
         mock_msg_types = {
             'hello': HelloMessage,
@@ -82,18 +83,18 @@ class MessageTest(AbstractTestCase):
         mock_message1 = MockMessage(buf=self.buf1, payload_len=40, msg_type='example')
 
         with self.assertRaises(PayloadLenError):
-            Message.parse(mock_message1.rawbytes())
+            parse(mock_message1.rawbytes())
 
-        mock_message2 = MockMessage(buf=self.buf1, payload_len=24, msg_type='example')
-        mock_message2_bytes = Message.parse(mock_message2.rawbytes())
+        mock_message2 = MockMessage(buf=self.buf1, payload_len=len(self.buf1) - HDR_COMMON_OFF, msg_type='example')
+        mock_message2_bytes = parse(mock_message2.rawbytes())
 
-        self.assertEqual(mock_message2_bytes._payload_len, mock_message2._payload_len)
-        self.assertEqual(mock_message2_bytes.buf, mock_message2.buf)
-        self.assertEqual(mock_message2_bytes._msg_type, mock_message2._msg_type)
+        self.assertEqual(mock_message2._payload_len, mock_message2_bytes._payload_len)
+        self.assertEqual(mock_message2.buf, mock_message2_bytes.buf)
+        self.assertEqual(mock_message2._msg_type, mock_message2_bytes._msg_type)
 
         mock_message3 = MockMessage(buf=self.buf2, payload_len=4, msg_type='example')
-        mock_message3_bytes = Message.parse(mock_message3.rawbytes())
-        self.assertNotEqual(mock_message3_bytes.buf, mock_message2.buf)
+        mock_message3_bytes = parse(mock_message3.rawbytes())
+        self.assertNotEqual(mock_message2.buf, mock_message3_bytes.buf)
 
     def test_msg_type(self):
         self.assertEqual(self.msg_type1, self.message1.msg_type())
@@ -102,7 +103,7 @@ class MessageTest(AbstractTestCase):
         self.assertEqual(self.payload_len1, self.message1.payload_len())
 
     def test_payload(self):
-        self.assertEqual(self.message1._payload, None)
-        self.assertEqual(self.message1.payload(), self.buf1[HDR_COMMON_OFF:self.payload_len1 + HDR_COMMON_OFF])
-        self.assertEqual(self.message1._payload, self.buf1[HDR_COMMON_OFF:self.payload_len1 + HDR_COMMON_OFF])
+        self.assertIsNone(self.message1._payload)
+        self.assertEqual(self.buf1[HDR_COMMON_OFF:self.payload_len1 + HDR_COMMON_OFF], self.message1.payload())
+        self.assertEqual(self.buf1[HDR_COMMON_OFF:self.payload_len1 + HDR_COMMON_OFF], self.message1._payload)
 

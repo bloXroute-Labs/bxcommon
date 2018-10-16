@@ -1,4 +1,4 @@
-from bxcommon.messages.message import Message
+from bxcommon.messages.message import parse
 from bxcommon.messages.ping_message import PingMessage
 from bxcommon.messages.pong_message import PongMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -22,7 +22,7 @@ class PingPongMessageTests(AbstractTestCase):
         ping_msg_bytes = msg.rawbytes()
         self.assertTrue(ping_msg_bytes)
 
-        parsed_ping_message = Message.parse(ping_msg_bytes)
+        parsed_ping_message = parse(ping_msg_bytes)
 
         self.assertIsInstance(parsed_ping_message, msg_cls)
 

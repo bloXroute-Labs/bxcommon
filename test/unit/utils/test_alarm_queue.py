@@ -8,15 +8,9 @@ class AlarmQueueTest(AbstractTestCase):
 
     def setUp(self):
         self.alarm_queue = AlarmQueue()
-        self.time_manipulator = 0
 
     def function_to_pass(self, first, second):
         return first + second
-
-    def test_init(self):
-        self.assertEqual(self.alarm_queue.alarms, [])
-        self.assertEqual(self.alarm_queue.uniq_count, 0)
-        self.assertEqual(self.alarm_queue.approx_alarms_scheduled, {})
 
     def test_register_alarm(self):
         alarm_id = self.alarm_queue.register_alarm(1, self.function_to_pass, 1, 5)
@@ -50,9 +44,9 @@ class AlarmQueueTest(AbstractTestCase):
     def test_time_to_next_alarm(self):
         self.alarm_queue.register_alarm(1, self.function_to_pass, 1, 5)
         self.assertEqual(1, len(self.alarm_queue.alarms))
-        self.assertGreater(self.alarm_queue.time_to_next_alarm()[1], 0)
+        self.assertLess(0, self.alarm_queue.time_to_next_alarm()[1])
         time.time = MagicMock(return_value=time.time() + 2)
-        self.assertLess(self.alarm_queue.time_to_next_alarm()[1], 0)
+        self.assertGreater(0, self.alarm_queue.time_to_next_alarm()[1])
 
     def test_fire_ready_alarms(self):
         self.alarm_queue.register_alarm(1, self.function_to_pass, 0, 0)
@@ -60,5 +54,5 @@ class AlarmQueueTest(AbstractTestCase):
         time.time = MagicMock(return_value=time.time() + 2)
         time_to_next_alarm = self.alarm_queue.fire_ready_alarms(False)
         self.assertEqual(1, len(self.alarm_queue.alarms))
-        self.assertGreater(time_to_next_alarm, 0)
+        self.assertLess(0, time_to_next_alarm)
 

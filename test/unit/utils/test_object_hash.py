@@ -22,7 +22,7 @@ class ObjectHashTests(unittest.TestCase):
         actual = self.to_31
         self.assertEqual(expected, actual)
         actual = ObjectHash(memoryview(actual))
-        self.assertEqual(actual.binary, expected)
+        self.assertEqual(expected, actual.binary)
         self.assertIsNotNone(hash(self.int_hash_all_0))
 
     def test_hash(self):
@@ -37,9 +37,9 @@ class ObjectHashTests(unittest.TestCase):
         self.assertEqual(initial_hash, mutated_hash)
 
     def test_cmp(self):
-        self.assertTrue(self.int_hash_31a == self.int_hash_31b)
-        self.assertTrue(self.int_hash_32 > self.int_hash_31a)
-        self.assertTrue(self.int_hash_all_0 < self.int_hash_31b)
+        self.assertEqual(self.int_hash_31a, self.int_hash_31b)
+        self.assertGreater(self.int_hash_32, self.int_hash_31a)
+        self.assertLess(self.int_hash_all_0, self.int_hash_31b)
 
     def test_get_item(self):
         int_list = [0] * SHA256_HASH_LEN
@@ -50,8 +50,8 @@ class ObjectHashTests(unittest.TestCase):
         int_list[expected_index_1] = expected_1
         int_list[expected_index_2] = expected_2
         int_hash = ObjectHash(bytearray(int_list))
-        self.assertEqual(int_hash[expected_index_1], expected_1)
-        self.assertEqual(int_hash[expected_index_2], expected_2)
+        self.assertEqual(expected_1, int_hash[expected_index_1])
+        self.assertEqual(expected_2, int_hash[expected_index_2])
 
     def test_repr(self):
         self.assertEqual(repr(self.int_hash_31a), repr(self.int_hash_31b))
@@ -59,8 +59,4 @@ class ObjectHashTests(unittest.TestCase):
         self.assertNotEqual(repr(self.int_hash_31b), repr(self.int_hash_all_0))
         expected = bytearray([i for i in range(SHA256_HASH_LEN)])
         actual = ObjectHash(bytearray(expected))
-        self.assertEqual(repr(actual), repr(expected))
-
-
-
-
+        self.assertEqual(repr(expected), repr(actual))

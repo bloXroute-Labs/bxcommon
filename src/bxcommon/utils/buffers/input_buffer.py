@@ -13,14 +13,11 @@ class InputBuffer(object):
         if not isinstance(suffix, bytearray):
             raise ValueError("Suffix must be a bytearray.")
 
-        if len(self.input_list[-1]) < len(suffix):
-            raise ValueError("Suffix cannot be longer than the last element of inputlist.")
-
         return self.input_list[-1].endswith(suffix)
 
     # Adds a bytearray to the end of the input buffer.
     def add_bytes(self, piece):
-        if not isinstance(piece, bytearray) and not isinstance(piece, memoryview):
+        if not (isinstance(piece, bytearray) or isinstance(piece, memoryview)):
             raise ValueError("Piece must be a bytearray.")
         self.input_list.append(piece)
         self.length += len(piece)

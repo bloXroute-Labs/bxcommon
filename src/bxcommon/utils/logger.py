@@ -25,7 +25,7 @@ LOG_ROTATION_INTERVAL = 24 * 3600
 
 # Log class that you can write to which asynchronously dumps the log to the background
 class Log(object):
-    LOG_SIZE = 1  # We flush every 4 KiB
+    LOG_SIZE = 4096  # We flush every 4 KiB
 
     # No log should be bigger than 10 GB
     MAX_LOG_SIZE = 1024 * 1024 * 1024 * 10

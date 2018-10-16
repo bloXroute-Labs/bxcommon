@@ -23,7 +23,7 @@ class AlarmQueue(object):
         if fire_delay < 0:
             raise ValueError("Invalid negative fire delay.")
         elif fn is None:
-            raise ValueError("Fire delay cannot be None.")
+            raise ValueError("Function cannot be None.")
         alarm = Alarm(fn, *args)
         alarm_id = [time.time() + fire_delay, self.uniq_count, alarm]
         heappush(self.alarms, alarm_id)
@@ -36,7 +36,7 @@ class AlarmQueue(object):
         if fire_delay < 0:
             raise ValueError("Invalid negative fire delay.")
         elif fn is None:
-            raise ValueError("Fire delay cannot be None.")
+            raise ValueError("Function cannot be None.")
         elif slop < 0:
             raise ValueError("Invalid negative slop.")
         if fn not in self.approx_alarms_scheduled:

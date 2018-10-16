@@ -130,8 +130,6 @@ class AbstractConnection(object):
             if msg_type in self.message_handlers:
                 msg_handler = self.message_handlers[msg_type]
                 msg_handler(msg)
-                if type(self) is "RelayConnection":
-                    self.log_throughput_event(payload_len, msg_type)
 
         logger.debug("Done receiving from {0}".format(self.peer_desc))
         return 0
