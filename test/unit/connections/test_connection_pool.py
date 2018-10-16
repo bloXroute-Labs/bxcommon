@@ -58,9 +58,10 @@ class ConnectionPoolTest(unittest.TestCase):
         self.add_conn()
         self.assertEqual(self.conn1, self.conn_pool1.get_byfileno(self.fileno1))
         self.assertEqual(self.conn2, self.conn_pool1.get_byfileno(self.fileno2))
-        self.assertIsNone(self.conn_pool1.get_byfileno(10000))
+        self.conn_pool1.add(6000, "0.0.0.0", 4000, self.conn3)
+        self.assertIsNone(self.conn_pool1.get_byfileno(7000))
         self.assertIsNone(self.conn_pool1.get_byfileno(2))
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             self.conn_pool1.get_byfileno("g")
 
     def test_get_num_conn_by_ip(self):
