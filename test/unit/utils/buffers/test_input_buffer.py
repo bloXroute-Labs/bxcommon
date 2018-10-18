@@ -37,7 +37,7 @@ class TestInputBuffer(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.in_buf.remove_bytes(0)
         with self.assertRaises(ValueError):
-            self.in_buf.remove_bytes('f')
+            self.in_buf.remove_bytes("f")
 
         self.make_input_buffer()
 

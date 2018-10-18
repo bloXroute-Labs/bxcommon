@@ -46,9 +46,9 @@ class MessageTest(AbstractTestCase):
 
     def test_rawbytes(self):
         self.assertIsInstance(self.message1.rawbytes(), memoryview)
-        self.assertEqual(20, self.message1._payload_len)
+        self.assertEqual(self.payload_len1, self.message1._payload_len)
         message2_rawbytes = self.message2.rawbytes()
-        self.assertEqual(50, self.message2._payload_len)
+        self.assertEqual(self.payload_len2, self.message2._payload_len)
         self.assertEqual(message2_rawbytes, memoryview(self.message2._memoryview))
 
     def test_peek_message(self):
@@ -66,33 +66,33 @@ class MessageTest(AbstractTestCase):
             parse(self.message1.rawbytes())
 
         mock_msg_types = {
-            'hello': HelloMessage,
-            'ack': AckMessage,
-            'ping': PingMessage,
-            'pong': PongMessage,
-            'broadcast': BroadcastMessage,
-            'tx': TxMessage,
-            'txassign': TxAssignMessage,
-            'gettxs': GetTxsMessage,
-            'txs': TxsMessage,
-            'example': MockMessage
+            "hello": HelloMessage,
+            "ack": AckMessage,
+            "ping": PingMessage,
+            "pong": PongMessage,
+            "broadcast": BroadcastMessage,
+            "tx": TxMessage,
+            "txassign": TxAssignMessage,
+            "gettxs": GetTxsMessage,
+            "txs": TxsMessage,
+            "example": MockMessage
         }
 
         message_types_loader.get_message_types = MagicMock(return_value=mock_msg_types)
 
-        mock_message1 = MockMessage(buf=self.buf1, payload_len=40, msg_type='example')
+        mock_message1 = MockMessage(buf=self.buf1, payload_len=40, msg_type="example")
 
         with self.assertRaises(PayloadLenError):
             parse(mock_message1.rawbytes())
 
-        mock_message2 = MockMessage(buf=self.buf1, payload_len=len(self.buf1) - HDR_COMMON_OFF, msg_type='example')
+        mock_message2 = MockMessage(buf=self.buf1, payload_len=len(self.buf1) - HDR_COMMON_OFF, msg_type="example")
         mock_message2_bytes = parse(mock_message2.rawbytes())
 
         self.assertEqual(mock_message2._payload_len, mock_message2_bytes._payload_len)
         self.assertEqual(mock_message2.buf, mock_message2_bytes.buf)
         self.assertEqual(mock_message2._msg_type, mock_message2_bytes._msg_type)
 
-        mock_message3 = MockMessage(buf=self.buf2, payload_len=4, msg_type='example')
+        mock_message3 = MockMessage(buf=self.buf2, payload_len=4, msg_type="example")
         mock_message3_bytes = parse(mock_message3.rawbytes())
         self.assertNotEqual(mock_message2.buf, mock_message3_bytes.buf)
 

@@ -8,7 +8,7 @@ from bxcommon.utils import logger
 
 class Message(object):
     def __init__(self, msg_type=None, payload_len=None, buf=None):
-        if buf is None or len(buf) < 16:
+        if buf is None or len(buf) < HDR_COMMON_OFF:
             raise ValueError("Buffer must be at least 16 in length.")
 
         if not isinstance(payload_len, int):
@@ -33,6 +33,9 @@ class Message(object):
 
     # Returns a memoryview of the message.
     def rawbytes(self):
+        if self._payload_len is None:
+            self._payload_len, _ = struct.unpack_from('<L', self.buf, 12)
+
         if self._payload_len + HDR_COMMON_OFF == len(self.buf):
             return self._memoryview
         else:
@@ -42,6 +45,8 @@ class Message(object):
         return self._msg_type
 
     def payload_len(self):
+        if self._payload_len is None:
+            self._payload_len = struct.unpack_from('<L', self.buf, 12)[0]
         return self._payload_len
 
     def payload(self):

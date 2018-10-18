@@ -48,7 +48,7 @@ class TestOutputBuffer(unittest.TestCase):
 
     def test_enqueue_msgbytes(self):
         with self.assertRaises(ValueError):
-            self.out_buf.enqueue_msgbytes('f')
+            self.out_buf.enqueue_msgbytes("f")
 
         data1 = bytearray([i for i in range(20)])
         self.out_buf.enqueue_msgbytes(data1)
@@ -64,7 +64,7 @@ class TestOutputBuffer(unittest.TestCase):
 
     def test_prepend_msg(self):
         with self.assertRaises(ValueError):
-            self.out_buf.prepend_msg('f')
+            self.out_buf.prepend_msg("f")
 
         data1 = bytearray([i for i in range(20)])
         self.out_buf.prepend_msg(data1)
