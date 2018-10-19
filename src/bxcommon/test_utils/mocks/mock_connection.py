@@ -24,7 +24,5 @@ class MockConnection(object):
 
         # Number of bad messages I've received in a row.
         self.num_bad_messages = 0
-
         self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
-
         self.message_handlers = None

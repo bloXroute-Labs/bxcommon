@@ -1,6 +1,5 @@
 import unittest
 from bxcommon.connections.connection_pool import ConnectionPool
-from collections import defaultdict
 from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 

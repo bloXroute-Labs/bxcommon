@@ -1,5 +1,5 @@
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-from bxcommon.utils.alarm import Alarm, AlarmQueue
+from bxcommon.utils.alarm import AlarmQueue
 import time
 from mock import MagicMock
 

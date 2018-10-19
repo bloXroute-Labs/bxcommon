@@ -9,7 +9,7 @@ from bxcommon.utils import logger
 class Message(object):
     def __init__(self, msg_type=None, payload_len=None, buf=None):
         if buf is None or len(buf) < HDR_COMMON_OFF:
-            raise ValueError("Buffer must be at least 16 in length.")
+            raise ValueError("Buffer must be at least %d in length.".format(HDR_COMMON_OFF))
 
         if not isinstance(payload_len, int):
             raise ValueError("Payload_len must be an integer.")

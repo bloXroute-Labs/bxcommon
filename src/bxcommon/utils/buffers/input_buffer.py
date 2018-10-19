@@ -17,7 +17,7 @@ class InputBuffer(object):
 
     # Adds a bytearray to the end of the input buffer.
     def add_bytes(self, piece):
-        if not (isinstance(piece, bytearray) or isinstance(piece, memoryview)):
+        if not (isinstance(piece, (bytearray, memoryview))):
             raise ValueError("Piece must be a bytearray.")
         self.input_list.append(piece)
         self.length += len(piece)
@@ -43,7 +43,7 @@ class InputBuffer(object):
 
         return to_return
 
-    # Returns the first bytes_to_peek bytes in the input buffer.
+    # Returns at LEAST the first bytes_to_peek bytes in the input buffer.
     # The assumption is that these bytes are all part of the same message.
     # Thus, we combine pieces if we cannot just return the first message.
     def peek_message(self, bytes_to_peek):
@@ -55,7 +55,7 @@ class InputBuffer(object):
             head.extend(self.input_list.popleft())
             self.input_list.appendleft(head)
 
-        return self.input_list[0][:bytes_to_peek]
+        return self.input_list[0]
 
     # Gets a slice of the inputbuffer from start to end.
     # We assume that this slice is a piece of a single bitcoin message

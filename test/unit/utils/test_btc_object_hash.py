@@ -80,11 +80,3 @@ class ObjectHashTests(unittest.TestCase):
         expected = self.to_31[::-1]
         actual = BTCObjectHash(binary=self.to_31).get_big_endian()
         self.assertEqual(expected, actual)
-
-
-
-
-
-
-
-
