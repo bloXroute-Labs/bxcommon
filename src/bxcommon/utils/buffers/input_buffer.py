@@ -17,7 +17,7 @@ class InputBuffer(object):
 
     # Adds a bytearray to the end of the input buffer.
     def add_bytes(self, piece):
-        if not (isinstance(piece, (bytearray, memoryview))):
+        if not isinstance(piece, (bytearray, memoryview)):
             raise ValueError("Piece must be a bytearray.")
         self.input_list.append(piece)
         self.length += len(piece)

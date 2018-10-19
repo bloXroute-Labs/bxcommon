@@ -39,6 +39,8 @@ class ConnectionPool(object):
     # Gets the connection by fileno.
     # Returns None if the fileno does not exist.
     def get_byfileno(self, fileno):
+        if fileno > self.len_fileno:
+            return None
         return self.byfileno[fileno]
 
     # Get the number of connections to this ip address.

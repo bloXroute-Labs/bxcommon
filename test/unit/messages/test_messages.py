@@ -66,15 +66,6 @@ class MessageTest(AbstractTestCase):
             parse(self.message1.rawbytes())
 
         mock_msg_types = {
-            "hello": HelloMessage,
-            "ack": AckMessage,
-            "ping": PingMessage,
-            "pong": PongMessage,
-            "broadcast": BroadcastMessage,
-            "tx": TxMessage,
-            "txassign": TxAssignMessage,
-            "gettxs": GetTxsMessage,
-            "txs": TxsMessage,
             "example": MockMessage
         }
 
