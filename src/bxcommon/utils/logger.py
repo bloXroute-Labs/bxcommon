@@ -41,6 +41,8 @@ class Log(object):
         if not self.use_stdout:
             if path is None or not path:
                 path = "."
+            elif not os.path.exists(path):
+                os.makedirs(path)
             self.filename = os.path.join(path,
                                          time.strftime("%Y-%m-%d-%H:%M:%S+0000-", time.gmtime()) + str(os.getpid()) +
                                          ".log")
