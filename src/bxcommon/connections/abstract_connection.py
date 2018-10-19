@@ -65,7 +65,6 @@ class AbstractConnection(object):
 
         :param msg: message
         """
-
         if self.state & ConnectionState.MARK_FOR_CLOSE:
             return
 

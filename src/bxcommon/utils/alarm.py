@@ -20,6 +20,10 @@ class AlarmQueue(object):
     # fn(args) must return 0 if it was successful or a positive integer,
     # WAIT_TIME, to be rescheduled at a delay of WAIT_TIME in the future.
     def register_alarm(self, fire_delay, fn, *args):
+        if fire_delay < 0:
+            raise ValueError("Invalid negative fire delay.")
+        elif fn is None:
+            raise ValueError("Function cannot be None.")
         alarm = Alarm(fn, *args)
         alarm_id = [time.time() + fire_delay, self.uniq_count, alarm]
         heappush(self.alarms, alarm_id)
@@ -29,6 +33,12 @@ class AlarmQueue(object):
     # Register an alarm that will fire sometime between fire_delay +/- slop seconds from now.
     # If such an alarm exists (as told by the memory location of fn) already,
     def register_approx_alarm(self, fire_delay, slop, fn, *args):
+        if fire_delay < 0:
+            raise ValueError("Invalid negative fire delay.")
+        elif fn is None:
+            raise ValueError("Function cannot be None.")
+        elif slop < 0:
+            raise ValueError("Invalid negative slop.")
         if fn not in self.approx_alarms_scheduled:
             new_alarm_id = self.register_alarm(fire_delay, fn, *args)
             self.approx_alarms_scheduled[fn] = []
@@ -43,6 +53,8 @@ class AlarmQueue(object):
             heappush(self.approx_alarms_scheduled[fn], self.register_alarm(fire_delay, fn, *args))
 
     def unregister_alarm(self, alarm_id):
+        if alarm_id is None:
+            raise ValueError("Alarm id cannot be none.")
         alarm_id[-1] = AlarmQueue.REMOVED
 
         # Remove unnecessary alarms from the queue.
@@ -111,6 +123,8 @@ class AlarmQueue(object):
 # An alarm object
 class Alarm(object):
     def __init__(self, fn, *args):
+        if fn is None:
+            raise ValueError("Alarm callback cannot be none.")
         self.fn = fn
         self.args = args
 

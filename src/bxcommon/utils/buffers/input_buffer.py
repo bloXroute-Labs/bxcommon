@@ -7,32 +7,25 @@ class InputBuffer(object):
         self.length = 0
 
     def endswith(self, suffix):
-        if self.input_list:
+        if not self.input_list:
             return False
 
-        if len(self.input_list[-1]) >= len(suffix):
-            return self.input_list[-1].endswith(suffix)
-        else:
-            # FIXME self_input_list, self.suffix are undefined, change
-            #   to self.input_list, suffix and test
-            raise RuntimeError("FIXME")
+        if not isinstance(suffix, bytearray):
+            raise ValueError("Suffix must be a bytearray.")
 
-        # elif len(self_input_list) > 1:
-        #     first_len = len(self.input_list[-1])
-        #
-        #     return self.suffix[-first_len:] == self.input_list[-1] and \
-        #            self.input_list[-2].endswith(self.suffix[:-first_len])
-        # return False
+        return self.input_list[-1].endswith(suffix)
 
     # Adds a bytearray to the end of the input buffer.
     def add_bytes(self, piece):
-        assert isinstance(piece, bytearray)
+        if not isinstance(piece, (bytearray, memoryview)):
+            raise ValueError("Piece must be a bytearray.")
         self.input_list.append(piece)
         self.length += len(piece)
 
     # Removes the first num_bytes bytes in the input buffer and returns them.
     def remove_bytes(self, num_bytes):
-        assert self.length >= num_bytes > 0
+        if not isinstance(num_bytes, int) or not self.length >= num_bytes > 0:
+            raise ValueError("num_bytes must be less or equal to length and greater than 0.")
 
         to_return = bytearray(0)
         while self.input_list and num_bytes >= len(self.input_list[0]):
@@ -50,7 +43,7 @@ class InputBuffer(object):
 
         return to_return
 
-    # Returns the first bytes_to_peek bytes in the input buffer.
+    # Returns at LEAST the first bytes_to_peek bytes in the input buffer.
     # The assumption is that these bytes are all part of the same message.
     # Thus, we combine pieces if we cannot just return the first message.
     def peek_message(self, bytes_to_peek):
@@ -69,7 +62,8 @@ class InputBuffer(object):
     # for performance reasons (with respect to the number of copies).
     # Additionally, the start value of the slice must exist.
     def get_slice(self, start, end):
-        assert self.length >= start
+        if start is None or end is None or self.length < start:
+            raise ValueError("Start and end must exist and start must be greater or equal to length.")
 
         # Combine all of the pieces in this slice into the first item on the list.
         # Since we will need to do so anyway when handing the message.

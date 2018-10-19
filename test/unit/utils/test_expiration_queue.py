@@ -1,6 +1,6 @@
 import time
 import unittest
-
+from mock import MagicMock
 from bxcommon.utils.expiration_queue import ExpirationQueue
 
 
@@ -18,7 +18,7 @@ class ExpirationQueueTests(unittest.TestCase):
         self.queue.add(item1)
         time_1_added = time.time()
 
-        time.sleep(1)
+        time.time = MagicMock(return_value=time.time() + 1)
 
         self.queue.add(item2)
         time_2_added = time.time()

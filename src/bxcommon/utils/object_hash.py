@@ -5,17 +5,15 @@ from bxcommon.constants import SHA256_HASH_LEN
 PARTIAL_HASH_LENGTH = 4
 
 
-#FIXME refactor to dedup code
 class ObjectHash(object):
     # binary is a memoryview or a bytearray
     # we do not intend for the binary to mutate
     def __init__(self, binary):
         #
-        assert len(binary) == SHA256_HASH_LEN
+        if len(binary) != SHA256_HASH_LEN:
+            raise ValueError("Binary has the wrong length.")
 
-        self.binary = binary
-        if isinstance(self.binary, memoryview):
-            self.binary = bytearray(binary)
+        self.binary = bytearray(binary) if isinstance(binary, memoryview) else binary
 
         self._hash = struct.unpack("<L", self.binary[-PARTIAL_HASH_LENGTH:])[0]
 
@@ -36,38 +34,32 @@ class ObjectHash(object):
         return self.binary.__getitem__(arg)
 
 
-class BTCObjectHash(object):
+class BTCObjectHash(ObjectHash):
     def __init__(self, buf=None, offset=0, length=0, binary=None):
+
+        from_binary = binary is not None and len(binary) == SHA256_HASH_LEN
+        from_buf = length == SHA256_HASH_LEN and len(buf) >= offset + length
+
+        if not (from_binary or from_buf):
+            raise ValueError("Either binary or buf must contain data.")
 
         if buf is not None:
             if isinstance(buf, bytearray):
-                self.binary = buf[offset:offset + length]
+                local_binary = buf[offset:offset + length]
             else:  # In case this is a memoryview.
-                self.binary = bytearray(buf[offset:offset + length])
-            self.binary = self.binary[::-1]
+                local_binary = bytearray(buf[offset:offset + length])
+            local_binary = local_binary[::-1]
+        elif binary is not None:
+            local_binary = binary
         else:
-            self.binary = binary
+            raise ValueError("No data was passed")
+
+        super(BTCObjectHash, self).__init__(local_binary)
 
         # This is where the big endian format will be stored
         self._buf = None
         self._hash = struct.unpack("<L", self.binary[-PARTIAL_HASH_LENGTH:])[0]
         self._full_str = None
-
-    def __hash__(self):
-        return self._hash
-
-    def __cmp__(self, id1):
-        if id1 is None or self.binary < id1.binary:
-            return -1
-        elif self.binary > id1.binary:
-            return 1
-        return 0
-
-    def __repr__(self):
-        return repr(self.binary)
-
-    def __getitem__(self, arg):
-        return self.binary.__getitem__(arg)
 
     def full_string(self):
         if self._full_str is None:

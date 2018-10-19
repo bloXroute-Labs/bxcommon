@@ -6,6 +6,7 @@ from bxcommon.messages.broadcast_message import BroadcastMessage
 from bxcommon.services.block_recovery_service import BlockRecoveryService
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_alarm_queue import MockAlarmQueue
+from mock import MagicMock
 
 
 class BlockRecoveryManagerTest(AbstractTestCase):
@@ -143,7 +144,7 @@ class BlockRecoveryManagerTest(AbstractTestCase):
 
         # Adding to messages with 2 seconds difference between them
         self._add_broadcast_message()
-        time.sleep(2)
+        time.time = MagicMock(return_value=time.time() + 3)
         self._add_broadcast_message(1)
 
         # Verify that clean up scheduled

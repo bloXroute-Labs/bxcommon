@@ -30,10 +30,14 @@ class OutputBuffer(object):
         return self.output_msgs[0][self.index:]
 
     def advance_buffer(self, num_bytes):
+        if not isinstance(num_bytes, int) or num_bytes < 0:
+            raise ValueError("Num_bytes must be a positive integer.")
+
+        if not self.output_msgs or (self.index + num_bytes) > len(self.output_msgs[0]):
+            raise ValueError("Index cannot be larger than length of first message.")
+
         self.index += num_bytes
         self.length -= num_bytes
-
-        assert self.index <= len(self.output_msgs[0])
 
         if self.index == len(self.output_msgs[0]):
             self.index = 0
@@ -43,10 +47,16 @@ class OutputBuffer(object):
         return self.index == 0
 
     def enqueue_msgbytes(self, msg_bytes):
+        if not isinstance(msg_bytes, bytearray) and not isinstance(msg_bytes, memoryview):
+            raise ValueError("Msg_bytes must be a bytearray.")
+
         self.output_msgs.append(msg_bytes)
         self.length += len(msg_bytes)
 
     def prepend_msg(self, msg_bytes):
+        if not isinstance(msg_bytes, bytearray):
+            raise ValueError("Msg_bytes must be a bytearray.")
+
         if self.index == 0:
             self.output_msgs.appendleft(msg_bytes)
         else:

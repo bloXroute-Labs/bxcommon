@@ -41,7 +41,6 @@ class ConnectionPool(object):
     def get_byfileno(self, fileno):
         if fileno > self.len_fileno:
             return None
-
         return self.byfileno[fileno]
 
     # Get the number of connections to this ip address.

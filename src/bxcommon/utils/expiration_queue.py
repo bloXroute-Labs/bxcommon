@@ -8,6 +8,10 @@ class ExpirationQueue(object):
     """
 
     def __init__(self, time_to_live_sec):
+
+        if time_to_live_sec < 0:
+            raise ValueError("Time to live cannot be negative.")
+
         self.time_to_live_sec = time_to_live_sec
         self.queue = []
 
