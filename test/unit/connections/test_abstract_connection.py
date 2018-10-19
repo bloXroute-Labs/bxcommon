@@ -4,12 +4,19 @@ from bxcommon.messages.ping_message import PingMessage
 from bxcommon.messages.pong_message import PongMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import create_connection
+from mock import MagicMock
+from bxcommon.messages import message_types_loader
 
 
 class AbstractConnectionTest(AbstractTestCase):
 
     def setUp(self):
         self.connection = create_connection(AbstractConnection)
+        mock_msg_types = {
+            "pong": PongMessage
+        }
+
+        message_types_loader.get_message_types = MagicMock(return_value=mock_msg_types)
 
     def test_msg_ping(self):
         self.connection.msg_ping(PingMessage())
