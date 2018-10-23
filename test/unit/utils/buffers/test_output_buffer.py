@@ -1,6 +1,7 @@
 import unittest
-from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from collections import deque
+
+from bxcommon.utils.buffers.output_buffer import OutputBuffer
 
 
 class TestOutputBuffer(unittest.TestCase):
@@ -8,7 +9,6 @@ class TestOutputBuffer(unittest.TestCase):
         self.out_buf = OutputBuffer()
 
     def test_get_buffer(self):
-
         with self.assertRaises(RuntimeError):
             self.out_buf.get_buffer()
 

@@ -1,5 +1,4 @@
 import select
-import sys
 
 from bxcommon import constants
 from bxcommon.network.abstract_network_event_loop import AbstractNetworkEventLoop

@@ -1,9 +1,9 @@
 import struct
 import time
 
-from bxcommon.constants import BTC_NODE_SERVICES, BTC_HDR_COMMON_OFF
+from bxcommon.constants import BTC_HDR_COMMON_OFF, BTC_NODE_SERVICES
 from bxcommon.messages.btc.btc_message import BTCMessage
-from bxcommon.messages.btc.btc_messages_util import ipaddrport_to_btcbytearray, btcbytearray_to_ipaddrport
+from bxcommon.messages.btc.btc_messages_util import btcbytearray_to_ipaddrport, ipaddrport_to_btcbytearray
 
 
 class VersionBTCMessage(BTCMessage):

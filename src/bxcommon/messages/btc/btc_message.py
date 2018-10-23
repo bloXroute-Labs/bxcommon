@@ -1,8 +1,8 @@
 import hashlib
 import struct
 
-from bxcommon.constants import btc_magic_numbers, BTC_HDR_COMMON_OFF, BTC_HEADER_MINUS_CHECKSUM
-from bxcommon.exceptions import PayloadLenError, ChecksumError, UnrecognizedCommandError
+from bxcommon.constants import BTC_HDR_COMMON_OFF, BTC_HEADER_MINUS_CHECKSUM, btc_magic_numbers
+from bxcommon.exceptions import ChecksumError, PayloadLenError, UnrecognizedCommandError
 from bxcommon.messages.message_types_loader import get_btc_message_types
 from bxcommon.utils import logger
 

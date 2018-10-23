@@ -1,17 +1,23 @@
+from bxcommon.utils import cli
+
 MAX_CONN_BY_IP = 30  # Maximum number of connections that an IP address can have
 
-CONNECTION_TIMEOUT = 30  # Number of seconds that we wait to retry a connection.
-FAST_RETRY = 3  # Seconds before we retry in case of transient failure (e.g. EINTR thrown)
-MAX_RETRIES = 10
+CONNECTION_TIMEOUT = 3  # Number of seconds that we wait to retry a connection.
+MAX_CONNECT_RETRIES = 3
+RETRY_BLOCKCHAIN_CONNECT_FOREVER = True
 
 # Number of bad messages I'm willing to receive in a row before declaring the input stream
 # corrupt beyond repair.
 MAX_BAD_MESSAGES = 3
 
+# Number of tries to connect to a peer on startup
+NET_ADDR_INIT_CONNECT_TRIES = 3
+NET_ADDR_INIT_CONNECT_RETRY_INTERVAL_SECONDS = 2
+
 # The size of the recv buffer that we fill each time.
 RECV_BUFSIZE = 8192
 
-RETRY_INTERVAL = 30  # Seconds before we retry in case of orderly shutdown
+CONNECTION_RETRY_SECONDS = 5  # Seconds to wait before retrying connection.
 
 SINK_TIMEOUT_SECONDS = 60  # Seconds timeout for the sink
 
@@ -42,9 +48,9 @@ ENABLE_LOGGING = True
 # This is useful to change for testing so that we can test tranfer rates for large numbers of blocks.
 HEIGHT_DIFFERENCE = 100
 
-FLUSH_LOG = False
+FLUSH_LOG = True
 
-LISTEN_ON_IP_ADDRESS = "0.0.0.0"
+LISTEN_ON_IP_ADDRESS = '0.0.0.0'
 
 # The length of everything in the header minus the checksum
 HDR_COMMON_OFF = 16
@@ -53,7 +59,7 @@ HDR_COMMON_OFF = 16
 SHA256_HASH_LEN = 32
 
 # Size of integer in bytes
-UL_INT_SIZE_IN_BYTES = 4
+UL_INT_SIZE_IN_BYTES = 4  # If changing here, also change in bxapi/constants.py
 
 # Expiration time for block broadcast message if services info is missing
 MISSING_BLOCK_EXPIRE_TIME = 60
@@ -88,11 +94,26 @@ CUT_THROUGH_TIMEOUT = 60  # Maximum time (in seconds) that we wait for the remot
 MGR_DELETE_DELAY = 100  # Time (in seconds) we wait until we delete this manager from our node.
 
 MIN_PYLINT_SCORE = 9.5
-ENV_PYLINTRC_PATH = "PYLINTRC_PATH"
 
 RELAY_PING_INTERVAL_SEC = 60
+
+# The unsigned integer transaction SID representing null.
+NULL_TX_SID = 0  # If changing, also change in bxapi/constants.py
+
+# Unsigned int used for no idx in hello messages from gateways.
+NULL_IDX = 0  # If changing, also change in bxapi/constants.
 
 PLATFORM_LINUX = "linux"
 PLATFORM_MAC = "darwin"
 
+DEFAULT_SLEEP_TIMEOUT = 0.1  # Schedule an event to be executed fast on alarm queue.
+
 MAX_KQUEUE_EVENTS_COUNT = 1000
+
+BX_API_ROOT_URL = cli.get_args().sdn_url
+BX_API_ROUTES = {
+    "nodes": BX_API_ROOT_URL + "/nodes",
+    "node": BX_API_ROOT_URL + "/nodes/{0}",
+    "node_peers": BX_API_ROOT_URL + "/nodes/{0}/peers",
+    "node_event": BX_API_ROOT_URL + "/nodes/{0}/events"
+}

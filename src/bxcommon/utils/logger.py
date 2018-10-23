@@ -3,9 +3,9 @@ import sys
 import time
 from collections import deque
 from datetime import datetime
-from threading import Lock, Condition, Thread
+from threading import Condition, Lock, Thread
 
-from bxcommon.constants import FLUSH_LOG, ENABLE_LOGGING
+from bxcommon.constants import ENABLE_LOGGING, FLUSH_LOG
 
 ##
 # The Logging Interface

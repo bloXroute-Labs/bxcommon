@@ -1,6 +1,8 @@
 import time
 import unittest
+
 from mock import MagicMock
+
 from bxcommon.utils.expiration_queue import ExpirationQueue
 
 

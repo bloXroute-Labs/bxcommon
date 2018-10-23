@@ -3,15 +3,20 @@ import unittest
 from threading import Thread
 
 from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.connections.node_types import NodeTypes
 from bxcommon.network.network_event_loop_factory import create_event_loop
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.helpers import generate_bytearray
+from bxcommon.test_utils.mocks.mock_node import MockOpts
 from bxcommon.utils import logger
 
 
 class TestNode(AbstractNode):
     def __init__(self, port, peers_ports, timeout=None, send_bytes=None):
-        super(TestNode, self).__init__('0.0.0.0', port)
+        opts = MockOpts()
+        opts.internal_port = port
+        opts.external_port = port
+        super(TestNode, self).__init__(opts)
 
         self.port = port
         self.peers_ports = peers_ports
@@ -32,19 +37,16 @@ class TestNode(AbstractNode):
 
         self.timeout_triggered_loops = 0
 
-    def get_server_address(self):
-        return ('0.0.0.0', self.port)
+    def set_node_type(self):
+        self.node_type = NodeTypes.RELAY
 
-    def get_peers_addresses(self):
+    def get_outbound_peer_addresses(self):
         peer_addresses = []
 
         for peer_port in self.peers_ports:
             peer_addresses.append(('0.0.0.0', peer_port))
 
         return peer_addresses
-
-    def can_retry_after_destroy(self, teardown, conn):
-        return False
 
     def get_connection_class(self, ip=None, port=None):
         return None

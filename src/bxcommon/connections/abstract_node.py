@@ -4,8 +4,11 @@ from collections import defaultdict, deque
 
 from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import CONNECTION_TIMEOUT, FAST_RETRY, MAX_RETRIES, RETRY_INTERVAL
+from bxcommon.constants import CONNECTION_RETRY_SECONDS, CONNECTION_TIMEOUT, DEFAULT_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES, \
+    RETRY_BLOCKCHAIN_CONNECT_FOREVER
 from bxcommon.exceptions import TerminationError
+from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.services import sdn_service
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import logger
 from bxcommon.utils.alarm import AlarmQueue
@@ -13,19 +16,21 @@ from bxcommon.utils.alarm import AlarmQueue
 
 class AbstractNode(object):
     __meta__ = ABCMeta
+    node_type = None
 
-    def __init__(self, server_ip, server_port):
+    def __init__(self, opts):
+        logger.info("Initializing node of type {}".format(self.node_type))
+
+        self.opts = opts
+
         self.connection_queue = deque()
         self.disconnect_queue = deque()
-
-        self.server_ip = server_ip
-        self.server_port = server_port
 
         self.connection_pool = ConnectionPool()
         self.send_pings = False
         self.should_force_exit = False
 
-        self.num_retries_by_ip = defaultdict(lambda: 0)
+        self.num_retries_by_ip = defaultdict(int)
 
         # Handle termination gracefully
         signal.signal(signal.SIGTERM, self._kill_node)
@@ -38,18 +43,19 @@ class AbstractNode(object):
 
         logger.info("initialized node state")
 
-    def get_server_address(self):
-        return self.server_ip, self.server_port
-
     @abstractmethod
-    def get_peers_addresses(self):
+    def get_outbound_peer_addresses(self):
         pass
 
-    def on_connection_added(self, fileno, ip, port, from_me):
+    def connection_exists(self, ip, port):
+        return self.connection_pool.has_connection(ip, port)
 
+    def on_connection_added(self, fileno, ip, port, from_me):
         # If we're already connected to the remote peer, log the event and request disconnect.
-        if self.connection_pool.has_connection(ip, port):
+        if self.connection_exists(ip, port):
             logger.error("Connection to {0}:{1} already exists!".format(ip, port))
+
+            # Schedule dropping the added connection and keep the old one.
             self.enqueue_disconnect(fileno)
         else:
             self._add_connection(fileno, ip, port, from_me)
@@ -71,7 +77,19 @@ class AbstractNode(object):
             logger.warn("Closed connection not in pool. Fileno {0}".format(fileno))
             return None
 
-        self._destroy_conn(conn)
+        self._destroy_conn(conn, retry_connection=True)
+
+    def fetch_updated_outbound_peers(self):
+        outbound_peers = sdn_service.fetch_outbound_peers(self.opts.node_id)
+
+        # Connect to peers not in our known pool
+        peer_set = set()
+        for peer in outbound_peers:
+            peer_ip = peer.get(OutboundPeerModel.ip)
+            peer_port = peer.get(OutboundPeerModel.port)
+            peer_set.add((peer_ip, peer_port))
+            if not self.connection_pool.has_connection(peer_ip, peer_port):
+                self.enqueue_connection(peer_ip, peer_port)
 
     def on_bytes_received(self, fileno, bytes_received):
         conn = self.connection_pool.get_byfileno(fileno)
@@ -86,7 +104,7 @@ class AbstractNode(object):
         conn.add_received_bytes(bytes_received)
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            self._destroy_conn(conn, teardown=True)
+            self._destroy_conn(conn)
 
     def get_bytes_to_send(self, fileno):
         conn = self.connection_pool.get_byfileno(fileno)
@@ -115,11 +133,15 @@ class AbstractNode(object):
 
             # Time out can be negative during debugging
             if timeout < 0:
-                timeout = 0.1
+                timeout = DEFAULT_SLEEP_TIMEOUT
 
             return timeout
         else:
-            return self.alarm_queue.fire_ready_alarms(triggered_by_timeout)
+            time_to_next = self.alarm_queue.fire_ready_alarms(triggered_by_timeout)
+            if self.connection_queue or self.disconnect_queue:
+                time_to_next = DEFAULT_SLEEP_TIMEOUT
+
+            return time_to_next
 
     def force_exit(self):
         """
@@ -134,7 +156,7 @@ class AbstractNode(object):
         logger.error("Node is closing! Closing everything.")
 
         for conn in self.connection_pool:
-            self._destroy_conn(conn, teardown=True)
+            self._destroy_conn(conn)
 
     def broadcast(self, msg, broadcasting_conn):
         """
@@ -149,10 +171,6 @@ class AbstractNode(object):
         for conn in self.connection_pool:
             if conn.state & ConnectionState.ESTABLISHED and conn != broadcasting_conn:
                 conn.enqueue_msg(msg)
-
-    @abstractmethod
-    def can_retry_after_destroy(self, teardown, conn):
-        pass
 
     @abstractmethod
     def get_connection_class(self, ip=None, port=None):
@@ -231,7 +249,7 @@ class AbstractNode(object):
 
         # Clean up the old connection and retry it if it is trusted
         logger.debug("destroying old socket with {0}".format(conn.peer_desc))
-        self._destroy_conn(conn, teardown=True)
+        self._destroy_conn(conn, retry_connection=True)
 
         # It is connect_to_address's job to schedule this function.
         return 0
@@ -242,7 +260,7 @@ class AbstractNode(object):
         """
         raise TerminationError("Node killed.")
 
-    def _destroy_conn(self, conn, teardown=False):
+    def _destroy_conn(self, conn, retry_connection=False):
         """
         Clean up the associated connection and update all data structures tracking it.
         We also retry trusted connections since they can never be destroyed.
@@ -252,26 +270,46 @@ class AbstractNode(object):
         logger.debug("Breaking connection to {0}".format(conn.peer_desc))
 
         self.connection_pool.delete(conn)
-        conn.close()
+        conn.mark_for_close()
 
-        if teardown:
-            self.enqueue_disconnect(conn.fileno)
+        if retry_connection:
+            peer_ip = conn.peer_ip
+            peer_port = conn.peer_port
+            if self.is_outbound_peer(peer_ip, peer_port) or self.is_blockchain_node_address(peer_ip, peer_port):
+                self.alarm_queue.register_alarm(CONNECTION_RETRY_SECONDS, self._retry_init_client_socket, peer_ip,
+                                                peer_port)
 
-        if teardown and self.can_retry_after_destroy(teardown, conn):
-            logger.debug("Retrying connection to {0}".format(conn.peer_desc))
-            self.alarm_queue.register_alarm(FAST_RETRY, self._retry_init_client_socket, conn.peer_ip, conn.peer_port)
+        self.enqueue_disconnect(conn.fileno)
 
-        if not teardown and conn.is_persistent:
-            self.alarm_queue.register_alarm(RETRY_INTERVAL, self._retry_init_client_socket, conn.peer_ip,
-                                            conn.peer_port)
+    @abstractmethod
+    def is_blockchain_node_address(self, ip, port):
+        pass
+
+    def is_outbound_peer(self, ip, port):
+        if not self.opts.outbound_peers:
+            return False
+
+        for peer in self.opts.outbound_peers:
+            if ip == peer.get(OutboundPeerModel.ip) and port == peer.get(OutboundPeerModel.port):
+                return True
+
+        return False
 
     def _retry_init_client_socket(self, ip, port):
         self.num_retries_by_ip[ip] += 1
-        if self.num_retries_by_ip[ip] >= MAX_RETRIES:
-            del self.num_retries_by_ip[ip]
-            logger.debug("Not retrying connection to {0}:{1}- maximum connections exceeded!".format(ip, port))
-            return 0
-        else:
+
+        is_blockchain_node = self.is_blockchain_node_address(ip, port)
+        always_retry_blockchain = is_blockchain_node and RETRY_BLOCKCHAIN_CONNECT_FOREVER
+
+        if always_retry_blockchain or self.num_retries_by_ip[ip] < MAX_CONNECT_RETRIES:
             logger.debug("Retrying connection to {0}:{1}.".format(ip, port))
             self.enqueue_connection(ip, port)
+        else:
+            del self.num_retries_by_ip[ip]
+            logger.debug("Not retrying connection to {0}:{1}- maximum connections exceeded!".format(ip, port))
+
+            if not is_blockchain_node:
+                sdn_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
+                self.fetch_updated_outbound_peers()
+
         return 0

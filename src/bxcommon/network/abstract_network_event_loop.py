@@ -1,6 +1,6 @@
 import errno
 import socket
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta, abstractmethod
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
@@ -42,13 +42,13 @@ class AbstractNetworkEventLoop(object):
             timeout = self._node.get_sleep_timeout(triggered_by_timeout=False, first_call=True)
 
             while True:
+                events_count = self._process_events(timeout)
+
                 self._process_disconnect_requests()
 
                 if self._node.force_exit():
                     logger.debug("Ending events loop. Shutdown has been requested.")
                     break
-
-                events_count = self._process_events(timeout)
 
                 self._send_all_connections()
 
@@ -74,40 +74,41 @@ class AbstractNetworkEventLoop(object):
 
     def _start_server(self):
 
-        server_address = self._node.get_server_address()
-
-        listen_port = server_address[1]
+        external_port = self._node.opts.external_port
 
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        logger.debug("Creating a server socket on {0}:{1}".format(LISTEN_ON_IP_ADDRESS, listen_port))
+        logger.debug("Creating a server socket on {0}:{1}".format(LISTEN_ON_IP_ADDRESS, external_port))
 
         try:
-            server_socket.bind((LISTEN_ON_IP_ADDRESS, listen_port))
+            server_socket.bind((LISTEN_ON_IP_ADDRESS, external_port))
             server_socket.listen(50)
             server_socket.setblocking(0)
 
-            self._register_socket(server_socket, (LISTEN_ON_IP_ADDRESS, listen_port), is_server=True)
+            self._register_socket(server_socket, (LISTEN_ON_IP_ADDRESS, external_port), is_server=True)
 
-            logger.debug("Finished creating a server socket on {0}:{1}".format(LISTEN_ON_IP_ADDRESS, listen_port))
+            logger.debug("Finished creating a server socket on {0}:{1}".format(LISTEN_ON_IP_ADDRESS, external_port))
             return server_socket
 
         except socket.error as e:
             if e.errno in [errno.EACCES, errno.EADDRINUSE, errno.EADDRNOTAVAIL, errno.ENOMEM, errno.EOPNOTSUPP]:
                 logger.fatal("Fatal error: " + str(e.errno) + " " + e.strerror +
                              " Occurred while setting up server socket on {0}:{1}. Exiting..."
-                             .format(LISTEN_ON_IP_ADDRESS, listen_port))
+                             .format(LISTEN_ON_IP_ADDRESS, external_port))
                 exit(1)
             else:
                 logger.fatal("Fatal error: " + str(e.errno) + " " + e.strerror +
-                             " Occurred while setting up server socket on {0}:{1}. Re-raising".format(LISTEN_ON_IP_ADDRESS, listen_port))
+                             " Occurred while setting up server socket on {0}:{1}. Re-raising".format(
+                                 LISTEN_ON_IP_ADDRESS,
+                                 external_port))
                 raise e
 
     def _connect_to_peers(self):
-        peers_addresses = self._node.get_peers_addresses()
+        peers_addresses = self._node.get_outbound_peer_addresses()
 
         if peers_addresses:
             for address in peers_addresses:
+                logger.debug("connecting to node {0}:{1}".format(address[0], address[1]))
                 self._connect_to_server(address[0], address[1])
 
     def _process_new_connections_requests(self):
@@ -115,7 +116,7 @@ class AbstractNetworkEventLoop(object):
 
         while address is not None:
             self._connect_to_server(address[0], address[1])
-            print "Connected to {0}, {1}".format(address[0], address[1])
+            logger.debug("Connected to {0}, {1}".format(address[0], address[1]))
             address = self._node.pop_next_connection_address()
 
     def _process_disconnect_requests(self):
@@ -131,6 +132,10 @@ class AbstractNetworkEventLoop(object):
             fileno = self._node.pop_next_disconnect_connection()
 
     def _connect_to_server(self, ip, port):
+        if self._node.connection_exists(ip, port):
+            logger.error("Ignoring repeat connection to {0}:{1}.".format(ip, port))
+            return
+
         sock = None
 
         initialized = True  # True if socket is connected. False otherwise.
@@ -148,16 +153,9 @@ class AbstractNetworkEventLoop(object):
                 return
             elif e.errno in [errno.EAGAIN, errno.ECONNREFUSED, errno.EINTR, errno.EISCONN, errno.ENETUNREACH,
                              errno.ETIMEDOUT]:
-                raise RuntimeError('FIXME')
-
-                # FIXME conn_obj and trusted are not defined, delete trust, alarm register call and test
-                # logger.error("Node.connect_to_address",
-                #         "Connection to {0}:{1} failed. Got errno {2} with msg {3}. Retry?: {4}"
-                #         .format(ip, port, e.errno, e.strerror, conn_obj.trusted))
-                # if trusted:
-                #     self.alarm_queue.register_alarm(FAST_RETRY, self.retry_init_client_socket, sock, conn_cls, ip,
-                #                                     port, setup)
-                # return
+                logger.error("Connection to {0}:{1} failed. Got errno {2} with msg {3}"
+                             .format(ip, port, e.errno, e.strerror))
+                return
             elif e.errno in [errno.EALREADY]:
                 # Can never happen because this thread is the only one using the socket.
                 logger.error("Got EALREADY while connecting to {0}:{1}.".format(ip, port))

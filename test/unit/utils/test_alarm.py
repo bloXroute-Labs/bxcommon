@@ -13,4 +13,3 @@ class AlarmTests(AbstractTestCase):
 
     def test_fire(self):
         self.assertEqual(6, self.alarm.fire())
-

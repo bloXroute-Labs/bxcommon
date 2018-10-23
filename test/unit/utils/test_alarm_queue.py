@@ -1,7 +1,9 @@
+import time
+
+from mock import MagicMock
+
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.alarm import AlarmQueue
-import time
-from mock import MagicMock
 
 
 class AlarmQueueTest(AbstractTestCase):
@@ -22,7 +24,8 @@ class AlarmQueueTest(AbstractTestCase):
     def test_register_approx_alarm(self):
         self.alarm_queue.register_approx_alarm(1, 3, self.function_to_pass, 1, 5)
         self.assertEqual(1, len(self.alarm_queue.approx_alarms_scheduled[self.function_to_pass]))
-        self.assertEqual(self.function_to_pass, self.alarm_queue.approx_alarms_scheduled[self.function_to_pass][0][2].fn)
+        self.assertEqual(self.function_to_pass,
+                         self.alarm_queue.approx_alarms_scheduled[self.function_to_pass][0][2].fn)
 
     def test_unregister_alarm(self):
         alarm_id1 = self.alarm_queue.register_alarm(1, self.function_to_pass, 1, 5)
@@ -55,4 +58,3 @@ class AlarmQueueTest(AbstractTestCase):
         time_to_next_alarm = self.alarm_queue.fire_ready_alarms(False)
         self.assertEqual(1, len(self.alarm_queue.alarms))
         self.assertLess(0, time_to_next_alarm)
-

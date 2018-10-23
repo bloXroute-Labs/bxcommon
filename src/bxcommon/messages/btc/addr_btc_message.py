@@ -2,7 +2,7 @@ import struct
 
 from bxcommon.constants import BTC_HDR_COMMON_OFF
 from bxcommon.messages.btc.btc_message import BTCMessage
-from bxcommon.messages.btc.btc_messages_util import pack_int_to_btcvarint, ipaddrport_to_btcbytearray
+from bxcommon.messages.btc.btc_messages_util import ipaddrport_to_btcbytearray, pack_int_to_btcvarint
 
 
 # the addr argument should be an array of (timestamp, ipaddr, port) triples

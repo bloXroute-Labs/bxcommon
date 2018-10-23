@@ -1,20 +1,12 @@
-from bxcommon.test_utils.mocks.mock_message import MockMessage
-from bxcommon.messages.message import Message, parse, peek_message
-from bxcommon.utils.buffers.input_buffer import InputBuffer
-from bxcommon.constants import HDR_COMMON_OFF
-from bxcommon.exceptions import UnrecognizedCommandError, PayloadLenError
 from mock import MagicMock
+
+from bxcommon.constants import HDR_COMMON_OFF
+from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
 from bxcommon.messages import message_types_loader
+from bxcommon.messages.message import Message, parse, peek_message
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-from bxcommon.messages.ack_message import AckMessage
-from bxcommon.messages.broadcast_message import BroadcastMessage
-from bxcommon.messages.hello_message import HelloMessage
-from bxcommon.messages.ping_message import PingMessage
-from bxcommon.messages.pong_message import PongMessage
-from bxcommon.messages.tx_assign_message import TxAssignMessage
-from bxcommon.messages.tx_message import TxMessage
-from bxcommon.messages.get_txs_message import GetTxsMessage
-from bxcommon.messages.txs_message import TxsMessage
+from bxcommon.test_utils.mocks.mock_message import MockMessage
+from bxcommon.utils.buffers.input_buffer import InputBuffer
 
 
 class MessageTest(AbstractTestCase):
@@ -30,7 +22,6 @@ class MessageTest(AbstractTestCase):
         self.message2 = Message(msg_type=self.msg_type2, payload_len=self.payload_len2, buf=self.buf2)
 
     def test_init(self):
-
         with self.assertRaises(ValueError):
             Message(msg_type=None, payload_len=20, buf=bytearray([i for i in range(40)]))
         with self.assertRaises(ValueError):
@@ -97,4 +88,3 @@ class MessageTest(AbstractTestCase):
         self.assertIsNone(self.message1._payload)
         self.assertEqual(self.buf1[HDR_COMMON_OFF:self.payload_len1 + HDR_COMMON_OFF], self.message1.payload())
         self.assertEqual(self.buf1[HDR_COMMON_OFF:self.payload_len1 + HDR_COMMON_OFF], self.message1._payload)
-

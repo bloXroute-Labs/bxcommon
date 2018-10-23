@@ -1,7 +1,7 @@
 import hashlib
 import struct
 
-from bxcommon.constants import BTC_BLOCK_HDR_SIZE, BTC_SHA_HASH_LEN, BTC_HDR_COMMON_OFF
+from bxcommon.constants import BTC_BLOCK_HDR_SIZE, BTC_HDR_COMMON_OFF, BTC_SHA_HASH_LEN
 from bxcommon.messages.btc.btc_message import BTCMessage
 from bxcommon.messages.btc.btc_messages_util import btcvarint_to_int, pack_int_to_btcvarint
 from bxcommon.utils.object_hash import BTCObjectHash

@@ -1,6 +1,7 @@
 import unittest
-from bxcommon.utils.object_hash import BTCObjectHash
+
 from bxcommon.constants import SHA256_HASH_LEN
+from bxcommon.utils.object_hash import BTCObjectHash
 
 
 class ObjectHashTests(unittest.TestCase):

@@ -1,11 +1,11 @@
+from mock import MagicMock
+
 from bxcommon.connections.abstract_connection import AbstractConnection
-from bxcommon.messages import message
+from bxcommon.messages import message, message_types_loader
 from bxcommon.messages.ping_message import PingMessage
 from bxcommon.messages.pong_message import PongMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import create_connection
-from mock import MagicMock
-from bxcommon.messages import message_types_loader
 
 
 class AbstractConnectionTest(AbstractTestCase):

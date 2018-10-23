@@ -1,8 +1,6 @@
-import time
-
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import MAX_BAD_MESSAGES, HDR_COMMON_OFF
-from bxcommon.exceptions import UnrecognizedCommandError, PayloadLenError
+from bxcommon.constants import HDR_COMMON_OFF, MAX_BAD_MESSAGES, NULL_IDX
+from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
 from bxcommon.messages.ack_message import AckMessage
 from bxcommon.messages.message import Message
 from bxcommon.messages.pong_message import PongMessage
@@ -18,8 +16,8 @@ class AbstractConnection(object):
         # (IP, Port) at time of socket creation. We may get a new application level port in
         # the version message if the connection is not from me.
         self.peer_ip, self.peer_port = address
-        self.my_ip = node.server_ip
-        self.my_port = node.server_port
+        self.my_port = node.opts.external_port
+        self.idx = NULL_IDX
 
         self.from_me = from_me  # Whether or not I initiated the connection
 
@@ -27,7 +25,6 @@ class AbstractConnection(object):
         self.inputbuf = InputBuffer()
         self.node = node
 
-        self.is_persistent = False
         self.state = ConnectionState.CONNECTING
 
         # Number of bad messages I've received in a row.
@@ -184,20 +181,5 @@ class AbstractConnection(object):
     def msg_pong(self, msg):
         pass
 
-    def msg_txassign(self, msg):
-        """
-        Receive a transaction assignment from txhash -> shortid
-        """
-
-        tx_hash = msg.tx_hash()
-
-        logger.debug("Processing txassign message")
-        if self.node.tx_service.get_txid(tx_hash) == -1:
-            logger.debug("Assigning {0} to sid {1}".format(msg.tx_hash(), msg.short_id()))
-            self.node.tx_service.assign_tx_to_sid(tx_hash, msg.short_id(), time.time())
-            return tx_hash
-
-        return None
-
-    def close(self):
+    def mark_for_close(self):
         self.state |= ConnectionState.MARK_FOR_CLOSE

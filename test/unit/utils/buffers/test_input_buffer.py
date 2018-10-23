@@ -1,6 +1,7 @@
 import unittest
-from bxcommon.utils.buffers.input_buffer import InputBuffer
 from collections import deque
+
+from bxcommon.utils.buffers.input_buffer import InputBuffer
 
 
 class TestInputBuffer(unittest.TestCase):
@@ -75,4 +76,3 @@ class TestInputBuffer(unittest.TestCase):
         self.in_buf.add_bytes(self.data1)
         self.in_buf.add_bytes(self.data2)
         self.in_buf.add_bytes(self.data3)
-
