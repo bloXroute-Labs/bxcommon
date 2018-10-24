@@ -31,7 +31,7 @@ class PingPongMessageTests(AbstractTestCase):
         ping_msg_bytes = msg.rawbytes()
         self.assertTrue(ping_msg_bytes)
 
-        parsed_ping_message = message.parse(ping_msg_bytes)
+        parsed_ping_message = PingMessage.parse(ping_msg_bytes)
 
         self.assertIsInstance(parsed_ping_message, msg_cls)
 

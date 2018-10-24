@@ -1,7 +1,7 @@
 from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
-from bxcommon.messages import message, message_types_loader
+from bxcommon.messages import message_types_loader
 from bxcommon.messages.ping_message import PingMessage
 from bxcommon.messages.pong_message import PongMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -23,7 +23,7 @@ class AbstractConnectionTest(AbstractTestCase):
         self.assertTrue(self.connection.outputbuf.length > 0)
 
         output_buf_msg = self.connection.outputbuf.get_buffer()
-        pong_reply_msg = message.parse(output_buf_msg)
+        pong_reply_msg = PongMessage.parse(output_buf_msg)
 
         self.assertTrue(pong_reply_msg)
         self.assertTrue(isinstance(pong_reply_msg, PongMessage))
