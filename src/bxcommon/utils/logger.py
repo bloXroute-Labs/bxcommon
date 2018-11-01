@@ -27,8 +27,8 @@ LOG_ROTATION_INTERVAL = 24 * 3600
 class Log(object):
     LOG_SIZE = 4096  # We flush every 4 KiB
 
-    # No log should be bigger than 10 GB
-    MAX_LOG_SIZE = 1024 * 1024 * 1024 * 10
+    # No log should be bigger than 1 GB
+    MAX_LOG_SIZE = 1024 * 1024 * 1024 * 1
 
     def __init__(self, path, use_stdout=False):
         self.log = []
@@ -104,8 +104,10 @@ class Log(object):
                 # Checks whether we've been dumping to this logfile for a while
                 # and opens up a new file.
                 now = time.time()
-                if not self.use_stdout and now - self.last_rotation_time > LOG_ROTATION_INTERVAL \
-                        or self.bytes_written > Log.MAX_LOG_SIZE:
+
+                if not self.use_stdout and \
+                    (now - self.last_rotation_time > LOG_ROTATION_INTERVAL or self.bytes_written > Log.MAX_LOG_SIZE):
+
                     self.last_rotation_time = now
                     self.filename = time.strftime("%Y-%m-%d-%H:%M:%S+0000-", time.gmtime()) + str(os.getpid()) + ".log"
 

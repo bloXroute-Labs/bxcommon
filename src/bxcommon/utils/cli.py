@@ -1,5 +1,7 @@
 import argparse
 
+from bxcommon.utils import convert
+
 arg_parser = argparse.ArgumentParser()
 
 arg_parser.add_argument("--node-id", help="Set the node_id for using in testing.")
@@ -12,11 +14,10 @@ arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", defa
 arg_parser.add_argument("--sdn-socket-ip", help="Socket connection ip for SDN", type=str)
 arg_parser.add_argument("--sdn-socket-port", help="Socket connection port for SDN", type=int)
 arg_parser.add_argument("--bloxroute-version", help="Bloxroute protocol version")
-arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode", type=bool,
-                        default=True)
+arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode",
+                        type=convert.str_to_bool, default=True)
 
 _args = None
-
 
 def get_args():
     global _args
@@ -25,3 +26,4 @@ def get_args():
         _args, unknown = arg_parser.parse_known_args()
 
     return _args
+
