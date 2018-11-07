@@ -7,6 +7,8 @@ from bxcommon.messages.pong_message import PongMessage
 from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
+from bxcommon.utils.throughput.direction import Direction
+from bxcommon.utils.throughput.throughput_service import throughput_service
 
 
 class AbstractConnection(object):
@@ -33,6 +35,8 @@ class AbstractConnection(object):
         self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
 
         self.message_handlers = None
+
+        throughput_service.set_node(self.node)
 
     def add_received_bytes(self, bytes_received):
         assert not self.state & ConnectionState.MARK_FOR_CLOSE
@@ -122,7 +126,7 @@ class AbstractConnection(object):
                 self.state |= ConnectionState.MARK_FOR_CLOSE
                 return 0
 
-            logger.debug("Received message of type {0} from {1}".format(msg_type, self.peer_desc))
+            throughput_service.add_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
 
             if msg_type in self.message_handlers:
                 msg_handler = self.message_handlers[msg_type]
@@ -162,6 +166,7 @@ class AbstractConnection(object):
             return buf.get_buffer()
 
     def advance_bytes_on_buffer(self, buf, bytes_written):
+        throughput_service.add_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc)
         buf.advance_buffer(bytes_written)
 
     def msg_hello(self, msg):

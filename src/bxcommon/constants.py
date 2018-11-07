@@ -117,3 +117,8 @@ BX_API_ROUTES = {
     "node_peers": BX_API_ROOT_URL + "/nodes/{0}/peers",
     "node_event": BX_API_ROOT_URL + "/nodes/{0}/events"
 }
+
+# Time (in seconds) between stats gathering runs
+THROUGHPUT_STATS_INTERVAL = 60
+# Look back limit (in seconds) - Stats older then this will be discarded (Should be >= THROUGHPUT_STATS_INTERVAL)
+THROUGHPUT_STATS_LOOK_BACK = 600
