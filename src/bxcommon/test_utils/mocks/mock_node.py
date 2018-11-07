@@ -13,6 +13,7 @@ class MockNode(object):
         self.opts = mock_opts
         self.alarm_queue = AlarmQueue()
         self.tx_service = TransactionService(self)
+        self.connection_pool = []
 
         self.broadcast_messages = []
 
