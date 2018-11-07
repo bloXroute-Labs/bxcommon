@@ -3,6 +3,7 @@ import socket
 from contextlib import closing
 
 from bxcommon.connections.abstract_connection import AbstractConnection
+from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 
 
@@ -20,8 +21,8 @@ def create_connection(connection_cls):
     test_address = ('0.0.0.0', 8001)
     test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     mock_node = MockNode('0.0.0.0', 8002)
-
-    connection = connection_cls(test_socket, test_address, mock_node)
+    test_socket_connection = SocketConnection(test_socket, mock_node)
+    connection = connection_cls(test_socket_connection, test_address, mock_node)
     connection.idx = 1
 
     return connection

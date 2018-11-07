@@ -30,6 +30,8 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
                 return 0
             raise ioe
 
+        receive_connections = []
+
         for fileno, event in events:
 
             if fileno in self._socket_connections:
@@ -55,22 +57,18 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
                         # Mark the connection as sendable and send as much as we can from the outputbuffer.
                         socket_connection.can_send = True
 
-                        self._send(socket_connection)
+                        socket_connection.send()
+
+                    if event & select.EPOLLIN and \
+                        not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
+
+                        receive_connections.append(socket_connection)
             else:
                 assert False, "Connection not handled!"
 
-        # Handle EPOLLIN events.
-        for fileno, event in events:
-
-            socket_connection = self._socket_connections[fileno]
-            assert isinstance(socket_connection, SocketConnection)
-
-            # we already handled the new connections above, no need to handle them again
-            if not socket_connection.is_server:
-
-                if event & select.EPOLLIN and \
-                        not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-                    self._receive(socket_connection)
+        # Process receive events in the end
+        for socket_connection in receive_connections:
+            socket_connection.receive()
 
         return len(events)
 

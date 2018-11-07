@@ -4,6 +4,7 @@ from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
 from bxcommon.messages.ack_message import AckMessage
 from bxcommon.messages.message import Message
 from bxcommon.messages.pong_message import PongMessage
+from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
@@ -12,8 +13,13 @@ from bxcommon.utils.throughput.throughput_service import throughput_service
 
 
 class AbstractConnection(object):
-    def __init__(self, fileno, address, node, from_me=False):
-        self.fileno = fileno
+    def __init__(self, socket_connection, address, node, from_me=False):
+        if not isinstance(socket_connection, SocketConnection):
+            raise ValueError("SocketConnection type is expected for socket_connection arg but was {0}."
+                             .format(type(socket_connection)))
+
+        self.socket_connection = socket_connection
+        self.fileno = socket_connection.fileno()
 
         # (IP, Port) at time of socket creation. We may get a new application level port in
         # the version message if the connection is not from me.
@@ -39,10 +45,15 @@ class AbstractConnection(object):
         throughput_service.set_node(self.node)
 
     def add_received_bytes(self, bytes_received):
-        assert not self.state & ConnectionState.MARK_FOR_CLOSE
+        """
+        Adds bytes received from socket connection to input buffer
 
+        :param bytes_received: new bytes received from socket connection
+        :return:
+        """
+
+        assert not self.state & ConnectionState.MARK_FOR_CLOSE
         self.inputbuf.add_bytes(bytes_received)
-        self.process_message()
 
     def get_bytes_to_send(self):
         assert not self.state & ConnectionState.MARK_FOR_CLOSE
@@ -69,7 +80,7 @@ class AbstractConnection(object):
         if self.state & ConnectionState.MARK_FOR_CLOSE:
             return
 
-        self.outputbuf.enqueue_msgbytes(msg.rawbytes())
+        self.enqueue_msg_bytes(msg.rawbytes())
 
     def enqueue_msg_bytes(self, msg_bytes):
         """
@@ -88,9 +99,11 @@ class AbstractConnection(object):
 
         self.outputbuf.enqueue_msgbytes(msg_bytes)
 
+        self.socket_connection.send()
+
     def process_message(self, msg_cls=Message, hello_msgs=['hello', 'ack']):
         """
-        Receives and processes the next bytes on the socket's inputbuffer.
+        Processes the next bytes on the socket's inputbuffer.
         Returns 0 in order to avoid being rescheduled if this was an alarm.
 
         :param msg_cls: class of message

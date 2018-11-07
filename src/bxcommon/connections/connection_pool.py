@@ -17,6 +17,9 @@ class ConnectionPool(object):
     # Throws an AssertionError if there already exists a connection to the same
     # (ip, port) pair.
     def add(self, fileno, ip, port, conn):
+        if not isinstance(fileno, int):
+            raise TypeError("Fileno is expected to be of type integer.")
+
         assert (ip, port) not in self.byipport
 
         while fileno > self.len_fileno:

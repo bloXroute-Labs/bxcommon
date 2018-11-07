@@ -51,7 +51,8 @@ class TestNode(AbstractNode):
     def get_connection_class(self, ip=None, port=None):
         return None
 
-    def on_connection_added(self, fileno, port, ip, from_me):
+    def on_connection_added(self, socket_connection, port, ip, from_me):
+        fileno = socket_connection.fileno()
         print("Node {0}: Add_connection call. Fileno {1}".format(self.port, fileno))
         self.connections.append((fileno, port, ip, from_me))
         self.receive_buffers[fileno] = bytearray(0)

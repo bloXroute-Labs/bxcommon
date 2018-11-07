@@ -7,6 +7,7 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.constants import CONNECTION_RETRY_SECONDS, CONNECTION_TIMEOUT, DEFAULT_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES, \
     RETRY_BLOCKCHAIN_CONNECT_FOREVER, THROUGHPUT_STATS_INTERVAL
 from bxcommon.exceptions import TerminationError
+from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.services import sdn_service
 from bxcommon.services.transaction_service import TransactionService
@@ -53,7 +54,14 @@ class AbstractNode(object):
     def connection_exists(self, ip, port):
         return self.connection_pool.has_connection(ip, port)
 
-    def on_connection_added(self, fileno, ip, port, from_me):
+    def on_connection_added(self, socket_connection, ip, port, from_me):
+
+        if not isinstance(socket_connection, SocketConnection):
+            raise ValueError('Type SocketConnection is expected for socket_connection argument but was {0}'
+                             .format(socket_connection))
+
+        fileno = socket_connection.fileno()
+
         # If we're already connected to the remote peer, log the event and request disconnect.
         if self.connection_exists(ip, port):
             logger.error("Connection to {0}:{1} already exists!".format(ip, port))
@@ -61,7 +69,7 @@ class AbstractNode(object):
             # Schedule dropping the added connection and keep the old one.
             self.enqueue_disconnect(fileno)
         else:
-            self._add_connection(fileno, ip, port, from_me)
+            self._add_connection(socket_connection, ip, port, from_me)
 
     def on_connection_initialized(self, fileno):
         conn = self.connection_pool.get_byfileno(fileno)
@@ -108,6 +116,18 @@ class AbstractNode(object):
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
             self._destroy_conn(conn)
+
+    def on_finished_receiving(self, fileno):
+        conn = self.connection_pool.get_byfileno(fileno)
+
+        if conn is None:
+            logger.warn("Received bytes for connection not in pool. Fileno {0}".format(fileno))
+            return
+
+        if conn.state & ConnectionState.MARK_FOR_CLOSE:
+            return
+
+        conn.process_message()
 
     def get_bytes_to_send(self, fileno):
         conn = self.connection_pool.get_byfileno(fileno)
@@ -216,18 +236,18 @@ class AbstractNode(object):
 
         return None
 
-    def _add_connection(self, fileno, ip, port, from_me):
+    def _add_connection(self, socket_connection, ip, port, from_me):
         conn_cls = self.get_connection_class(ip=ip, port=port)
 
-        conn_obj = conn_cls(fileno, (ip, port), self, from_me=from_me)
+        conn_obj = conn_cls(socket_connection, (ip, port), self, from_me=from_me)
 
         self.alarm_queue.register_alarm(CONNECTION_TIMEOUT, self._connection_timeout, conn_obj)
 
         # Make the connection object publicly accessible
-        self.connection_pool.add(fileno, ip, port, conn_obj)
+        self.connection_pool.add(socket_connection.fileno(), ip, port, conn_obj)
 
         logger.debug("Connected {0}:{1} on file descriptor {2} with state {3}"
-                     .format(ip, port, fileno, conn_obj.state))
+                     .format(ip, port, socket_connection.fileno(), conn_obj.state))
 
     def _connection_timeout(self, conn):
         """

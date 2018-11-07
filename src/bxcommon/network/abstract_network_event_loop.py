@@ -2,7 +2,6 @@ import errno
 import socket
 from abc import ABCMeta, abstractmethod
 
-from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.constants import LISTEN_ON_IP_ADDRESS
 from bxcommon.network.socket_connection import SocketConnection
@@ -25,7 +24,6 @@ class AbstractNetworkEventLoop(object):
 
         self._node = node
         self._socket_connections = {}
-        self._receive_buf = bytearray(constants.RECV_BUFSIZE)
 
     def run(self):
         """
@@ -182,121 +180,13 @@ class AbstractNetworkEventLoop(object):
         except socket.error:
             pass
 
-    def _receive(self, socket_connection):
-        assert isinstance(socket_connection, SocketConnection)
-
-        fileno = socket_connection.fileno()
-
-        logger.debug("Collecting input from {0}".format(fileno))
-        collect_input = True
-
-        while collect_input:
-            # Read from the socket and store it into the receive buffer.
-            try:
-                bytes_read = socket_connection.socket_instance.recv_into(self._receive_buf, constants.RECV_BUFSIZE)
-            except socket.error as e:
-                if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
-                    logger.debug("Received errno {0} with msg {1} on connection {2}. Stop collecting input"
-                                 .format(e.errno, e.strerror, fileno))
-                    break
-                elif e.errno in [errno.EINTR]:
-                    # we were interrupted, try again
-                    logger.debug("Received errno {0} with msg {1}, receive on {2} failed. Continuing recv."
-                                 .format(e.errno, e.strerror, fileno))
-                    continue
-                elif e.errno in [errno.ECONNREFUSED]:
-                    # Fatal errors for the connections
-                    logger.debug("Received errno {0} with msg {1}, receive on {2} failed. "
-                                 "Closing connection and retrying..."
-                                 .format(e.errno, e.strerror, fileno))
-                    socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                    return
-                elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
-                    # Perform orderly shutdown
-                    socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                    return
-                elif e.errno in [errno.EFAULT, errno.EINVAL, errno.ENOTCONN, errno.ENOMEM]:
-                    # Should never happen errors
-                    logger.error("Received errno {0} with msg {1}, receive on {2} failed. This should never happen..."
-                                 .format(e.errno, e.strerror, fileno))
-                    return
-                else:
-                    raise e
-
-            piece = self._receive_buf[:bytes_read]
-            logger.debug("Got {0} bytes from {2}. They were: {1}".format(bytes_read, repr(piece), fileno))
-
-            if bytes_read == 0:
-                socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                self._node.on_connection_closed(fileno)
-                return
-            else:
-                self._node.on_bytes_received(fileno, piece)
-
-    def _send(self, socket_connection):
-        assert isinstance(socket_connection, SocketConnection)
-
-        fileno = socket_connection.fileno()
-
-        total_bytes_written = 0
-        bytes_written = 0
-
-        # Send on the socket until either the socket is full or we have nothing else to send.
-        while socket_connection.can_send and not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-            try:
-                send_buffer = self._node.get_bytes_to_send(fileno)
-
-                if not send_buffer:
-                    break
-
-                bytes_written = socket_connection.socket_instance.send(send_buffer)
-            except socket.error as e:
-                if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOBUFS]:
-                    # Normal operation
-                    logger.debug("Got {0}. Done sending to {1}. Marking as not sendable."
-                                 .format(e.strerror, fileno))
-                    socket_connection.can_send = False
-                elif e.errno in [errno.EINTR]:
-                    # Try again later errors
-                    logger.debug("Got {0}. Send to {1} failed, trying again...".format(e.strerror, fileno))
-                    continue
-                elif e.errno in [errno.EACCES, errno.ECONNRESET, errno.EPIPE, errno.EHOSTUNREACH]:
-                    # Fatal errors for the connection
-                    logger.debug("Got {0}, send to {1} failed, closing connection.".format(e.strerror, fileno))
-                    socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                    return 0
-                elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
-                    # Perform orderly shutdown
-                    socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                    return 0
-                elif e.errno in [errno.EDESTADDRREQ, errno.EFAULT, errno.EINVAL,
-                                 errno.EISCONN, errno.EMSGSIZE, errno.ENOTCONN, errno.ENOTSOCK]:
-                    # Should never happen errors
-                    logger.debug("Got {0}, send to {1} failed. Should not have happened..."
-                                 .format(e.strerror, fileno))
-                    exit(1)
-                elif e.errno in [errno.ENOMEM]:
-                    # Fatal errors for the node
-                    logger.debug("Got {0}, send to {1} failed. Fatal error! Shutting down node."
-                                 .format(e.strerror, fileno))
-                    exit(1)
-                else:
-                    raise e
-
-            total_bytes_written += bytes_written
-            self._node.on_bytes_sent(fileno, bytes_written)
-
-            bytes_written = 0
-
-        return total_bytes_written
-
     def _send_all_connections(self):
         for _, socket_connection in self._socket_connections.iteritems():
             if socket_connection.can_send and not socket_connection.is_server:
-                self._send(socket_connection)
+                socket_connection.send()
 
     def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):
-        socket_connection = SocketConnection(new_socket, is_server)
+        socket_connection = SocketConnection(new_socket, self._node, is_server)
 
         if initialized:
             socket_connection.set_state(SocketConnectionState.INITIALIZED)
@@ -304,7 +194,7 @@ class AbstractNetworkEventLoop(object):
         self._socket_connections[new_socket.fileno()] = socket_connection
 
         if not is_server:
-            self._node.on_connection_added(new_socket.fileno(), address[0], address[1], from_me)
+            self._node.on_connection_added(socket_connection, address[0], address[1], from_me)
 
             if initialized:
                 self._node.on_connection_initialized(new_socket.fileno())

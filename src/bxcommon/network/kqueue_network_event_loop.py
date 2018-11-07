@@ -26,6 +26,9 @@ class KQueueNetworkEventLoop(AbstractNetworkEventLoop):
         # get all available events from kqueue or wait until timeout. do not add any new events ([] is empty).
         events = self._kqueue.control([], constants.MAX_KQUEUE_EVENTS_COUNT, timeout)
 
+        receive_connections = []
+
+        # Process new connections and send events before receive
         for event in events:
             assert event.ident in self._socket_connections
 
@@ -35,9 +38,6 @@ class KQueueNetworkEventLoop(AbstractNetworkEventLoop):
             if event.filter == select.KQ_FILTER_READ and socket_connection.is_server:
                 self._handle_incoming_connections(socket_connection)
 
-            elif event.filter == select.KQ_FILTER_READ:
-                self._receive(socket_connection)
-
             elif event.filter == select.KQ_FILTER_WRITE and \
                     not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
 
@@ -46,7 +46,13 @@ class KQueueNetworkEventLoop(AbstractNetworkEventLoop):
                     self._node.on_connection_initialized(event.ident)
 
                 socket_connection.can_send = True
-                self._send(socket_connection)
+                socket_connection.send()
+            elif event.filter == select.KQ_FILTER_READ:
+                receive_connections.append(socket_connection)
+
+        # Process receive events in the end
+        for socket_connection in receive_connections:
+            socket_connection.receive()
 
         return len(events)
 
