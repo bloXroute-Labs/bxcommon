@@ -1,9 +1,14 @@
-version: 2
-jobs:
-
-  test:
+version: 2.1
+executors:
+  bloxroute-executor:
     docker:
       - image: circleci/python:2.7
+    environment:
+      PYTHONPATH: /home/circleci/ws/bxcommon/src
+    working_directory: ~/ws
+jobs:
+  test:
+    executor: bloxroute-executor
     working_directory: ~/ws
     steps:
       - attach_workspace:
@@ -31,21 +36,18 @@ jobs:
           command: |
             . venv/bin/activate
             cd bxcommon/test/unit
-            PYTHONPATH=../../../bxcommon/src/ \
             python -m unittest discover --verbose
       - run: # check coverage
           name: Check Coverage
           command: |
             . venv/bin/activate
             cd bxcommon/test/unit
-            PYTHONPATH=../../../bxcommon/src/ \
             coverage run --source=../../src -m unittest discover && coverage report --fail-under=01
       - run:
           name: Integration Tests
           command: |
             . venv/bin/activate
             cd bxcommon/test/integration
-            PYTHONPATH=../../../bxcommon/src/ \
             python -m unittest discover --verbose
       - run: # run pylint
           name: Lint Score
@@ -58,6 +60,53 @@ jobs:
           path: test-reports/
           destination: tr1
 
+  e2e:
+    executor: bloxroute-executor
+    steps:
+      - attach_workspace:
+          at: ~/ws
+      - checkout:
+          path:
+            "bxcommon"
+      - run:
+          name: Try to clone corresponding branches
+          command: |
+            cd ~/ws
+            { # try
+                echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxcommon."
+                git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxe2e.git
+            } || { # catch
+                echo "Trying bxe2e develop branch, could not find identical branch name '$CIRCLE_BRANCH' in bxrelay."
+                git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxe2e.git
+            }
+            { # try
+                echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxcommon."
+                git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxrelay.git
+            } || { # catch
+                echo "Trying bxrelay develop branch, could not find identical branch name '$CIRCLE_BRANCH  in bxrelay."
+                git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxrelay.git
+            }
+            { # try
+                echo "Trying to clone identical branch name '$CIRCLE_BRANCH  from bxcommon."
+                git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway.git
+            } || { # catch
+                echo "Trying bxgateway develop branch, could not find identical branch name '$CIRCLE_BRANCH  in bxrelay."
+                git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway.git
+            }
+      - run:
+          name: Initialize virtualenv
+          command: |
+            python -m virtualenv venv
+            . venv/bin/activate
+            pip install -r bxrelay/requirements.txt
+            pip install -r bxgateway/requirements.txt
+      - run:
+          name: Integration Test
+          command: |
+            . venv/bin/activate
+            cd bxe2e/test/integration
+            PYTHONPATH=$PYTHONPATH:/home/circleci/ws/bxe2e/src:/home/circleci/ws/bxgateway/src:/home/circleci/ws/bxrelay/src \
+            python -m unittest discover --verbose
   build:
     docker:
       - image: circleci/python:2.7
@@ -90,6 +139,7 @@ workflows:
   test-build:
     jobs:
       - test
+      - e2e
       - build:
           requires:
             - test
