@@ -3,10 +3,13 @@ import time
 
 from bxcommon.constants import BTC_HDR_COMMON_OFF, BTC_NODE_SERVICES
 from bxcommon.messages.btc.btc_message import BTCMessage
+from bxcommon.messages.btc.btc_message_type import BtcMessageType
 from bxcommon.messages.btc.btc_messages_util import btcbytearray_to_ipaddrport, ipaddrport_to_btcbytearray
 
 
 class VersionBTCMessage(BTCMessage):
+    MESSAGE_TYPE = BtcMessageType.VERSION
+
     def __init__(self, magic=None, version=None, dst_ip=None, dst_port=None,
                  src_ip=None, src_port=None, nonce=None, start_height=None, user_agent=None, services=BTC_NODE_SERVICES,
                  buf=None):
@@ -28,7 +31,7 @@ class VersionBTCMessage(BTCMessage):
             off += 8 + len(user_agent) + 1 + 4
             # we do not send or parse the relay boolean. if present, we benignly ignore it.
 
-            BTCMessage.__init__(self, magic, 'version', off - BTC_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, self.MESSAGE_TYPE, off - BTC_HDR_COMMON_OFF, buf)
 
         else:
             self.buf = buf

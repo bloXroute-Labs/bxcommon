@@ -2,14 +2,15 @@ import struct
 
 from bxcommon.constants import BTC_HDR_COMMON_OFF, BTC_SHA_HASH_LEN
 from bxcommon.messages.btc.btc_message import BTCMessage
+from bxcommon.messages.btc.btc_message_type import BtcMessageType
 from bxcommon.messages.btc.btc_messages_util import btcvarint_to_int, pack_int_to_btcvarint
 from bxcommon.utils.object_hash import BTCObjectHash
 
 
 class DataBTCMessage(BTCMessage):
-    # FIXME hashes is sharing global state
-    def __init__(self, magic=None, version=None, hashes=[],
-                 hash_stop=None, command=None, buf=None):
+    def __init__(self, magic=None, version=None, hashes=None, hash_stop=None, command=None, buf=None):
+        if hashes is None:
+            hashes = []
         if buf is None:
             buf = bytearray(BTC_HDR_COMMON_OFF + 9 + (len(hashes) + 1) * 32)
             self.buf = buf
@@ -63,12 +64,18 @@ class DataBTCMessage(BTCMessage):
 
 
 class GetHeadersBTCMessage(DataBTCMessage):
-    # FIXME hashes is sharing global state
-    def __init__(self, magic=None, version=None, hashes=[], hash_stop=None, buf=None):
-        DataBTCMessage.__init__(self, magic, version, hashes, hash_stop, 'getheaders', buf)
+    MESSAGE_TYPE = BtcMessageType.GET_HEADERS
+
+    def __init__(self, magic=None, version=None, hashes=None, hash_stop=None, buf=None):
+        if hashes is None:
+            hashes = []
+        DataBTCMessage.__init__(self, magic, version, hashes, hash_stop, self.MESSAGE_TYPE, buf)
 
 
 class GetBlocksBTCMessage(DataBTCMessage):
-    # FIXME hashes is sharing global state
-    def __init__(self, magic=None, version=None, hashes=[], hash_stop=None, buf=None):
-        DataBTCMessage.__init__(self, magic, version, hashes, hash_stop, 'getblocks', buf)
+    MESSAGE_TYPE = BtcMessageType.GET_BLOCKS
+
+    def __init__(self, magic=None, version=None, hashes=None, hash_stop=None, buf=None):
+        if hashes is None:
+            hashes = []
+        DataBTCMessage.__init__(self, magic, version, hashes, hash_stop, self.MESSAGE_TYPE, buf)

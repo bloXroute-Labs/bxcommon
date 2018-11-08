@@ -1,15 +1,16 @@
-import struct
-
-from bxcommon.constants import HDR_COMMON_OFF, SHA256_HASH_LEN
-from bxcommon.messages.message import Message
+from bxcommon.constants import HDR_COMMON_OFF
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxcommon.messages.bloxroute.message import Message
+from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import ObjectHash
 
 
 class BroadcastMessage(Message):
+    MESSAGE_TYPE = BloxrouteMessageType.BROADCAST
+
     def __init__(self, msg_hash=None, blob=None, buf=None):
         if buf is None:
-            buf = bytearray(HDR_COMMON_OFF + SHA256_HASH_LEN + len(blob))
-            self.buf = buf
+            self.buf = bytearray(HDR_COMMON_OFF + SHA256_HASH_LEN + len(blob))
 
             off = HDR_COMMON_OFF
             self.buf[off:off + SHA256_HASH_LEN] = msg_hash.binary
@@ -17,7 +18,7 @@ class BroadcastMessage(Message):
             self.buf[off:off + len(blob)] = blob
             off += len(blob)
 
-            Message.__init__(self, 'broadcast', off - HDR_COMMON_OFF, buf)
+            super(BroadcastMessage, self).__init__(self.MESSAGE_TYPE, off - HDR_COMMON_OFF, self.buf)
         else:
             assert not isinstance(buf, str)
             self.buf = buf
@@ -37,14 +38,3 @@ class BroadcastMessage(Message):
             self._blob = self._memoryview[off:off + self.payload_len()]
 
         return self._blob
-
-    @staticmethod
-    def peek_message(input_buffer):
-        buf = input_buffer.peek_message(HDR_COMMON_OFF + SHA256_HASH_LEN)
-
-        # FIXME statement does nothing, and returning false,none,none breaks tests
-        # if len(buf) < HDR_COMMON_OFF + SHA256_HASH_LEN:
-        #     False, None, None
-        _, length = struct.unpack_from('<12sL', buf, 0)
-        msg_hash = ObjectHash(buf[HDR_COMMON_OFF:HDR_COMMON_OFF + SHA256_HASH_LEN])
-        return True, msg_hash, length

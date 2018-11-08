@@ -1,12 +1,15 @@
 import struct
 
+import bxcommon.utils.crypto
 from bxcommon import constants
-from bxcommon.messages.message import Message
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils import logger
 from bxcommon.utils.object_hash import ObjectHash
 
 
 class TxsMessage(Message):
+    MESSAGE_TYPE = BloxrouteMessageType.TRANSACTIONS
     """
     Message with tx details. Reply to GetTxsMessage.
     """
@@ -22,7 +25,7 @@ class TxsMessage(Message):
 
         if buf is None:
             buf = self._txs_to_bytes(txs)
-            super(TxsMessage, self).__init__('txs', len(buf) - constants.HDR_COMMON_OFF, buf)
+            super(TxsMessage, self).__init__(self.MESSAGE_TYPE, len(buf) - constants.HDR_COMMON_OFF, buf)
         else:
             if isinstance(buf, str):
                 raise TypeError("Buffer can't be string")
@@ -44,7 +47,8 @@ class TxsMessage(Message):
         # msg_size = HDR_COMMON_OFF + tx count + (sid + hash + tx size) of each tx
         msg_size \
             = constants.HDR_COMMON_OFF + constants.UL_INT_SIZE_IN_BYTES + \
-              tx_count * (constants.UL_INT_SIZE_IN_BYTES + constants.SHA256_HASH_LEN + constants.UL_INT_SIZE_IN_BYTES)
+              tx_count * (
+                      constants.UL_INT_SIZE_IN_BYTES + bxcommon.utils.crypto.SHA256_HASH_LEN + constants.UL_INT_SIZE_IN_BYTES)
 
         # msg_size += size of each tx
         for tx_info in txs_details:
@@ -60,8 +64,8 @@ class TxsMessage(Message):
             struct.pack_into('<L', buf, off, tx_info[0])
             off += constants.UL_INT_SIZE_IN_BYTES
 
-            buf[off:off + constants.SHA256_HASH_LEN] = tx_info[1]
-            off += constants.SHA256_HASH_LEN
+            buf[off:off + bxcommon.utils.crypto.SHA256_HASH_LEN] = tx_info[1]
+            off += bxcommon.utils.crypto.SHA256_HASH_LEN
 
             struct.pack_into('<L', buf, off, len(tx_info[2]))
             off += constants.UL_INT_SIZE_IN_BYTES
@@ -85,8 +89,8 @@ class TxsMessage(Message):
             tx_sid, = struct.unpack_from('<L', self.buf, off)
             off += constants.UL_INT_SIZE_IN_BYTES
 
-            tx_hash = ObjectHash(self._memoryview[off:off + constants.SHA256_HASH_LEN])
-            off += constants.SHA256_HASH_LEN
+            tx_hash = ObjectHash(self._memoryview[off:off + bxcommon.utils.crypto.SHA256_HASH_LEN])
+            off += bxcommon.utils.crypto.SHA256_HASH_LEN
 
             tx_size, = struct.unpack_from('<L', self.buf, off)
             off += constants.UL_INT_SIZE_IN_BYTES

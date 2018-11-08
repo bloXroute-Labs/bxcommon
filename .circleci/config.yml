@@ -98,6 +98,7 @@ jobs:
           command: |
             python -m virtualenv venv
             . venv/bin/activate
+            pip install -r bxcommon/requirements.txt
             pip install -r bxrelay/requirements.txt
             pip install -r bxgateway/requirements.txt
       - run:

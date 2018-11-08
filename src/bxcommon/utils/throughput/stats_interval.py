@@ -1,12 +1,11 @@
-import time
 import json
-
+import time
 from collections import defaultdict
 
 from bxcommon.utils.throughput.direction import Direction
-from bxcommon.utils.throughput.throughput_payload_encoder import ThroughputPayloadEncoder
 from bxcommon.utils.throughput.peer_stats import PeerStats
 from bxcommon.utils.throughput.throughput_payload import ThroughputPayload
+from bxcommon.utils.throughput.throughput_payload_encoder import ThroughputPayloadEncoder
 
 
 class StatsInterval(object):

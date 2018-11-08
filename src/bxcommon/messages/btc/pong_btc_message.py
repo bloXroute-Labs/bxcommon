@@ -2,9 +2,12 @@ import struct
 
 from bxcommon.constants import BTC_HDR_COMMON_OFF
 from bxcommon.messages.btc.btc_message import BTCMessage
+from bxcommon.messages.btc.btc_message_type import BtcMessageType
 
 
 class PongBTCMessage(BTCMessage):
+    MESSAGE_TYPE = BtcMessageType.PONG
+
     def __init__(self, magic=None, nonce=None, buf=None):
         if buf is None:
             buf = bytearray(BTC_HDR_COMMON_OFF + 8)
@@ -16,7 +19,7 @@ class PongBTCMessage(BTCMessage):
                 struct.pack_into('<Q', buf, off, nonce)
                 off += 8
 
-            BTCMessage.__init__(self, magic, 'pong', off - BTC_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, self.MESSAGE_TYPE, off - BTC_HDR_COMMON_OFF, buf)
 
         else:
             self.buf = buf

@@ -1,8 +1,10 @@
 import struct
 
 from bxcommon import constants
-from bxcommon.constants import HDR_COMMON_OFF, SHA256_HASH_LEN
-from bxcommon.messages.message import Message
+from bxcommon.constants import HDR_COMMON_OFF
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxcommon.messages.bloxroute.message import Message
+from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import ObjectHash
 
 _SID_LEN = constants.UL_INT_SIZE_IN_BYTES
@@ -10,6 +12,8 @@ _NULL_SID = constants.NULL_TX_SID
 
 
 class TxMessage(Message):
+    MESSAGE_TYPE = BloxrouteMessageType.TRANSACTION
+
     def __init__(self, tx_hash=None, tx_val=None, buf=None, sid=_NULL_SID):
         self._tx_hash = None
         self._short_id = None
@@ -27,7 +31,7 @@ class TxMessage(Message):
             self.buf[off:off + len(tx_val)] = tx_val
             off += len(tx_val)
 
-            Message.__init__(self, 'tx', off - HDR_COMMON_OFF, buf)
+            Message.__init__(self, self.MESSAGE_TYPE, off - HDR_COMMON_OFF, buf)
         else:
             assert not isinstance(buf, str)
             self.buf = buf
@@ -54,14 +58,3 @@ class TxMessage(Message):
 
         # TODO check for empty?
         return self._tx_val
-
-    @staticmethod
-    def peek_message(input_buffer):
-        buf = input_buffer.peek_message(HDR_COMMON_OFF + SHA256_HASH_LEN)
-
-        # FIXME statement does nothing, and returning false,none,none breaks tests
-        # if len(buf) < HDR_COMMON_OFF + _BINARY_LEN:
-        #     False, None, None
-        _, length = struct.unpack_from('<12sL', buf, 0)
-        msg_hash = ObjectHash(buf[HDR_COMMON_OFF:HDR_COMMON_OFF + SHA256_HASH_LEN])
-        return True, msg_hash, length

@@ -2,13 +2,18 @@ import struct
 
 from bxcommon.constants import BTC_HDR_COMMON_OFF
 from bxcommon.messages.btc.btc_message import BTCMessage
+from bxcommon.messages.btc.btc_message_type import BtcMessageType
 from bxcommon.messages.btc.btc_messages_util import ipaddrport_to_btcbytearray, pack_int_to_btcvarint
 
 
 # the addr argument should be an array of (timestamp, ipaddr, port) triples
 class AddrBTCMessage(BTCMessage):
+    MESSAGE_TYPE = BtcMessageType.ADDRESS
+
     # FIXME addrs arg is sharing global state
-    def __init__(self, magic=None, addrs=[], buf=None):
+    def __init__(self, magic=None, addrs=None, buf=None):
+        if addrs is None:
+            addrs = []
         if buf is None:
             buf = bytearray(BTC_HDR_COMMON_OFF + 9 + len(addrs) * (4 + 18))
             self.buf = buf
@@ -24,7 +29,7 @@ class AddrBTCMessage(BTCMessage):
                 buf[off:off + 18] = ipaddrport_to_btcbytearray(triplet[1], triplet[2])
                 off += 18
 
-            BTCMessage.__init__(self, magic, 'addr', off - BTC_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, self.MESSAGE_TYPE, off - BTC_HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(buf)

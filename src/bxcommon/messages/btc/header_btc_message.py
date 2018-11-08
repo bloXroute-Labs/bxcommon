@@ -1,12 +1,11 @@
-import hashlib
 import struct
 
 from bxcommon.constants import BTC_BLOCK_HDR_SIZE, BTC_HDR_COMMON_OFF, BTC_SHA_HASH_LEN
 from bxcommon.messages.btc.btc_message import BTCMessage
+from bxcommon.messages.btc.btc_message_type import BtcMessageType
 from bxcommon.messages.btc.btc_messages_util import btcvarint_to_int, pack_int_to_btcvarint
+from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import BTCObjectHash
-
-sha256 = hashlib.sha256
 
 
 # A BlockHeader is the first 80 bytes of the corresponding block message payload
@@ -77,12 +76,14 @@ class BlockHeader(object):
     def block_hash(self):
         if self._block_hash is None:
             header = self._memoryview[:BTC_BLOCK_HDR_SIZE - 1]  # remove the tx count at the end
-            raw_hash = sha256(sha256(header).digest()).digest()
+            raw_hash = crypto.bitcoin_hash(header)
             self._hash_val = BTCObjectHash(buf=raw_hash, length=BTC_SHA_HASH_LEN)
         return self._hash_val
 
 
 class HeadersBTCMessage(BTCMessage):
+    MESSAGE_TYPE = BtcMessageType.HEADERS
+
     def __init__(self, magic=None, headers=None, buf=None):
         if buf is None:
             buf = bytearray(BTC_HDR_COMMON_OFF + 9 + len(headers) * 81)
@@ -94,7 +95,7 @@ class HeadersBTCMessage(BTCMessage):
                 buf[off:off + 81] = header
                 off += 81
 
-            BTCMessage.__init__(self, magic, 'headers', off - BTC_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, self.MESSAGE_TYPE, off - BTC_HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(self.buf)

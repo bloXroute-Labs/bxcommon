@@ -1,12 +1,11 @@
-import hashlib
 import struct
 
 from bxcommon.constants import BTC_BLOCK_HDR_SIZE, BTC_HDR_COMMON_OFF, BTC_SHA_HASH_LEN
 from bxcommon.messages.btc.btc_message import BTCMessage
+from bxcommon.messages.btc.btc_message_type import BtcMessageType
 from bxcommon.messages.btc.btc_messages_util import btcvarint_to_int, get_next_tx_size, pack_int_to_btcvarint
+from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import BTCObjectHash
-
-sha256 = hashlib.sha256
 
 
 def pack_block_message(buf, magic, block_header, txns):
@@ -26,6 +25,8 @@ def pack_block_message(buf, magic, block_header, txns):
 
 # FIXME, there's a lot of duplicate code between here and BlockHeader
 class BlockBTCMessage(BTCMessage):
+    MESSAGE_TYPE = BtcMessageType.BLOCK
+
     def __init__(self, magic=None, version=None, prev_block=None, merkle_root=None,
                  timestamp=None, bits=None, nonce=None, txns=None, buf=None):
         if buf is None:
@@ -48,7 +49,7 @@ class BlockBTCMessage(BTCMessage):
                 buf[off:off + len(tx)] = tx
                 off += len(tx)
 
-            BTCMessage.__init__(self, magic, 'block', off - BTC_HDR_COMMON_OFF, buf)
+            super(BlockBTCMessage, self).__init__(magic, self.MESSAGE_TYPE, off - BTC_HDR_COMMON_OFF, buf)
         else:
             assert not isinstance(buf, str)
             self.buf = buf
@@ -67,7 +68,7 @@ class BlockBTCMessage(BTCMessage):
             off += 4
             self._prev_block = BTCObjectHash(self.buf, off, 32)
             off += 32
-            self._merkle_root = self._memoryview[off:off + 32]
+            self._merkle_root = BTCObjectHash(self.buf, off, 32)
             off += 32
             self._timestamp, self._bits, self._nonce = struct.unpack_from('<III', self.buf, off)
             off += 12
@@ -132,7 +133,7 @@ class BlockBTCMessage(BTCMessage):
     def block_hash(self):
         if self._hash_val is None:
             header = self._memoryview[BTC_HDR_COMMON_OFF:BTC_HDR_COMMON_OFF + BTC_BLOCK_HDR_SIZE - 1]
-            raw_hash = sha256(sha256(header).digest()).digest()
+            raw_hash = crypto.bitcoin_hash(header)
             self._hash_val = BTCObjectHash(buf=raw_hash, length=BTC_SHA_HASH_LEN)
         return self._hash_val
 
@@ -144,7 +145,7 @@ class BlockBTCMessage(BTCMessage):
             return is_here, None, None
 
         header = buf[BTC_HDR_COMMON_OFF:BTC_HDR_COMMON_OFF + BTC_BLOCK_HDR_SIZE - 1]
-        raw_hash = sha256(sha256(header).digest()).digest()
+        raw_hash = crypto.bitcoin_hash(header)
         payload_len = struct.unpack_from('<L', buf, 16)[0]
         is_here = True
         return is_here, BTCObjectHash(buf=raw_hash, length=BTC_SHA_HASH_LEN), payload_len

@@ -55,9 +55,6 @@ LISTEN_ON_IP_ADDRESS = '0.0.0.0'
 # The length of everything in the header minus the checksum
 HDR_COMMON_OFF = 16
 
-# Length of a sha256 hash
-SHA256_HASH_LEN = 32
-
 # Size of integer in bytes
 UL_INT_SIZE_IN_BYTES = 4  # If changing here, also change in bxapi/constants.py
 
@@ -89,6 +86,8 @@ BTC_CASH_SERVICES = 33
 BTC_OBJTYPE_TX = 1
 BTC_OBJTYPE_BLOCK = 2
 BTC_OBJTYPE_FILTERED_BLOCK = 3
+
+BTC_HELLO_MESSAGES = ["version", "verack"]
 
 CUT_THROUGH_TIMEOUT = 60  # Maximum time (in seconds) that we wait for the remote to send us this block
 MGR_DELETE_DELAY = 100  # Time (in seconds) we wait until we delete this manager from our node.
@@ -122,3 +121,7 @@ BX_API_ROUTES = {
 THROUGHPUT_STATS_INTERVAL = 60
 # Look back limit (in seconds) - Stats older then this will be discarded (Should be >= THROUGHPUT_STATS_INTERVAL)
 THROUGHPUT_STATS_LOOK_BACK = 600
+MSG_NULL_BYTE = "\x00"
+NULL_ENCRYPT_REPEAT_VALUE = "1"  # must be nonzero string character
+BLOXROUTE_HELLO_MESSAGES = ["hello", "ack"]
+BLOXROUTE_ENCRYPTION_CACHE_TIMEOUT_S = 30 * 60

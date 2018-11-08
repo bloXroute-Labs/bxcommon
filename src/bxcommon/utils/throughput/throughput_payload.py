@@ -10,4 +10,3 @@ class ThroughputPayload(object):
         self.peer_stats = []
         self.start_time = str(start_time)
         self.current_time = str(current_time)
-

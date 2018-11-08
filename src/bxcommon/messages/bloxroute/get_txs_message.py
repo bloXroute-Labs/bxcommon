@@ -1,10 +1,13 @@
 import struct
 
 from bxcommon import constants
-from bxcommon.messages.message import Message
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxcommon.messages.bloxroute.message import Message
 
 
 class GetTxsMessage(Message):
+    MESSAGE_TYPE = BloxrouteMessageType.GET_TRANSACTIONS
+
     """
     Message used to request information about services with specified short ids.
     Node needs to reply with TxsWithShortIdsMessage
@@ -21,7 +24,7 @@ class GetTxsMessage(Message):
 
         if buf is None:
             buf = self._short_ids_to_bytes(short_ids)
-            super(GetTxsMessage, self).__init__('gettxs', len(buf) - constants.HDR_COMMON_OFF, buf)
+            super(GetTxsMessage, self).__init__(self.MESSAGE_TYPE, len(buf) - constants.HDR_COMMON_OFF, buf)
         else:
             if isinstance(buf, str):
                 raise TypeError("Buffer can't be string")

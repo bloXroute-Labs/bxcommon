@@ -19,6 +19,7 @@ arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate log
 
 _args = None
 
+
 def get_args():
     global _args
 
@@ -26,4 +27,3 @@ def get_args():
         _args, unknown = arg_parser.parse_known_args()
 
     return _args
-

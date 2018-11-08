@@ -1,6 +1,6 @@
 import struct
 
-from bxcommon.constants import SHA256_HASH_LEN
+from bxcommon.utils.crypto import SHA256_HASH_LEN
 
 # Used to take the last few characters of the SHA256 encryption as the hash function.
 # This is done because using the last characters of the SHA256 function provides major speed boosts.

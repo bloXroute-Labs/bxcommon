@@ -1,12 +1,11 @@
-import hashlib
 import struct
 
 from bxcommon.constants import BTC_HDR_COMMON_OFF, BTC_SHA_HASH_LEN
 from bxcommon.messages.btc.btc_message import BTCMessage
+from bxcommon.messages.btc.btc_message_type import BtcMessageType
 from bxcommon.messages.btc.btc_messages_util import btcvarint_to_int, pack_int_to_btcvarint
+from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import BTCObjectHash
-
-sha256 = hashlib.sha256
 
 
 def pack_outpoint(hash_val, index, buf, off):
@@ -60,9 +59,10 @@ class TxOut(object):
             buf[off:off + len(pk_script)] = pk_script
         else:
             self.buf = buf
-            self._memoryview = memoryview(buf)
             self.size = length
             self.off = off
+
+        self._memoryview = memoryview(buf)
 
     def rawbytes(self):
         if self.size == len(self.buf) and self.off == 0:
@@ -71,17 +71,22 @@ class TxOut(object):
             return self._memoryview[self.off:self.off + self.size]
 
 
-# A transaction message.
-# This class cannot fully parse a transaction message from the message bytes, but can construct one.
 class TxBTCMessage(BTCMessage):
-    # Params:
-    #    - tx_in: A list of TxIn instances.
-    #    - tx_out: A list of TxOut instances.
+    """
+    Transaction message. This class cannot fully parse a transaction message from bytes, but can construct one.
 
-    # FIXME this constructor should call init of super class or diverge from inheritance model
-    #   add magic as argument and test
-    def __init__(self, version=None, tx_in=None, tx_out=None, lock_time=None, buf=None):
+    Attributes
+    ----------
+    tx_in: a list of TxIn instances
+    tx_out: a list of TxOut instances
+    """
+    MESSAGE_TYPE = BtcMessageType.TRANSACTIONS
+
+    def __init__(self, magic=None, version=None, tx_in=None, tx_out=None, lock_time=None, buf=None):
         if buf is None:
+            # TODO: this doesn't allocate correctly
+            # need to allocate for len(tx_in) and len(tx_out) as well + test
+            # and 2*9 is an upper bound for varint, find a precise value
             buf = bytearray(BTC_HDR_COMMON_OFF + 2 * 9 + 8)
             self.buf = buf
 
@@ -107,9 +112,7 @@ class TxBTCMessage(BTCMessage):
             struct.pack_into('<I', buf, off, lock_time)
             off += 4
 
-            # FIXME magic is undefined
-            # BTCMessage.__init__(self, magic, 'tx', off-BTC_HDR_COMMON_OFF, buf)
-            raise RuntimeError('FIXME')
+            super(TxBTCMessage, self).__init__(magic, self.MESSAGE_TYPE, off - BTC_HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(buf)
@@ -178,7 +181,7 @@ class TxBTCMessage(BTCMessage):
 
     def tx_hash(self):
         if self._tx_hash is None:
-            self._tx_hash = BTCObjectHash(buf=sha256(sha256(self.payload()).digest()).digest(), length=BTC_SHA_HASH_LEN)
+            self._tx_hash = BTCObjectHash(buf=crypto.bitcoin_hash(self.payload()), length=BTC_SHA_HASH_LEN)
         return self._tx_hash
 
     def tx(self):

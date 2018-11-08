@@ -57,8 +57,11 @@ def get_sizeof_btcvarint(val):
         return 9
 
 
-# Buf must be a bytearray
 def btcvarint_to_int(buf, off):
+    """
+    Converts a varint to a regular integer in a buffer bytearray.
+    https://en.bitcoin.it/wiki/Protocol_documentation#Variable_length_integer
+    """
     assert isinstance(buf, bytearray)
 
     if buf[off] == 0xff:
@@ -71,10 +74,11 @@ def btcvarint_to_int(buf, off):
         return struct.unpack_from('B', buf, off)[0], 1
 
 
-# Returns a the size of the next transaction in the buffer.
-# Returns -1 if there's a parsing error (or the end goes beyond the tail).
-# Input must be a bytearray object.
 def get_next_tx_size(buf, off, tail=-1):
+    """
+    Returns the size of the next transaction in the.
+    Returns -1 if there's a parsing error or the end goes beyond the tail.
+    """
     end = off + 4
     txin_c, size = btcvarint_to_int(buf, end)
     end += size

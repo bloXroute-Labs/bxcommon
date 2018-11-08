@@ -106,8 +106,8 @@ class Log(object):
                 now = time.time()
 
                 if not self.use_stdout and \
-                    (now - self.last_rotation_time > LOG_ROTATION_INTERVAL or self.bytes_written > Log.MAX_LOG_SIZE):
-
+                        (
+                                now - self.last_rotation_time > LOG_ROTATION_INTERVAL or self.bytes_written > Log.MAX_LOG_SIZE):
                     self.last_rotation_time = now
                     self.filename = time.strftime("%Y-%m-%d-%H:%M:%S+0000-", time.gmtime()) + str(os.getpid()) + ".log"
 

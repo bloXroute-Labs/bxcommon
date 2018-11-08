@@ -33,3 +33,7 @@ class ChecksumError(ParseError):
 
 class TerminationError(Exception):
     pass
+
+
+class DecryptionError(Exception):
+    pass

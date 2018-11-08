@@ -2,9 +2,11 @@ import struct
 
 from bxcommon.constants import BTC_HDR_COMMON_OFF
 from bxcommon.messages.btc.btc_message import BTCMessage
+from bxcommon.messages.btc.btc_message_type import BtcMessageType
 
 
 class RejectBTCMessage(BTCMessage):
+    MESSAGE_TYPE = BtcMessageType.REJECT
     # ccodes
     REJECT_MALFORMED = 0x01
     REJECT_INVALID = 0x10
@@ -28,7 +30,7 @@ class RejectBTCMessage(BTCMessage):
             buf[off:off + len(b_data)] = b_data
             off += len(b_data)
 
-            BTCMessage.__init__(self, magic, 'reject', off - BTC_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, self.MESSAGE_TYPE, off - BTC_HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(buf)

@@ -1,9 +1,10 @@
+from abc import ABCMeta
+
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import HDR_COMMON_OFF, MAX_BAD_MESSAGES, NULL_IDX
+from bxcommon.constants import MAX_BAD_MESSAGES, NULL_IDX
 from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
-from bxcommon.messages.ack_message import AckMessage
-from bxcommon.messages.message import Message
-from bxcommon.messages.pong_message import PongMessage
+from bxcommon.messages.bloxroute.ack_message import AckMessage
+from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -13,6 +14,8 @@ from bxcommon.utils.throughput.throughput_service import throughput_service
 
 
 class AbstractConnection(object):
+    __metaclass__ = ABCMeta
+
     def __init__(self, socket_connection, address, node, from_me=False):
         if not isinstance(socket_connection, SocketConnection):
             raise ValueError("SocketConnection type is expected for socket_connection arg but was {0}."
@@ -37,9 +40,11 @@ class AbstractConnection(object):
 
         # Number of bad messages I've received in a row.
         self.num_bad_messages = 0
-
         self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
 
+        self.hello_messages = []
+        self.header_size = 0
+        self.message_factory = None
         self.message_handlers = None
 
         throughput_service.set_node(self.node)
@@ -63,11 +68,9 @@ class AbstractConnection(object):
     def advance_sent_bytes(self, bytes_sent):
         self.advance_bytes_on_buffer(self.outputbuf, bytes_sent)
 
-    def pre_process_msg(self, msg_cls):
-        is_full_msg, msg_type, payload_len = msg_cls.peek_message(self.inputbuf)
-
-        logger.debug("XXX: Starting to get message of type {0}. Is full: {1}".format(msg_type, is_full_msg))
-
+    def pre_process_msg(self):
+        is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview(self.inputbuf)
+        logger.debug("Starting to get message of type {0}. Is full: {1}".format(msg_type, is_full_msg))
         return is_full_msg, msg_type, payload_len
 
     def enqueue_msg(self, msg):
@@ -101,20 +104,16 @@ class AbstractConnection(object):
 
         self.socket_connection.send()
 
-    def process_message(self, msg_cls=Message, hello_msgs=['hello', 'ack']):
+    def process_message(self):
         """
         Processes the next bytes on the socket's inputbuffer.
         Returns 0 in order to avoid being rescheduled if this was an alarm.
-
-        :param msg_cls: class of message
-        :param hello_msgs: list of hello messages types
         """
-
         while True:
             if self.state & ConnectionState.MARK_FOR_CLOSE:
                 return 0
 
-            is_full_msg, msg_type, payload_len = self.pre_process_msg(msg_cls)
+            is_full_msg, msg_type, payload_len = self.pre_process_msg()
 
             if not is_full_msg:
                 break
@@ -133,7 +132,7 @@ class AbstractConnection(object):
 
             self.num_bad_messages = 0
 
-            if not (self.state & ConnectionState.ESTABLISHED) and msg_type not in hello_msgs:
+            if not (self.state & ConnectionState.ESTABLISHED) and msg_type not in self.hello_messages:
                 logger.error("Connection to {0} not established and got {1} message!  Closing."
                              .format(self.peer_desc, msg_type))
                 self.state |= ConnectionState.MARK_FOR_CLOSE
@@ -148,7 +147,7 @@ class AbstractConnection(object):
         logger.debug("Done receiving from {0}".format(self.peer_desc))
         return 0
 
-    def pop_next_message(self, payload_len, msg_type=Message, hdr_size=HDR_COMMON_OFF):
+    def pop_next_message(self, payload_len):
         """
         Pop the next message off of the buffer given the message length.
         Preserve invariant of self.inputbuf always containing the start of a valid message.
@@ -160,9 +159,9 @@ class AbstractConnection(object):
         """
 
         try:
-            msg_len = hdr_size + payload_len
+            msg_len = self.header_size + payload_len
             msg_contents = self.inputbuf.remove_bytes(msg_len)
-            return msg_type.parse(msg_contents)
+            return self.message_factory.create_message_from_buffer(msg_contents)
         except UnrecognizedCommandError as e:
             logger.error("Unrecognized command on {0}. Error Message: {1}".format(self.peer_desc, e.msg))
             logger.debug("Src: {0} Raw data: {1}".format(self.peer_desc, e.raw_data))
@@ -190,7 +189,6 @@ class AbstractConnection(object):
         """
         Handle an Ack Message
         """
-
         self.state |= ConnectionState.HELLO_ACKD
 
     def msg_ping(self, msg):

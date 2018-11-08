@@ -1,4 +1,4 @@
-from bxcommon.messages.txs_message import TxsMessage
+from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.object_hash import ObjectHash

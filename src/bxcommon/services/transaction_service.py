@@ -9,6 +9,8 @@ from bxcommon.utils.expiration_queue import ExpirationQueue
 
 # A manager for the transaction mappings
 # We assume in this class that no more than MAX_ID unassigned services exist at a time
+
+
 class TransactionService(object):
     # Size of a short id
     # If this is changed, make sure to change it in the TxMessage
@@ -31,9 +33,6 @@ class TransactionService(object):
         self.unassigned_hashes = set()
         self.tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
         self.tx_assign_alarm_scheduled = False
-
-        self.relayed_txns = set()
-        self.tx_relay_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
 
         if self.node.node_type == NodeTypes.RELAY:
             self.sid_start = node.opts.sid_start
@@ -174,18 +173,3 @@ class TransactionService(object):
                 logger.debug("Block recovery: Short id {0} requested by client is unknown by server.".format(short_id))
 
         return txs_details
-
-    # Returns True if
-    def already_relayed(self, tx_hash):
-        if tx_hash in self.relayed_txns:
-            return True
-        else:
-            self.relayed_txns.add(tx_hash)
-            self.tx_relay_expire_queue.add(tx_hash)
-            self.node.alarm_queue.register_approx_alarm(2 * self.node.opts.sid_expire_time,
-                                                        self.node.opts.sid_expire_time, self.cleanup_relayed)
-            return False
-
-    def cleanup_relayed(self):
-        self.tx_relay_expire_queue.remove_expired(remove_callback=self.relayed_txns.remove)
-        return 0

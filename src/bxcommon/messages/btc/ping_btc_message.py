@@ -4,10 +4,13 @@ import sys
 
 from bxcommon.constants import BTC_HDR_COMMON_OFF
 from bxcommon.messages.btc.btc_message import BTCMessage
-
-
 # FIXME dedup this against pongbtcmessage
+from bxcommon.messages.btc.btc_message_type import BtcMessageType
+
+
 class PingBTCMessage(BTCMessage):
+    MESSAGE_TYPE = BtcMessageType.PING
+
     def __init__(self, magic=None, buf=None):
         if buf is None:
             buf = bytearray(BTC_HDR_COMMON_OFF + 8)
@@ -17,7 +20,7 @@ class PingBTCMessage(BTCMessage):
             struct.pack_into('<Q', buf, off, random.randint(0, sys.maxint))
             off += 8
 
-            BTCMessage.__init__(self, magic, 'ping', off - BTC_HDR_COMMON_OFF, buf)
+            BTCMessage.__init__(self, magic, self.MESSAGE_TYPE, off - BTC_HDR_COMMON_OFF, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(buf)

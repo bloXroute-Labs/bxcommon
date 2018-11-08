@@ -4,7 +4,7 @@ import time
 from mock import MagicMock
 
 from bxcommon import constants
-from bxcommon.messages.broadcast_message import BroadcastMessage
+from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.services.block_recovery_service import BlockRecoveryService
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_alarm_queue import MockAlarmQueue

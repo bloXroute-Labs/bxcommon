@@ -60,8 +60,7 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
                         socket_connection.send()
 
                     if event & select.EPOLLIN and \
-                        not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-
+                            not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
                         receive_connections.append(socket_connection)
             else:
                 assert False, "Connection not handled!"

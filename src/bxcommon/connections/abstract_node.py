@@ -7,8 +7,8 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.constants import CONNECTION_RETRY_SECONDS, CONNECTION_TIMEOUT, DEFAULT_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES, \
     RETRY_BLOCKCHAIN_CONNECT_FOREVER, THROUGHPUT_STATS_INTERVAL
 from bxcommon.exceptions import TerminationError
-from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_service
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import logger
@@ -339,4 +339,3 @@ class AbstractNode(object):
 
     def init_throughput_logging(self):
         self.alarm_queue.register_alarm(THROUGHPUT_STATS_INTERVAL, throughput_service.flush_stats)
-

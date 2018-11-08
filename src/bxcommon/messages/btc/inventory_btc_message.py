@@ -2,6 +2,7 @@ import struct
 
 from bxcommon.constants import BTC_HDR_COMMON_OFF, BTC_SHA_HASH_LEN
 from bxcommon.messages.btc.btc_message import BTCMessage
+from bxcommon.messages.btc.btc_message_type import BtcMessageType
 from bxcommon.messages.btc.btc_messages_util import btcvarint_to_int, pack_int_to_btcvarint
 from bxcommon.utils.object_hash import BTCObjectHash
 
@@ -50,15 +51,21 @@ class InventoryBTCMessage(BTCMessage):
 
 
 class InvBTCMessage(InventoryBTCMessage):
+    MESSAGE_TYPE = BtcMessageType.INVENTORY
+
     def __init__(self, magic=None, inv_vects=None, buf=None):
-        InventoryBTCMessage.__init__(self, magic, inv_vects, 'inv', buf)
+        InventoryBTCMessage.__init__(self, magic, inv_vects, self.MESSAGE_TYPE, buf)
 
 
 class GetDataBTCMessage(InventoryBTCMessage):
+    MESSAGE_TYPE = BtcMessageType.GET_DATA
+
     def __init__(self, magic=None, inv_vects=None, buf=None):
-        InventoryBTCMessage.__init__(self, magic, inv_vects, 'getdata', buf)
+        InventoryBTCMessage.__init__(self, magic, inv_vects, self.MESSAGE_TYPE, buf)
 
 
 class NotFoundBTCMessage(InventoryBTCMessage):
+    MESSAGE_TYPE = BtcMessageType.NOT_FOUND
+
     def __init__(self, magic=None, inv_vects=None, buf=None):
-        InventoryBTCMessage.__init__(self, magic, inv_vects, 'notfound', buf)
+        InventoryBTCMessage.__init__(self, magic, inv_vects, self.MESSAGE_TYPE, buf)
