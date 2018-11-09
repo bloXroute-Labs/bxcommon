@@ -47,8 +47,6 @@ class AbstractConnection(object):
         self.message_factory = None
         self.message_handlers = None
 
-        throughput_service.set_node(self.node)
-
     def add_received_bytes(self, bytes_received):
         """
         Adds bytes received from socket connection to input buffer

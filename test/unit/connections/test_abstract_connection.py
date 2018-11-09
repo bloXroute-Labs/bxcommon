@@ -10,6 +10,7 @@ from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import create_connection
+from bxcommon.utils.throughput.throughput_service import throughput_service
 
 
 class AbstractConnectionTest(AbstractTestCase):
@@ -56,6 +57,7 @@ class AbstractConnectionTest(AbstractTestCase):
 
     def test_process_message_handler_(self):
         mock_pong = MagicMock()
+        throughput_service.set_node(None)
         self.connection.message_handlers = {
             "hello": self.connection.msg_hello,
             "pong": mock_pong

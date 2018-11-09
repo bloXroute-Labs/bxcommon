@@ -43,6 +43,8 @@ class AbstractNode(object):
 
         self.tx_service = TransactionService(self)
 
+        throughput_service.set_node(self)
+
         self.init_throughput_logging()
 
         logger.info("initialized node state")

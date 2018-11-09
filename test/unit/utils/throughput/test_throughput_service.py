@@ -1,5 +1,6 @@
 from collections import deque
 
+from bxcommon.constants import THROUGHPUT_STATS_LOOK_BACK, THROUGHPUT_STATS_INTERVAL
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils.throughput.direction import Direction
@@ -33,16 +34,17 @@ class ThroughputServiceTests(AbstractTestCase):
         self.assertEqual(0, len(throughput_service.stats_interval._peer_to_stats))
 
     def test_flush_stats_greater_than_max_look_back(self):
-        for _ in range(0, 10):
+        max_look_back = THROUGHPUT_STATS_LOOK_BACK/THROUGHPUT_STATS_INTERVAL
+        for _ in range(0, max_look_back):
             throughput_service.add_event(Direction.INBOUND, "mock_msg", 100, "localhost 0000")
             throughput_service.add_event(Direction.OUTBOUND, None, 50, "localhost 0000")
             throughput_service.flush_stats()
 
-        self.assertEqual(10, len(throughput_service.throughput_stats))
+        self.assertEqual(max_look_back, len(throughput_service.throughput_stats))
 
-        for _ in range(0, 5):
+        for _ in range(0, 2):
             throughput_service.add_event(Direction.INBOUND, "mock_msg", 100, "localhost 0000")
             throughput_service.add_event(Direction.OUTBOUND, None, 50, "localhost 0000")
             throughput_service.flush_stats()
 
-        self.assertEqual(10, len(throughput_service.throughput_stats))
+        self.assertEqual(max_look_back, len(throughput_service.throughput_stats))

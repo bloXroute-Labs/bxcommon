@@ -118,7 +118,7 @@ BX_API_ROUTES = {
 }
 
 # Time (in seconds) between stats gathering runs
-THROUGHPUT_STATS_INTERVAL = 60
+THROUGHPUT_STATS_INTERVAL = 300
 # Look back limit (in seconds) - Stats older then this will be discarded (Should be >= THROUGHPUT_STATS_INTERVAL)
 THROUGHPUT_STATS_LOOK_BACK = 600
 MSG_NULL_BYTE = "\x00"
