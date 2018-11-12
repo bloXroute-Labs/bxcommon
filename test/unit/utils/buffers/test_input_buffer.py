@@ -33,12 +33,11 @@ class TestInputBuffer(unittest.TestCase):
         self.assertEqual(deque([self.data1, self.data2]), self.in_buf.input_list)
 
     def test_remove_bytes(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             self.in_buf.remove_bytes(5)
-        with self.assertRaises(ValueError):
-            self.in_buf.remove_bytes(0)
-        with self.assertRaises(ValueError):
-            self.in_buf.remove_bytes("f")
+
+        self.in_buf.remove_bytes(0)
+        self.assertEqual(0, self.in_buf.length, 0)
 
         self.make_input_buffer()
 

@@ -35,6 +35,8 @@ class AbstractNetworkEventLoop(object):
         try:
             self._start_server()
 
+            self._connect_to_sdn()
+
             self._connect_to_peers()
 
             timeout = self._node.get_sleep_timeout(triggered_by_timeout=False, first_call=True)
@@ -100,6 +102,14 @@ class AbstractNetworkEventLoop(object):
                                  LISTEN_ON_IP_ADDRESS,
                                  external_port))
                 raise e
+
+    def _connect_to_sdn(self):
+        sdn_address = self._node.get_sdn_address()
+
+        if sdn_address:
+            self._connect_to_server(sdn_address[0], sdn_address[1])
+        else:
+            logger.warn("SDN address not provided, skipping connection.")
 
     def _connect_to_peers(self):
         peers_addresses = self._node.get_outbound_peer_addresses()

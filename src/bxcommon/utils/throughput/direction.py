@@ -1,6 +1,3 @@
-from enum import Enum
-
-
-class Direction(Enum):
+class Direction(object):
     INBOUND = "INBOUND"
     OUTBOUND = "OUTBOUND"

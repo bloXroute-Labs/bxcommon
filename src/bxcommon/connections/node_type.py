@@ -1,3 +1,3 @@
-class NodeTypes(object):
+class NodeType(object):
     RELAY = "RELAY"
     GATEWAY = "GATEWAY"

@@ -3,7 +3,7 @@ import unittest
 from threading import Thread
 
 from bxcommon.connections.abstract_node import AbstractNode
-from bxcommon.connections.node_types import NodeTypes
+from bxcommon.connections.node_type import NodeType
 from bxcommon.network.network_event_loop_factory import create_event_loop
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.helpers import generate_bytearray
@@ -37,8 +37,11 @@ class TestNode(AbstractNode):
 
         self.timeout_triggered_loops = 0
 
+    def send_request_for_peers(self):
+        pass
+
     def set_node_type(self):
-        self.node_type = NodeTypes.RELAY
+        self.node_type = NodeType.RELAY
 
     def get_outbound_peer_addresses(self):
         peer_addresses = []

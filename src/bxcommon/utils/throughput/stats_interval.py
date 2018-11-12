@@ -2,10 +2,10 @@ import json
 import time
 from collections import defaultdict
 
+from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 from bxcommon.utils.throughput.direction import Direction
 from bxcommon.utils.throughput.peer_stats import PeerStats
 from bxcommon.utils.throughput.throughput_payload import ThroughputPayload
-from bxcommon.utils.throughput.throughput_payload_encoder import ThroughputPayloadEncoder
 
 
 class StatsInterval(object):
@@ -46,4 +46,4 @@ class StatsInterval(object):
 
         payload.peer_stats = self._peer_to_stats.values()
 
-        return json.dumps(payload, cls=ThroughputPayloadEncoder)
+        return json.dumps(payload, cls=ClassJsonEncoder)

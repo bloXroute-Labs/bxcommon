@@ -1,10 +1,10 @@
-from bxcommon.connections.node_types import NodeTypes
+from bxcommon.connections.node_type import NodeType
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils.alarm import AlarmQueue
 
 
 class MockNode(object):
-    node_type = NodeTypes.RELAY
+    node_type = NodeType.RELAY
 
     def __init__(self, external_ip, external_port):
         mock_opts = MockOpts()

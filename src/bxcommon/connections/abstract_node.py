@@ -4,12 +4,12 @@ from collections import defaultdict, deque
 
 from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import CONNECTION_RETRY_SECONDS, CONNECTION_TIMEOUT, DEFAULT_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES, \
-    RETRY_BLOCKCHAIN_CONNECT_FOREVER, THROUGHPUT_STATS_INTERVAL
+    PING_INTERVAL_SEC, SDN_CONTACT_RETRY_SECONDS, THROUGHPUT_STATS_INTERVAL
 from bxcommon.exceptions import TerminationError
-from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.socket_connection import SocketConnection
-from bxcommon.services import sdn_service
+from bxcommon.services import sdn_http_service
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import logger
 from bxcommon.utils.alarm import AlarmQueue
@@ -29,7 +29,8 @@ class AbstractNode(object):
         self.disconnect_queue = deque()
 
         self.connection_pool = ConnectionPool()
-        self.send_pings = False
+
+        self.schedule_pings_on_timeout = False
         self.should_force_exit = False
 
         self.num_retries_by_ip = defaultdict(int)
@@ -48,6 +49,15 @@ class AbstractNode(object):
         self.init_throughput_logging()
 
         logger.info("initialized node state")
+
+        self.alarm_queue.register_alarm(SDN_CONTACT_RETRY_SECONDS, self.send_request_for_peers)
+
+    def get_sdn_address(self):
+        """
+        Placeholder for net event loop to get the sdn address (relay only).
+        :return:
+        """
+        return
 
     @abstractmethod
     def get_outbound_peer_addresses(self):
@@ -92,17 +102,53 @@ class AbstractNode(object):
 
         self._destroy_conn(conn, retry_connection=True)
 
-    def fetch_updated_outbound_peers(self):
-        outbound_peers = sdn_service.fetch_outbound_peers(self.opts.node_id)
+    @abstractmethod
+    def send_request_for_peers(self):
+        pass
+
+    def on_updated_peers(self, outbound_peer_models):
+        if not outbound_peer_models:
+            logger.warn("Got peer update with no peers.")
+            return
+
+        logger.debug("Processing updated outbound peers: {}.".format(outbound_peer_models))
+
+        # Remove peers not in updated list.
+        if self.opts.outbound_peers:
+            remove_peers = []
+            old_peers = self.opts.outbound_peers
+            for old_peer in old_peers:
+                found_peer = None
+                for new_peer in outbound_peer_models:
+                    if old_peer.ip == new_peer.ip and \
+                            old_peer.port == new_peer.port:
+                        found_peer = new_peer
+                        break
+
+                if not found_peer:
+                    remove_peers.append(old_peer)
+
+            for rem_peer in remove_peers:
+                rem_conn = self.connection_pool.get_byipport(rem_peer.ip,
+                                                             rem_peer.port)
+                if rem_conn:
+                    self._destroy_conn(rem_conn)
 
         # Connect to peers not in our known pool
-        peer_set = set()
-        for peer in outbound_peers:
-            peer_ip = peer.get(OutboundPeerModel.ip)
-            peer_port = peer.get(OutboundPeerModel.port)
-            peer_set.add((peer_ip, peer_port))
+        for peer in outbound_peer_models:
+            peer_ip = peer.ip
+            peer_port = peer.port
             if not self.connection_pool.has_connection(peer_ip, peer_port):
                 self.enqueue_connection(peer_ip, peer_port)
+
+        self.opts.outbound_peers = outbound_peer_models
+
+    def on_updated_sid_space(self, sid_start, sid_end):
+        """
+        Placeholder interface to receive sid updates from SDN over sockets and pass to relay node
+        """
+
+        return
 
     def on_bytes_received(self, fileno, bytes_received):
         conn = self.connection_pool.get_byfileno(fileno)
@@ -183,6 +229,8 @@ class AbstractNode(object):
         for conn in self.connection_pool:
             self._destroy_conn(conn)
 
+        sdn_http_service.submit_node_offline_event(self.opts.node_id)
+
     def broadcast(self, msg, broadcasting_conn):
         """
         Broadcasts message msg to every connection except requester.
@@ -194,7 +242,8 @@ class AbstractNode(object):
             logger.debug("Broadcasting message to everyone")
 
         for conn in self.connection_pool:
-            if conn.state & ConnectionState.ESTABLISHED and conn != broadcasting_conn:
+            if conn.state & ConnectionState.ESTABLISHED and conn != broadcasting_conn \
+                    and conn.connection_type != ConnectionType.SDN:
                 conn.enqueue_msg(msg)
 
     @abstractmethod
@@ -248,6 +297,9 @@ class AbstractNode(object):
         # Make the connection object publicly accessible
         self.connection_pool.add(socket_connection.fileno(), ip, port, conn_obj)
 
+        if conn_obj.connection_type == ConnectionType.SDN:
+            self.sdn_connection = conn_obj
+
         logger.debug("Connected {0}:{1} on file descriptor {2} with state {3}"
                      .format(ip, port, socket_connection.fileno(), conn_obj.state))
 
@@ -262,8 +314,8 @@ class AbstractNode(object):
         if conn.state & ConnectionState.ESTABLISHED:
             logger.debug("Turns out connection was initialized, carrying on with {0}".format(conn.peer_desc))
 
-            if self.send_pings:
-                self.alarm_queue.register_alarm(60, conn.send_ping)
+            if self.schedule_pings_on_timeout:
+                self.alarm_queue.register_alarm(PING_INTERVAL_SEC, conn.send_ping)
 
             return 0
 
@@ -300,42 +352,39 @@ class AbstractNode(object):
         if retry_connection:
             peer_ip = conn.peer_ip
             peer_port = conn.peer_port
-            if self.is_outbound_peer(peer_ip, peer_port) or self.is_blockchain_node_address(peer_ip, peer_port):
+            if self.is_outbound_peer(peer_ip, peer_port) or \
+                    conn.connection_type == ConnectionType.BLOCKCHAIN_NODE or \
+                    conn.connection_type == ConnectionType.SDN:
                 self.alarm_queue.register_alarm(CONNECTION_RETRY_SECONDS, self._retry_init_client_socket, peer_ip,
-                                                peer_port)
+                                                peer_port, conn.connection_type)
 
         self.enqueue_disconnect(conn.fileno)
-
-    @abstractmethod
-    def is_blockchain_node_address(self, ip, port):
-        pass
 
     def is_outbound_peer(self, ip, port):
         if not self.opts.outbound_peers:
             return False
 
         for peer in self.opts.outbound_peers:
-            if ip == peer.get(OutboundPeerModel.ip) and port == peer.get(OutboundPeerModel.port):
+            if ip == peer.ip and port == peer.port:
                 return True
 
         return False
 
-    def _retry_init_client_socket(self, ip, port):
+    def _retry_init_client_socket(self, ip, port, connection_type):
         self.num_retries_by_ip[ip] += 1
 
-        is_blockchain_node = self.is_blockchain_node_address(ip, port)
-        always_retry_blockchain = is_blockchain_node and RETRY_BLOCKCHAIN_CONNECT_FOREVER
+        is_blockchain_node = connection_type == ConnectionType.BLOCKCHAIN_NODE
+        is_sdn = connection_type == ConnectionType.SDN
 
-        if always_retry_blockchain or self.num_retries_by_ip[ip] < MAX_CONNECT_RETRIES:
+        if is_sdn or is_blockchain_node or self.num_retries_by_ip[ip] < MAX_CONNECT_RETRIES:
             logger.debug("Retrying connection to {0}:{1}.".format(ip, port))
             self.enqueue_connection(ip, port)
         else:
             del self.num_retries_by_ip[ip]
             logger.debug("Not retrying connection to {0}:{1}- maximum connections exceeded!".format(ip, port))
 
-            if not is_blockchain_node:
-                sdn_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
-                self.fetch_updated_outbound_peers()
+            sdn_http_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
+            self.send_request_for_peers()
 
         return 0
 

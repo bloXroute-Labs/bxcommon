@@ -24,8 +24,8 @@ class InputBuffer(object):
 
     # Removes the first num_bytes bytes in the input buffer and returns them.
     def remove_bytes(self, num_bytes):
-        if not isinstance(num_bytes, int) or not self.length >= num_bytes > 0:
-            raise ValueError("num_bytes must be less or equal to length and greater than 0.")
+        if num_bytes is None or num_bytes < 0:
+            raise ValueError("Invalid num_bytes {}".format(num_bytes))
 
         to_return = bytearray(0)
         while self.input_list and num_bytes >= len(self.input_list[0]):

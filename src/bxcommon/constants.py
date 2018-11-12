@@ -4,7 +4,6 @@ MAX_CONN_BY_IP = 30  # Maximum number of connections that an IP address can have
 
 CONNECTION_TIMEOUT = 3  # Number of seconds that we wait to retry a connection.
 MAX_CONNECT_RETRIES = 3
-RETRY_BLOCKCHAIN_CONNECT_FOREVER = True
 
 # Number of bad messages I'm willing to receive in a row before declaring the input stream
 # corrupt beyond repair.
@@ -94,10 +93,11 @@ MGR_DELETE_DELAY = 100  # Time (in seconds) we wait until we delete this manager
 
 MIN_PYLINT_SCORE = 9.5
 
-RELAY_PING_INTERVAL_SEC = 60
+PING_INTERVAL_SEC = 60
 
 # The unsigned integer transaction SID representing null.
 NULL_TX_SID = 0  # If changing, also change in bxapi/constants.py
+SID_RANGE_EARLY_UPDATE_PERCENT = .9
 
 # Unsigned int used for no idx in hello messages from gateways.
 NULL_IDX = 0  # If changing, also change in bxapi/constants.
@@ -109,13 +109,17 @@ DEFAULT_SLEEP_TIMEOUT = 0.1  # Schedule an event to be executed fast on alarm qu
 
 MAX_KQUEUE_EVENTS_COUNT = 1000
 
-BX_API_ROOT_URL = cli.get_args().sdn_url
-BX_API_ROUTES = {
-    "nodes": BX_API_ROOT_URL + "/nodes",
-    "node": BX_API_ROOT_URL + "/nodes/{0}",
-    "node_peers": BX_API_ROOT_URL + "/nodes/{0}/peers",
-    "node_event": BX_API_ROOT_URL + "/nodes/{0}/events"
-}
+BX_API_ROOT_URL = cli.get_sdn_url()
+
+
+class BxApiRoutes(object):
+    nodes = BX_API_ROOT_URL + "/nodes"
+    node = BX_API_ROOT_URL + "/nodes/{0}"
+    node_peers = BX_API_ROOT_URL + "/nodes/{0}/peers"
+    node_event = BX_API_ROOT_URL + "/nodes/{0}/events"
+
+
+SDN_CONTACT_RETRY_SECONDS = 2
 
 # Time (in seconds) between stats gathering runs
 THROUGHPUT_STATS_INTERVAL = 300
@@ -125,3 +129,5 @@ MSG_NULL_BYTE = "\x00"
 NULL_ENCRYPT_REPEAT_VALUE = "1"  # must be nonzero string character
 BLOXROUTE_HELLO_MESSAGES = ["hello", "ack"]
 BLOXROUTE_ENCRYPTION_CACHE_TIMEOUT_S = 30 * 60
+
+DEFAULT_TEXT_ENCODING = "utf-8"

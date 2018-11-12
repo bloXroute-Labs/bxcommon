@@ -1,8 +1,9 @@
 import time
 
 from bxcommon import constants
-from bxcommon.connections.node_types import NodeTypes
-from bxcommon.services import sdn_service
+from bxcommon.connections.node_type import NodeType
+from bxcommon.constants import SID_RANGE_EARLY_UPDATE_PERCENT
+from bxcommon.services import sdn_http_service
 from bxcommon.utils import logger
 from bxcommon.utils.expiration_queue import ExpirationQueue
 
@@ -24,6 +25,12 @@ class TransactionService(object):
 
     def __init__(self, node):
         self.node = node
+        self.sid_start = None
+        self.sid_end = None
+
+        # Instead of waiting for the sid range to fully fill up and block until an update happens,
+        #   when the sid count hits this number the request for a new sid space will be sent early.
+        self.sid_eager_fetch_num = None
 
         # txhash is the longhash of the transaction, sid is the short ID for the transaction
         self.txhash_to_sid = {}
@@ -34,9 +41,8 @@ class TransactionService(object):
         self.tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
         self.tx_assign_alarm_scheduled = False
 
-        if self.node.node_type == NodeTypes.RELAY:
-            self.sid_start = node.opts.sid_start
-            self.sid_end = node.opts.sid_end
+        if self.node.node_type == NodeType.RELAY:
+            self.set_sid_range(node.opts.sid_start, node.opts.sid_end)
 
         self.prev_id = constants.NULL_TX_SID
 
@@ -59,7 +65,7 @@ class TransactionService(object):
         self.unassigned_hashes = None
 
     def get_and_increment_id(self):
-        if self.prev_id is constants.NULL_TX_SID:
+        if self.prev_id == constants.NULL_TX_SID:
             self.prev_id = self.sid_start
         else:
             self.prev_id += 1
@@ -68,20 +74,29 @@ class TransactionService(object):
             raise ValueError("Tried to assign sid {}, but it is already in use.".format(self.prev_id))
 
         if self.prev_id > self.sid_end:
-            self.update_sid_start_end()
+            logger.error("SID max reached. Blocking to get new SID range. Debug eager fetch failures.")
+            self.blocking_update_sid_start_end()
             self.prev_id = self.sid_start
+        elif self.prev_id > self.sid_eager_fetch_num:
+            logger.debug("SID space almost full, notifying SDN.")
+            self.node.sdn_connection.send_sid_space_full_event()
 
         return self.prev_id, time.time()
 
-    def update_sid_start_end(self):
-        sdn_service.submit_sid_space_full_event(self.node.opts.node_id)
-        cfg = sdn_service.fetch_config(self.node.opts.node_id)
+    def blocking_update_sid_start_end(self):
+        sdn_http_service.submit_sid_space_full_event(self.node.opts.node_id)
+        node_model = sdn_http_service.fetch_config(self.node.opts.node_id)
 
-        new_sid_start = cfg.get("sid_start")
-        new_sid_end = cfg.get("sid_end")
+        self.set_sid_range(node_model.sid_start, node_model.sid_end)
 
-        self.sid_start = new_sid_start
-        self.sid_end = new_sid_end
+    def set_sid_range(self, sid_start_int, sid_end_int):
+        if sid_start_int is None or sid_end_int is None:
+            raise ValueError("Cannot set SID range value: None")
+
+        logger.debug("Setting new sid range {} {}".format(sid_start_int, sid_end_int))
+        self.sid_start = sid_start_int
+        self.sid_end = sid_end_int
+        self.sid_eager_fetch_num = self.sid_start + (self.sid_end - self.sid_start) * SID_RANGE_EARLY_UPDATE_PERCENT
 
     def expire_old_ids(self):
         self.tx_assignment_expire_queue.remove_expired(remove_callback=self.remove_tx_id)

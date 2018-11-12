@@ -27,6 +27,20 @@ def blocking_resolve_ip(net_address):
     return resolved_ip
 
 
+def blocking_resolve_peers(peer_models):
+    if not peer_models:
+        return
+
+    for peer in peer_models:
+        resolved_ip = blocking_resolve_ip(peer.ip)
+
+        if peer.ip != resolved_ip:
+            logger.debug("Resolved peer {0} to {1}".format(peer.ip, resolved_ip))
+            peer.ip = resolved_ip
+
+    logger.debug("Resolved peers successfully.")
+
+
 # Configure the global logger.
 def init_logging(log_path, to_stdout=True):
     log_path = log_path

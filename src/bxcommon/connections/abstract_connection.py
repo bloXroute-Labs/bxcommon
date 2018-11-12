@@ -1,9 +1,10 @@
 from abc import ABCMeta
 
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import MAX_BAD_MESSAGES, NULL_IDX
+from bxcommon.constants import MAX_BAD_MESSAGES, NULL_IDX, PING_INTERVAL_SEC
 from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
 from bxcommon.messages.bloxroute.ack_message import AckMessage
+from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger
@@ -15,6 +16,8 @@ from bxcommon.utils.throughput.throughput_service import throughput_service
 
 class AbstractConnection(object):
     __metaclass__ = ABCMeta
+
+    connection_type = None
 
     def __init__(self, socket_connection, address, node, from_me=False):
         if not isinstance(socket_connection, SocketConnection):
@@ -42,10 +45,18 @@ class AbstractConnection(object):
         self.num_bad_messages = 0
         self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
 
+        self.can_send_pings = False
+
         self.hello_messages = []
         self.header_size = 0
         self.message_factory = None
         self.message_handlers = None
+
+        self.log_throughput = True
+
+        self.ping_message = PingMessage()
+        self.pong_message = PongMessage()
+        self.ack_message = AckMessage()
 
     def add_received_bytes(self, bytes_received):
         """
@@ -136,7 +147,8 @@ class AbstractConnection(object):
                 self.state |= ConnectionState.MARK_FOR_CLOSE
                 return 0
 
-            throughput_service.add_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
+            if self.log_throughput:
+                throughput_service.add_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
 
             if msg_type in self.message_handlers:
                 msg_handler = self.message_handlers[msg_type]
@@ -179,9 +191,17 @@ class AbstractConnection(object):
         throughput_service.add_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc)
         buf.advance_buffer(bytes_written)
 
+    def send_ping(self):
+        """
+        Send a ping (and reschedule if called from alarm queue)
+        """
+        if self.can_send_pings:
+            self.enqueue_msg(self.ping_message)
+            return PING_INTERVAL_SEC
+
     def msg_hello(self, msg):
         self.state |= ConnectionState.HELLO_RECVD
-        self.enqueue_msg(AckMessage())
+        self.enqueue_msg(self.ack_message)
 
     def msg_ack(self, msg):
         """
@@ -190,7 +210,7 @@ class AbstractConnection(object):
         self.state |= ConnectionState.HELLO_ACKD
 
     def msg_ping(self, msg):
-        self.enqueue_msg(PongMessage())
+        self.enqueue_msg(self.pong_message)
 
     def msg_pong(self, msg):
         pass

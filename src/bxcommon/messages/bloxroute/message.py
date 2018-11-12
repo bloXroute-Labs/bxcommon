@@ -43,7 +43,8 @@ class Message(AbstractMessage):
     def validate_payload(cls, buf, unpacked_args):
         _command, payload_length = unpacked_args
         if payload_length != len(buf) - cls.HEADER_LENGTH:
-            error_message = "Payload length does not match buffer size: %d vs %d bytes" % (payload_length, len(buf))
+            error_message = "Payload length does not match buffer size: {} vs {} bytes" \
+                .format(payload_length, len(buf) - cls.HEADER_LENGTH)
             logger.error(error_message)
             raise PayloadLenError(error_message)
 
