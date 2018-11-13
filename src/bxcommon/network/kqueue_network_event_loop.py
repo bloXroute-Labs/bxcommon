@@ -7,6 +7,11 @@ from bxcommon.network.socket_connection_state import SocketConnectionState
 
 
 class KQueueNetworkEventLoop(AbstractNetworkEventLoop):
+    """
+    Implementation of network event loop for MacOS that uses KQueue
+
+    Documentation for 'select' and 'KQueue' - https://docs.python.org/2/library/select.html
+    """
 
     def __init__(self, node):
         super(KQueueNetworkEventLoop, self).__init__(node)
@@ -39,6 +44,7 @@ class KQueueNetworkEventLoop(AbstractNetworkEventLoop):
                 self._handle_incoming_connections(socket_connection)
 
             elif event.filter == select.KQ_FILTER_WRITE and \
+                    not event.flags & select.KQ_EV_EOF and \
                     not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
 
                 if not socket_connection.state & SocketConnectionState.INITIALIZED:

@@ -8,6 +8,12 @@ from bxcommon.utils import logger
 
 
 class EpollNetworkEventLoop(AbstractNetworkEventLoop):
+    """
+    Implementation of network event loop for Linux that uses epoll
+
+    Documentation for 'select' and 'epoll' - https://docs.python.org/2/library/select.html
+    """
+
     def __init__(self, node):
         super(EpollNetworkEventLoop, self).__init__(node)
         self._epoll = select.epoll()
