@@ -1,9 +1,4 @@
-import time
-
 from bxcommon import constants
-from bxcommon.connections.node_type import NodeType
-from bxcommon.constants import SID_RANGE_EARLY_UPDATE_PERCENT
-from bxcommon.services import sdn_http_service
 from bxcommon.utils import logger
 from bxcommon.utils.expiration_queue import ExpirationQueue
 
@@ -28,75 +23,15 @@ class TransactionService(object):
         self.sid_start = None
         self.sid_end = None
 
-        # Instead of waiting for the sid range to fully fill up and block until an update happens,
-        #   when the sid count hits this number the request for a new sid space will be sent early.
-        self.sid_eager_fetch_num = None
-
         # txhash is the longhash of the transaction, sid is the short ID for the transaction
         self.txhash_to_sid = {}
+
         # txid is the (unique) list of [time assigned, txhash]
         self.sid_to_txid = {}
         self.hash_to_contents = {}
         self.unassigned_hashes = set()
         self.tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
         self.tx_assign_alarm_scheduled = False
-
-        if self.node.node_type == NodeType.RELAY:
-            self.set_sid_range(node.opts.sid_start, node.opts.sid_end)
-
-        self.prev_id = constants.NULL_TX_SID
-
-        self.node.alarm_queue.register_alarm(TransactionService.INITIAL_DELAY, self.assign_initial_ids)
-
-    def assign_initial_ids(self):
-        assert self.prev_id == constants.NULL_TX_SID
-
-        if self.unassigned_hashes:
-            # FIXME there is no method _assign_tx_to_sid, change to assign_tx_to_sid and test
-            raise RuntimeError("FIXME")
-
-            # for tx_hash in self.unassigned_hashes:
-            #     sid, tx_time = self.get_and_increment_id()
-            #     self._assign_tx_to_sid(tx_hash, sid, tx_time)
-
-        if self.tx_assignment_expire_queue:
-            self.node.alarm_queue.register_alarm(self.node.opts.sid_expire_time, self.expire_old_ids)
-            self.tx_assign_alarm_scheduled = True
-        self.unassigned_hashes = None
-
-    def get_and_increment_id(self):
-        if self.prev_id == constants.NULL_TX_SID:
-            self.prev_id = self.sid_start
-        else:
-            self.prev_id += 1
-
-        if self.prev_id in self.sid_to_txid:
-            raise ValueError("Tried to assign sid {}, but it is already in use.".format(self.prev_id))
-
-        if self.prev_id > self.sid_end:
-            logger.error("SID max reached. Blocking to get new SID range. Debug eager fetch failures.")
-            self.blocking_update_sid_start_end()
-            self.prev_id = self.sid_start
-        elif self.prev_id > self.sid_eager_fetch_num:
-            logger.debug("SID space almost full, notifying SDN.")
-            self.node.sdn_connection.send_sid_space_full_event()
-
-        return self.prev_id, time.time()
-
-    def blocking_update_sid_start_end(self):
-        sdn_http_service.submit_sid_space_full_event(self.node.opts.node_id)
-        node_model = sdn_http_service.fetch_config(self.node.opts.node_id)
-
-        self.set_sid_range(node_model.sid_start, node_model.sid_end)
-
-    def set_sid_range(self, sid_start_int, sid_end_int):
-        if sid_start_int is None or sid_end_int is None:
-            raise ValueError("Cannot set SID range value: None")
-
-        logger.debug("Setting new sid range {} {}".format(sid_start_int, sid_end_int))
-        self.sid_start = sid_start_int
-        self.sid_end = sid_end_int
-        self.sid_eager_fetch_num = self.sid_start + (self.sid_end - self.sid_start) * SID_RANGE_EARLY_UPDATE_PERCENT
 
     def expire_old_ids(self):
         self.tx_assignment_expire_queue.remove_expired(remove_callback=self.remove_tx_id)
@@ -130,18 +65,6 @@ class TransactionService(object):
         if not self.tx_assign_alarm_scheduled:
             self.node.alarm_queue.register_alarm(self.node.opts.sid_expire_time, self.expire_old_ids)
             self.tx_assign_alarm_scheduled = True
-
-    def assign_tx_to_id(self, tx_hash):
-        # Not done waiting for the initial services to come through
-        if self.unassigned_hashes is not None:
-            if tx_hash not in self.unassigned_hashes:
-                self.unassigned_hashes.add(tx_hash)
-            return constants.NULL_TX_SID
-        elif tx_hash not in self.txhash_to_sid:
-            logger.debug("XXX: Adding {0} to tx_hash mapping".format(tx_hash))
-            sid, tx_time = self.get_and_increment_id()
-            self.assign_tx_to_sid(tx_hash, sid, tx_time)
-            return sid
 
     def get_txid(self, tx_hash):
         if tx_hash in self.txhash_to_sid:

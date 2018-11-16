@@ -42,7 +42,7 @@ class AbstractNode(object):
         # Event handling queue for delayed events
         self.alarm_queue = AlarmQueue()
 
-        self.tx_service = TransactionService(self)
+        self.tx_service = None
 
         throughput_service.set_node(self)
 
