@@ -129,10 +129,11 @@ class AbstractNode(object):
                     remove_peers.append(old_peer)
 
             for rem_peer in remove_peers:
-                rem_conn = self.connection_pool.get_byipport(rem_peer.ip,
-                                                             rem_peer.port)
-                if rem_conn:
-                    self._destroy_conn(rem_conn)
+                if self.connection_pool.has_connection(rem_peer.ip, rem_peer.port):
+                    rem_conn = self.connection_pool.get_byipport(rem_peer.ip,
+                                                                 rem_peer.port)
+                    if rem_conn:
+                        self._destroy_conn(rem_conn)
 
         # Connect to peers not in our known pool
         for peer in outbound_peer_models:

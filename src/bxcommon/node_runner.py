@@ -18,7 +18,8 @@ def run_node(process_id_file_path, opts, node_class):
 
     if not node_model:
         node_model = sdn_http_service.register_node(
-            NodeModel(node_type=node_class.node_type, external_ip=opts.external_ip, external_port=opts.external_port))
+            NodeModel(node_type=node_class.node_type, external_ip=opts.external_ip, external_port=opts.external_port,
+                      source_version=opts.source_version))
 
     # Add opts from SDN, but don't overwrite CLI args
     for key, val in node_model.__dict__.items():

@@ -7,6 +7,8 @@ DEFAULT_BX_API_ROOT_URL = "http://127.0.0.1:8080"
 
 arg_parser = argparse.ArgumentParser()
 
+arg_parser.add_argument("--source-version", help="Current node source version number in the format MAJOR.MINOR.PATCH",
+                        type=str, required=True)
 arg_parser.add_argument("--external-ip", help="External network ip of this node", required=True)
 arg_parser.add_argument("--external-port", help="External network port to listen on", type=int, required=True)
 arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", default=DEFAULT_BX_API_ROOT_URL, type=str)
