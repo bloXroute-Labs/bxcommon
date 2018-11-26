@@ -6,7 +6,7 @@ from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.services import http_service
-from bxcommon.utils import config, logger
+from bxcommon.utils import config, logger, model_loader
 # TODO port this to sockets soon and remove json serialization perf hit on the node.
 from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 
@@ -18,7 +18,7 @@ def fetch_config(node_id):
     logger.debug("Retrieved config for id {0} : {1}".format(node_id, opts))
 
     if opts:
-        return NodeModel(**opts)
+        return NodeModel(**model_loader.load_node_model(json.loads(opts)))
     else:
         return None
 
@@ -77,4 +77,4 @@ def register_node(node_model):
     if not node_config:
         raise EnvironmentError("Unable to reach SDN and register this node. Please check connection.")
 
-    return NodeModel(**node_config)
+    return NodeModel(**model_loader.load_node_model(node_config))
