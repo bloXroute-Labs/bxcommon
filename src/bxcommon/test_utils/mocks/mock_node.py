@@ -1,9 +1,10 @@
 from bxcommon.connections.node_type import NodeType
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils.alarm import AlarmQueue
+from bxcommon.connections.abstract_node import AbstractNode
 
 
-class MockNode(object):
+class MockNode(AbstractNode):
     node_type = NodeType.RELAY
 
     def __init__(self, external_ip, external_port):
@@ -16,6 +17,8 @@ class MockNode(object):
         self.connection_pool = []
 
         self.broadcast_messages = []
+        mock_opts = MockOpts()
+        super(MockNode, self).__init__(mock_opts)
 
     def broadcast(self, msg, requester):
         self.broadcast_messages.append(msg)
@@ -35,3 +38,4 @@ class MockOpts(object):
         self.sid_start = 1
         self.sid_end = 100000
         self.sid_expire_time = 99999
+        self.outbound_peers = False

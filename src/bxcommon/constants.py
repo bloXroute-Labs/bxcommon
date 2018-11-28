@@ -131,3 +131,6 @@ BLOXROUTE_HELLO_MESSAGES = ["hello", "ack"]
 BLOXROUTE_ENCRYPTION_CACHE_TIMEOUT_S = 30 * 60
 
 DEFAULT_TEXT_ENCODING = "utf-8"
+
+# return timeout in abstract node
+CANCEL_ALARMS = 0

@@ -6,7 +6,7 @@ from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import CONNECTION_RETRY_SECONDS, CONNECTION_TIMEOUT, DEFAULT_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES, \
-    PING_INTERVAL_SEC, SDN_CONTACT_RETRY_SECONDS, THROUGHPUT_STATS_INTERVAL
+    PING_INTERVAL_SEC, SDN_CONTACT_RETRY_SECONDS, THROUGHPUT_STATS_INTERVAL, CANCEL_ALARMS
 from bxcommon.exceptions import TerminationError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_http_service
@@ -88,7 +88,7 @@ class AbstractNode(object):
 
         if conn is None:
             logger.warn("Initialized connection not in pool. Fileno {0}".format(fileno))
-            return None
+            return
 
         logger.debug("Connection {0} has been initialized.".format(conn.peer_desc))
         conn.state |= ConnectionState.INITIALIZED
@@ -98,7 +98,7 @@ class AbstractNode(object):
 
         if conn is None:
             logger.warn("Closed connection not in pool. Fileno {0}".format(fileno))
-            return None
+            return
 
         self._destroy_conn(conn, retry_connection=True)
 
@@ -183,10 +183,10 @@ class AbstractNode(object):
 
         if conn is None:
             logger.warn("Request to get bytes for connection not in pool. Fileno {0}".format(fileno))
-            return None
+            return
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            return None
+            return
 
         return conn.get_bytes_to_send()
 
@@ -195,7 +195,7 @@ class AbstractNode(object):
 
         if conn is None:
             logger.warn("Bytes sent call for connection not in pool. Fileno {0}".format(fileno))
-            return None
+            return
 
         conn.advance_sent_bytes(bytes_sent)
 
@@ -274,19 +274,19 @@ class AbstractNode(object):
         if self.connection_queue:
             return self.connection_queue.popleft()
 
-        return None
+        return
 
     def pop_next_disconnect_connection(self):
         """
         Get next Fileno from the queue of disconnect connections
 
-        :return: tuple (ip, port)
+        :return: int (fileno)
         """
 
         if self.disconnect_queue:
             return self.disconnect_queue.popleft()
 
-        return None
+        return
 
     def _add_connection(self, socket_connection, ip, port, from_me):
         conn_cls = self.get_connection_class(ip=ip, port=port)
@@ -318,19 +318,19 @@ class AbstractNode(object):
             if self.schedule_pings_on_timeout:
                 self.alarm_queue.register_alarm(PING_INTERVAL_SEC, conn.send_ping)
 
-            return 0
+            return CANCEL_ALARMS
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
             logger.debug("We're already closing the connection to {0} (or have closed it). Ignoring timeout."
                          .format(conn.peer_desc))
-            return 0
+            return CANCEL_ALARMS
 
         # Clean up the old connection and retry it if it is trusted
         logger.debug("destroying old socket with {0}".format(conn.peer_desc))
         self._destroy_conn(conn, retry_connection=True)
 
         # It is connect_to_address's job to schedule this function.
-        return 0
+        return CANCEL_ALARMS
 
     def _kill_node(self, _signum, _stack):
         """
