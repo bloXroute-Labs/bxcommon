@@ -79,9 +79,9 @@ class TransactionService(object):
         if sid in self.sid_to_txid:
             tx_hash = self.sid_to_txid[sid][1]
 
+            logger.debug("Looking for hash: " + repr(tx_hash))
             if tx_hash in self.hash_to_contents:
                 return tx_hash, self.hash_to_contents[tx_hash]
-            logger.debug("Looking for hash: " + repr(tx_hash))
             logger.debug("Could not find hash: " + repr(self.hash_to_contents.keys()[0:10]))
 
         return tx_hash, None

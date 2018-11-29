@@ -32,7 +32,8 @@ class TxsMessage(Message):
 
             self.buf = buf
             self._memoryview = memoryview(self.buf)
-            self._txs = None
+            
+        self._txs = None
 
     def get_txs(self):
         if self._txs is None:

@@ -73,13 +73,13 @@ class TestOutputBuffer(unittest.TestCase):
 
     def test_prepend_msg(self):
         with self.assertRaises(ValueError):
-            self.out_buf.prepend_msg("f")
+            self.out_buf.prepend_msgbytes("f")
 
         data1 = bytearray([i for i in xrange(20)])
-        self.out_buf.prepend_msg(data1)
+        self.out_buf.prepend_msgbytes(data1)
 
         data2 = bytearray([i for i in xrange(20, 40)])
-        self.out_buf.prepend_msg(data2)
+        self.out_buf.prepend_msgbytes(data2)
 
         confirm1 = deque()
         confirm1.append(data2)
@@ -91,7 +91,7 @@ class TestOutputBuffer(unittest.TestCase):
         self.out_buf.advance_buffer(10)
 
         data3 = bytearray([i for i in xrange(40, 60)])
-        self.out_buf.prepend_msg(data3)
+        self.out_buf.prepend_msgbytes(data3)
 
         confirm2 = deque()
         confirm2.append(data2)

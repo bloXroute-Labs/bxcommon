@@ -99,8 +99,8 @@ class OutputBuffer(object):
 
         self.length += len(msg_bytes)
 
-    def prepend_msg(self, msg_bytes):
-        if not isinstance(msg_bytes, bytearray):
+    def prepend_msgbytes(self, msg_bytes):
+        if not isinstance(msg_bytes, bytearray) and not isinstance(msg_bytes, memoryview):
             raise ValueError("Msg_bytes must be a bytearray.")
 
         if self.index == 0:
