@@ -86,12 +86,11 @@ class ConnectionPoolTest(unittest.TestCase):
 
     def test_iter(self):
         self.add_conn()
-        pool_iter = iter(self.conn_pool1)
-        self.assertEqual(self.conn1, pool_iter.next())
-        self.assertEqual(self.conn2, pool_iter.next())
-        self.assertEqual(self.conn3, pool_iter.next())
-        with self.assertRaises(StopIteration):
-            pool_iter.next()
+        pool_connections = list(iter(self.conn_pool1))
+        self.assertEquals(3, len(pool_connections))
+        self.assertTrue(self.conn1 in pool_connections)
+        self.assertTrue(self.conn2 in pool_connections)
+        self.assertTrue(self.conn3 in pool_connections)
 
     def test_len(self):
         self.assertEqual(0, len(self.conn_pool1))

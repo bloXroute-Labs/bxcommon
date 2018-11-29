@@ -18,6 +18,7 @@ from bxcommon.utils.throughput.throughput_service import throughput_service
 
 class AbstractNode(object):
     __meta__ = ABCMeta
+    FLUSH_SEND_BUFFERS_INTERVAL = 1
     node_type = None
 
     def __init__(self, opts):
@@ -48,6 +49,10 @@ class AbstractNode(object):
 
         self.init_throughput_logging()
 
+        # TODO: clean this up alongside outputbuffer holding time
+        # this is Nagle's algorithm and we need to implement it properly
+        # flush buffers regularly because of output buffer holding time
+        self.alarm_queue.register_alarm(self.FLUSH_SEND_BUFFERS_INTERVAL, self.flush_all_send_buffers)
         logger.info("initialized node state")
 
         self.alarm_queue.register_alarm(SDN_CONTACT_RETRY_SECONDS, self.send_request_for_peers)
@@ -227,12 +232,12 @@ class AbstractNode(object):
     def close(self):
         logger.error("Node is closing! Closing everything.")
 
-        for conn in self.connection_pool:
+        for _fileno, conn in self.connection_pool.items():
             self._destroy_conn(conn)
 
         sdn_http_service.submit_node_offline_event(self.opts.node_id)
 
-    def broadcast(self, msg, broadcasting_conn):
+    def broadcast(self, msg, broadcasting_conn, prepend_to_queue=False):
         """
         Broadcasts message msg to every connection except requester.
         """
@@ -245,7 +250,7 @@ class AbstractNode(object):
         for conn in self.connection_pool:
             if conn.state & ConnectionState.ESTABLISHED and conn != broadcasting_conn \
                     and conn.connection_type != ConnectionType.SDN:
-                conn.enqueue_msg(msg)
+                conn.enqueue_msg(msg, prepend_to_queue)
 
     @abstractmethod
     def get_connection_class(self, ip=None, port=None):
@@ -391,3 +396,9 @@ class AbstractNode(object):
 
     def init_throughput_logging(self):
         self.alarm_queue.register_alarm(THROUGHPUT_STATS_INTERVAL, throughput_service.flush_stats)
+
+    def flush_all_send_buffers(self):
+        for conn in self.connection_pool:
+            if conn.socket_connection.can_send:
+                conn.socket_connection.send()
+        return self.FLUSH_SEND_BUFFERS_INTERVAL

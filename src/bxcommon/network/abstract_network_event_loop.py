@@ -50,7 +50,7 @@ class AbstractNetworkEventLoop(object):
                     logger.debug("Ending events loop. Shutdown has been requested.")
                     break
 
-                self._send_all_connections()
+                self._node.flush_all_send_buffers()
 
                 self._process_new_connections_requests()
 
@@ -189,11 +189,6 @@ class AbstractNetworkEventLoop(object):
                 self._register_socket(new_socket, address, is_server=False, initialized=True, from_me=False)
         except socket.error:
             pass
-
-    def _send_all_connections(self):
-        for _, socket_connection in self._socket_connections.iteritems():
-            if socket_connection.can_send and not socket_connection.is_server:
-                socket_connection.send()
 
     def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):
         socket_connection = SocketConnection(new_socket, self._node, is_server)

@@ -47,7 +47,7 @@ class MockConnection(object):
     def advance_bytes_on_buffer(self, buf, bytes_written):
         buf.advance_buffer(bytes_written)
 
-    def enqueue_msg(self, msg):
+    def enqueue_msg(self, msg, _prepend_to_queue=False):
 
         if self.state & ConnectionState.MARK_FOR_CLOSE:
             return

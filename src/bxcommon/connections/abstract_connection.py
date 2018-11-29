@@ -82,24 +82,26 @@ class AbstractConnection(object):
         logger.debug("Starting to get message of type {0}. Is full: {1}".format(msg_type, is_full_msg))
         return is_full_msg, msg_type, payload_len
 
-    def enqueue_msg(self, msg):
+    def enqueue_msg(self, msg, prepend=False):
         """
         Enqueues the contents of a Message instance, msg, to our outputbuf and attempts to send it if the underlying
         socket has room in the send buffer.
 
         :param msg: message
+        :param prepend: if the message should be bumped to the front of the outputbuf
         """
         if self.state & ConnectionState.MARK_FOR_CLOSE:
             return
 
-        self.enqueue_msg_bytes(msg.rawbytes())
+        self.enqueue_msg_bytes(msg.rawbytes(), prepend)
 
-    def enqueue_msg_bytes(self, msg_bytes):
+    def enqueue_msg_bytes(self, msg_bytes, prepend=False):
         """
         Enqueues the raw bytes of a message, msg_bytes, to our outputbuf and attempts to send it if the
         underlying socket has room in the send buffer.
 
         :param msg_bytes: message bytes
+        :param prepend: if the message should be bumped to the front of the outputbuf
         """
 
         if self.state & ConnectionState.MARK_FOR_CLOSE:
@@ -109,7 +111,10 @@ class AbstractConnection(object):
 
         logger.debug("Adding message of length {0} to {1}'s outputbuf".format(size, self.peer_desc))
 
-        self.outputbuf.enqueue_msgbytes(msg_bytes)
+        if prepend:
+            self.outputbuf.prepend_msg(msg_bytes)
+        else:
+            self.outputbuf.enqueue_msgbytes(msg_bytes)
 
         self.socket_connection.send()
 
@@ -203,7 +208,7 @@ class AbstractConnection(object):
         self.state |= ConnectionState.HELLO_RECVD
         self.enqueue_msg(self.ack_message)
 
-    def msg_ack(self, msg):
+    def msg_ack(self, _msg):
         """
         Handle an Ack Message
         """
@@ -212,7 +217,7 @@ class AbstractConnection(object):
     def msg_ping(self, msg):
         self.enqueue_msg(self.pong_message)
 
-    def msg_pong(self, msg):
+    def msg_pong(self, _msg):
         pass
 
     def mark_for_close(self):

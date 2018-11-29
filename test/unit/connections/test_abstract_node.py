@@ -131,7 +131,7 @@ class AbstractNodeTest(AbstractTestCase):
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         self.local_node.connection_pool.add(3, ip, port, connection2)
         self.local_node.broadcast(msg, self.connection)
-        connection2.enqueue_msg.assert_called_with(msg)
+        connection2.enqueue_msg.assert_called_with(msg, False)
 
     def test_enqueue_connection(self):
         self.assertNotIn((self.remote_ip, self.remote_port), self.local_node.connection_queue)
@@ -159,10 +159,10 @@ class AbstractNodeTest(AbstractTestCase):
     def test_add_connection(self, mock_fileno):
         test_socket = MagicMock(spec=socket.socket)
         socket_connection = SocketConnection(test_socket, self.remote_node)
-        self.assertEqual(2, self.local_node.alarm_queue.uniq_count)
+        self.assertEqual(3, self.local_node.alarm_queue.uniq_count)
         self.assertIsNone(self.local_node.connection_pool.byfileno[self.remote_fileno])
         self.local_node._add_connection(socket_connection, self.remote_ip, self.remote_port, True)
-        self.assertEqual(3, self.local_node.alarm_queue.uniq_count)
+        self.assertEqual(4, self.local_node.alarm_queue.uniq_count)
         self.assertEqual(self.connection.fileno, self.local_node.connection_pool.byfileno[self.remote_fileno].fileno.fileno())
 
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")

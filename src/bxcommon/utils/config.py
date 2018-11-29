@@ -43,11 +43,16 @@ def blocking_resolve_peers(peer_models):
 
 # Configure the global logger.
 def init_logging(log_path, to_stdout=True):
+    """
+    Configure global logger.
+    """
     log_path = log_path
     logger.log_init(log_path, to_stdout)
 
 
-# Capture the process id for easy termination in multi-thread scenarios.
 def log_pid(file_name):
+    """
+    Capture process id for easy termination in multi-thread scenarios.
+    """
     with open(file_name, "w") as writable_file:
         writable_file.write(str(os.getpid()))

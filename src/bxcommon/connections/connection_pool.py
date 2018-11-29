@@ -1,8 +1,10 @@
 from collections import defaultdict
 
 
-# A group of connections with active sockets
 class ConnectionPool(object):
+    """
+    A group of connections with active sockets.
+    """
     INITIAL_FILENO = 5000
 
     def __init__(self):
@@ -13,10 +15,11 @@ class ConnectionPool(object):
         self.count_conn_by_ip = defaultdict(lambda: 0)
         self.num_peer_conn = 0
 
-    # Add a connection for tracking.
-    # Throws an AssertionError if there already exists a connection to the same
-    # (ip, port) pair.
     def add(self, fileno, ip, port, conn):
+        """
+        Adds a connection for a tracking.
+        Throws an AssertionError if there already exists a connection to the same (ip, port) pair.
+        """
         if not isinstance(fileno, int):
             raise TypeError("Fileno is expected to be of type integer.")
 
@@ -30,30 +33,29 @@ class ConnectionPool(object):
         self.byipport[(ip, port)] = conn
         self.count_conn_by_ip[ip] += 1
 
-    # Checks whether we have a connection to (ip, port) or not
     def has_connection(self, ip, port):
         return (ip, port) in self.byipport
 
-    # Gets the connection by (ip, port).
-    # Throws a KeyError if no such connection exists
     def get_byipport(self, ip, port):
         return self.byipport[(ip, port)]
 
-    # Gets the connection by fileno.
-    # Returns None if the fileno does not exist.
     def get_byfileno(self, fileno):
         if fileno > self.len_fileno:
             return None
         return self.byfileno[fileno]
 
-    # Get the number of connections to this ip address.
     def get_num_conn_by_ip(self, ip):
+        """
+        Gets the number of connections to this IP address.
+        """
         if ip in self.count_conn_by_ip:
             return self.count_conn_by_ip[ip]
         return 0
 
-    # Delete this connection from the connection pool
     def delete(self, conn):
+        """
+        Delete connection from connection pool.
+        """
         # Remove conn from the dictionaries
         self.byfileno[conn.fileno] = None
         del self.byipport[(conn.peer_ip, conn.peer_port)]
@@ -64,16 +66,36 @@ class ConnectionPool(object):
         else:
             self.count_conn_by_ip[conn.peer_ip] -= 1
 
-    # Delete this connection given its fileno.
     def delete_byfileno(self, fileno):
-        return self.delete(self.byfileno[fileno])
+        """
+        Delete connection from connection pool via fileno.
+        """
+        conn = self.byfileno[fileno]
+        if conn is not None:
+            # noinspection PyTypeChecker
+            self.delete(conn)
 
-    # Iterates through all connection objects in this connection pool
-    def __iter__(self):
-        for conn in self.byfileno:
+    def items(self):
+        """
+        Iterates through all of the connection objects in this connection pool.
+
+        The pool can be freely modified while iterating here.
+        """
+        for fileno, conn in enumerate(self.byfileno):
             if conn is not None:
-                yield conn
+                yield fileno, conn
 
-    # Returns the number of connections in our pool
+    def __iter__(self):
+        """
+        Iterates through all of the connection objects in this connection pool.
+
+        Do not modify this pool while iterating through it here.
+        """
+        for ipport in self.byipport:
+            yield self.byipport[ipport]
+
     def __len__(self):
+        """
+        Returns number of connections in pool.
+        """
         return len(self.byipport)
