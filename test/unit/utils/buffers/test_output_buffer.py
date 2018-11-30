@@ -71,7 +71,7 @@ class TestOutputBuffer(unittest.TestCase):
         self.out_buf.index = new_index
         self.assertEqual(data1[new_index:], self.out_buf.get_buffer())
 
-    def test_prepend_msg(self):
+    def test_prepend_msgbytes(self):
         with self.assertRaises(ValueError):
             self.out_buf.prepend_msgbytes("f")
 

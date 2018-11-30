@@ -113,7 +113,7 @@ class AbstractConnection(object):
         logger.debug("Adding message of length {0} to {1}'s outputbuf".format(size, self.peer_desc))
 
         if prepend:
-            self.outputbuf.prepend_msg(msg_bytes)
+            self.outputbuf.prepend_msgbytes(msg_bytes)
         else:
             self.outputbuf.enqueue_msgbytes(msg_bytes)
 
