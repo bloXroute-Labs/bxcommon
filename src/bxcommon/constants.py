@@ -57,6 +57,9 @@ HDR_COMMON_OFF = 16
 # Size of integer in bytes
 UL_INT_SIZE_IN_BYTES = 4  # If changing here, also change in bxapi/constants.py
 
+# Length of network number in messages in bytes
+NETWORK_NUM_LEN = UL_INT_SIZE_IN_BYTES
+
 # Expiration time for block broadcast message if services info is missing
 MISSING_BLOCK_EXPIRE_TIME = 60
 
@@ -131,6 +134,12 @@ BLOXROUTE_HELLO_MESSAGES = ["hello", "ack"]
 BLOXROUTE_ENCRYPTION_CACHE_TIMEOUT_S = 30 * 60
 
 DEFAULT_TEXT_ENCODING = "utf-8"
+
+VERSION_NUM_LEN = UL_INT_SIZE_IN_BYTES
+VERSIONED_HELLO_MSG_MIN_PAYLOAD_LEN = UL_INT_SIZE_IN_BYTES + NETWORK_NUM_LEN + VERSION_NUM_LEN
+
+ALL_NETWORK_NUM = 0
+DEFAULT_NETWORK_NUM = 1
 
 OUTPUT_BUFFER_MIN_SIZE = 65535
 OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME = 0.2

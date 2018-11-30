@@ -97,11 +97,11 @@ class TransactionService(object):
         txs_details = []
 
         for short_id in short_ids:
-            if short_id in self.node.tx_service.sid_to_txid:
-                tx_hash = self.node.tx_service.sid_to_txid[short_id][1]
+            if short_id in self.sid_to_txid:
+                tx_hash = self.sid_to_txid[short_id][1]
 
-                if tx_hash in self.node.tx_service.hash_to_contents:
-                    tx = self.node.tx_service.hash_to_contents[tx_hash]
+                if tx_hash in self.hash_to_contents:
+                    tx = self.hash_to_contents[tx_hash]
 
                     txs_details.append((short_id, tx_hash, tx))
                 else:

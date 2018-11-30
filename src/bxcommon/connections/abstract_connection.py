@@ -1,6 +1,7 @@
 from abc import ABCMeta
 
 from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import MAX_BAD_MESSAGES, NULL_IDX, PING_INTERVAL_SEC
 from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
 from bxcommon.messages.bloxroute.ack_message import AckMessage
@@ -55,9 +56,12 @@ class AbstractConnection(object):
 
         self.log_throughput = True
 
-        self.ping_message = PingMessage()
-        self.pong_message = PongMessage()
-        self.ack_message = AckMessage()
+        self.ping_message = None
+        self.pong_message = None
+        self.ack_message = None
+
+        # Default network number to network number of current node. But it can change after hello message is received
+        self.network_num = node.network_num
 
     def add_received_bytes(self, bytes_received):
         """

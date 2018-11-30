@@ -3,6 +3,7 @@ from mock import MagicMock
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.constants import BLOXROUTE_HELLO_MESSAGES, HDR_COMMON_OFF
+from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory, _BloxrouteMessageFactory
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.message import Message
@@ -27,6 +28,9 @@ class AbstractConnectionTest(AbstractTestCase):
             self.hello_messages = BLOXROUTE_HELLO_MESSAGES
             self.header_size = HDR_COMMON_OFF
             self.message_factory = AbstractConnectionTest.TestMessageFactory()
+            self.ping_message = PingMessage()
+            self.pong_message = PongMessage()
+            self.ack_message = AckMessage()
 
     def setUp(self):
         self.connection = create_connection(self.TestAbstractConnection)
@@ -62,7 +66,7 @@ class AbstractConnectionTest(AbstractTestCase):
             "hello": self.connection.msg_hello,
             "pong": mock_pong
         }
-        self.connection.inputbuf.add_bytes(HelloMessage(1).rawbytes())
+        self.connection.inputbuf.add_bytes(HelloMessage(1, 2, 3).rawbytes())
         self.connection.inputbuf.add_bytes(PongMessage().rawbytes())
 
         self.connection.process_message()

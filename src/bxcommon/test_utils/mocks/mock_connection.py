@@ -30,6 +30,7 @@ class MockConnection(object):
         self.num_bad_messages = 0
         self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
         self.message_handlers = None
+        self.network_num = node.opts.network_num
 
     def mark_for_close(self):
         self.state |= ConnectionState.MARK_FOR_CLOSE
@@ -54,7 +55,7 @@ class MockConnection(object):
 
         self.outputbuf.enqueue_msgbytes(msg.rawbytes())
 
-    def enqueue_msg_bytes(self, msg_bytes):
+    def enqueue_msg_bytes(self, msg_bytes, prepend=False):
 
         if self.state & ConnectionState.MARK_FOR_CLOSE:
             return

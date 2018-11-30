@@ -130,7 +130,7 @@ class AbstractNodeTest(AbstractTestCase):
         connection2.enqueue_msg = MagicMock()
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         self.local_node.connection_pool.add(3, ip, port, connection2)
-        self.local_node.broadcast(msg, self.connection)
+        self.local_node.broadcast(msg, self.connection, network_num=self.connection.network_num)
         connection2.enqueue_msg.assert_called_with(msg, False)
 
     def test_enqueue_connection(self):

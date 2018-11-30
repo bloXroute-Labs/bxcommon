@@ -1,4 +1,5 @@
 from bxcommon.connections.node_type import NodeType
+from bxcommon.constants import DEFAULT_NETWORK_NUM
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils.alarm import AlarmQueue
 from bxcommon.connections.abstract_node import AbstractNode
@@ -13,15 +14,21 @@ class MockNode(AbstractNode):
         mock_opts.external_ip = external_ip
         self.opts = mock_opts
         self.alarm_queue = AlarmQueue()
-        self.tx_service = TransactionService(self)
         self.connection_pool = []
+        self.network_num = DEFAULT_NETWORK_NUM
+        self.idx = 1
 
         self.broadcast_messages = []
         mock_opts = MockOpts()
         super(MockNode, self).__init__(mock_opts)
 
-    def broadcast(self, msg, requester):
+        self._tx_service = TransactionService(self)
+
+    def broadcast(self, msg, _requester, network_num=None):
         self.broadcast_messages.append(msg)
+
+    def get_tx_service(self, _network_num):
+        return self._tx_service
 
 
 class MockOpts(object):
@@ -39,3 +46,4 @@ class MockOpts(object):
         self.sid_end = 100000
         self.sid_expire_time = 99999
         self.outbound_peers = False
+        self.network_num = DEFAULT_NETWORK_NUM

@@ -6,7 +6,7 @@ from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import CONNECTION_RETRY_SECONDS, CONNECTION_TIMEOUT, DEFAULT_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES, \
-    PING_INTERVAL_SEC, SDN_CONTACT_RETRY_SECONDS, THROUGHPUT_STATS_INTERVAL, CANCEL_ALARMS
+    PING_INTERVAL_SEC, SDN_CONTACT_RETRY_SECONDS, THROUGHPUT_STATS_INTERVAL, CANCEL_ALARMS, ALL_NETWORK_NUM
 from bxcommon.exceptions import TerminationError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_http_service
@@ -43,8 +43,6 @@ class AbstractNode(object):
         # Event handling queue for delayed events
         self.alarm_queue = AlarmQueue()
 
-        self.tx_service = None
-
         throughput_service.set_node(self)
 
         self.init_throughput_logging()
@@ -57,12 +55,18 @@ class AbstractNode(object):
 
         self.alarm_queue.register_alarm(SDN_CONTACT_RETRY_SECONDS, self.send_request_for_peers)
 
+        self.network_num = ALL_NETWORK_NUM
+
     def get_sdn_address(self):
         """
         Placeholder for net event loop to get the sdn address (relay only).
         :return:
         """
         return
+
+    @abstractmethod
+    def get_tx_service(self, network_num=None):
+        pass
 
     @abstractmethod
     def get_outbound_peer_addresses(self):
@@ -237,7 +241,7 @@ class AbstractNode(object):
 
         sdn_http_service.submit_node_offline_event(self.opts.node_id)
 
-    def broadcast(self, msg, broadcasting_conn, prepend_to_queue=False):
+    def broadcast(self, msg, broadcasting_conn, prepend_to_queue=False, network_num=None):
         """
         Broadcasts message msg to every connection except requester.
         """
@@ -247,9 +251,15 @@ class AbstractNode(object):
         else:
             logger.debug("Broadcasting message to everyone")
 
+        if network_num is None:
+            broadcast_net_num = self.network_num
+        else:
+            broadcast_net_num = network_num
+
         for conn in self.connection_pool:
             if conn.state & ConnectionState.ESTABLISHED and conn != broadcasting_conn \
-                    and conn.connection_type != ConnectionType.SDN:
+                    and conn.connection_type != ConnectionType.SDN \
+                    and (conn.network_num == ALL_NETWORK_NUM or conn.network_num == broadcast_net_num):
                 conn.enqueue_msg(msg, prepend_to_queue)
 
     @abstractmethod

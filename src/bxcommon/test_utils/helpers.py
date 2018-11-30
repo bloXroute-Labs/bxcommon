@@ -52,11 +52,13 @@ def create_input_buffer_with_bytes(message_bytes):
     return input_buffer
 
 
-def get_gateway_opts(port, relay_addresses=None, node_address=None):
+def get_gateway_opts(port, relay_addresses=None, node_address=None, network_num=None):
     if relay_addresses is None:
         relay_addresses = []
     if node_address is None:
         node_address = ("127.0.0.1", 7000)  # not real, just a placeholder
+    if network_num is None:
+        network_num = 12345
     opts = Namespace()
     opts.__dict__ = {
         "node_id": "Gateway at {0}".format(port),
@@ -73,6 +75,7 @@ def get_gateway_opts(port, relay_addresses=None, node_address=None):
         "outbound_peers": relay_addresses,
         "blockchain_ip": node_address[0],
         "blockchain_port": node_address[1],
+        "network_num": network_num,
         "test_mode": "",
         "protocol_version": 1
     }
