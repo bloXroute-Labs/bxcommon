@@ -1,18 +1,20 @@
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-from bxcommon.connections.abstract_node import AbstractNode
-from bxcommon.test_utils.mocks.mock_node import MockOpts, MockNode
-from mock import patch, MagicMock
-from bxcommon.test_utils.mocks.mock_connection import MockConnection
-from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.exceptions import TerminationError
-from bxcommon.network.socket_connection import SocketConnection
 import socket
+
+from mock import patch, MagicMock
+
+from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import THROUGHPUT_STATS_INTERVAL, DEFAULT_SLEEP_TIMEOUT, PING_INTERVAL_SEC, \
     CONNECTION_RETRY_SECONDS, MAX_CONNECT_RETRIES
-from bxcommon.utils.throughput.throughput_service import throughput_service
+from bxcommon.exceptions import TerminationError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.network.socket_connection import SocketConnection
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.test_utils.mocks.mock_message import MockMessage
-from bxcommon.connections.connection_type import ConnectionType
+from bxcommon.test_utils.mocks.mock_node import MockOpts, MockNode
+from bxcommon.utils.throughput.throughput_service import throughput_service
 
 
 class AbstractNodeTest(AbstractTestCase):
@@ -59,13 +61,14 @@ class AbstractNodeTest(AbstractTestCase):
     @patch("bxcommon.connections.abstract_node.AbstractNode._destroy_conn")
     def test_on_updated_peers(self, mocked_destroy_conn):
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        outbound_peer_models = [OutboundPeerModel("111.111.111.111", 1000),
-                                OutboundPeerModel("222.222.222.222", 2000)]
-        self.local_node.opts.outbound_peers = [OutboundPeerModel("111.111.111.111", 1000),
-                                           OutboundPeerModel("222.222.222.222", 2000),
-                                           OutboundPeerModel(self.remote_ip, self.remote_port)]
+        self.local_node.opts.outbound_peers = [OutboundPeerModel("222.222.222.222", 2000)]
+        self.local_node.outbound_peers = [OutboundPeerModel("111.111.111.111", 1000),
+                                          OutboundPeerModel("222.222.222.222", 2000),
+                                          OutboundPeerModel(self.remote_ip, self.remote_port)]
+
+        outbound_peer_models = [OutboundPeerModel("111.111.111.111", 1000)]
         self.local_node.on_updated_peers(outbound_peer_models)
-        self.assertEqual(outbound_peer_models, self.local_node.opts.outbound_peers)
+        self.assertEqual(outbound_peer_models, self.local_node.outbound_peers)
         mocked_destroy_conn.assert_called_with(self.connection)
 
     def test_on_bytes_received(self):
@@ -106,7 +109,8 @@ class AbstractNodeTest(AbstractTestCase):
     @patch("bxcommon.connections.abstract_node.AlarmQueue.time_to_next_alarm", return_value=(10, -1))
     @patch("bxcommon.connections.abstract_node.AlarmQueue.fire_ready_alarms", return_value=40)
     def test_get_sleep_timeout(self, mocked_time_to_next_alarm, mocked_fire_ready_alarms):
-        self.assertEqual(DEFAULT_SLEEP_TIMEOUT, self.local_node.get_sleep_timeout(triggered_by_timeout=10, first_call=True))
+        self.assertEqual(DEFAULT_SLEEP_TIMEOUT,
+                         self.local_node.get_sleep_timeout(triggered_by_timeout=10, first_call=True))
         self.assertEqual(40, self.local_node.get_sleep_timeout(triggered_by_timeout=10))
         self.local_node.connection_queue.append(self.connection)
         self.assertEqual(DEFAULT_SLEEP_TIMEOUT, self.local_node.get_sleep_timeout(triggered_by_timeout=10))
@@ -163,7 +167,8 @@ class AbstractNodeTest(AbstractTestCase):
         self.assertIsNone(self.local_node.connection_pool.byfileno[self.remote_fileno])
         self.local_node._add_connection(socket_connection, self.remote_ip, self.remote_port, True)
         self.assertEqual(4, self.local_node.alarm_queue.uniq_count)
-        self.assertEqual(self.connection.fileno, self.local_node.connection_pool.byfileno[self.remote_fileno].fileno.fileno())
+        self.assertEqual(self.connection.fileno,
+                         self.local_node.connection_pool.byfileno[self.remote_fileno].fileno.fileno())
 
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
     def test_connection_timeout_established(self, mocked_register_alarm):
@@ -200,16 +205,17 @@ class AbstractNodeTest(AbstractTestCase):
         self.assertFalse(self.local_node.is_outbound_peer(self.remote_ip, self.remote_port))
         ip = "111.111.111.111"
         port = 1000
-        self.local_node.opts.outbound_peers = [OutboundPeerModel(ip, port),
-                                               OutboundPeerModel("222.222.222.222", 2000),
-                                               OutboundPeerModel("0.0.0.0", 1234)]
+        self.local_node.outbound_peers = [OutboundPeerModel(ip, port),
+                                          OutboundPeerModel("222.222.222.222", 2000),
+                                          OutboundPeerModel("0.0.0.0", 1234)]
 
         self.assertFalse(self.local_node.is_outbound_peer(self.remote_ip, self.remote_port))
         self.assertTrue(self.local_node.is_outbound_peer(ip, port))
 
     @patch("bxcommon.connections.abstract_node.sdn_http_service.submit_peer_connection_error_event")
     def test_retry_init_client_socket(self, mocked_submit_peer):
-        self.assertEqual(0, self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port, ConnectionType.RELAY))
+        self.assertEqual(0, self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port,
+                                                                      ConnectionType.RELAY))
         self.assertIn((self.remote_ip, self.remote_port), self.local_node.connection_queue)
         self.local_node.num_retries_by_ip[self.remote_ip] = MAX_CONNECT_RETRIES
         self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port, ConnectionType.RELAY)
@@ -232,5 +238,5 @@ class TestNode(AbstractNode):
     def send_request_for_peers(self):
         pass
 
-    def get_connection_class(self, ip=None, port=None):
+    def get_connection_class(self, ip=None, port=None, from_me=False):
         return MockConnection

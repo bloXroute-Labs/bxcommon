@@ -58,7 +58,12 @@ class ConnectionPool(object):
         """
         # Remove conn from the dictionaries
         self.byfileno[conn.fileno] = None
-        del self.byipport[(conn.peer_ip, conn.peer_port)]
+
+        # Connection might be replaced with new connection
+        # Only delete from byipport if connection has the matching fileno
+        connection_key = (conn.peer_ip, conn.peer_port)
+        if connection_key in self.byipport and self.byipport[connection_key].fileno == conn.fileno:
+            del self.byipport[(conn.peer_ip, conn.peer_port)]
 
         # Decrement the count- if it's 0, we delete the key.
         if self.count_conn_by_ip[conn.peer_ip] == 1:

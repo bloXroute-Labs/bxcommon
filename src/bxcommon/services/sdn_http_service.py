@@ -23,20 +23,36 @@ def fetch_config(node_id):
         return None
 
 
-def fetch_outbound_peers(node_id):
-    node_url = BxApiRoutes.node_peers.format(node_id)
-    outbound_peers = http_service.get_json(node_url)
-    logger.debug("Retrieved outbound peers for id {0} : {1}".format(node_id, outbound_peers))
+def fetch_relay_peers(node_id):
+    node_url = BxApiRoutes.node_relays.format(node_id)
+    outbound_relays = http_service.get_json(node_url)
+    logger.debug("Retrieved outbound relays for id {0} : {1}".format(node_id, outbound_relays))
 
-    if not outbound_peers:
-        logger.warn("This node has no outbound peers.")
+    if not outbound_relays:
+        logger.warn("This node has no outbound relays.")
         return []
 
-    outbound_peers = [OutboundPeerModel(**o) for o in outbound_peers]
+    outbound_relays = [OutboundPeerModel(**o) for o in outbound_relays]
 
-    config.blocking_resolve_peers(outbound_peers)
+    config.blocking_resolve_peers(outbound_relays)
 
-    return outbound_peers
+    return outbound_relays
+
+
+def fetch_gateway_peers(node_id):
+    node_url = BxApiRoutes.node_gateways.format(node_id)
+    outbound_gateways = http_service.get_json(node_url)
+    logger.debug("Retrieved outbound gateways for id {0} : {1}".format(node_id, outbound_gateways))
+
+    if not outbound_gateways:
+        logger.warn("This node has no outbound gateways.")
+        return []
+
+    outbound_gateways = [OutboundPeerModel(**o) for o in outbound_gateways]
+
+    config.blocking_resolve_peers(outbound_gateways)
+
+    return outbound_gateways
 
 
 def submit_sid_space_full_event(node_id):

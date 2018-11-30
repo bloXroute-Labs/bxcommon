@@ -50,12 +50,18 @@ HEIGHT_DIFFERENCE = 100
 FLUSH_LOG = True
 
 LISTEN_ON_IP_ADDRESS = '0.0.0.0'
+LOCALHOST = "127.0.0.1"
 
 # The length of everything in the header minus the checksum
 HDR_COMMON_OFF = 16
 
+UL_SHORT_SIZE_IN_BYTES = 2
 # Size of integer in bytes
 UL_INT_SIZE_IN_BYTES = 4  # If changing here, also change in bxapi/constants.py
+
+IP_V4_PREFIX = bytearray(b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff")
+IP_V4_PREFIX_LENGTH = 12
+IP_ADDR_SIZE_IN_BYTES = 16
 
 # Length of network number in messages in bytes
 NETWORK_NUM_LEN = UL_INT_SIZE_IN_BYTES
@@ -77,6 +83,7 @@ BTC_HDR_COMMON_OFF = 24
 BTC_BLOCK_HDR_SIZE = 81
 # Length of a sha256 hash
 BTC_SHA_HASH_LEN = 32
+BTC_IP_ADDR_PORT_SIZE = 18
 
 # The services that we provide
 # 1: can ask for full blocks.
@@ -112,13 +119,17 @@ DEFAULT_SLEEP_TIMEOUT = 0.1  # Schedule an event to be executed fast on alarm qu
 
 MAX_KQUEUE_EVENTS_COUNT = 1000
 
-BX_API_ROOT_URL = cli.get_sdn_url()
+if __name__ == "__main__":
+    BX_API_ROOT_URL = cli.get_sdn_url()
+else:
+    BX_API_ROOT_URL = cli.DEFAULT_BX_API_ROOT_URL
 
 
 class BxApiRoutes(object):
     nodes = BX_API_ROOT_URL + "/nodes"
     node = BX_API_ROOT_URL + "/nodes/{0}"
-    node_peers = BX_API_ROOT_URL + "/nodes/{0}/peers"
+    node_relays = BX_API_ROOT_URL + "/nodes/{0}/peers"
+    node_gateways = BX_API_ROOT_URL + "/nodes/{0}/gateways"
     node_event = BX_API_ROOT_URL + "/nodes/{0}/events"
 
 

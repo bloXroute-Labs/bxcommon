@@ -8,7 +8,7 @@ _IDX_LEN = UL_INT_SIZE_IN_BYTES
 
 class HelloMessage(Message):
     """
-    BloXroute hello message type.
+    BloXroute relay hello message type.
 
     idx: index of the peer.
         Client will use 0 and will not be connected back to

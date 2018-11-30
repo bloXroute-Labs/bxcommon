@@ -10,7 +10,6 @@ from bxcommon.constants import CONNECTION_RETRY_SECONDS, CONNECTION_TIMEOUT, DEF
 from bxcommon.exceptions import TerminationError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_http_service
-from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import logger
 from bxcommon.utils.alarm import AlarmQueue
 from bxcommon.utils.throughput.throughput_service import throughput_service
@@ -28,6 +27,7 @@ class AbstractNode(object):
 
         self.connection_queue = deque()
         self.disconnect_queue = deque()
+        self.outbound_peers = opts.outbound_peers[:]
 
         self.connection_pool = ConnectionPool()
 
@@ -53,7 +53,7 @@ class AbstractNode(object):
         self.alarm_queue.register_alarm(self.FLUSH_SEND_BUFFERS_INTERVAL, self.flush_all_send_buffers)
         logger.info("initialized node state")
 
-        self.alarm_queue.register_alarm(SDN_CONTACT_RETRY_SECONDS, self.send_request_for_peers)
+        self.alarm_queue.register_alarm(SDN_CONTACT_RETRY_SECONDS, self.send_request_for_relay_peers)
 
         self.network_num = ALL_NETWORK_NUM
 
@@ -78,7 +78,7 @@ class AbstractNode(object):
     def on_connection_added(self, socket_connection, ip, port, from_me):
 
         if not isinstance(socket_connection, SocketConnection):
-            raise ValueError('Type SocketConnection is expected for socket_connection argument but was {0}'
+            raise ValueError("Type SocketConnection is expected for socket_connection argument but was {0}"
                              .format(socket_connection))
 
         fileno = socket_connection.fileno()
@@ -112,7 +112,7 @@ class AbstractNode(object):
         self._destroy_conn(conn, retry_connection=True)
 
     @abstractmethod
-    def send_request_for_peers(self):
+    def send_request_for_relay_peers(self):
         pass
 
     def on_updated_peers(self, outbound_peer_models):
@@ -122,27 +122,22 @@ class AbstractNode(object):
 
         logger.debug("Processing updated outbound peers: {}.".format(outbound_peer_models))
 
-        # Remove peers not in updated list.
-        if self.opts.outbound_peers:
-            remove_peers = []
-            old_peers = self.opts.outbound_peers
-            for old_peer in old_peers:
-                found_peer = None
-                for new_peer in outbound_peer_models:
-                    if old_peer.ip == new_peer.ip and \
-                            old_peer.port == new_peer.port:
-                        found_peer = new_peer
-                        break
+        # Remove peers not in updated list or from command-line args.
+        remove_peers = []
+        old_peers = self.outbound_peers
+        for old_peer in old_peers:
+            if not (any(old_peer.ip == fixed_peer.ip and old_peer.port == fixed_peer.port
+                        for fixed_peer in self.opts.outbound_peers)
+                    or any(new_peer.ip == old_peer.ip and new_peer.port == old_peer.port
+                           for new_peer in outbound_peer_models)):
+                remove_peers.append(old_peer)
 
-                if not found_peer:
-                    remove_peers.append(old_peer)
-
-            for rem_peer in remove_peers:
-                if self.connection_pool.has_connection(rem_peer.ip, rem_peer.port):
-                    rem_conn = self.connection_pool.get_byipport(rem_peer.ip,
-                                                                 rem_peer.port)
-                    if rem_conn:
-                        self._destroy_conn(rem_conn)
+        for rem_peer in remove_peers:
+            if self.connection_pool.has_connection(rem_peer.ip, rem_peer.port):
+                rem_conn = self.connection_pool.get_byipport(rem_peer.ip,
+                                                             rem_peer.port)
+                if rem_conn:
+                    self._destroy_conn(rem_conn)
 
         # Connect to peers not in our known pool
         for peer in outbound_peer_models:
@@ -151,7 +146,7 @@ class AbstractNode(object):
             if not self.connection_pool.has_connection(peer_ip, peer_port):
                 self.enqueue_connection(peer_ip, peer_port)
 
-        self.opts.outbound_peers = outbound_peer_models
+        self.outbound_peers = outbound_peer_models
 
     def on_updated_sid_space(self, sid_start, sid_end):
         """
@@ -263,7 +258,7 @@ class AbstractNode(object):
                 conn.enqueue_msg(msg, prepend_to_queue)
 
     @abstractmethod
-    def get_connection_class(self, ip=None, port=None):
+    def get_connection_class(self, ip=None, port=None, from_me=False):
         pass
 
     def enqueue_connection(self, ip, port):
@@ -304,7 +299,7 @@ class AbstractNode(object):
         return
 
     def _add_connection(self, socket_connection, ip, port, from_me):
-        conn_cls = self.get_connection_class(ip=ip, port=port)
+        conn_cls = self.get_connection_class(ip, port, from_me)
 
         conn_obj = conn_cls(socket_connection, (ip, port), self, from_me=from_me)
 
@@ -357,7 +352,6 @@ class AbstractNode(object):
         """
         Clean up the associated connection and update all data structures tracking it.
         We also retry trusted connections since they can never be destroyed.
-        If teardown is True, then we do not retry trusted connections and just tear everything down.
         """
 
         logger.debug("Breaking connection to {0}".format(conn.peer_desc))
@@ -377,14 +371,7 @@ class AbstractNode(object):
         self.enqueue_disconnect(conn.fileno)
 
     def is_outbound_peer(self, ip, port):
-        if not self.opts.outbound_peers:
-            return False
-
-        for peer in self.opts.outbound_peers:
-            if ip == peer.ip and port == peer.port:
-                return True
-
-        return False
+        return any(peer.ip == ip and peer.port == port for peer in self.outbound_peers)
 
     def _retry_init_client_socket(self, ip, port, connection_type):
         self.num_retries_by_ip[ip] += 1
@@ -400,7 +387,9 @@ class AbstractNode(object):
             logger.debug("Not retrying connection to {0}:{1}- maximum connections exceeded!".format(ip, port))
 
             sdn_http_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
-            self.send_request_for_peers()
+
+            # TOOD: retry gateway peers?
+            self.send_request_for_relay_peers()
 
         return 0
 

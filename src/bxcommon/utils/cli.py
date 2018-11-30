@@ -89,10 +89,7 @@ def get_sdn_url():
     Wraps the sdn url getter for constants to work without the CLI (e.g. in test).
     :return: URL of the SDN
     """
-    try:
-        return get_args().sdn_url
-    except BaseException:
-        return DEFAULT_BX_API_ROOT_URL
+    return get_args().sdn_url
 
 
 def merge_args(from_args, into_args):

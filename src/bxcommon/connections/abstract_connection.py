@@ -25,11 +25,14 @@ class AbstractConnection(object):
             raise ValueError("SocketConnection type is expected for socket_connection arg but was {0}."
                              .format(type(socket_connection)))
 
+        logger.debug("Initialized connection of type {}".format(self.connection_type))
+
         self.socket_connection = socket_connection
         self.fileno = socket_connection.fileno()
 
-        # (IP, Port) at time of socket creation. We may get a new application level port in
-        # the version message if the connection is not from me.
+        # (IP, Port) at time of socket creation.
+        # If the version/hello message contains a different port (i.e. connection is not from me), this will
+        # be updated to the one in the message.
         self.peer_ip, self.peer_port = address
         self.external_ip = node.opts.external_ip
         self.external_port = node.opts.external_port
