@@ -74,6 +74,7 @@ def get_gateway_opts(port, relay_addresses=None, node_address=None):
         "blockchain_ip": node_address[0],
         "blockchain_port": node_address[1],
         "test_mode": "",
+        "protocol_version": 1
     }
     return opts
 
