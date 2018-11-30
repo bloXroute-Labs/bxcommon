@@ -30,7 +30,8 @@ class AbstractConnection(object):
         # (IP, Port) at time of socket creation. We may get a new application level port in
         # the version message if the connection is not from me.
         self.peer_ip, self.peer_port = address
-        self.my_port = node.opts.external_port
+        self.external_ip = node.opts.external_ip
+        self.external_port = node.opts.external_port
         self.idx = NULL_IDX
 
         self.from_me = from_me  # Whether or not I initiated the connection
