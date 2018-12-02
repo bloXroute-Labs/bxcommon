@@ -146,7 +146,7 @@ class LogLevel(object):
 
 def log_init(path, use_stdout):
     global _log
-    print "initializing log"
+    print("initializing log")
     _log = Log(path, use_stdout)
 
 
