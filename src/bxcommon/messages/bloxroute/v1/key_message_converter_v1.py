@@ -49,7 +49,7 @@ class _KeyMessageConverterV1(AbstractMessageConverter):
         payload_len = len(result_bytes) - HDR_COMMON_OFF
 
         off = 0
-        struct.pack_into("<12sL", result_bytes, off, BloxrouteMessageType.TRANSACTION, payload_len)
+        struct.pack_into("<12sL", result_bytes, off, BloxrouteMessageType.KEY, payload_len)
         off += HDR_COMMON_OFF
 
         result_bytes[off:off + SHA256_HASH_LEN + KEY_SIZE] = mem_view[off:off + SHA256_HASH_LEN + KEY_SIZE]
