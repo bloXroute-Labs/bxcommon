@@ -163,3 +163,10 @@ GATEWAY_BLOCKS_SEEN_EXPIRATION_TIME_S = 30 * 60
 
 # return timeout in abstract node
 CANCEL_ALARMS = 0
+
+# keep constants_local.py file to override settings in the constants file
+# this part should be at the bottom of the file
+try:
+    from bxcommon.constants_local import *
+except ImportError as e:
+    pass
