@@ -105,3 +105,8 @@ ENV/
 .idea
 
 .DS_Store
+
+# local config
+src/bxcommon/constants_local.py
+
+
