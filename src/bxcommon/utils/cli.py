@@ -3,6 +3,7 @@ import json
 from bxcommon.utils import convert, versions
 import os
 import re
+import sys
 
 # Keep here instead of constants to avoid circular import.
 DEFAULT_BX_API_ROOT_URL = "http://127.0.0.1:8080"
@@ -62,9 +63,18 @@ def read_manifest(manifest_path):
         raise Exception("ERROR: {}".format(str(ex)))
 
 
+def get_manifest_path():
+    if os.path.dirname(sys.argv[0]) == "":
+        manifest_path = MANIFEST_PATH
+    else:
+        manifest_path = os.path.dirname(sys.argv[0]) + "/" + MANIFEST_PATH
+
+    return manifest_path
+
+
 def append_manifest_args(dict_args):
     #   set config file path
-    manifest_path = "{}/{}".format(os.getcwd(), MANIFEST_PATH)
+    manifest_path = get_manifest_path()
     manifest_data = read_manifest(manifest_path)
     #   if all required params exist in manifest file, update dict_args
     if all(params in manifest_data for params in REQUIRED_PARAMS_IN_MANIFEST):
