@@ -1,12 +1,13 @@
 import argparse
 import json
 from bxcommon.utils import convert, versions
+from bxcommon import constants
 import os
 import re
 import sys
 
 # Keep here instead of constants to avoid circular import.
-DEFAULT_BX_API_ROOT_URL = "http://localhost:8080"
+
 MANIFEST_PATH = "MANIFEST.MF"
 MANIFEST_SOURCE_VERSION = "source_version"
 PROTOCOL_VERSION = "protocol_version"
@@ -17,7 +18,7 @@ arg_parser = argparse.ArgumentParser()
 
 arg_parser.add_argument("--external-ip", help="External network ip of this node", required=True)
 arg_parser.add_argument("--external-port", help="External network port to listen on", type=int, required=True)
-arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", default=DEFAULT_BX_API_ROOT_URL, type=str)
+arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", default=constants.BX_API_ROOT_URL, type=str)
 arg_parser.add_argument("--log-path", help="Path to store logfiles in")
 arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode",
                         type=convert.str_to_bool, default=True)
@@ -94,11 +95,12 @@ def get_args():
     return _args
 
 
-def get_sdn_url():
+def set_sdn_url():
     """
     Wraps the sdn url getter for constants to work without the CLI (e.g. in test).
     :return: URL of the SDN
     """
+    constants.BX_API_ROOT_URL = get_args().sdn_url
     return get_args().sdn_url
 
 

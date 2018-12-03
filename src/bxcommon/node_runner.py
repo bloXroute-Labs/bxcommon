@@ -4,12 +4,16 @@ from bxcommon.models.node_model import NodeModel
 from bxcommon.network import network_event_loop_factory
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import config, logger
+from bxcommon.utils import cli
 from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 
 
 def run_node(process_id_file_path, opts, node_class):
     config.log_pid(process_id_file_path)
     config.init_logging(opts.log_path, opts.to_stdout)
+
+    # update constants from cli
+    cli.set_sdn_url()
 
     node_model = None
     if opts.node_id:

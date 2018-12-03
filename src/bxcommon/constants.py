@@ -1,4 +1,3 @@
-from bxcommon.utils import cli
 
 MAX_CONN_BY_IP = 30  # Maximum number of connections that an IP address can have
 
@@ -119,18 +118,14 @@ DEFAULT_SLEEP_TIMEOUT = 0.1  # Schedule an event to be executed fast on alarm qu
 
 MAX_KQUEUE_EVENTS_COUNT = 1000
 
-if __name__ == "__main__":
-    BX_API_ROOT_URL = cli.get_sdn_url()
-else:
-    BX_API_ROOT_URL = cli.DEFAULT_BX_API_ROOT_URL
-
+BX_API_ROOT_URL = "http://127.0.0.1:8080"
 
 class BxApiRoutes(object):
-    nodes = BX_API_ROOT_URL + "/nodes"
-    node = BX_API_ROOT_URL + "/nodes/{0}"
-    node_relays = BX_API_ROOT_URL + "/nodes/{0}/peers"
-    node_gateways = BX_API_ROOT_URL + "/nodes/{0}/gateways"
-    node_event = BX_API_ROOT_URL + "/nodes/{0}/events"
+    nodes = "/nodes"
+    node = "/nodes/{0}"
+    node_relays = "/nodes/{0}/peers"
+    node_gateways = "/nodes/{0}/gateways"
+    node_event = "/nodes/{0}/events"
 
 
 SDN_CONTACT_RETRY_SECONDS = 2
