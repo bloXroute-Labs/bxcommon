@@ -1,7 +1,7 @@
 import struct
 import time
 
-from bxcommon.constants import BTC_HDR_COMMON_OFF, BTC_NODE_SERVICES
+from bxcommon.constants import BTC_HDR_COMMON_OFF, BTC_NODE_SERVICES, BTC_IP_ADDR_PORT_SIZE
 from bxcommon.messages.btc.btc_message import BTCMessage
 from bxcommon.messages.btc.btc_message_type import BtcMessageType
 from bxcommon.messages.btc.btc_messages_util import btcbytearray_to_ipaddrport, ipaddrport_to_btcbytearray
@@ -21,12 +21,12 @@ class VersionBTCMessage(BTCMessage):
             off = BTC_HDR_COMMON_OFF
             struct.pack_into('<IQQQ', buf, off, version, services, int(time.time()), 1)
             off += 28
-            buf[off:off + 18] = ipaddrport_to_btcbytearray(dst_ip, dst_port)
-            off += 18
+            buf[off:off + BTC_IP_ADDR_PORT_SIZE] = ipaddrport_to_btcbytearray(dst_ip, dst_port)
+            off += BTC_IP_ADDR_PORT_SIZE
             struct.pack_into('<Q', buf, off, 1)
             off += 8
-            buf[off:off + 18] = ipaddrport_to_btcbytearray(src_ip, src_port)
-            off += 18
+            buf[off:off + BTC_IP_ADDR_PORT_SIZE] = ipaddrport_to_btcbytearray(src_ip, src_port)
+            off += BTC_IP_ADDR_PORT_SIZE
             struct.pack_into('<Q%dpL' % (len(user_agent) + 1,), buf, off, nonce, user_agent, start_height)
             off += 8 + len(user_agent) + 1 + 4
             # we do not send or parse the relay boolean. if present, we benignly ignore it.
@@ -63,7 +63,7 @@ class VersionBTCMessage(BTCMessage):
     def dst_ip(self):
         if self._dst_ip is None:
             dst_ip_off = BTC_HDR_COMMON_OFF + 28
-            self._dst_ip, self._dst_port = btcbytearray_to_ipaddrport(self.buf[dst_ip_off:dst_ip_off + 18])
+            self._dst_ip, self._dst_port = btcbytearray_to_ipaddrport(self.buf[dst_ip_off:dst_ip_off + BTC_IP_ADDR_PORT_SIZE])
         return self._dst_ip
 
     def dst_port(self):
@@ -74,7 +74,7 @@ class VersionBTCMessage(BTCMessage):
     def src_ip(self):
         if self._src_ip is None:
             src_ip_off = BTC_HDR_COMMON_OFF + 54
-            self._src_ip, self._src_port = btcbytearray_to_ipaddrport(self.buf[src_ip_off:src_ip_off + 18])
+            self._src_ip, self._src_port = btcbytearray_to_ipaddrport(self.buf[src_ip_off:src_ip_off + BTC_IP_ADDR_PORT_SIZE])
         return self._src_ip
 
     def src_port(self):

@@ -3,6 +3,8 @@ import socket
 from argparse import Namespace
 from contextlib import closing
 
+from mock import MagicMock
+
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
@@ -21,7 +23,7 @@ def create_connection(connection_cls):
         raise TypeError("{0} is not a subclass of AbstractConnection".format(connection_cls))
 
     test_address = ('0.0.0.0', 8001)
-    test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    test_socket = MagicMock(spec=socket.socket)
     mock_node = MockNode('0.0.0.0', 8002)
     test_socket_connection = SocketConnection(test_socket, mock_node)
     connection = connection_cls(test_socket_connection, test_address, mock_node)
@@ -52,29 +54,44 @@ def create_input_buffer_with_bytes(message_bytes):
     return input_buffer
 
 
-def get_gateway_opts(port, relay_addresses=None, node_address=None):
-    if relay_addresses is None:
-        relay_addresses = []
-    if node_address is None:
-        node_address = ("127.0.0.1", 7000)  # not real, just a placeholder
+def get_gateway_opts(port, node_id=None, external_ip="127.0.0.1", internal_ip="0.0.0.0", blockchain_address=None,
+                     test_mode="", peer_gateways=None, peer_relays=None, protocol_version=1, sid_expire_time=30,
+                     bloxroute_version="bloxroute 1.5", include_default_btc_args=False, network_num=12345, **kwargs):
+    if node_id is None:
+        node_id = "Gateway at {0}".format(port)
+    if peer_gateways is None:
+        peer_gateways = []
+    if peer_relays is None:
+        peer_relays = []
+    if blockchain_address is None:
+        blockchain_address = ("127.0.0.1", 7000)  # not real, just a placeholder
     opts = Namespace()
     opts.__dict__ = {
-        "node_id": "Gateway at {0}".format(port),
-        "blockchain_net_magic": 12345,
-        "blockchain_version": 23456,
-        "blockchain_nonce": 0,
-        "blockchain_services": 1,
-        "bloxroute_version": "bloxroute 1.5",
-        "sid_expire_time": 30,
-        "external_ip": "127.0.0.1",
+        "node_id": node_id,
+        "sid_expire_time": sid_expire_time,
+        "bloxroute_version": bloxroute_version,
+        "external_ip": external_ip,
         "external_port": port,
-        "internal_ip": "0.0.0.0",
+        "internal_ip": internal_ip,
         "internal_port": port,
-        "outbound_peers": relay_addresses,
-        "blockchain_ip": node_address[0],
-        "blockchain_port": node_address[1],
-        "test_mode": "",
+        "blockchain_ip": blockchain_address[0],
+        "blockchain_port": blockchain_address[1],
+        "test_mode": test_mode,
+        "peer_gateways": peer_gateways,
+        "peer_relays": peer_relays,
+        "outbound_peers": peer_gateways + peer_relays,
+        "protocol_version": protocol_version,
+        "network_num": network_num
     }
+    if include_default_btc_args:
+        opts.__dict__.update({
+            "blockchain_net_magic": 12345,
+            "blockchain_version": 23456,
+            "blockchain_nonce": 0,
+            "blockchain_services": 1,
+        })
+    for key, val in kwargs:
+        opts.__dict__[key] = val
     return opts
 
 

@@ -5,6 +5,7 @@ from abc import ABCMeta, abstractmethod
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.constants import LISTEN_ON_IP_ADDRESS
 from bxcommon.network.socket_connection import SocketConnection
+from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
 from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.utils import logger
 
@@ -50,7 +51,7 @@ class AbstractNetworkEventLoop(object):
                     logger.debug("Ending events loop. Shutdown has been requested.")
                     break
 
-                self._send_all_connections()
+                self._node.flush_all_send_buffers()
 
                 self._process_new_connections_requests()
 
@@ -116,8 +117,10 @@ class AbstractNetworkEventLoop(object):
 
         if peers_addresses:
             for address in peers_addresses:
-                logger.debug("connecting to node {0}:{1}".format(address[0], address[1]))
-                self._connect_to_server(address[0], address[1])
+                protocol = address[2] if len(address) == 3 else None
+                logger.debug("connecting to node {0}:{1} on protocol {2}".format(address[0], address[1], protocol))
+
+                self._connect_to_server(address[0], address[1], protocol)
 
     def _process_new_connections_requests(self):
         address = self._node.pop_next_connection_address()
@@ -139,7 +142,7 @@ class AbstractNetworkEventLoop(object):
                     self._node.on_connection_closed(fileno)
             fileno = self._node.pop_next_disconnect_connection()
 
-    def _connect_to_server(self, ip, port):
+    def _connect_to_server(self, ip, port, protocol=TransportLayerProtocol.TCP):
         if self._node.connection_exists(ip, port):
             logger.error("Ignoring repeat connection to {0}:{1}.".format(ip, port))
             return
@@ -149,9 +152,13 @@ class AbstractNetworkEventLoop(object):
         initialized = True  # True if socket is connected. False otherwise.
 
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            socket_stream = socket.SOCK_DGRAM if protocol == TransportLayerProtocol.UDP else socket.SOCK_STREAM
+
+            sock = socket.socket(socket.AF_INET, socket_stream)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+            if protocol == TransportLayerProtocol.TCP:
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             sock.setblocking(0)
             sock.connect((ip, port))
         except socket.error as e:
@@ -189,11 +196,6 @@ class AbstractNetworkEventLoop(object):
                 self._register_socket(new_socket, address, is_server=False, initialized=True, from_me=False)
         except socket.error:
             pass
-
-    def _send_all_connections(self):
-        for _, socket_connection in self._socket_connections.iteritems():
-            if socket_connection.can_send and not socket_connection.is_server:
-                socket_connection.send()
 
     def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):
         socket_connection = SocketConnection(new_socket, self._node, is_server)

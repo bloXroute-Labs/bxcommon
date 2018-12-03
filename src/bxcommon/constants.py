@@ -50,12 +50,21 @@ HEIGHT_DIFFERENCE = 100
 FLUSH_LOG = True
 
 LISTEN_ON_IP_ADDRESS = '0.0.0.0'
+LOCALHOST = "127.0.0.1"
 
 # The length of everything in the header minus the checksum
 HDR_COMMON_OFF = 16
 
+UL_SHORT_SIZE_IN_BYTES = 2
 # Size of integer in bytes
 UL_INT_SIZE_IN_BYTES = 4  # If changing here, also change in bxapi/constants.py
+
+IP_V4_PREFIX = bytearray(b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff")
+IP_V4_PREFIX_LENGTH = 12
+IP_ADDR_SIZE_IN_BYTES = 16
+
+# Length of network number in messages in bytes
+NETWORK_NUM_LEN = UL_INT_SIZE_IN_BYTES
 
 # Expiration time for block broadcast message if services info is missing
 MISSING_BLOCK_EXPIRE_TIME = 60
@@ -74,6 +83,7 @@ BTC_HDR_COMMON_OFF = 24
 BTC_BLOCK_HDR_SIZE = 81
 # Length of a sha256 hash
 BTC_SHA_HASH_LEN = 32
+BTC_IP_ADDR_PORT_SIZE = 18
 
 # The services that we provide
 # 1: can ask for full blocks.
@@ -109,13 +119,17 @@ DEFAULT_SLEEP_TIMEOUT = 0.1  # Schedule an event to be executed fast on alarm qu
 
 MAX_KQUEUE_EVENTS_COUNT = 1000
 
-BX_API_ROOT_URL = cli.get_sdn_url()
+if __name__ == "__main__":
+    BX_API_ROOT_URL = cli.get_sdn_url()
+else:
+    BX_API_ROOT_URL = cli.DEFAULT_BX_API_ROOT_URL
 
 
 class BxApiRoutes(object):
     nodes = BX_API_ROOT_URL + "/nodes"
     node = BX_API_ROOT_URL + "/nodes/{0}"
-    node_peers = BX_API_ROOT_URL + "/nodes/{0}/peers"
+    node_relays = BX_API_ROOT_URL + "/nodes/{0}/peers"
+    node_gateways = BX_API_ROOT_URL + "/nodes/{0}/gateways"
     node_event = BX_API_ROOT_URL + "/nodes/{0}/events"
 
 
@@ -131,3 +145,28 @@ BLOXROUTE_HELLO_MESSAGES = ["hello", "ack"]
 BLOXROUTE_ENCRYPTION_CACHE_TIMEOUT_S = 30 * 60
 
 DEFAULT_TEXT_ENCODING = "utf-8"
+
+VERSION_NUM_LEN = UL_INT_SIZE_IN_BYTES
+VERSIONED_HELLO_MSG_MIN_PAYLOAD_LEN = UL_INT_SIZE_IN_BYTES + NETWORK_NUM_LEN + VERSION_NUM_LEN
+
+ALL_NETWORK_NUM = 0
+DEFAULT_NETWORK_NUM = 1
+
+OUTPUT_BUFFER_MIN_SIZE = 65535
+OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME = 0.2
+
+RELAY_PING_INTERVAL_S = 2
+KEY_EXPIRATION_TIME_S = 30 * 60
+
+BLOCKCHAIN_PING_INTERVAL_S = 2
+GATEWAY_BLOCKS_SEEN_EXPIRATION_TIME_S = 30 * 60
+
+# return timeout in abstract node
+CANCEL_ALARMS = 0
+
+# keep constants_local.py file to override settings in the constants file
+# this part should be at the bottom of the file
+try:
+    from bxcommon.constants_local import *
+except ImportError as e:
+    pass

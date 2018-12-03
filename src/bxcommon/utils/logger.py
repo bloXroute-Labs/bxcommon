@@ -137,6 +137,7 @@ class LogLevel(object):
 
     DEBUG = 0
     INFO = 10
+    STATS = 15
     WARN = 20
     ERROR = 30
     FATAL = 40
@@ -146,7 +147,7 @@ class LogLevel(object):
 
 def log_init(path, use_stdout):
     global _log
-    print "initializing log"
+    print("initializing log")
     _log = Log(path, use_stdout)
 
 
@@ -200,6 +201,10 @@ def fatal(msg):
 
 def info(msg):
     log(LogLevel.INFO, "INFO  ", msg, datetime.utcnow())
+
+
+def statistics(msg):
+    log(LogLevel.STATS, "STATS  ", msg, datetime.utcnow())
 
 
 def warn(msg):

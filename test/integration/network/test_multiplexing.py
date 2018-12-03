@@ -37,7 +37,7 @@ class TestNode(AbstractNode):
 
         self.timeout_triggered_loops = 0
 
-    def send_request_for_peers(self):
+    def send_request_for_relay_peers(self):
         pass
 
     def set_node_type(self):
@@ -51,7 +51,7 @@ class TestNode(AbstractNode):
 
         return peer_addresses
 
-    def get_connection_class(self, ip=None, port=None):
+    def get_connection_class(self, ip=None, port=None, from_me=False):
         return None
 
     def on_connection_added(self, socket_connection, port, ip, from_me):

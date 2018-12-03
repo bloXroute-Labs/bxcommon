@@ -1,12 +1,13 @@
 import socket
 import struct
 
-ipv4prefix = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff')
+from bxcommon import constants
+from bxcommon.constants import BTC_IP_ADDR_PORT_SIZE
 
 
 def ipaddrport_to_btcbytearray(ip_addr, ip_port):
     try:
-        buf = bytearray(18)
+        buf = bytearray(BTC_IP_ADDR_PORT_SIZE)
         buf[10] = 0xff
         buf[11] = 0xff
         buf[12:16] = socket.inet_pton(socket.AF_INET, ip_addr)
@@ -14,7 +15,7 @@ def ipaddrport_to_btcbytearray(ip_addr, ip_port):
         buf[17] = (ip_port & 0xFF)
     except socket.error:
         try:
-            buf = bytearray(18)
+            buf = bytearray(BTC_IP_ADDR_PORT_SIZE)
             buf[0:16] = socket.inet_pton(socket.AF_INET6, ip_addr)
             buf[16] = ((ip_port >> 8) & 0xFF)
             buf[17] = (ip_port & 0xFF)
@@ -23,11 +24,12 @@ def ipaddrport_to_btcbytearray(ip_addr, ip_port):
     return buf
 
 
+# broken
 def btcbytearray_to_ipaddrport(btcbytearray):
-    if btcbytearray[0:12] == ipv4prefix[0:12]:
-        return socket.inet_ntop(socket.AF_INET, buffer(btcbytearray[12:16])), (btcbytearray[16] << 8) | btcbytearray[17]
+    if btcbytearray[0:12] == constants.IP_V4_PREFIX[0:12]:
+        return socket.inet_ntop(socket.AF_INET, btcbytearray[12:16]), (btcbytearray[16] << 8) | btcbytearray[17]
     else:
-        return socket.inet_ntop(socket.AF_INET6, buffer(btcbytearray[:16])), (btcbytearray[16] << 8) | btcbytearray[17]
+        return socket.inet_ntop(socket.AF_INET6, btcbytearray[:16]), (btcbytearray[16] << 8) | btcbytearray[17]
 
 
 # pack the value into a varint, return how many bytes it took

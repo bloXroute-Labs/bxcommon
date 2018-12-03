@@ -6,7 +6,7 @@ from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.services import http_service
-from bxcommon.utils import config, logger
+from bxcommon.utils import config, logger, model_loader
 # TODO port this to sockets soon and remove json serialization perf hit on the node.
 from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 
@@ -18,25 +18,41 @@ def fetch_config(node_id):
     logger.debug("Retrieved config for id {0} : {1}".format(node_id, opts))
 
     if opts:
-        return NodeModel(**opts)
+        return NodeModel(**model_loader.load_node_model(json.loads(opts)))
     else:
         return None
 
 
-def fetch_outbound_peers(node_id):
-    node_url = BxApiRoutes.node_peers.format(node_id)
-    outbound_peers = http_service.get_json(node_url)
-    logger.debug("Retrieved outbound peers for id {0} : {1}".format(node_id, outbound_peers))
+def fetch_relay_peers(node_id):
+    node_url = BxApiRoutes.node_relays.format(node_id)
+    outbound_relays = http_service.get_json(node_url)
+    logger.debug("Retrieved outbound relays for id {0} : {1}".format(node_id, outbound_relays))
 
-    if not outbound_peers:
-        logger.warn("This node has no outbound peers.")
+    if not outbound_relays:
+        logger.warn("This node has no outbound relays.")
         return []
 
-    outbound_peers = [OutboundPeerModel(**o) for o in outbound_peers]
+    outbound_relays = [OutboundPeerModel(**o) for o in outbound_relays]
 
-    config.blocking_resolve_peers(outbound_peers)
+    config.blocking_resolve_peers(outbound_relays)
 
-    return outbound_peers
+    return outbound_relays
+
+
+def fetch_gateway_peers(node_id):
+    node_url = BxApiRoutes.node_gateways.format(node_id)
+    outbound_gateways = http_service.get_json(node_url)
+    logger.debug("Retrieved outbound gateways for id {0} : {1}".format(node_id, outbound_gateways))
+
+    if not outbound_gateways:
+        logger.warn("This node has no outbound gateways.")
+        return []
+
+    outbound_gateways = [OutboundPeerModel(**o) for o in outbound_gateways]
+
+    config.blocking_resolve_peers(outbound_gateways)
+
+    return outbound_gateways
 
 
 def submit_sid_space_full_event(node_id):
@@ -77,4 +93,4 @@ def register_node(node_model):
     if not node_config:
         raise EnvironmentError("Unable to reach SDN and register this node. Please check connection.")
 
-    return NodeModel(**node_config)
+    return NodeModel(**model_loader.load_node_model(node_config))
