@@ -1,11 +1,12 @@
 class OutboundPeerModel(object):
-    def __init__(self, ip, port, idx=None):
+    def __init__(self, ip, port, idx=None, node_id=None):
         self.ip = ip
         self.port = port
         self.idx = idx
+        self.node_id = node_id
 
     def __str__(self):
-        return "({}, {}, {})".format(self.ip, self.port, self.idx)
+        return "({}, {}, {}, {})".format(self.ip, self.port, self.idx, self.node_id)
 
     def __repr__(self):
         return "OutboundPeerModel" + self.__str__()

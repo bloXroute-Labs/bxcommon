@@ -1,1 +1,24 @@
-{"source_version": "dev1.3.0.1"}
+{
+"repo": [
+    {
+      "name": "/Users/daniellemachpud/workspace/bloxroute-dev/bxapi",
+      "manifest_path": "src/bxapi",
+      "branch": "develop"
+    },
+    {
+      "name": "/Users/daniellemachpud/workspace/bloxroute-dev/bxrelay",
+      "manifest_path": "src/bxrelay",
+      "branch": "develop"
+    },
+    {
+      "name": "/Users/daniellemachpud/workspace/bloxroute-dev/bxcommon",
+      "manifest_path": "src/bxcommon",
+      "branch": "develop"
+    },
+    {
+      "name": "/Users/daniellemachpud/workspace/bloxroute-dev/bxgateway",
+      "manifest_path": "src/bxgateway",
+      "branch": "develop"
+    }
+  ]
+}

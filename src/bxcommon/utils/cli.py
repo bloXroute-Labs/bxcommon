@@ -6,7 +6,7 @@ import re
 import sys
 
 # Keep here instead of constants to avoid circular import.
-DEFAULT_BX_API_ROOT_URL = "http://127.0.0.1:8080"
+DEFAULT_BX_API_ROOT_URL = "http://localhost:8080"
 MANIFEST_PATH = "MANIFEST.MF"
 MANIFEST_SOURCE_VERSION = "source_version"
 PROTOCOL_VERSION = "protocol_version"
