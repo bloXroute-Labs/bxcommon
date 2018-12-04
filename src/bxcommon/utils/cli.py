@@ -2,7 +2,7 @@ import argparse
 import json
 from bxcommon.utils import convert, versions
 from bxcommon import constants
-from bxcommon.utils.config import blocking_resolve_ip
+from bxcommon.utils import config
 import os
 import re
 import sys
@@ -92,7 +92,7 @@ def get_args():
 
     if not _args:
         _args, unknown = arg_parser.parse_known_args()
-        _args.external_ip = blocking_resolve_ip(_args.external_ip)
+        _args.external_ip = config.blocking_resolve_ip(_args.external_ip)
     return _args
 
 
