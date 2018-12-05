@@ -34,6 +34,8 @@ def run_node(process_id_file_path, opts, node_class):
         opts.__dict__["outbound_peers"] = []
 
     logger.log_setmyname(opts.node_id)
+    if cli.get_args().log_level:
+        logger.log_setmylevel(cli.get_args().log_level)
 
     logger.debug("Config loaded:\n {}".format(json.dumps(opts, indent=2, sort_keys=True, cls=ClassJsonEncoder)))
 

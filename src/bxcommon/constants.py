@@ -1,3 +1,4 @@
+from bxcommon.utils.log_level import LogLevel
 
 MAX_CONN_BY_IP = 30  # Maximum number of connections that an IP address can have
 
@@ -41,6 +42,17 @@ CRASH_INTERVAL = -1
 LOG_FOR_WEB = True
 
 ENABLE_LOGGING = True
+
+# set default log level use either enum values
+# LogLevel.DEBUG
+# LogLevel.INFO
+# LogLevel.STATS
+# LogLevel.WARN
+# LogLevel.ERROR
+# LogLevel.FATAL
+# or their corresponding numbers
+
+DEFAULT_LOG_LEVEL = LogLevel.DEBUG
 
 # If the peer is more this many blocks behind me, then we close the connection.
 # This is useful to change for testing so that we can test tranfer rates for large numbers of blocks.

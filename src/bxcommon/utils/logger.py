@@ -1,11 +1,13 @@
 import os
 import sys
 import time
+from enum import IntEnum
 from collections import deque
 from datetime import datetime
 from threading import Condition, Lock, Thread
 
-from bxcommon.constants import ENABLE_LOGGING, FLUSH_LOG
+from bxcommon.utils.log_level import LogLevel
+from bxcommon.constants import ENABLE_LOGGING, FLUSH_LOG, DEFAULT_LOG_LEVEL
 
 ##
 # The Logging Interface
@@ -17,7 +19,7 @@ MAX_ERR_QUEUE_SIZE = 30
 
 error_msgs = deque()
 _hostname = '[Unassigned]'
-_log_level = 0
+_log_level = DEFAULT_LOG_LEVEL
 _default_log = None
 # The time (in seconds) to cycle through to another log.
 LOG_ROTATION_INTERVAL = 24 * 3600
@@ -129,20 +131,6 @@ class Log(object):
 
 _log = None
 
-
-# An enum that stores the different log levels
-class LogLevel(object):
-    def __init__(self):
-        pass
-
-    DEBUG = 0
-    INFO = 10
-    STATS = 15
-    WARN = 20
-    ERROR = 30
-    FATAL = 40
-
-
 # Logging helper functions
 
 def log_init(path, use_stdout):
@@ -160,6 +148,15 @@ def log_setmyname(name):
     global _hostname
 
     _hostname = '[' + name + ']'
+
+
+def log_setmylevel(loglevel):
+    global _log_level
+
+    if isinstance(loglevel, int):
+        _log_level = loglevel
+    else:
+        raise TypeError('Expects LogLevel Enum or int')
 
 
 def log(level, logtype, msg, log_time):

@@ -2,6 +2,7 @@ import argparse
 import json
 from bxcommon.utils import convert, versions
 from bxcommon import constants
+from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils import config
 import os
 import re
@@ -24,6 +25,7 @@ arg_parser.add_argument("--log-path", help="Path to store logfiles in")
 arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode",
                         type=convert.str_to_bool, default=True)
 arg_parser.add_argument("--node-id", help="(TEST ONLY) Set the node_id for using in testing.")
+arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__getattr__, choices=list(LogLevel))
 
 _args = None
 
