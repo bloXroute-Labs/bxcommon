@@ -18,7 +18,7 @@ def fetch_config(node_id):
     logger.debug("Retrieved config for id {0} : {1}".format(node_id, opts))
 
     if opts:
-        return NodeModel(**model_loader.load_node_model(json.loads(opts)))
+        return NodeModel(**model_loader.load_node_model(opts))
     else:
         return None
 
