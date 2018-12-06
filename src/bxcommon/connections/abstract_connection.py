@@ -11,8 +11,8 @@ from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.utils.throughput.direction import Direction
-from bxcommon.utils.throughput.throughput_service import throughput_service
+from bxcommon.utils.stats.direction import Direction
+from bxcommon.utils.stats import hooks
 
 
 class AbstractConnection(object):
@@ -161,7 +161,7 @@ class AbstractConnection(object):
                 return 0
 
             if self.log_throughput:
-                throughput_service.add_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
+                hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
 
             if msg_type in self.message_handlers:
                 msg_handler = self.message_handlers[msg_type]
@@ -201,7 +201,7 @@ class AbstractConnection(object):
             return buf.get_buffer()
 
     def advance_bytes_on_buffer(self, buf, bytes_written):
-        throughput_service.add_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc)
+        hooks.add_throughput_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc)
         buf.advance_buffer(bytes_written)
 
     def send_ping(self):

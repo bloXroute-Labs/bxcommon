@@ -6,13 +6,16 @@ from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import CONNECTION_RETRY_SECONDS, CONNECTION_TIMEOUT, DEFAULT_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES, \
-    PING_INTERVAL_SEC, SDN_CONTACT_RETRY_SECONDS, THROUGHPUT_STATS_INTERVAL, CANCEL_ALARMS, ALL_NETWORK_NUM
+    PING_INTERVAL_SEC, SDN_CONTACT_RETRY_SECONDS, CANCEL_ALARMS, ALL_NETWORK_NUM, INFO_STATS_INTERVAL, \
+    THROUGHPUT_STATS_INTERVAL
 from bxcommon.exceptions import TerminationError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import logger
 from bxcommon.utils.alarm import AlarmQueue
-from bxcommon.utils.throughput.throughput_service import throughput_service
+
+from bxcommon.utils.stats.throughput_service import throughput_statistics
+from bxcommon.utils.stats.node_info_service import node_info_statistics
 
 
 class AbstractNode(object):
@@ -43,9 +46,10 @@ class AbstractNode(object):
         # Event handling queue for delayed events
         self.alarm_queue = AlarmQueue()
 
-        throughput_service.set_node(self)
+        self.tx_service = None
 
         self.init_throughput_logging()
+        self.init_node_info_logging()
 
         # TODO: clean this up alongside outputbuffer holding time
         # this is Nagle's algorithm and we need to implement it properly
@@ -394,10 +398,16 @@ class AbstractNode(object):
         return 0
 
     def init_throughput_logging(self):
-        self.alarm_queue.register_alarm(THROUGHPUT_STATS_INTERVAL, throughput_service.flush_stats)
+        throughput_statistics.set_node(self)
+        self.alarm_queue.register_alarm(THROUGHPUT_STATS_INTERVAL, throughput_statistics.flush_info)
+
+    def init_node_info_logging(self):
+        node_info_statistics.set_node(self)
+        self.alarm_queue.register_alarm(INFO_STATS_INTERVAL, node_info_statistics.flush_info)
 
     def flush_all_send_buffers(self):
         for conn in self.connection_pool:
             if conn.socket_connection.can_send:
                 conn.socket_connection.send()
         return self.FLUSH_SEND_BUFFERS_INTERVAL
+

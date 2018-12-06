@@ -1,5 +1,6 @@
 class OutboundPeerModel(object):
     def __init__(self, ip, port, idx=None, node_id=None):
+
         self.ip = ip
         self.port = port
         self.idx = idx
@@ -14,5 +15,4 @@ class OutboundPeerModel(object):
     def __eq__(self, other):
         return isinstance(other, OutboundPeerModel) and other.ip == self.ip and other.port == self.port \
                and other.idx == self.idx
-
 

@@ -153,6 +153,9 @@ BLOXROUTE_ENCRYPTION_CACHE_TIMEOUT_S = 30 * 60
 
 DEFAULT_TEXT_ENCODING = "utf-8"
 
+# Time (in seconds) between stats gathering runs
+INFO_STATS_INTERVAL = 3600
+
 VERSION_NUM_LEN = UL_INT_SIZE_IN_BYTES
 VERSIONED_HELLO_MSG_MIN_PAYLOAD_LEN = UL_INT_SIZE_IN_BYTES + NETWORK_NUM_LEN + VERSION_NUM_LEN
 
@@ -177,3 +180,4 @@ try:
     from bxcommon.constants_local import *
 except ImportError as e:
     pass
+

@@ -6,7 +6,7 @@ from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import THROUGHPUT_STATS_INTERVAL, DEFAULT_SLEEP_TIMEOUT, PING_INTERVAL_SEC, \
-    CONNECTION_RETRY_SECONDS, MAX_CONNECT_RETRIES
+    CONNECTION_RETRY_SECONDS, MAX_CONNECT_RETRIES, THROUGHPUT_STATS_INTERVAL
 from bxcommon.exceptions import TerminationError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.socket_connection import SocketConnection
@@ -14,7 +14,7 @@ from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.test_utils.mocks.mock_message import MockMessage
 from bxcommon.test_utils.mocks.mock_node import MockOpts, MockNode
-from bxcommon.utils.throughput.throughput_service import throughput_service
+from bxcommon.utils.stats.throughput_service import throughput_statistics
 
 
 class AbstractNodeTest(AbstractTestCase):
@@ -163,10 +163,10 @@ class AbstractNodeTest(AbstractTestCase):
     def test_add_connection(self, mock_fileno):
         test_socket = MagicMock(spec=socket.socket)
         socket_connection = SocketConnection(test_socket, self.remote_node)
-        self.assertEqual(3, self.local_node.alarm_queue.uniq_count)
+        self.assertEqual(4, self.local_node.alarm_queue.uniq_count)
         self.assertIsNone(self.local_node.connection_pool.byfileno[self.remote_fileno])
         self.local_node._add_connection(socket_connection, self.remote_ip, self.remote_port, True)
-        self.assertEqual(4, self.local_node.alarm_queue.uniq_count)
+        self.assertEqual(5, self.local_node.alarm_queue.uniq_count)
         self.assertEqual(self.connection.fileno,
                          self.local_node.connection_pool.byfileno[self.remote_fileno].fileno.fileno())
 
@@ -225,7 +225,7 @@ class AbstractNodeTest(AbstractTestCase):
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
     def test_init_throughput_logging(self, mocked_alarm_queue):
         self.local_node.init_throughput_logging()
-        mocked_alarm_queue.assert_called_once_with(THROUGHPUT_STATS_INTERVAL, throughput_service.flush_stats)
+        mocked_alarm_queue.assert_called_once_with(THROUGHPUT_STATS_INTERVAL, throughput_statistics.flush_info)
 
 
 class TestNode(AbstractNode):
