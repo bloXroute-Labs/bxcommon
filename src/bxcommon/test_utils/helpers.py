@@ -84,7 +84,8 @@ def get_gateway_opts(port, node_id=None, external_ip="127.0.0.1", internal_ip="0
         "outbound_peers": peer_gateways + peer_relays,
         "protocol_version": protocol_version,
         "network_num": network_num,
-        "min_peer_gateways": min_peer_gateways
+        "min_peer_gateways": min_peer_gateways,
+        "remote_public_key": None
     }
     if include_default_btc_args:
         opts.__dict__.update({

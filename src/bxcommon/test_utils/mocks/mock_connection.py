@@ -32,7 +32,7 @@ class MockConnection(object):
         self.message_handlers = None
         self.network_num = node.opts.network_num
 
-    def mark_for_close(self):
+    def mark_for_close(self, force_destroy_now=False):
         self.state |= ConnectionState.MARK_FOR_CLOSE
 
     def add_received_bytes(self, bytes_received):

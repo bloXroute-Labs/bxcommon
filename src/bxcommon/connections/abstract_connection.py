@@ -226,5 +226,8 @@ class AbstractConnection(object):
     def msg_pong(self, _msg):
         pass
 
-    def mark_for_close(self):
+    def mark_for_close(self, force_destroy_now=False):
         self.state |= ConnectionState.MARK_FOR_CLOSE
+
+        if force_destroy_now:
+            self.node.destroy_conn(self, retry_connection=True)
