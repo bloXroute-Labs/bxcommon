@@ -6,6 +6,7 @@ from contextlib import closing
 from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
+from bxcommon.constants import DEFAULT_NETWORK_NUM
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -56,7 +57,8 @@ def create_input_buffer_with_bytes(message_bytes):
 
 def get_gateway_opts(port, node_id=None, external_ip="127.0.0.1", internal_ip="0.0.0.0", blockchain_address=None,
                      test_mode="", peer_gateways=None, peer_relays=None, protocol_version=1, sid_expire_time=30,
-                     bloxroute_version="bloxroute 1.5", include_default_btc_args=False, network_num=12345, **kwargs):
+                     bloxroute_version="bloxroute 1.5", include_default_btc_args=False, include_default_etc_args=False,
+                     network_num=DEFAULT_NETWORK_NUM, min_peer_gateways=0, **kwargs):
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -81,7 +83,8 @@ def get_gateway_opts(port, node_id=None, external_ip="127.0.0.1", internal_ip="0
         "peer_relays": peer_relays,
         "outbound_peers": peer_gateways + peer_relays,
         "protocol_version": protocol_version,
-        "network_num": network_num
+        "network_num": network_num,
+        "min_peer_gateways": min_peer_gateways
     }
     if include_default_btc_args:
         opts.__dict__.update({
@@ -90,7 +93,15 @@ def get_gateway_opts(port, node_id=None, external_ip="127.0.0.1", internal_ip="0
             "blockchain_nonce": 0,
             "blockchain_services": 1,
         })
-    for key, val in kwargs:
+    if include_default_etc_args:
+        opts.__dict__.update({
+            "private_key": "294549f8629f0eeb2b8e01aca491f701f5386a9662403b485c4efe7d447dfba3",
+            "network_id": 1,
+            "chain_difficulty": 4194304,
+            "genesis_hash": "1e8ff5fd9d06ab673db775cf5c72a6b2d63171cd26fe1e6a8b9d2d696049c781",
+            "no_discovery": True,
+        })
+    for key, val in kwargs.items():
         opts.__dict__[key] = val
     return opts
 

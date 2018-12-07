@@ -10,10 +10,10 @@ class NetworkThread(object):
     Test utility class for spinning up a full node with the event loop for a longer integration test.
     """
 
-    def __init__(self, node):
+    def __init__(self, node, name=None):
         self.node = node
         self.event_loop = network_event_loop_factory.create_event_loop(self.node)
-        self._process = Thread(target=self.event_loop.run)
+        self._process = Thread(target=self.event_loop.run, name=name)
 
     def start(self):
         self._process.start()
@@ -29,3 +29,4 @@ class NetworkThread(object):
 
         if self._process.is_alive():
             self._process.join()
+

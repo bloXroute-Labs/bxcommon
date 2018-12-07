@@ -176,8 +176,6 @@ class AbstractConnection(object):
         Preserve invariant of self.inputbuf always containing the start of a valid message.
 
         :param payload_len: length of payload
-        :param msg_type: message type string
-        :param hdr_size: size of header
         :return: message object
         """
 

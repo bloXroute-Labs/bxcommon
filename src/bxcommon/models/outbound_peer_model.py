@@ -16,3 +16,5 @@ class OutboundPeerModel(object):
         return isinstance(other, OutboundPeerModel) and other.ip == self.ip and other.port == self.port \
                and other.idx == self.idx
 
+    def __hash__(self):
+        return hash(self.__repr__())

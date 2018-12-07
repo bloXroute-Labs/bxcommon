@@ -58,7 +58,7 @@ class AbstractNodeTest(AbstractTestCase):
         self.local_node.on_connection_closed(self.remote_fileno)
         self.assertNotIn(self.connection, self.local_node.connection_pool.byfileno)
 
-    @patch("bxcommon.connections.abstract_node.AbstractNode._destroy_conn")
+    @patch("bxcommon.connections.abstract_node.AbstractNode.destroy_conn")
     def test_on_updated_peers(self, mocked_destroy_conn):
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         self.local_node.opts.outbound_peers = [OutboundPeerModel("222.222.222.222", 2000)]
@@ -76,7 +76,7 @@ class AbstractNodeTest(AbstractTestCase):
         self.local_node.on_bytes_received(self.remote_fileno, self.to_31)
         self.assertEqual(self.to_31, self.connection.inputbuf.input_list[0])
 
-    @patch("bxcommon.connections.abstract_node.AbstractNode._destroy_conn")
+    @patch("bxcommon.connections.abstract_node.AbstractNode.destroy_conn")
     def test_on_bytes_received_connection_destroyed(self, mocked_destroy):
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         self.local_node.on_bytes_received(self.remote_fileno, self.to_31)
@@ -179,7 +179,7 @@ class AbstractNodeTest(AbstractTestCase):
         self.connection.state = ConnectionState.MARK_FOR_CLOSE
         self.assertEqual(0, self.local_node._connection_timeout(self.connection))
 
-    @patch("bxcommon.connections.abstract_node.AbstractNode._destroy_conn")
+    @patch("bxcommon.connections.abstract_node.AbstractNode.destroy_conn")
     def test_connection_timeout_connecting(self, mocked_destroy_conn):
         self.connection.state = ConnectionState.CONNECTING
         self.assertEqual(0, self.local_node._connection_timeout(self.connection))
@@ -193,12 +193,12 @@ class AbstractNodeTest(AbstractTestCase):
     def test_destroy_conn(self, mocked_register_alarm):
         self.connection.connection_type = ConnectionType.BLOCKCHAIN_NODE
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node._destroy_conn(self.connection)
+        self.local_node.destroy_conn(self.connection)
         mocked_register_alarm.assert_not_called()
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node._destroy_conn(self.connection, retry_connection=True)
+        self.local_node.destroy_conn(self.connection, retry_connection=True)
         self.assertIn(self.connection.fileno, self.local_node.disconnect_queue)
-        mocked_register_alarm.assert_called_with(CONNECTION_RETRY_SECONDS, self.local_node._retry_init_client_socket,
+        mocked_register_alarm.assert_called_with(CONNECTION_RETRY_SECONDS, self.local_node.retry_init_client_socket,
                                                  self.remote_ip, self.remote_port, self.connection.connection_type)
 
     def test_is_outbound_peer(self):
@@ -214,11 +214,11 @@ class AbstractNodeTest(AbstractTestCase):
 
     @patch("bxcommon.connections.abstract_node.sdn_http_service.submit_peer_connection_error_event")
     def test_retry_init_client_socket(self, mocked_submit_peer):
-        self.assertEqual(0, self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port,
-                                                                      ConnectionType.RELAY))
+        self.assertEqual(0, self.local_node.retry_init_client_socket(self.remote_ip, self.remote_port,
+                                                                     ConnectionType.RELAY))
         self.assertIn((self.remote_ip, self.remote_port), self.local_node.connection_queue)
         self.local_node.num_retries_by_ip[self.remote_ip] = MAX_CONNECT_RETRIES
-        self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port, ConnectionType.RELAY)
+        self.local_node.retry_init_client_socket(self.remote_ip, self.remote_port, ConnectionType.RELAY)
         self.assertNotIn(self.remote_ip, self.local_node.num_retries_by_ip)
         mocked_submit_peer.assert_called_with(self.local_node.opts.node_id, self.remote_ip, self.remote_port)
 

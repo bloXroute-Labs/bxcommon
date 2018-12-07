@@ -1,11 +1,12 @@
 import unittest
 
 from bxcommon.connections.connection_pool import ConnectionPool
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 
 
-class ConnectionPoolTest(unittest.TestCase):
+class ConnectionPoolTest(AbstractTestCase):
 
     def setUp(self):
         self.conn_pool1 = ConnectionPool()
@@ -39,6 +40,13 @@ class ConnectionPoolTest(unittest.TestCase):
 
         self.conn_pool1.add(ConnectionPool.INITIAL_FILENO + 1, "0.0.0.0", self.port1, self.conn1)
         self.assertEqual(ConnectionPool.INITIAL_FILENO * 2, self.conn_pool1.len_fileno)
+
+    def test_update(self):
+        self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
+        self.conn_pool1.add(self.fileno2, self.ip2, self.port2, self.conn2)
+        self.conn_pool1.update_port(self.port2, self.conn1)
+        self.assertEqual(self.conn1, self.conn_pool1.get_byipport(self.ip1, self.port2))
+        self.assertFalse(self.conn_pool1.has_connection(self.ip1, self.port1))
 
     def test_has_connection(self):
         self.add_conn()

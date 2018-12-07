@@ -3,8 +3,8 @@ from bxcommon.messages.bloxroute.v1.key_message_converter_v1 import key_message_
 from bxcommon.messages.bloxroute.v1.tx_message_converter_v1 import tx_message_converter_v1
 from bxcommon.messages.bloxroute.v1.broadcast_message_converter_v1 import broadcast_message_converter_v1
 from bxcommon.messages.bloxroute.v1.hello_message_converter_v1 import hello_message_converter_v1
-from bxcommon.messages.bloxroute.versioning.abstract_message_converter_factory import AbstractMessageConverterFactory
-from bxcommon.messages.bloxroute.versioning.no_changes_message_converter import no_changes_message_converter
+from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
+from bxcommon.messages.versioning.no_changes_message_converter import no_changes_message_converter
 
 
 class _MessageConverterFactoryV1(AbstractMessageConverterFactory):

@@ -2,6 +2,7 @@ from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, VERSION_NU
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
+from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
@@ -10,7 +11,6 @@ from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
-from bxcommon.messages.bloxroute.versioning import versioning
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import create_input_buffer_with_message, create_input_buffer_with_bytes
 from bxcommon.utils import crypto
@@ -110,7 +110,7 @@ class BloxrouteMessageFactory(AbstractTestCase):
 
     def test_create_message_success_all_types(self):
         test_network_num = 10
-        test_protocol_version = versioning.CURRENT_PROTOCOL_VERSION
+        test_protocol_version = bloxroute_version_manager.CURRENT_PROTOCOL_VERSION
 
         hello_message = self.create_message_successfully(HelloMessage(protocol_version=test_protocol_version,
                                                                       idx=1,

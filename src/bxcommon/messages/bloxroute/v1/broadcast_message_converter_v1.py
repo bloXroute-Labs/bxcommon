@@ -5,7 +5,7 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.messages.bloxroute.v1.broadcast_message_v1 import BroadcastMessageV1
-from bxcommon.messages.bloxroute.versioning.abstract_message_converter import AbstractMessageConverter
+from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 
 

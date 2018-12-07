@@ -6,7 +6,7 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.messages.bloxroute.v1.hello_message_v1 import HelloMessageV1
-from bxcommon.messages.bloxroute.versioning.abstract_message_converter import AbstractMessageConverter
+from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 
 
 class _HelloMessageConverterV1(AbstractMessageConverter):
@@ -25,7 +25,7 @@ class _HelloMessageConverterV1(AbstractMessageConverter):
         struct.pack_into("<12sL", result_bytes, off_v1, BloxrouteMessageType.HELLO, payload_len)
         off_v1 += HDR_COMMON_OFF
 
-        off = off_v1 + NETWORK_NUM_LEN
+        off = off_v1 + VERSION_NUM_LEN + NETWORK_NUM_LEN
         result_bytes[off_v1:] = mem_view[off:]
 
         return Message.initialize_class(HelloMessageV1, result_bytes, (BloxrouteMessageType.HELLO, payload_len))
@@ -51,12 +51,12 @@ class _HelloMessageConverterV1(AbstractMessageConverter):
         struct.pack_into("<L", result_bytes, off, 1)
         off += VERSION_NUM_LEN
 
-        # copy IDx
-        result_bytes[off:off + UL_INT_SIZE_IN_BYTES] = mem_view[off_v1:off_v1 + UL_INT_SIZE_IN_BYTES]
-        off += UL_INT_SIZE_IN_BYTES
-
         # pack default network number
         struct.pack_into("<L", result_bytes, off, DEFAULT_NETWORK_NUM)
+        off += NETWORK_NUM_LEN
+
+        # copy IDx
+        result_bytes[off:off + UL_INT_SIZE_IN_BYTES] = mem_view[off_v1:off_v1 + UL_INT_SIZE_IN_BYTES]
 
         return Message.initialize_class(HelloMessage, result_bytes, (BloxrouteMessageType.HELLO, payload_len))
 

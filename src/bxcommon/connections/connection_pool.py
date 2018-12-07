@@ -33,6 +33,16 @@ class ConnectionPool(object):
         self.byipport[(ip, port)] = conn
         self.count_conn_by_ip[ip] += 1
 
+    def update_port(self, new_port, conn):
+        """
+        Updates port mapping of connection. Clears out old one.
+        """
+        old_ipport = (conn.peer_ip, conn.peer_port)
+        if old_ipport in self.byipport:
+            del self.byipport[old_ipport]
+
+        self.byipport[(conn.peer_ip, new_port)] = conn
+
     def has_connection(self, ip, port):
         return (ip, port) in self.byipport
 

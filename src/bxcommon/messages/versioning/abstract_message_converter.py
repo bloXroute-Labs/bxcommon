@@ -30,7 +30,7 @@ class AbstractMessageConverter(object):
         """
         Converts first bytes of message of current protocol version to older version (version of converter)
 
-        :param msg: first bytes of message in current protocol version
+        :param first_msg_bytes: first bytes of message in current protocol version
         :return: converted message bytes
         """
         pass
@@ -40,7 +40,7 @@ class AbstractMessageConverter(object):
         """
         Converts first message bytes of older version (version of converter) to current protocol version
 
-        :param msg: first message bytes in older protocol version
+        :param first_msg_bytes: first message bytes in older protocol version
         :return: converted message bytes
         """
         pass

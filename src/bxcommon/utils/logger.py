@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 import time
 from enum import IntEnum
 from collections import deque
@@ -167,8 +168,13 @@ def log(level, logtype, msg, log_time):
 
     # loc is kept for debugging purposes. Uncomment the following line if you need to see the execution path.
     #    msg = loc + ": " + msg
-    logmsg = "{0}: {1} [{2}]: {3}\n".format(
-        _hostname, logtype, log_time.strftime("%Y-%m-%d-%H:%M:%S+%f"), msg)
+    if _hostname == "[Unassigned]":
+        # Print threadname for testing in multithreaded integration testing environments
+        logmsg = "[{0}]: {1} [{2}]: {3}\n".format(
+            threading.current_thread().name, logtype, log_time.strftime("%Y-%m-%d-%H:%M:%S+%f"), msg)
+    else:
+        logmsg = "{0}: {1} [{2}]: {3}\n".format(
+            _hostname, logtype, log_time.strftime("%Y-%m-%d-%H:%M:%S+%f"), msg)
 
     # Store all error messages to be sent to the frontend
     if level > LogLevel.WARN:

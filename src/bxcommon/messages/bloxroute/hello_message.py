@@ -1,12 +1,13 @@
 import struct
 
-from bxcommon.constants import HDR_COMMON_OFF, UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, VERSION_NUM_LEN
+from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, VERSION_NUM_LEN
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.messages.bloxroute.message import Message
+from bxcommon.messages.bloxroute.version_message import VersionMessage
 
 _IDX_LEN = UL_INT_SIZE_IN_BYTES
 
-class HelloMessage(Message):
+
+class HelloMessage(VersionMessage):
     """
     BloXroute relay hello message type.
 
@@ -16,42 +17,23 @@ class HelloMessage(Message):
     """
     MESSAGE_TYPE = BloxrouteMessageType.HELLO
 
-    def __init__(self, protocol_version=None, idx=None, network_num=None, buf=None):
+    def __init__(self, protocol_version=None, network_num=None, idx=None, buf=None):
 
         if buf is None:
-            buf = bytearray(HDR_COMMON_OFF + VERSION_NUM_LEN + _IDX_LEN + NETWORK_NUM_LEN)
-            self.buf = buf
-            off = HDR_COMMON_OFF
-            struct.pack_into("<L", buf, off, protocol_version)
-            off += VERSION_NUM_LEN
+            buf = bytearray(VersionMessage.BASE_LENGTH + _IDX_LEN)
+            off = VersionMessage.BASE_LENGTH
             struct.pack_into("<L", buf, off, idx)
-            off += _IDX_LEN
-            struct.pack_into("<L", buf, off, network_num)
 
-            super(HelloMessage, self).__init__(self.MESSAGE_TYPE, VERSION_NUM_LEN + _IDX_LEN + NETWORK_NUM_LEN, buf)
-        else:
-            self.buf = buf
-            self._msg_type = self._payload_len = self._payload = None
-
-        self._protocol_version = None
+        self.buf = buf
         self._idx = None
         self._network_num = None
         self._memoryview = memoryview(buf)
 
-    def protocol_version(self):
-        if self._protocol_version is None:
-            off = HDR_COMMON_OFF
-            self._protocol_version, = struct.unpack_from("<L", self.buf, off)
-        return self._protocol_version
+        super(HelloMessage, self).__init__(self.MESSAGE_TYPE, VERSION_NUM_LEN + _IDX_LEN + NETWORK_NUM_LEN,
+                                           protocol_version, network_num, buf)
 
     def idx(self):
         if self._idx is None:
-            off = HDR_COMMON_OFF + VERSION_NUM_LEN
+            off = VersionMessage.BASE_LENGTH
             self._idx, = struct.unpack_from("<L", self.buf, off)
         return self._idx
-
-    def network_num(self):
-        if self._network_num is None:
-            off = HDR_COMMON_OFF + VERSION_NUM_LEN + _IDX_LEN
-            self._network_num, = struct.unpack_from("<L", self.buf, off)
-        return self._network_num

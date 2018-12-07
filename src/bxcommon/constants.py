@@ -60,7 +60,7 @@ HEIGHT_DIFFERENCE = 100
 
 FLUSH_LOG = True
 
-LISTEN_ON_IP_ADDRESS = '0.0.0.0'
+LISTEN_ON_IP_ADDRESS = "0.0.0.0"
 LOCALHOST = "127.0.0.1"
 
 # The length of everything in the header minus the checksum
@@ -81,11 +81,11 @@ NETWORK_NUM_LEN = UL_INT_SIZE_IN_BYTES
 MISSING_BLOCK_EXPIRE_TIME = 60
 
 btc_magic_numbers = {
-    'main': 0xD9B4BEF9,
-    'testnet': 0xDAB5BFFA,
-    'testnet3': 0x0709110B,
-    'regtest': 0xDAB5BFFA,
-    'namecoin': 0xFEB4BEF9
+    "main": 0xD9B4BEF9,
+    "testnet": 0xDAB5BFFA,
+    "testnet3": 0x0709110B,
+    "regtest": 0xDAB5BFFA,
+    "namecoin": 0xFEB4BEF9
 }
 
 # The length of everything in the header minus the checksum
@@ -131,6 +131,7 @@ DEFAULT_SLEEP_TIMEOUT = 0.1  # Schedule an event to be executed fast on alarm qu
 MAX_KQUEUE_EVENTS_COUNT = 1000
 
 BX_API_ROOT_URL = "http://127.0.0.1:8080"
+
 
 class BxApiRoutes(object):
     nodes = "/nodes"

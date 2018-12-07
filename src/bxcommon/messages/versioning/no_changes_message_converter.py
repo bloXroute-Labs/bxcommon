@@ -1,4 +1,4 @@
-from bxcommon.messages.bloxroute.versioning.abstract_message_converter import AbstractMessageConverter
+from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 
 
 class _NoChangesMessageConverter(AbstractMessageConverter):
