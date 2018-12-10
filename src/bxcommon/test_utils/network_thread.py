@@ -13,10 +13,10 @@ class NetworkThread(object):
     def __init__(self, node, name=None):
         self.node = node
         self.event_loop = network_event_loop_factory.create_event_loop(self.node)
-        self._process = Thread(target=self.event_loop.run, name=name)
+        self._thread = Thread(target=self.event_loop.run, name=name)
 
     def start(self):
-        self._process.start()
+        self._thread.start()
 
     def close(self):
         self.node.should_force_exit = True
@@ -27,6 +27,6 @@ class NetworkThread(object):
             except socket.error:
                 pass
 
-        if self._process.is_alive():
-            self._process.join()
+        if self._thread.is_alive():
+            self._thread.join()
 

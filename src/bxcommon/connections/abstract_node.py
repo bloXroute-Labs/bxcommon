@@ -254,7 +254,8 @@ class AbstractNode(object):
             broadcast_net_num = network_num
 
         for conn in self.connection_pool:
-            if conn.state & ConnectionState.ESTABLISHED and conn != broadcasting_conn \
+            if conn.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED \
+                    and conn != broadcasting_conn \
                     and conn.connection_type != ConnectionType.SDN \
                     and (conn.network_num == constants.ALL_NETWORK_NUM or conn.network_num == broadcast_net_num):
                 conn.enqueue_msg(msg, prepend_to_queue)

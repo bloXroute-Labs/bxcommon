@@ -154,7 +154,8 @@ class AbstractConnection(object):
 
             self.num_bad_messages = 0
 
-            if not (self.state & ConnectionState.ESTABLISHED) and msg_type not in self.hello_messages:
+            if not (self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED) \
+                    and msg_type not in self.hello_messages:
                 logger.error("Connection to {0} not established and got {1} message!  Closing."
                              .format(self.peer_desc, msg_type))
                 self.state |= ConnectionState.MARK_FOR_CLOSE

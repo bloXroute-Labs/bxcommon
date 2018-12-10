@@ -18,6 +18,7 @@ class AbstractVersionManager(object):
     def __init__(self):
         self.protocol_to_factory_mapping = {}
         self.protocol_to_converter_factory_mapping = {}
+        self.version_message_command = ""
 
     def is_protocol_supported(self, protocol_version):
         return protocol_version >= self.MIN_SUPPORTED_PROTOCOL_VERSION
@@ -170,8 +171,11 @@ class AbstractVersionManager(object):
             return None
 
         header_buf = input_buffer.peek_message(VersionMessage.HEADER_LENGTH)
-        args = VersionMessage.unpack(header_buf)
-        payload_len = args[-1]
+        command, payload_len = VersionMessage.unpack(header_buf)
+        if command != self.version_message_command:
+            logger.error("Received a nonversion hello message of type {}. Ignoring and closing connection."
+                         .format(command))
+            return self.MIN_SUPPORTED_PROTOCOL_VERSION - 1
 
         if payload_len < self.VERSION_MESSAGE_MAIN_LENGTH:
             return 1

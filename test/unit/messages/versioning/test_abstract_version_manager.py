@@ -1,10 +1,13 @@
 from bxcommon.constants import VERSIONED_HELLO_MSG_MIN_PAYLOAD_LEN
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
+from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.v1.hello_message_v1 import HelloMessageV1
 from bxcommon.messages.versioning.abstract_version_manager import AbstractVersionManager
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.utils import crypto
 from bxcommon.utils.buffers.input_buffer import InputBuffer
+from bxcommon.utils.object_hash import ObjectHash
 
 
 class MessageFactory(AbstractMessageFactory):
@@ -30,6 +33,7 @@ class VersionManager(AbstractVersionManager):
             2: message_factory
         }
         self.protocol_to_converter_factory_mapping = {}
+        self.version_message_command = "hello"
 
 
 class AbstractVersionManagerTest(AbstractTestCase):
@@ -50,6 +54,16 @@ class AbstractVersionManagerTest(AbstractTestCase):
             self.version_manager.get_message_factory_for_version(0)
         with self.assertRaises(NotImplementedError):
             self.version_manager.get_message_factory_for_version(3)
+
+    def test_get_connection_protocol_version__wrong_message(self):
+        wrong_message = BroadcastMessage(
+            msg_hash=ObjectHash(crypto.double_sha256("hello")),
+            network_num=1,
+            blob=bytearray(1))
+        input_buffer = InputBuffer()
+        input_buffer.add_bytes(wrong_message.rawbytes())
+
+        self.assertEqual(0, self.version_manager.get_connection_protocol_version(input_buffer))
 
     def test_get_connection_protocol_version__v1(self):
         hello_msg_v1 = HelloMessageV1(idx=0)
