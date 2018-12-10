@@ -2,6 +2,7 @@ import json
 import time
 
 from bxcommon.constants import BxApiRoutes
+from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
@@ -53,6 +54,32 @@ def fetch_gateway_peers(node_id):
     config.blocking_resolve_peers(outbound_gateways)
 
     return outbound_gateways
+
+
+def fetch_blockchain_network(protocol_name, network_name):
+    node_url = BxApiRoutes.blockchain_network.format(protocol_name, network_name)
+    blockchain_network = http_service.get_json(node_url)
+
+    if blockchain_network is None:
+        return None
+
+    blockchain_network = BlockchainNetworkModel(**model_loader.load_blockchain_network_model(blockchain_network))
+
+    return blockchain_network
+
+
+def fetch_blockchain_networks():
+    node_url = BxApiRoutes.blockchain_networks
+    blockchain_networks = http_service.get_json(node_url)
+
+    if not blockchain_networks:
+        logger.warn("There are no blockchain networks configured in SDN")
+        return []
+
+    blockchain_networks = [BlockchainNetworkModel(**model_loader.load_blockchain_network_model(b)) for b in
+                           blockchain_networks]
+
+    return blockchain_networks
 
 
 def submit_sid_space_full_event(node_id):

@@ -57,7 +57,7 @@ class AbstractNode(object):
 
         self.alarm_queue.register_alarm(constants.SDN_CONTACT_RETRY_SECONDS, self.send_request_for_relay_peers)
 
-        self.network_num = constants.ALL_NETWORK_NUM
+        self.network_num = opts.network_num
 
     def get_sdn_address(self):
         """

@@ -110,6 +110,8 @@ class BxApiRoutes(object):
     node_relays = "/nodes/{0}/peers"
     node_gateways = "/nodes/{0}/gateways"
     node_event = "/nodes/{0}/events"
+    blockchain_network = "/blockchain-networks/{0}/{1}"
+    blockchain_networks = "/blockchain-networks"
 
 
 SDN_CONTACT_RETRY_SECONDS = 2
