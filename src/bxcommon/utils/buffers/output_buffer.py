@@ -126,7 +126,8 @@ class OutputBuffer(object):
     # TODO: @soumya this is called every 200ms. This needs some future cleanup; possibly in the alarm data structure.
     # Consult Nagle algorithm before implementing improvements.
     def _flush_to_buffer(self):
-        assert self.last_bytearray is not None
+        if self.last_bytearray is None:
+            return
 
         self.output_msgs.append(self.last_memview[:self.valid_len])
         self.last_bytearray_create_time = None
