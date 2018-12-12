@@ -14,11 +14,13 @@ class OutputBuffer(object):
     """
     EMPTY = bytearray(0)  # The empty outputbuffer
 
-    def __init__(self, min_size=None, max_hold_time=None):
+    def __init__(self, min_size=None, max_hold_time=None, enable_buffering=False):
         if min_size is None:
             min_size = constants.OUTPUT_BUFFER_MIN_SIZE
         if max_hold_time is None:
             max_hold_time = constants.OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME
+
+        self.enable_buffering = enable_buffering
 
         # A deque of memoryview objects representing the raw memoryviews of the messages
         # that are being sent on the outputbuffer.
@@ -46,7 +48,9 @@ class OutputBuffer(object):
         """
         now = time.time()
 
-        if self.last_bytearray is not None and now - self.last_bytearray_create_time > self.max_hold_time:
+        if self.enable_buffering and \
+                self.last_bytearray is not None and \
+                now - self.last_bytearray_create_time >= self.max_hold_time:
             self._flush_to_buffer()
 
         if not self.output_msgs:
@@ -76,7 +80,10 @@ class OutputBuffer(object):
             raise ValueError("Msg_bytes must be a bytearray.")
 
         length = len(msg_bytes)
-        if length + self.valid_len > self.min_size:
+
+        if not self.enable_buffering:
+            self.output_msgs.append(msg_bytes)
+        elif length + self.valid_len > self.min_size:
             if self.last_bytearray is not None:
                 self._flush_to_buffer()
             self.output_msgs.append(msg_bytes)
@@ -114,6 +121,7 @@ class OutputBuffer(object):
 
     def has_more_bytes(self):
         return self.length != 0
+
 
     # TODO: @soumya this is called every 200ms. This needs some future cleanup; possibly in the alarm data structure.
     # Consult Nagle algorithm before implementing improvements.
