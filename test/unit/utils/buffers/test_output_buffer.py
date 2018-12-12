@@ -10,7 +10,7 @@ from bxcommon.utils.buffers.output_buffer import OutputBuffer
 
 class TestOutputBuffer(unittest.TestCase):
     def setUp(self):
-        self.out_buf = OutputBuffer()
+        self.out_buf = OutputBuffer(enable_buffering=True)
 
     def test_get_buffer(self):
         self.assertEqual(OutputBuffer.EMPTY, self.out_buf.get_buffer())
