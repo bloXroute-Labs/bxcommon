@@ -36,9 +36,11 @@ def run_node(process_id_file_path, opts, node_class):
     if not hasattr(opts, "outbound_peers"):
         opts.__dict__["outbound_peers"] = []
 
-    logger.log_setmyname(opts.node_id)
-    if cli.get_args().log_level:
-        logger.log_setmylevel(cli.get_args().log_level)
+    logger.set_log_name(opts.node_id)
+    if cli.get_args().log_level is not None:
+        logger.set_log_level(cli.get_args().log_level)
+
+    logger.set_immediate_flush(cli.get_args().log_flush_immediately)
 
     logger.debug("Config loaded:\n {}".format(json.dumps(opts, indent=2, sort_keys=True, cls=ClassJsonEncoder)))
 

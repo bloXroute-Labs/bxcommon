@@ -253,12 +253,17 @@ class AbstractNode(object):
         else:
             broadcast_net_num = network_num
 
+        broadcast_connections = []
+
         for conn in self.connection_pool:
             if conn.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED \
                     and conn != broadcasting_conn \
                     and conn.connection_type != ConnectionType.SDN \
                     and (conn.network_num == constants.ALL_NETWORK_NUM or conn.network_num == broadcast_net_num):
                 conn.enqueue_msg(msg, prepend_to_queue)
+                broadcast_connections.append(conn)
+
+        return broadcast_connections
 
     @abstractmethod
     def get_connection_class(self, ip=None, port=None, from_me=False):

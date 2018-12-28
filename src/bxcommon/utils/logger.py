@@ -2,13 +2,12 @@ import os
 import sys
 import threading
 import time
-from enum import IntEnum
 from collections import deque
 from datetime import datetime
 from threading import Condition, Lock, Thread
 
-from bxcommon.utils.log_level import LogLevel
 from bxcommon.constants import ENABLE_LOGGING, FLUSH_LOG, DEFAULT_LOG_LEVEL
+from bxcommon.utils.log_level import LogLevel
 
 ##
 # The Logging Interface
@@ -52,6 +51,7 @@ class Log(object):
         self.bytes_written = 0
         self.dumper = Thread(target=self.log_dumper)
         self.is_alive = True
+        self.flush_immediately = False
 
         if not self.use_stdout:
             with open("current.log", "w") as log_file:
@@ -88,7 +88,7 @@ class Log(object):
             while alive:
                 with self.lock:
                     alive = self.is_alive
-                    while self.log_size < Log.LOG_SIZE and self.is_alive:
+                    while not self.flush_immediately and self.log_size < Log.LOG_SIZE and self.is_alive:
                         self.needs_flush.wait()
 
                     oldlog = self.log
@@ -101,7 +101,7 @@ class Log(object):
 
                 self.bytes_written += oldsize
 
-                if FLUSH_LOG:
+                if FLUSH_LOG or self.flush_immediately:
                     output_dest.flush()
 
                 # Checks whether we've been dumping to this logfile for a while
@@ -132,6 +132,7 @@ class Log(object):
 
 _log = None
 
+
 # Logging helper functions
 
 def log_init(path, use_stdout):
@@ -145,19 +146,31 @@ def log_close():
     _log.close()
 
 
-def log_setmyname(name):
+def set_log_name(name):
     global _hostname
 
     _hostname = '[' + name + ']'
 
 
-def log_setmylevel(loglevel):
+def set_log_level(loglevel):
     global _log_level
 
     if isinstance(loglevel, int):
         _log_level = loglevel
     else:
-        raise TypeError('Expects LogLevel Enum or int')
+        raise TypeError("Expects LogLevel Enum or int")
+
+
+def set_immediate_flush(flush_immediately):
+    global _log
+
+    if not _log:
+        raise ValueError("Logger is not initialized.")
+
+    if not isinstance(flush_immediately, bool):
+        raise TypeError("flush_immediately is expected of type bool but was {}".format(type(flush_immediately)))
+
+    _log.flush_immediately = flush_immediately
 
 
 def log(level, logtype, msg, log_time):
@@ -206,9 +219,9 @@ def info(msg):
     log(LogLevel.INFO, "INFO  ", msg, datetime.utcnow())
 
 
-def statistics(msg):
-    log(LogLevel.STATS, "STATS  ", msg, datetime.utcnow())
-
-
 def warn(msg):
     log(LogLevel.WARN, "WARN  ", msg, datetime.utcnow())
+
+
+def statistics(msg):
+    log(LogLevel.STATS, "STATS  ", msg, datetime.utcnow())

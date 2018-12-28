@@ -5,10 +5,11 @@ from enum import IntEnum
 class LogLevel(IntEnum):
     DEBUG = 0
     INFO = 10
-    STATS = 15
     WARN = 20
     ERROR = 30
     FATAL = 40
+    STATS = 50
+    OFF = 100
 
     def __str__(self):
         return self.name

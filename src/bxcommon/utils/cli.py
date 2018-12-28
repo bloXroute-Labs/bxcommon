@@ -32,6 +32,7 @@ arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate log
                         type=convert.str_to_bool, default=True)
 arg_parser.add_argument("--node-id", help="(TEST ONLY) Set the node_id for using in testing.")
 arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__getattr__, choices=list(LogLevel))
+arg_parser.add_argument("--log-flush-immediately", help="Enables immediate flush for logs", action="store_true")
 
 _args = None
 

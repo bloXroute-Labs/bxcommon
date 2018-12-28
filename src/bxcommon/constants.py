@@ -52,7 +52,7 @@ ENABLE_LOGGING = True
 # LogLevel.FATAL
 # or their corresponding numbers
 
-DEFAULT_LOG_LEVEL = LogLevel.DEBUG
+DEFAULT_LOG_LEVEL = LogLevel.WARN
 
 # If the peer is more this many blocks behind me, then we close the connection.
 # This is useful to change for testing so that we can test tranfer rates for large numbers of blocks.
