@@ -28,6 +28,7 @@ class MockNode(AbstractNode):
     def broadcast(self, msg, requester=None, prepend_to_queue=False, network_num=None,
                   connection_type=ConnectionType.RELAY):
         self.broadcast_messages.append(msg)
+        return []
 
     def get_tx_service(self, _network_num=None):
         return self._tx_service

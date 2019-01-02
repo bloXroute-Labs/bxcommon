@@ -66,7 +66,7 @@ def create_input_buffer_with_bytes(message_bytes):
 
 
 def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0.0.0", blockchain_address=None,
-                     test_mode="", peer_gateways=None, peer_relays=None, protocol_version=1, sid_expire_time=30,
+                     test_mode=None, peer_gateways=None, peer_relays=None, protocol_version=1, sid_expire_time=30,
                      bloxroute_version="bloxroute 1.5", include_default_btc_args=False, include_default_eth_args=False,
                      network_num=DEFAULT_NETWORK_NUM, min_peer_gateways=0, remote_blockchain_ip=None,
                      remote_blockchain_port=None, connect_to_remote_blockchain=False, **kwargs):
@@ -78,6 +78,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         peer_relays = []
     if blockchain_address is None:
         blockchain_address = ("127.0.0.1", 7000)  # not real, just a placeholder
+    if test_mode is None:
+        test_mode = []
     if remote_blockchain_ip is not None and remote_blockchain_port is not None:
         remote_blockchain_peer = (remote_blockchain_ip, remote_blockchain_port)
     else:
