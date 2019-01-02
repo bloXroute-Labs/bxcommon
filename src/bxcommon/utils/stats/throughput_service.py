@@ -39,7 +39,7 @@ class ThroughputStatistics(StatisticsService):
             raise ValueError
         payload = dict(
             node_id=self.interval_data.node.opts.node_id,
-            node_type=self.interval_data.node.node_type,
+            node_type=self.interval_data.node.NODE_TYPE,
             node_address="%s:%d" % (self.interval_data.node.opts.external_ip, self.interval_data.node.opts.external_port),
             node_peers=[],
             total_bytes_received=self.interval_data.total_in,

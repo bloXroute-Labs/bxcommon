@@ -159,7 +159,7 @@ class AbstractNetworkEventLoop(object):
 
             if protocol == TransportLayerProtocol.TCP:
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            sock.setblocking(0)
+            sock.setblocking(False)
             sock.connect((ip, port))
         except socket.error as e:
             if e.errno in [errno.EPERM, errno.EADDRINUSE]:

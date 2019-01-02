@@ -17,16 +17,15 @@ class AbstractMessageFactory(object):
         self.base_message_type = None
         self.message_type_mapping = {}
 
-    def get_message_header_preview(self, input_buffer):
+    def get_message_header_preview_from_input_buffer(self, input_buffer):
         """
-        Peeks at a message, determining if its full.
+        Peeks at a message on the input buffer, determining if its full.
         Returns (is_full_message, command, payload_length)
         """
-        header_buffer = input_buffer.peek_message(self.base_message_type.HEADER_LENGTH)
-        if len(header_buffer) < self.base_message_type.HEADER_LENGTH:
+        if input_buffer.length < self.base_message_type.HEADER_LENGTH:
             return False, None, None
         else:
-            unpacked_args = self.base_message_type.unpack(header_buffer)
+            unpacked_args = self.base_message_type.unpack(input_buffer[:self.base_message_type.HEADER_LENGTH])
             command = unpacked_args[0]
             payload_length = unpacked_args[-1]
             is_full_message = input_buffer.length >= payload_length + self.base_message_type.HEADER_LENGTH
@@ -46,5 +45,8 @@ class AbstractMessageFactory(object):
         if command not in self.message_type_mapping:
             raise UnrecognizedCommandError("Message not recognized: {0}. Raw data: {1}".format(command, repr(buf)), buf)
 
+        return self.create_message(command, buf, unpacked_args)
+
+    def create_message(self, command, buf, args=None):
         message_cls = self.message_type_mapping[command]
-        return self.base_message_type.initialize_class(message_cls, buf, unpacked_args)
+        return self.base_message_type.initialize_class(message_cls, buf, args)

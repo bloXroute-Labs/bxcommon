@@ -1,3 +1,4 @@
+from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import DEFAULT_NETWORK_NUM
 from bxcommon.services.transaction_service import TransactionService
@@ -6,7 +7,7 @@ from bxcommon.connections.abstract_node import AbstractNode
 
 
 class MockNode(AbstractNode):
-    node_type = NodeType.RELAY
+    NODE_TYPE = NodeType.RELAY
 
     def __init__(self, external_ip, external_port):
         mock_opts = MockOpts()
@@ -24,7 +25,8 @@ class MockNode(AbstractNode):
 
         self._tx_service = TransactionService(self)
 
-    def broadcast(self, msg, _requester, prepend_to_queue=False, network_num=None):
+    def broadcast(self, msg, requester=None, prepend_to_queue=False, network_num=None,
+                  connection_type=ConnectionType.RELAY):
         self.broadcast_messages.append(msg)
 
     def get_tx_service(self, _network_num=None):

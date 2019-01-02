@@ -11,18 +11,17 @@ from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import logger
 from bxcommon.utils.alarm import AlarmQueue
-
-from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
+from bxcommon.utils.stats.throughput_service import throughput_statistics
 
 
 class AbstractNode(object):
     __meta__ = ABCMeta
     FLUSH_SEND_BUFFERS_INTERVAL = 1
-    node_type = None
+    NODE_TYPE = None
 
     def __init__(self, opts):
-        logger.info("Initializing node of type {}".format(self.node_type))
+        logger.info("Initializing node of type {}".format(self.NODE_TYPE))
 
         self.opts = opts
 
@@ -95,7 +94,7 @@ class AbstractNode(object):
             self._add_connection(socket_connection, ip, port, from_me)
 
     def on_connection_initialized(self, fileno):
-        conn = self.connection_pool.get_byfileno(fileno)
+        conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
             logger.warn("Initialized connection not in pool. Fileno {0}".format(fileno))
@@ -105,7 +104,7 @@ class AbstractNode(object):
         conn.state |= ConnectionState.INITIALIZED
 
     def on_connection_closed(self, fileno):
-        conn = self.connection_pool.get_byfileno(fileno)
+        conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
             logger.warn("Closed connection not in pool. Fileno {0}".format(fileno))
@@ -136,8 +135,8 @@ class AbstractNode(object):
 
         for rem_peer in remove_peers:
             if self.connection_pool.has_connection(rem_peer.ip, rem_peer.port):
-                rem_conn = self.connection_pool.get_byipport(rem_peer.ip,
-                                                             rem_peer.port)
+                rem_conn = self.connection_pool.get_by_ipport(rem_peer.ip,
+                                                              rem_peer.port)
                 if rem_conn:
                     self.destroy_conn(rem_conn)
 
@@ -158,7 +157,7 @@ class AbstractNode(object):
         return
 
     def on_bytes_received(self, fileno, bytes_received):
-        conn = self.connection_pool.get_byfileno(fileno)
+        conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
             logger.warn("Received bytes for connection not in pool. Fileno {0}".format(fileno))
@@ -173,7 +172,7 @@ class AbstractNode(object):
             self.destroy_conn(conn)
 
     def on_finished_receiving(self, fileno):
-        conn = self.connection_pool.get_byfileno(fileno)
+        conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
             logger.warn("Received bytes for connection not in pool. Fileno {0}".format(fileno))
@@ -185,7 +184,7 @@ class AbstractNode(object):
         conn.process_message()
 
     def get_bytes_to_send(self, fileno):
-        conn = self.connection_pool.get_byfileno(fileno)
+        conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
             logger.warn("Request to get bytes for connection not in pool. Fileno {0}".format(fileno))
@@ -197,7 +196,7 @@ class AbstractNode(object):
         return conn.get_bytes_to_send()
 
     def on_bytes_sent(self, fileno, bytes_sent):
-        conn = self.connection_pool.get_byfileno(fileno)
+        conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
             logger.warn("Bytes sent call for connection not in pool. Fileno {0}".format(fileno))
@@ -238,9 +237,12 @@ class AbstractNode(object):
 
         sdn_http_service.submit_node_offline_event(self.opts.node_id)
 
-    def broadcast(self, msg, broadcasting_conn, prepend_to_queue=False, network_num=None):
+    def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, network_num=None,
+                  connection_type=ConnectionType.RELAY):
         """
-        Broadcasts message msg to every connection except requester.
+        Broadcasts message msg to connections of the specified type except requester.
+
+        TODO: refactor some sort of index so iterate over only connection_type
         """
 
         if broadcasting_conn is not None:
@@ -254,12 +256,10 @@ class AbstractNode(object):
             broadcast_net_num = network_num
 
         broadcast_connections = []
-
-        for conn in self.connection_pool:
-            if conn.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED \
-                    and conn != broadcasting_conn \
-                    and conn.connection_type != ConnectionType.SDN \
-                    and (conn.network_num == constants.ALL_NETWORK_NUM or conn.network_num == broadcast_net_num):
+        for conn in self.connection_pool.get_by_connection_type(connection_type):
+            is_matching_network_num = conn.network_num == constants.ALL_NETWORK_NUM or \
+                                      conn.network_num == broadcast_net_num
+            if conn.is_active() and conn != broadcasting_conn and is_matching_network_num:
                 conn.enqueue_msg(msg, prepend_to_queue)
                 broadcast_connections.append(conn)
 
@@ -309,14 +309,14 @@ class AbstractNode(object):
     def _add_connection(self, socket_connection, ip, port, from_me):
         conn_cls = self.get_connection_class(ip, port, from_me)
 
-        conn_obj = conn_cls(socket_connection, (ip, port), self, from_me=from_me)
+        conn_obj = conn_cls(socket_connection, (ip, port), self, from_me)
 
         self.alarm_queue.register_alarm(constants.CONNECTION_TIMEOUT, self._connection_timeout, conn_obj)
 
         # Make the connection object publicly accessible
         self.connection_pool.add(socket_connection.fileno(), ip, port, conn_obj)
 
-        if conn_obj.connection_type == ConnectionType.SDN:
+        if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
             self.sdn_connection = conn_obj
 
         logger.debug("Connected {0}:{1} on file descriptor {2} with state {3}"
@@ -370,37 +370,40 @@ class AbstractNode(object):
         if retry_connection:
             peer_ip = conn.peer_ip
             peer_port = conn.peer_port
+
             if self.is_outbound_peer(peer_ip, peer_port) or \
-                    conn.connection_type == ConnectionType.BLOCKCHAIN_NODE or \
-                    conn.connection_type == ConnectionType.SDN:
-                self.alarm_queue.register_alarm(constants.CONNECTION_RETRY_SECONDS, self.retry_init_client_socket,
-                                                peer_ip, peer_port, conn.connection_type)
+                    conn.CONNECTION_TYPE == ConnectionType.BLOCKCHAIN_NODE or \
+                    conn.CONNECTION_TYPE == ConnectionType.REMOTE_BLOCKCHAIN_NODE or \
+                    conn.CONNECTION_TYPE == ConnectionType.SDN:
+                self.alarm_queue.register_alarm(constants.CONNECTION_RETRY_SECONDS, self._retry_init_client_socket,
+                                                peer_ip, peer_port, conn.CONNECTION_TYPE)
 
         self.enqueue_disconnect(conn.fileno)
 
     def is_outbound_peer(self, ip, port):
         return any(peer.ip == ip and peer.port == port for peer in self.outbound_peers)
 
-    def retry_init_client_socket(self, ip, port, connection_type):
+    def _retry_init_client_socket(self, ip, port, connection_type):
         self.num_retries_by_ip[ip] += 1
 
         if self.should_retry_connection(ip, port, connection_type):
             logger.debug("Retrying connection to {0}:{1}.".format(ip, port))
             self.enqueue_connection(ip, port)
-        elif connection_type == ConnectionType.RELAY:
+        else:
             del self.num_retries_by_ip[ip]
             logger.debug("Not retrying connection to {0}:{1}- maximum connections exceeded!".format(ip, port))
-
-            sdn_http_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
-
-            self.send_request_for_relay_peers()
+            self.on_failed_connection_retry(ip, port, connection_type)
 
         return 0
 
     def should_retry_connection(self, ip, port, connection_type):
-        is_blockchain_node = connection_type == ConnectionType.BLOCKCHAIN_NODE
         is_sdn = connection_type == ConnectionType.SDN
-        return is_blockchain_node or is_sdn or self.num_retries_by_ip[ip] < constants.MAX_CONNECT_RETRIES
+        return is_sdn or self.num_retries_by_ip[ip] < constants.MAX_CONNECT_RETRIES
+
+    def on_failed_connection_retry(self, ip, port, connection_type):
+        if connection_type == ConnectionType.RELAY:
+            sdn_http_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
+            self.send_request_for_relay_peers()
 
     def init_throughput_logging(self):
         throughput_statistics.set_node(self)

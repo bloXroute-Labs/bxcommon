@@ -19,7 +19,9 @@ def blocking_resolve_ip(net_address):
             time.sleep(NET_ADDR_INIT_CONNECT_RETRY_INTERVAL_SECONDS)
             resolved_ip = None
             tries += 1
-            logger.debug("Unable to connect to address {0}. Retried {1}".format(net_address, tries))
+
+            # logger might not yet be initialized
+            print("Unable to connect to address {0}. Retried {1}".format(net_address, tries))
 
             if tries >= NET_ADDR_INIT_CONNECT_TRIES:
                 raise EnvironmentError("Unable to resolve address {}.".format(net_address))

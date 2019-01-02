@@ -24,36 +24,36 @@ def fetch_config(node_id):
         return None
 
 
-def fetch_relay_peers(node_id):
-    node_url = BxApiRoutes.node_relays.format(node_id)
-    outbound_relays = http_service.get_json(node_url)
-    logger.debug("Retrieved outbound relays for id {0} : {1}".format(node_id, outbound_relays))
+def _fetch_peers(route_template, node_id):
+    node_url = route_template.format(node_id)
+    outbound_peers = http_service.get_json(node_url)
+    logger.debug("Retrieved outbound peers for id {0} from endpoint {1} : {2}"
+                 .format(node_id, node_url, outbound_peers))
 
-    if not outbound_relays:
-        logger.warn("This node has no outbound relays.")
+    if not outbound_peers:
+        logger.warn("This node has no outbound peers.")
         return []
 
-    outbound_relays = [OutboundPeerModel(**o) for o in outbound_relays]
+    outbound_peers = [OutboundPeerModel(**o) for o in outbound_peers]
+    config.blocking_resolve_peers(outbound_peers)
+    return outbound_peers
 
-    config.blocking_resolve_peers(outbound_relays)
 
-    return outbound_relays
+def fetch_relay_peers(node_id):
+    return _fetch_peers(BxApiRoutes.node_relays, node_id)
 
 
 def fetch_gateway_peers(node_id):
-    node_url = BxApiRoutes.node_gateways.format(node_id)
-    outbound_gateways = http_service.get_json(node_url)
-    logger.debug("Retrieved outbound gateways for id {0} : {1}".format(node_id, outbound_gateways))
+    return _fetch_peers(BxApiRoutes.node_gateways, node_id)
 
-    if not outbound_gateways:
-        logger.warn("This node has no outbound gateways.")
-        return []
 
-    outbound_gateways = [OutboundPeerModel(**o) for o in outbound_gateways]
-
-    config.blocking_resolve_peers(outbound_gateways)
-
-    return outbound_gateways
+def fetch_remote_blockchain_peer(node_id):
+    peers = _fetch_peers(BxApiRoutes.node_remote_blockchain, node_id)
+    if len(peers) != 1:
+        logger.warn("Did not get expected number of peers from SDN.")
+        return None
+    else:
+        return peers[0]
 
 
 def fetch_blockchain_network(protocol_name, network_name):

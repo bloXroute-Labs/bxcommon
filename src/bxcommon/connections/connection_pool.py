@@ -8,10 +8,11 @@ class ConnectionPool(object):
     INITIAL_FILENO = 5000
 
     def __init__(self):
-        self.byfileno = [None] * ConnectionPool.INITIAL_FILENO
-        self.len_fileno = ConnectionPool.INITIAL_FILENO
+        self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO
+        self.by_ipport = {}
+        self.by_connection_type = defaultdict(set)
 
-        self.byipport = {}
+        self.len_fileno = ConnectionPool.INITIAL_FILENO
         self.count_conn_by_ip = defaultdict(lambda: 0)
         self.num_peer_conn = 0
 
@@ -23,14 +24,15 @@ class ConnectionPool(object):
         if not isinstance(fileno, int):
             raise TypeError("Fileno is expected to be of type integer.")
 
-        assert (ip, port) not in self.byipport
+        assert (ip, port) not in self.by_ipport
 
         while fileno > self.len_fileno:
-            self.byfileno.extend([None] * ConnectionPool.INITIAL_FILENO)
+            self.by_fileno.extend([None] * ConnectionPool.INITIAL_FILENO)
             self.len_fileno += ConnectionPool.INITIAL_FILENO
 
-        self.byfileno[fileno] = conn
-        self.byipport[(ip, port)] = conn
+        self.by_fileno[fileno] = conn
+        self.by_ipport[(ip, port)] = conn
+        self.by_connection_type[conn.CONNECTION_TYPE].add(conn)
         self.count_conn_by_ip[ip] += 1
 
     def update_port(self, new_port, conn):
@@ -38,21 +40,27 @@ class ConnectionPool(object):
         Updates port mapping of connection. Clears out old one.
         """
         old_ipport = (conn.peer_ip, conn.peer_port)
-        if old_ipport in self.byipport:
-            del self.byipport[old_ipport]
+        if old_ipport in self.by_ipport:
+            del self.by_ipport[old_ipport]
 
-        self.byipport[(conn.peer_ip, new_port)] = conn
+        self.by_ipport[(conn.peer_ip, new_port)] = conn
 
     def has_connection(self, ip, port):
-        return (ip, port) in self.byipport
+        return (ip, port) in self.by_ipport
 
-    def get_byipport(self, ip, port):
-        return self.byipport[(ip, port)]
+    def get_by_connection_type(self, connection_type):
+        """
+        Returns list of connections that match the connection type.
+        """
+        return self.by_connection_type[connection_type]
 
-    def get_byfileno(self, fileno):
+    def get_by_ipport(self, ip, port):
+        return self.by_ipport[(ip, port)]
+
+    def get_by_fileno(self, fileno):
         if fileno > self.len_fileno:
             return None
-        return self.byfileno[fileno]
+        return self.by_fileno[fileno]
 
     def get_num_conn_by_ip(self, ip):
         """
@@ -67,13 +75,15 @@ class ConnectionPool(object):
         Delete connection from connection pool.
         """
         # Remove conn from the dictionaries
-        self.byfileno[conn.fileno] = None
+        self.by_fileno[conn.fileno] = None
 
         # Connection might be replaced with new connection
         # Only delete from byipport if connection has the matching fileno
-        connection_key = (conn.peer_ip, conn.peer_port)
-        if connection_key in self.byipport and self.byipport[connection_key].fileno == conn.fileno:
-            del self.byipport[(conn.peer_ip, conn.peer_port)]
+        ipport = (conn.peer_ip, conn.peer_port)
+        if ipport in self.by_ipport and self.by_ipport[ipport].fileno == conn.fileno:
+            del self.by_ipport[(conn.peer_ip, conn.peer_port)]
+
+        self.by_connection_type[conn.CONNECTION_TYPE].discard(conn)
 
         # Decrement the count- if it's 0, we delete the key.
         if self.count_conn_by_ip[conn.peer_ip] == 1:
@@ -81,11 +91,11 @@ class ConnectionPool(object):
         else:
             self.count_conn_by_ip[conn.peer_ip] -= 1
 
-    def delete_byfileno(self, fileno):
+    def delete_by_fileno(self, fileno):
         """
         Delete connection from connection pool via fileno.
         """
-        conn = self.byfileno[fileno]
+        conn = self.by_fileno[fileno]
         if conn is not None:
             # noinspection PyTypeChecker
             self.delete(conn)
@@ -96,7 +106,7 @@ class ConnectionPool(object):
 
         The pool can be freely modified while iterating here.
         """
-        for fileno, conn in enumerate(self.byfileno):
+        for fileno, conn in enumerate(self.by_fileno):
             if conn is not None:
                 yield fileno, conn
 
@@ -106,11 +116,11 @@ class ConnectionPool(object):
 
         Do not modify this pool while iterating through it here.
         """
-        for ipport in self.byipport:
-            yield self.byipport[ipport]
+        for ipport in self.by_ipport:
+            yield self.by_ipport[ipport]
 
     def __len__(self):
         """
         Returns number of connections in pool.
         """
-        return len(self.byipport)
+        return len(self.by_ipport)

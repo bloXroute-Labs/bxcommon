@@ -59,7 +59,7 @@ class AbstractMessageFactoryTest(AbstractTestCase):
     def test_get_message_header_preview_too_short(self):
         input_buffer = create_input_buffer_with_bytes(bytearray(1))
 
-        is_full_message, command, payload_length = self.sut.get_message_header_preview(input_buffer)
+        is_full_message, command, payload_length = self.sut.get_message_header_preview_from_input_buffer(input_buffer)
         self.assertFalse(is_full_message)
         self.assertIsNone(command)
         self.assertIsNone(payload_length)
@@ -67,7 +67,7 @@ class AbstractMessageFactoryTest(AbstractTestCase):
     def test_get_message_header_preview_message(self):
         input_buffer = create_input_buffer_with_bytes(self.TestMessage().rawbytes())
 
-        is_full_message, command, payload_length = self.sut.get_message_header_preview(input_buffer)
+        is_full_message, command, payload_length = self.sut.get_message_header_preview_from_input_buffer(input_buffer)
         self.assertTrue(is_full_message)
         self.assertEquals("test", command)
         self.assertEquals(self.PAYLOAD_LENGTH, payload_length)

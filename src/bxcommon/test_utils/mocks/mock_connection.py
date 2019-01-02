@@ -1,4 +1,5 @@
 from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.constants import PING_INTERVAL_SEC
@@ -6,9 +7,10 @@ from bxcommon.constants import PING_INTERVAL_SEC
 
 class MockConnection(object):
 
-    connection_type = None
+    CONNECTION_TYPE = "mock"
 
     def __init__(self, fileno, address, node, from_me=False):
+        self.socket_connection = MockSocketConnection(fileno)
         self.fileno = fileno
 
         # (IP, Port) at time of socket creation. We may get a new application level port in
@@ -31,6 +33,10 @@ class MockConnection(object):
         self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
         self.message_handlers = None
         self.network_num = node.opts.network_num
+
+    def is_active(self):
+        return self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED and \
+               not self.state & ConnectionState.MARK_FOR_CLOSE
 
     def mark_for_close(self, force_destroy_now=False):
         self.state |= ConnectionState.MARK_FOR_CLOSE

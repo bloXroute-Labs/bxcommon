@@ -22,7 +22,7 @@ class BloxrouteMessageFactory(AbstractTestCase):
     HASH = ObjectHash(crypto.double_sha256("123"))
 
     def get_message_preview_successfully(self, message, expected_command, expected_payload_length):
-        is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview(
+        is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview_from_input_buffer(
             create_input_buffer_with_message(message)
         )
         self.assertTrue(is_full_message)
@@ -30,7 +30,7 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.assertEqual(expected_payload_length, payload_length)
 
     def get_message_hash_preview_successfully(self, message, expected_hash):
-        is_full_message, msg_hash, _payload_length = bloxroute_message_factory.get_message_hash_preview(
+        is_full_message, msg_hash, _payload_length = bloxroute_message_factory.get_message_hash_preview_from_input_buffer(
             create_input_buffer_with_message(message)
         )
         self.assertTrue(is_full_message)
@@ -68,14 +68,14 @@ class BloxrouteMessageFactory(AbstractTestCase):
 
     def test_message_preview_incomplete(self):
         message = HelloMessage(1, 2, 3)
-        is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview(
+        is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview_from_input_buffer(
             create_input_buffer_with_bytes(message.rawbytes()[:-1])
         )
         self.assertFalse(is_full_message)
         self.assertEquals("hello", command)
         self.assertEquals(VERSION_NUM_LEN + UL_INT_SIZE_IN_BYTES  + NETWORK_NUM_LEN, payload_length)
 
-        is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview(
+        is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview_from_input_buffer(
             create_input_buffer_with_bytes(message.rawbytes()[:1])
         )
         self.assertFalse(is_full_message)
@@ -94,14 +94,14 @@ class BloxrouteMessageFactory(AbstractTestCase):
         blob = bytearray(1 for _ in xrange(4))
         broadcast_message = BroadcastMessage(self.HASH, 123, blob)
 
-        is_full_message, msg_hash, payload_length = bloxroute_message_factory.get_message_hash_preview(
+        is_full_message, msg_hash, payload_length = bloxroute_message_factory.get_message_hash_preview_from_input_buffer(
             create_input_buffer_with_bytes(broadcast_message.rawbytes()[:-1])
         )
         self.assertFalse(is_full_message)
         self.assertEquals(self.HASH, msg_hash)
         self.assertEquals(SHA256_HASH_LEN + NETWORK_NUM_LEN + len(blob), payload_length)
 
-        is_full_message, msg_hash, payload_length = bloxroute_message_factory.get_message_hash_preview(
+        is_full_message, msg_hash, payload_length = bloxroute_message_factory.get_message_hash_preview_from_input_buffer(
             create_input_buffer_with_bytes(broadcast_message.rawbytes()[:-12])
         )
         self.assertFalse(is_full_message)

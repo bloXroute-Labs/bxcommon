@@ -10,7 +10,7 @@ To use, start some Bloxroute node on a background thread and create an event loo
 your main thread. You can then call these functions on the event loop or node objects to simulate
 the event loop without calling `event_loop.run` which runs forever.
 
-See bxgateway/test/integration/test_gateway_node.py for an example of how to use this.
+See bxgateway/test/integration/test_gateway_connection_peering.py for an example of how to use this.
 """
 
 # Timeout for polling on connections in integration tests
@@ -72,8 +72,8 @@ def get_server_socket(event_loop):
     Finds the socket connection object of the server port by excluding all the other peer ports.
     The server socket connection is the only one that does not exist in the connection pool.
     """
-    ipports = event_loop._node.connection_pool.byipport.keys()
-    outbound_filenos = [event_loop._node.connection_pool.byipport[ipport].fileno for ipport in ipports]
+    ipports = event_loop._node.connection_pool.by_ipport.keys()
+    outbound_filenos = [event_loop._node.connection_pool.by_ipport[ipport].fileno for ipport in ipports]
     server_initiated_connection_fileno = filter(lambda fileno: fileno not in outbound_filenos,
                                                 event_loop._socket_connections.keys())[0]
     return event_loop._socket_connections[server_initiated_connection_fileno]

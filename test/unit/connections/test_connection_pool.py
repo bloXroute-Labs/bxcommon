@@ -31,8 +31,8 @@ class ConnectionPoolTest(AbstractTestCase):
 
     def test_add(self):
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
-        self.assertEqual(self.conn1, self.conn_pool1.byfileno[self.fileno1])
-        self.assertEqual(self.conn1, self.conn_pool1.byipport[(self.ip1, self.port1)])
+        self.assertEqual(self.conn1, self.conn_pool1.by_fileno[self.fileno1])
+        self.assertEqual(self.conn1, self.conn_pool1.by_ipport[(self.ip1, self.port1)])
         self.assertEqual(1, self.conn_pool1.count_conn_by_ip[self.ip1])
 
         with self.assertRaises(AssertionError):
@@ -45,7 +45,7 @@ class ConnectionPoolTest(AbstractTestCase):
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
         self.conn_pool1.add(self.fileno2, self.ip2, self.port2, self.conn2)
         self.conn_pool1.update_port(self.port2, self.conn1)
-        self.assertEqual(self.conn1, self.conn_pool1.get_byipport(self.ip1, self.port2))
+        self.assertEqual(self.conn1, self.conn_pool1.get_by_ipport(self.ip1, self.port2))
         self.assertFalse(self.conn_pool1.has_connection(self.ip1, self.port1))
 
     def test_has_connection(self):
@@ -57,17 +57,17 @@ class ConnectionPoolTest(AbstractTestCase):
 
     def test_get_byipport(self):
         self.add_conn()
-        self.assertEqual(self.conn1, self.conn_pool1.get_byipport(self.ip1, self.port1))
+        self.assertEqual(self.conn1, self.conn_pool1.get_by_ipport(self.ip1, self.port1))
         with self.assertRaises(KeyError):
-            self.conn_pool1.get_byipport(self.ip1, 1)
+            self.conn_pool1.get_by_ipport(self.ip1, 1)
 
     def test_get_by_fileno(self):
         self.add_conn()
-        self.assertEqual(self.conn1, self.conn_pool1.get_byfileno(self.fileno1))
-        self.assertEqual(self.conn2, self.conn_pool1.get_byfileno(self.fileno2))
+        self.assertEqual(self.conn1, self.conn_pool1.get_by_fileno(self.fileno1))
+        self.assertEqual(self.conn2, self.conn_pool1.get_by_fileno(self.fileno2))
         self.conn_pool1.add(6000, "0.0.0.0", 4000, self.conn3)
-        self.assertIsNone(self.conn_pool1.get_byfileno(7000))
-        self.assertIsNone(self.conn_pool1.get_byfileno(2))
+        self.assertIsNone(self.conn_pool1.get_by_fileno(7000))
+        self.assertIsNone(self.conn_pool1.get_by_fileno(2))
 
     def test_get_num_conn_by_ip(self):
         self.add_conn()
@@ -78,19 +78,19 @@ class ConnectionPoolTest(AbstractTestCase):
     def test_delete(self):
         self.add_conn()
         self.conn_pool1.delete(self.conn1)
-        self.assertIsNone(self.conn_pool1.get_byfileno(self.fileno1))
+        self.assertIsNone(self.conn_pool1.get_by_fileno(self.fileno1))
         with self.assertRaises(KeyError):
-            self.conn_pool1.get_byipport(self.ip1, self.port1)
+            self.conn_pool1.get_by_ipport(self.ip1, self.port1)
 
         self.conn_pool1.delete(self.conn2)
-        self.assertIsNone(self.conn_pool1.get_byfileno(self.fileno2))
+        self.assertIsNone(self.conn_pool1.get_by_fileno(self.fileno2))
         self.assertEqual(1, self.conn_pool1.count_conn_by_ip[self.ip2])
 
-    def test_delete_byfileno(self):
+    def test_delete_by_fileno(self):
         self.add_conn()
-        self.conn_pool1.delete_byfileno(self.fileno1)
+        self.conn_pool1.delete_by_fileno(self.fileno1)
         with self.assertRaises(KeyError):
-            self.conn_pool1.get_byipport(self.ip1, self.port1)
+            self.conn_pool1.get_by_ipport(self.ip1, self.port1)
 
     def test_iter(self):
         self.add_conn()

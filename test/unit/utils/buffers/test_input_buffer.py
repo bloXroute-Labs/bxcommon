@@ -68,8 +68,11 @@ class TestInputBuffer(unittest.TestCase):
             self.in_buf.get_slice(100, 60)
 
         self.assertEqual(bytearray([i for i in range(1, 6)]), self.in_buf.get_slice(0, 5))
+        self.assertEqual(self.in_buf[:5], self.in_buf.get_slice(0, 5))
         self.assertEqual(bytearray([i for i in range(11, 32)]), self.in_buf.get_slice(10, 31))
-        self.assertEqual(bytearray([i for i in range(35, 60)]), self.in_buf.get_slice(34, 59))
+        self.assertEqual(self.in_buf[10:31], self.in_buf.get_slice(10, 31))
+        self.assertEqual(bytearray([i for i in range(35, 61)]), self.in_buf.get_slice(34, 60))
+        self.assertEqual(self.in_buf[34:], self.in_buf.get_slice(34, 60))
 
     def make_input_buffer(self):
         self.in_buf.add_bytes(self.data1)

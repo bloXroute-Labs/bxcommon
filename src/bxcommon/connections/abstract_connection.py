@@ -1,31 +1,27 @@
 from abc import ABCMeta
 
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import MAX_BAD_MESSAGES, NULL_IDX, PING_INTERVAL_SEC
 from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
-from bxcommon.messages.bloxroute.ack_message import AckMessage
-from bxcommon.messages.bloxroute.ping_message import PingMessage
-from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.utils.stats.direction import Direction
 from bxcommon.utils.stats import hooks
+from bxcommon.utils.stats.direction import Direction
 
 
 class AbstractConnection(object):
     __metaclass__ = ABCMeta
 
-    connection_type = None
+    CONNECTION_TYPE = None
 
     def __init__(self, socket_connection, address, node, from_me=False):
         if not isinstance(socket_connection, SocketConnection):
             raise ValueError("SocketConnection type is expected for socket_connection arg but was {0}."
                              .format(type(socket_connection)))
 
-        logger.debug("Initialized connection of type {}".format(self.connection_type))
+        logger.debug("Initialized connection of type {}".format(self.CONNECTION_TYPE))
 
         self.socket_connection = socket_connection
         self.fileno = socket_connection.fileno()
@@ -66,12 +62,18 @@ class AbstractConnection(object):
         # Default network number to network number of current node. But it can change after hello message is received
         self.network_num = node.network_num
 
+    def is_active(self):
+        """
+        Indicates whether the connection is established and not marked for close.
+        """
+        return self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED and \
+               not self.state & ConnectionState.MARK_FOR_CLOSE
+
     def add_received_bytes(self, bytes_received):
         """
         Adds bytes received from socket connection to input buffer
 
         :param bytes_received: new bytes received from socket connection
-        :return:
         """
 
         assert not self.state & ConnectionState.MARK_FOR_CLOSE
@@ -86,7 +88,7 @@ class AbstractConnection(object):
         self.advance_bytes_on_buffer(self.outputbuf, bytes_sent)
 
     def pre_process_msg(self):
-        is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview(self.inputbuf)
+        is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview_from_input_buffer(self.inputbuf)
         logger.debug("Starting to get message of type {0}. Is full: {1}".format(msg_type, is_full_msg))
         return is_full_msg, msg_type, payload_len
 
@@ -154,7 +156,7 @@ class AbstractConnection(object):
 
             self.num_bad_messages = 0
 
-            if not (self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED) \
+            if not (self.is_active()) \
                     and msg_type not in self.hello_messages:
                 logger.error("Connection to {0} not established and got {1} message!  Closing."
                              .format(self.peer_desc, msg_type))

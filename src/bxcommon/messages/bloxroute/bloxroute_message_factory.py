@@ -32,9 +32,9 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         self.message_type_mapping = self._MESSAGE_TYPE_MAPPING
         self.base_message_type = Message
 
-    def get_message_hash_preview(self, input_buffer):
+    def get_message_hash_preview_from_input_buffer(self, input_buffer):
         header_plus_hash_length = self.base_message_type.HEADER_LENGTH + SHA256_HASH_LEN
-        is_full_message, _command, payload_length = self.get_message_header_preview(input_buffer)
+        is_full_message, _command, payload_length = self.get_message_header_preview_from_input_buffer(input_buffer)
         if payload_length is None or input_buffer.length < header_plus_hash_length:
             return False, None, None
         else:

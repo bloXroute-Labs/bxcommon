@@ -15,15 +15,19 @@ class InputBuffer(object):
 
         return self.input_list[-1].endswith(suffix)
 
-    # Adds a bytearray to the end of the input buffer.
     def add_bytes(self, piece):
+        """
+        Adds a bytearray to the end of the input buffer.
+        """
         if not isinstance(piece, (bytearray, memoryview)):
             raise ValueError("Piece must be a bytearray.")
         self.input_list.append(piece)
         self.length += len(piece)
 
-    # Removes the first num_bytes bytes in the input buffer and returns them.
     def remove_bytes(self, num_bytes):
+        """
+        Removes the first num_bytes bytes in the input buffer and returns them.
+        """
         if num_bytes is None or num_bytes < 0:
             raise ValueError("Invalid num_bytes {}".format(num_bytes))
 
@@ -43,10 +47,12 @@ class InputBuffer(object):
 
         return to_return
 
-    # Returns at LEAST the first bytes_to_peek bytes in the input buffer.
-    # The assumption is that these bytes are all part of the same message.
-    # Thus, we combine pieces if we cannot just return the first message.
     def peek_message(self, bytes_to_peek):
+        """
+        Returns at LEAST the first bytes_to_peek bytes in the input buffer.
+        The assumption is that these bytes are all part of the same message.
+        Thus, we combine pieces if we cannot just return the first message.
+        """
         if bytes_to_peek > self.length:
             return bytearray(0)
 
@@ -57,11 +63,13 @@ class InputBuffer(object):
 
         return self.input_list[0]
 
-    # Gets a slice of the inputbuffer from start to end.
-    # We assume that this slice is a piece of a single bitcoin message
-    # for performance reasons (with respect to the number of copies).
-    # Additionally, the start value of the slice must exist.
     def get_slice(self, start, end):
+        """
+        Gets a slice of the inputbuffer from start to end.
+        We assume that this slice is a piece of a single bitcoin message
+        for performance reasons (with respect to the number of copies).
+        Additionally, the start value of the slice must exist.
+        """
         if start is None or end is None or self.length < start:
             raise ValueError("Start and end must exist and start must be greater or equal to length.")
 
@@ -73,3 +81,24 @@ class InputBuffer(object):
             self.input_list.appendleft(head)
 
         return self.input_list[0][start:end]
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, item):
+        if not isinstance(item, slice):
+            raise ValueError("Input buffer does not support nonslice indexing")
+
+        if item.step is not None and item.step != 1:
+            raise ValueError("Input buffer does not support non 1 slice step values")
+
+        start = item.start
+        if start is None:
+            start = 0
+
+        stop = item.stop
+        if stop is None:
+            stop = self.length
+
+        return self.get_slice(start, stop)
+

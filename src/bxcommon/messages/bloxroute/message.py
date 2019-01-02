@@ -1,13 +1,13 @@
 import struct
 
-from bxcommon.constants import HDR_COMMON_OFF, MSG_NULL_BYTE
+from bxcommon import constants
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.utils import logger
 
 
 class Message(AbstractMessage):
-    HEADER_LENGTH = HDR_COMMON_OFF
+    HEADER_LENGTH = constants.HDR_COMMON_OFF
 
     def __init__(self, msg_type=None, payload_len=None, buf=None):
         if buf is None or len(buf) < self.HEADER_LENGTH:
@@ -37,7 +37,7 @@ class Message(AbstractMessage):
     @classmethod
     def unpack(cls, buf):
         command, payload_length = struct.unpack_from("<12sL", buf)
-        return command.rstrip(MSG_NULL_BYTE), payload_length
+        return command.rstrip(constants.MSG_NULL_BYTE), payload_length
 
     @classmethod
     def validate_payload(cls, buf, unpacked_args):
@@ -63,7 +63,7 @@ class Message(AbstractMessage):
         Returns a memoryview of the message
         """
         if self._payload_len is None:
-            self._payload_len, _ = struct.unpack_from('<L', self.buf, 12)
+            self._payload_len, _ = struct.unpack_from('<L', self.buf, constants.MSG_TYPE_LEN)
 
         if self._payload_len + self.HEADER_LENGTH == len(self.buf):
             return self._memoryview
@@ -77,10 +77,21 @@ class Message(AbstractMessage):
 
     def payload_len(self):
         if self._payload_len is None:
-            self._payload_len = struct.unpack_from('<L', self.buf, 12)[0]
+            self._payload_len = struct.unpack_from('<L', self.buf, constants.MSG_TYPE_LEN)[0]
         return self._payload_len
 
     def payload(self):
         if self._payload is None:
             self._payload = self.buf[self.HEADER_LENGTH:self.payload_len() + self.HEADER_LENGTH]
         return self._payload
+
+    def __eq__(self, other):
+        """
+        Expensive equality comparison. Use only for tests.
+        """
+        if not isinstance(other, Message):
+            return False
+        else:
+            return self.rawbytes().tobytes() == other.rawbytes().tobytes()
+
+

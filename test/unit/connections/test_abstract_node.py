@@ -16,6 +16,10 @@ from bxcommon.test_utils.mocks.mock_message import MockMessage
 from bxcommon.test_utils.mocks.mock_node import MockOpts, MockNode
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 
+def create_connection(fileno, ip, port):
+    node = MockNode(ip, port)
+    connection = MockConnection(fileno, (ip, port), node)
+    return connection
 
 class AbstractNodeTest(AbstractTestCase):
     def setUp(self):
@@ -54,9 +58,9 @@ class AbstractNodeTest(AbstractTestCase):
 
     def test_on_connection_closed(self):
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.assertIn(self.connection, self.local_node.connection_pool.byfileno)
+        self.assertIn(self.connection, self.local_node.connection_pool.by_fileno)
         self.local_node.on_connection_closed(self.remote_fileno)
-        self.assertNotIn(self.connection, self.local_node.connection_pool.byfileno)
+        self.assertNotIn(self.connection, self.local_node.connection_pool.by_fileno)
 
     @patch("bxcommon.connections.abstract_node.AbstractNode.destroy_conn")
     def test_on_updated_peers(self, mocked_destroy_conn):
@@ -117,25 +121,39 @@ class AbstractNodeTest(AbstractTestCase):
         mocked_fire_ready_alarms.assert_called()
 
     def test_close(self):
-        self.assertNotIn(self.connection, self.local_node.connection_pool.byfileno)
+        self.assertNotIn(self.connection, self.local_node.connection_pool.by_fileno)
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.assertIn(self.connection, self.local_node.connection_pool.byfileno)
+        self.assertIn(self.connection, self.local_node.connection_pool.by_fileno)
         self.local_node.close()
-        self.assertNotIn(self.connection, self.local_node.connection_pool.byfileno)
+        self.assertNotIn(self.connection, self.local_node.connection_pool.by_fileno)
 
     def test_broadcast(self):
         self.connection.state = ConnectionState.ESTABLISHED
-        ip = "2.2.2.2"
-        port = 12345
-        node2 = MockNode(ip, port)
-        connection2 = MockConnection(3, (ip, port), node2)
-        msg = MockMessage(payload_len=32, buf=self.to_31)
+
+        fileno2 = 3
+        ip2 = "2.2.2.2"
+        port2 = 12345
+        connection2 = create_connection(fileno2, ip2, port2)
         connection2.state = ConnectionState.ESTABLISHED
         connection2.enqueue_msg = MagicMock()
+
+        fileno3 = 4
+        ip3 = "3.3.3.3"
+        port3 = 12346
+        connection3 = create_connection(fileno3, ip3, port3)
+        connection3.state = ConnectionState.ESTABLISHED
+        connection3.enqueue_msg = MagicMock()
+        connection3.CONNECTION_TYPE = "notmock"
+
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node.connection_pool.add(3, ip, port, connection2)
-        self.local_node.broadcast(msg, self.connection, network_num=self.connection.network_num)
+        self.local_node.connection_pool.add(fileno2, ip2, port2, connection2)
+        self.local_node.connection_pool.add(fileno3, ip3, port3, connection3)
+
+        msg = MockMessage(payload_len=32, buf=self.to_31)
+        self.local_node.broadcast(msg, self.connection, network_num=self.connection.network_num,
+                                  connection_type=MockConnection.CONNECTION_TYPE)
         connection2.enqueue_msg.assert_called_with(msg, False)
+        connection3.enqueue_msg.assert_not_called()
 
     def test_enqueue_connection(self):
         self.assertNotIn((self.remote_ip, self.remote_port), self.local_node.connection_queue)
@@ -164,11 +182,11 @@ class AbstractNodeTest(AbstractTestCase):
         test_socket = MagicMock(spec=socket.socket)
         socket_connection = SocketConnection(test_socket, self.remote_node)
         self.assertEqual(4, self.local_node.alarm_queue.uniq_count)
-        self.assertIsNone(self.local_node.connection_pool.byfileno[self.remote_fileno])
+        self.assertIsNone(self.local_node.connection_pool.by_fileno[self.remote_fileno])
         self.local_node._add_connection(socket_connection, self.remote_ip, self.remote_port, True)
         self.assertEqual(5, self.local_node.alarm_queue.uniq_count)
         self.assertEqual(self.connection.fileno,
-                         self.local_node.connection_pool.byfileno[self.remote_fileno].fileno.fileno())
+                         self.local_node.connection_pool.by_fileno[self.remote_fileno].fileno.fileno())
 
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
     def test_connection_timeout_established(self, mocked_register_alarm):
@@ -191,15 +209,15 @@ class AbstractNodeTest(AbstractTestCase):
 
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
     def test_destroy_conn(self, mocked_register_alarm):
-        self.connection.connection_type = ConnectionType.BLOCKCHAIN_NODE
+        self.connection.CONNECTION_TYPE = ConnectionType.BLOCKCHAIN_NODE
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         self.local_node.destroy_conn(self.connection)
         mocked_register_alarm.assert_not_called()
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         self.local_node.destroy_conn(self.connection, retry_connection=True)
         self.assertIn(self.connection.fileno, self.local_node.disconnect_queue)
-        mocked_register_alarm.assert_called_with(CONNECTION_RETRY_SECONDS, self.local_node.retry_init_client_socket,
-                                                 self.remote_ip, self.remote_port, self.connection.connection_type)
+        mocked_register_alarm.assert_called_with(CONNECTION_RETRY_SECONDS, self.local_node._retry_init_client_socket,
+                                                 self.remote_ip, self.remote_port, self.connection.CONNECTION_TYPE)
 
     def test_is_outbound_peer(self):
         self.assertFalse(self.local_node.is_outbound_peer(self.remote_ip, self.remote_port))
@@ -214,12 +232,12 @@ class AbstractNodeTest(AbstractTestCase):
 
     @patch("bxcommon.connections.abstract_node.sdn_http_service.submit_peer_connection_error_event")
     def test_retry_init_client_socket(self, mocked_submit_peer):
-        self.assertEqual(0, self.local_node.retry_init_client_socket(self.remote_ip, self.remote_port,
-                                                                     ConnectionType.RELAY))
+        self.assertEqual(0, self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port,
+                                                                      ConnectionType.RELAY))
         self.assertIn((self.remote_ip, self.remote_port), self.local_node.connection_queue)
         self.local_node.num_retries_by_ip[self.remote_ip] = MAX_CONNECT_RETRIES
-        self.local_node.retry_init_client_socket(self.remote_ip, self.remote_port, ConnectionType.RELAY)
-        self.assertNotIn(self.remote_ip, self.local_node.num_retries_by_ip)
+        self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port, ConnectionType.RELAY)
+        self.assertEqual(0, self.local_node.num_retries_by_ip[self.remote_ip])
         mocked_submit_peer.assert_called_with(self.local_node.opts.node_id, self.remote_ip, self.remote_port)
 
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
