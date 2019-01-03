@@ -129,5 +129,4 @@ class Alarm(object):
         self.args = args
 
     def fire(self):
-        logger.debug("Firing function {0} with args {1}".format(self.fn, self.args))
         return self.fn(*self.args)
