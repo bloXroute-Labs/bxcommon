@@ -21,7 +21,7 @@ class AbstractNode(object):
     NODE_TYPE = None
 
     def __init__(self, opts):
-        logger.info("Initializing node of type {}".format(self.NODE_TYPE))
+        logger.info("Initializing node of type: {}".format(self.NODE_TYPE))
 
         self.opts = opts
 
@@ -52,7 +52,6 @@ class AbstractNode(object):
         # this is Nagle's algorithm and we need to implement it properly
         # flush buffers regularly because of output buffer holding time
         self.alarm_queue.register_alarm(self.FLUSH_SEND_BUFFERS_INTERVAL, self.flush_all_send_buffers)
-        logger.info("initialized node state")
 
         self.alarm_queue.register_alarm(constants.SDN_CONTACT_RETRY_SECONDS, self.send_request_for_relay_peers)
 
@@ -86,7 +85,7 @@ class AbstractNode(object):
 
         # If we're already connected to the remote peer, log the event and request disconnect.
         if self.connection_exists(ip, port):
-            logger.error("Connection to {0}:{1} already exists!".format(ip, port))
+            logger.warn("Duplicate connection attempted to: {0}:{1}.".format(ip, port))
 
             # Schedule dropping the added connection and keep the old one.
             self.enqueue_disconnect(fileno)
@@ -97,19 +96,20 @@ class AbstractNode(object):
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Initialized connection not in pool. Fileno {0}".format(fileno))
+            logger.warn("Initialized connection not in pool. Fileno: {0}".format(fileno))
             return
 
-        logger.debug("Connection {0} has been initialized.".format(conn.peer_desc))
+        logger.info("Connection state initialized: {}".format(conn))
         conn.state |= ConnectionState.INITIALIZED
 
     def on_connection_closed(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Closed connection not in pool. Fileno {0}".format(fileno))
+            logger.warn("Closed connection not in pool. Fileno: {0}".format(fileno))
             return
 
+        logger.info("Closed connection: {}".format(conn))
         self.destroy_conn(conn, retry_connection=True)
 
     @abstractmethod
@@ -121,7 +121,7 @@ class AbstractNode(object):
             logger.warn("Got peer update with no peers.")
             return
 
-        logger.debug("Processing updated outbound peers: {}.".format(outbound_peer_models))
+        logger.info("Processing updated outbound peers: {}.".format(outbound_peer_models))
 
         # Remove peers not in updated list or from command-line args.
         remove_peers = []
@@ -246,9 +246,9 @@ class AbstractNode(object):
         """
 
         if broadcasting_conn is not None:
-            logger.debug("Broadcasting message to everyone from {0}".format(broadcasting_conn.peer_desc))
+            logger.info("Broadcasting {} to {} connections from {}.".format(msg, connection_type, broadcasting_conn))
         else:
-            logger.debug("Broadcasting message to everyone")
+            logger.info("Broadcasting {} to {} connections.".format(msg, connection_type))
 
         if network_num is None:
             broadcast_net_num = self.network_num
@@ -319,8 +319,7 @@ class AbstractNode(object):
         if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
             self.sdn_connection = conn_obj
 
-        logger.debug("Connected {0}:{1} on file descriptor {2} with state {3}"
-                     .format(ip, port, socket_connection.fileno(), conn_obj.state))
+        logger.info("Adding connection: {} with state: {}.".format(conn_obj, conn_obj.state))
 
     def _connection_timeout(self, conn):
         """
@@ -344,7 +343,7 @@ class AbstractNode(object):
             return constants.CANCEL_ALARMS
 
         # Clean up the old connection and retry it if it is trusted
-        logger.debug("destroying old socket with {0}".format(conn.peer_desc))
+        logger.info("Connection has timed out: {}".format(conn))
         self.destroy_conn(conn, retry_connection=True)
 
         # It is connect_to_address's job to schedule this function.
@@ -362,7 +361,7 @@ class AbstractNode(object):
         We also retry trusted connections since they can never be destroyed.
         """
 
-        logger.debug("Breaking connection to {0}".format(conn.peer_desc))
+        logger.debug("Breaking connection to {}. Attempting retry: {}".format(conn, retry_connection))
 
         self.connection_pool.delete(conn)
         conn.mark_for_close()
@@ -387,11 +386,11 @@ class AbstractNode(object):
         self.num_retries_by_ip[ip] += 1
 
         if self.should_retry_connection(ip, port, connection_type):
-            logger.debug("Retrying connection to {0}:{1}.".format(ip, port))
+            logger.info("Retrying connection to {}:{}.".format(ip, port))
             self.enqueue_connection(ip, port)
         else:
             del self.num_retries_by_ip[ip]
-            logger.debug("Not retrying connection to {0}:{1}- maximum connections exceeded!".format(ip, port))
+            logger.warn("Maximum retry attempts exceeded. Dropping connection to {}:{}.".format(ip, port))
             self.on_failed_connection_retry(ip, port, connection_type)
 
         return 0

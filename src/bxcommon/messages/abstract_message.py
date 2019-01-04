@@ -29,3 +29,7 @@ class AbstractMessage(object):
         Initialize message class with arguments. Returns cls_type instance.
         """
         pass
+
+    def should_log_debug(self):
+        return False
+

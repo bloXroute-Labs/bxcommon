@@ -21,8 +21,6 @@ class AbstractConnection(object):
             raise ValueError("SocketConnection type is expected for socket_connection arg but was {0}."
                              .format(type(socket_connection)))
 
-        logger.debug("Initialized connection of type {}".format(self.CONNECTION_TYPE))
-
         self.socket_connection = socket_connection
         self.fileno = socket_connection.fileno()
 
@@ -62,6 +60,15 @@ class AbstractConnection(object):
         # Default network number to network number of current node. But it can change after hello message is received
         self.network_num = node.network_num
 
+        logger.info("Initialized new connection: {}".format(self))
+
+
+    def __repr__(self):
+        return "Connection<type: {}, fileno: {}, address: {}, network_num: {}>".format(self.CONNECTION_TYPE,
+                                                                                       self.fileno,
+                                                                                       self.peer_desc,
+                                                                                       self.network_num)
+
     def is_active(self):
         """
         Indicates whether the connection is established and not marked for close.
@@ -89,7 +96,7 @@ class AbstractConnection(object):
 
     def pre_process_msg(self):
         is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview_from_input_buffer(self.inputbuf)
-        logger.debug("Starting to get message of type {0}. Is full: {1}".format(msg_type, is_full_msg))
+        logger.debug("Starting to process message of type {0}. Is complete message: {1}".format(msg_type, is_full_msg))
         return is_full_msg, msg_type, payload_len
 
     def enqueue_msg(self, msg, prepend=False):
@@ -102,6 +109,11 @@ class AbstractConnection(object):
         """
         if self.state & ConnectionState.MARK_FOR_CLOSE:
             return
+
+        if msg.should_log_debug():
+            logger.debug("Enqueued message: {} on connection: {}".format(msg, self))
+        else:
+            logger.info("Enqueued message: {} on connection: {}".format(msg, self))
 
         self.enqueue_msg_bytes(msg.rawbytes(), prepend)
 
@@ -147,7 +159,7 @@ class AbstractConnection(object):
             # If there was some error in parsing this message, then continue the loop.
             if msg is None:
                 if self.num_bad_messages == MAX_BAD_MESSAGES:
-                    logger.debug("Got enough bad messages! Marking connection from {0} closed".format(self.peer_desc))
+                    logger.warn("Got too many bad messages! Marking connection as closed: {}".format(self))
                     self.state |= ConnectionState.MARK_FOR_CLOSE
                     return 0  # I have MAX_BAD_MESSAGES messages that failed to parse in a row.
 
@@ -165,6 +177,11 @@ class AbstractConnection(object):
 
             if self.log_throughput:
                 hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
+
+            if msg.should_log_debug():
+                logger.debug("Processing message: {} on connection: {}".format(msg, self))
+            else:
+                logger.info("Processing message: {} on connection: {}".format(msg, self))
 
             if msg_type in self.message_handlers:
                 msg_handler = self.message_handlers[msg_type]
@@ -187,13 +204,11 @@ class AbstractConnection(object):
             msg_contents = self.inputbuf.remove_bytes(msg_len)
             return self.message_factory.create_message_from_buffer(msg_contents)
         except UnrecognizedCommandError as e:
-            logger.error("Unrecognized command on {0}. Error Message: {1}".format(self.peer_desc, e.msg))
-            logger.debug("Src: {0} Raw data: {1}".format(self.peer_desc, e.raw_data))
+            logger.error("Unrecognized command on connection: {}. Error: {}. Raw data: {}"
+                         .format(self.peer_desc, e.msg, e.raw_data))
             return None
-
         except PayloadLenError as e:
-            logger.error("ParseError on connection {0}.".format(self.peer_desc))
-            logger.debug("ParseError message: {0}".format(e.msg))
+            logger.error("ParseError on connection {}. Error: {}.".format(self, e.msg))
             self.state |= ConnectionState.MARK_FOR_CLOSE  # Close, no retry.
             return None
 

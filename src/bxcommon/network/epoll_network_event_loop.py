@@ -51,6 +51,7 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
                     #   on this connection.
                     if event & select.EPOLLHUP:
                         socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
+                        logger.info("Received EPOLLHUP. Closing connection on fileno: {}".format(fileno))
                         self._node.on_connection_closed(fileno)
 
                     if event & select.EPOLLOUT and \

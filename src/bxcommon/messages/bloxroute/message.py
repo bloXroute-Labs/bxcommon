@@ -7,6 +7,7 @@ from bxcommon.utils import logger
 
 
 class Message(AbstractMessage):
+    MESSAGE_TYPE = "internal"
     HEADER_LENGTH = constants.HDR_COMMON_OFF
 
     def __init__(self, msg_type=None, payload_len=None, buf=None):
@@ -93,5 +94,8 @@ class Message(AbstractMessage):
             return False
         else:
             return self.rawbytes().tobytes() == other.rawbytes().tobytes()
+
+    def __repr__(self):
+        return "Message<type: {}, length: {}>".format(self.MESSAGE_TYPE, len(self.rawbytes()))
 
 

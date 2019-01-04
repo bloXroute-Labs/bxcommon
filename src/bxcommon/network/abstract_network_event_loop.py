@@ -31,7 +31,7 @@ class AbstractNetworkEventLoop(object):
         Starts event_loop
         """
 
-        logger.debug("Start network event loop")
+        logger.debug("Start network event loop...")
 
         try:
             self._start_server()
@@ -48,7 +48,7 @@ class AbstractNetworkEventLoop(object):
                 self._process_disconnect_requests()
 
                 if self._node.force_exit():
-                    logger.debug("Ending events loop. Shutdown has been requested.")
+                    logger.info("Ending event loop. Shutdown has been requested.")
                     break
 
                 self._node.flush_all_send_buffers()
@@ -79,7 +79,7 @@ class AbstractNetworkEventLoop(object):
 
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        logger.debug("Creating a server socket on {0}:{1}".format(LISTEN_ON_IP_ADDRESS, external_port))
+        logger.info("Creating a server socket on {0}:{1}...".format(LISTEN_ON_IP_ADDRESS, external_port))
 
         try:
             server_socket.bind((LISTEN_ON_IP_ADDRESS, external_port))
@@ -88,7 +88,7 @@ class AbstractNetworkEventLoop(object):
 
             self._register_socket(server_socket, (LISTEN_ON_IP_ADDRESS, external_port), is_server=True)
 
-            logger.debug("Finished creating a server socket on {0}:{1}".format(LISTEN_ON_IP_ADDRESS, external_port))
+            logger.info("Server socket creation successful.")
             return server_socket
 
         except socket.error as e:
@@ -118,7 +118,7 @@ class AbstractNetworkEventLoop(object):
         if peers_addresses:
             for address in peers_addresses:
                 protocol = address[2] if len(address) == 3 else None
-                logger.debug("connecting to node {0}:{1} on protocol {2}".format(address[0], address[1], protocol))
+                logger.info("Connecting to node {0}:{1} on protocol: {2}.".format(address[0], address[1], protocol))
 
                 self._connect_to_server(address[0], address[1], protocol)
 
@@ -127,7 +127,6 @@ class AbstractNetworkEventLoop(object):
 
         while address is not None:
             self._connect_to_server(address[0], address[1])
-            logger.debug("Connected to {0}, {1}".format(address[0], address[1]))
             address = self._node.pop_next_connection_address()
 
     def _process_disconnect_requests(self):
@@ -144,7 +143,7 @@ class AbstractNetworkEventLoop(object):
 
     def _connect_to_server(self, ip, port, protocol=TransportLayerProtocol.TCP):
         if self._node.connection_exists(ip, port):
-            logger.error("Ignoring repeat connection to {0}:{1}.".format(ip, port))
+            logger.warn("Ignoring repeat connection to {0}:{1}.".format(ip, port))
             return
 
         sock = None
@@ -182,13 +181,14 @@ class AbstractNetworkEventLoop(object):
                 raise e
 
         self._register_socket(sock, (ip, port), is_server=False, initialized=initialized, from_me=True)
+        logger.info("Connected to {0}:{1}.".format(ip, port))
 
     def _handle_incoming_connections(self, socket_connection):
-        logger.info("new connection establishment starting")
+        logger.info("Received incoming request(s) for connection...")
         try:
             while True:
                 new_socket, address = socket_connection.socket_instance.accept()
-                logger.debug("new connection from {0}".format(address))
+                logger.info("Accepted new connection from {0}.".format(address))
 
                 new_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 new_socket.setblocking(0)

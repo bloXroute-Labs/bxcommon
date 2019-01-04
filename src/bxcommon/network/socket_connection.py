@@ -68,6 +68,7 @@ class SocketConnection(object):
             logger.debug("Got {0} bytes from {2}. They were: {1}".format(bytes_read, repr(piece), fileno))
 
             if bytes_read == 0:
+                logger.info("Received 0 length read. Closing connection on fileno: {}.".format(fileno))
                 self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
                 self._node.on_connection_closed(fileno)
                 return

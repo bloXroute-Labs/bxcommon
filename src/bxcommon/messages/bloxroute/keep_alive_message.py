@@ -13,3 +13,6 @@ class KeepAliveMessage(Message):
             self.buf = buf
             self._memoryview = memoryview(buf)
             self._nonce = self._command = self._payload_len = None
+
+    def should_log_debug(self):
+        return True

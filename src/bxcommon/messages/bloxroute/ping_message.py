@@ -7,3 +7,4 @@ class PingMessage(KeepAliveMessage):
 
     def __init__(self, buf=None):
         KeepAliveMessage.__init__(self, msg_type=self.MESSAGE_TYPE, buf=buf)
+

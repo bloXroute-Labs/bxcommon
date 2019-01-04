@@ -42,7 +42,7 @@ def run_node(process_id_file_path, opts, node_class):
 
     logger.set_immediate_flush(cli.get_args().log_flush_immediately)
 
-    logger.debug("Config loaded:\n {}".format(json.dumps(opts, indent=2, sort_keys=True, cls=ClassJsonEncoder)))
+    logger.info("Config loaded:\n {}".format(json.dumps(opts, indent=2, sort_keys=True, cls=ClassJsonEncoder)))
 
     node = node_class(opts)
     event_loop = network_event_loop_factory.create_event_loop(node)
@@ -52,6 +52,5 @@ def run_node(process_id_file_path, opts, node_class):
         logger.debug("Running node")
         event_loop.run()
     finally:
-        logger.fatal("Node run method returned")
-        logger.fatal("Log closed")
+        logger.fatal("Node run method returned. Closing log and exiting.")
         logger.log_close()
