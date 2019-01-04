@@ -31,7 +31,7 @@ def _fetch_peers(route_template, node_id):
                  .format(node_id, node_url, outbound_peers))
 
     if not outbound_peers:
-        logger.warn("This node has no outbound peers.")
+        logger.warn("Got no outbound peers for endpoint: {}".format(node_url))
         return []
 
     outbound_peers = [OutboundPeerModel(**o) for o in outbound_peers]

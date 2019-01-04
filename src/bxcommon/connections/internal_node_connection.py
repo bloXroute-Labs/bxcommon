@@ -89,7 +89,8 @@ class InternalNodeConnection(AbstractConnection):
         network_num = msg.network_num()
 
         if self.node.network_num != ALL_NETWORK_NUM and network_num != self.node.network_num:
-            logger.error("Network number mismatch. Current network num {}, remote network num {}. Closing connection.")
+            logger.error("Network number mismatch. Current network num {}, remote network num {}. Closing connection."
+                         .format(self.node.network_num, network_num))
             self.mark_for_close()
             return
 

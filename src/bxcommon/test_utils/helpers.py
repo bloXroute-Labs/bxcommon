@@ -6,7 +6,7 @@ from contextlib import closing
 from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
-from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST
+from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, ALL_NETWORK_NUM
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -134,7 +134,7 @@ SID_SIZE = 100 * 1000 * 1000
 
 
 def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, sdn_socket_port=8888,
-                   relay_addresses=None, network_num=DEFAULT_NETWORK_NUM, sid_expire_time=1000):
+                   relay_addresses=None, network_num=ALL_NETWORK_NUM, sid_expire_time=1000):
     if relay_addresses is None:
         relay_addresses = []
     opts = Namespace()

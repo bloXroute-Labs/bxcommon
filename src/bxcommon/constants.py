@@ -117,7 +117,7 @@ class BxApiRoutes(object):
     blockchain_networks = "/blockchain-networks"
 
 
-SDN_CONTACT_RETRY_SECONDS = 2
+SDN_CONTACT_RETRY_SECONDS = 5
 
 # Time (in seconds) between stats gathering runs
 THROUGHPUT_STATS_INTERVAL = 300
