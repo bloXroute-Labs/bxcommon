@@ -171,6 +171,8 @@ def set_immediate_flush(flush_immediately):
         raise TypeError("flush_immediately is expected of type bool but was {}".format(type(flush_immediately)))
 
     _log.flush_immediately = flush_immediately
+    with _log.lock:
+        _log.needs_flush.notify()
 
 
 def log(level, logtype, msg, log_time):
