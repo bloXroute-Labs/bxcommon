@@ -205,7 +205,7 @@ class AbstractConnection(object):
             return self.message_factory.create_message_from_buffer(msg_contents)
         except UnrecognizedCommandError as e:
             logger.error("Unrecognized command on connection: {}. Error: {}. Raw data: {}"
-                         .format(self.peer_desc, e.msg, e.raw_data))
+                         .format(self, e.msg, e.raw_data))
             return None
         except PayloadLenError as e:
             logger.error("ParseError on connection {}. Error: {}.".format(self, e.msg))

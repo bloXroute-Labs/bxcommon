@@ -1,6 +1,7 @@
 from abc import ABCMeta
 
 from bxcommon.exceptions import ParseError, UnrecognizedCommandError
+from bxcommon.utils import convert
 
 
 class AbstractMessageFactory(object):
@@ -43,7 +44,7 @@ class AbstractMessageFactory(object):
 
         command = unpacked_args[0]
         if command not in self.message_type_mapping:
-            raise UnrecognizedCommandError("Message not recognized: {0}. Raw data: {1}".format(command, repr(buf)), buf)
+            raise UnrecognizedCommandError("Message not recognized: {0}".format(command), convert.bytes_to_hex(buf))
 
         return self.create_message(command, buf, unpacked_args)
 

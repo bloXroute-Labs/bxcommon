@@ -58,6 +58,3 @@ class ObjectHashTests(unittest.TestCase):
         self.assertEqual(repr(self.int_hash_31a), repr(self.int_hash_31b))
         self.assertNotEqual(repr(self.int_hash_31a), repr(self.int_hash_32))
         self.assertNotEqual(repr(self.int_hash_31b), repr(self.int_hash_all_0))
-        expected = bytearray([i for i in range(SHA256_HASH_LEN)])
-        actual = ObjectHash(bytearray(expected))
-        self.assertEqual(repr(expected), repr(actual))

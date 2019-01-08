@@ -1,5 +1,6 @@
 import struct
 
+from bxcommon.utils import convert
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 
 # Used to take the last few characters of the SHA256 encryption as the hash function.
@@ -30,9 +31,7 @@ class ObjectHash(object):
         return 0
 
     def __repr__(self):
-        return repr(self.binary)
+        return "ObjectHash<binary: {}>".format(convert.bytes_to_hex(self.binary))
 
     def __getitem__(self, arg):
         return self.binary.__getitem__(arg)
-
-

@@ -1,8 +1,9 @@
-class BlockStatEventType:
+class BlockStatEventType(object):
     BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE = "BlockReceivedFromBlockchainNode"
     BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = "BlockReceivedFromBlockchainNodeIgnoreSeen"
     BLOCK_COMPRESSED = "BlockCompressed"
-    ENC_BLOCK_SENT_FROM_GATEWAY_TO_PEER = "EncBlockSentFromGatewayToPeer"
+    BLOCK_ENCRYPTED = "BlockEncrypted"
+    ENC_BLOCK_SENT_FROM_GATEWAY_TO_NETWORK = "EncBlockSentFromGatewayToNetwork"
     ENC_BLOCK_CUT_THROUGH_SEND_START = "EncBlockCutThroughSendStart"
     ENC_BLOCK_CUT_THROUGH_SEND_END = "EncBlockCutThroughSendEnd"
     ENC_BLOCK_CUT_THROUGH_RECEIVE_START = "EncBlockCutThroughReceiveStart"
@@ -10,6 +11,9 @@ class BlockStatEventType:
     ENC_BLOCK_CUT_THROUGH_IGNORE_SEEN_BLOCK = "EncBlockCutThroughIgnoreSeenBlock"
     ENC_BLOCK_RECEIVED_BY_GATEWAY_FROM_PEER = "EncBlockReceivedByGatewayFromPeer"
     ENC_BLOCK_DECRYPTED_SUCCESS = "EncBlockDecryptedSuccess"
+    ENC_BLOCK_RECEIVED_BLOCK_RECEIPT = "EncBlockReceivedBlockReceipt"
+    ENC_BLOCK_PROPAGATION_NEEDED = "EncBlockPropagationNeeded"
+    BLOCK_PROPAGATION_REQUESTED_BY_PEER = "BlockPropagationRequestedByPeer"
     BLOCK_DECOMPRESSED_IGNORE_SEEN = "BlockDecompressedIgnoreSeen"
     BLOCK_DECOMPRESSED_SUCCESS = "BlockDecompressedSuccess"
     BLOCK_DECOMPRESSED_WITH_UNKNOWN_TXS = "BlockDecompressedWithUnknownTxs"
