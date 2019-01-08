@@ -308,6 +308,10 @@ class AbstractNode(object):
 
     def _add_connection(self, socket_connection, ip, port, from_me):
         conn_cls = self.get_connection_class(ip, port, from_me)
+        if conn_cls is None:
+            logger.warn("Could not find connection class for {}:{}, from_me={}. Ignoring."
+                        .format(ip, port, from_me))
+            return
 
         conn_obj = conn_cls(socket_connection, (ip, port), self, from_me)
 
@@ -361,7 +365,7 @@ class AbstractNode(object):
         We also retry trusted connections since they can never be destroyed.
         """
 
-        logger.debug("Breaking connection to {}. Attempting retry: {}".format(conn, retry_connection))
+        logger.info("Breaking connection to {}. Attempting retry: {}".format(conn, retry_connection))
 
         self.connection_pool.delete(conn)
         conn.mark_for_close()
