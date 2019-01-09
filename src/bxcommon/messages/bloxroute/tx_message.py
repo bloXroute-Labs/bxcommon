@@ -68,3 +68,7 @@ class TxMessage(Message):
 
         # TODO check for empty?
         return self._tx_val
+
+    def __repr__(self):
+        return "TxMessage<tx_hash: {}, short_id: {}, network_num: {}>".format(self.tx_hash(), self.short_id(),
+                                                                              self.network_num())
