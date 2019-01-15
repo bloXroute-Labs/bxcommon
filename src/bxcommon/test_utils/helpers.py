@@ -95,6 +95,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "internal_port": port,
         "blockchain_ip": blockchain_address[0],
         "blockchain_port": blockchain_address[1],
+        "blockchain_protocol": "Bitcoin",
+        "blockchain_network": "Mainnet",
         "test_mode": test_mode,
         "peer_gateways": peer_gateways,
         "peer_relays": peer_relays,
