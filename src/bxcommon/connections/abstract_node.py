@@ -144,9 +144,10 @@ class AbstractNode(object):
         for peer in outbound_peer_models:
             peer_ip = peer.ip
             peer_port = peer.port
+            peer_id = peer.node_id
             if not self.connection_pool.has_connection(peer_ip, peer_port):
                 self.enqueue_connection(peer_ip, peer_port)
-
+                logger.debug("enqueue connection: {} {}.".format(peer_ip, peer_port))
         self.outbound_peers = outbound_peer_models
 
     def on_updated_sid_space(self, sid_start, sid_end):

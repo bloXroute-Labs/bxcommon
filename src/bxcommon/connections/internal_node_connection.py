@@ -1,13 +1,20 @@
+from datetime import datetime
+
+from bxcommon.constants import REQUEST_EXPIRATION_TIME
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import ALL_NETWORK_NUM, DEFAULT_NETWORK_NUM
+from bxcommon.constants import ALL_NETWORK_NUM, DEFAULT_NETWORK_NUM, PING_INTERVAL_SEC
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
+from bxcommon.utils import nonce_generator
 from bxcommon.utils import logger
+from bxcommon.utils.stats.measurement_type import MeasurementType
+from bxcommon.utils.stats import hooks
+from bxcommon.utils.expiring_dict import ExpiringDict
 
 
 class InternalNodeConnection(AbstractConnection):
@@ -25,6 +32,9 @@ class InternalNodeConnection(AbstractConnection):
         self.ping_message = PingMessage()
         self.pong_message = PongMessage()
         self.ack_message = AckMessage()
+
+        self.can_send_pings = True
+        self.sent_response_messages_timestamps = ExpiringDict(self.node.alarm_queue, REQUEST_EXPIRATION_TIME)
 
     def set_protocol_version_and_message_factory(self):
         """
@@ -104,3 +114,37 @@ class InternalNodeConnection(AbstractConnection):
             return DEFAULT_NETWORK_NUM
 
         return BroadcastMessage.peek_network_num(input_buffer)
+
+    def send_ping(self):
+        """
+        Send a ping (and reschedule if called from alarm queue)
+        """
+        if self.can_send_pings:
+            nonce = nonce_generator.get_nonce()
+            logger.debug("sent ping message to {} {} peer with nonce {}.".format(self.peer_desc, self.CONNECTION_TYPE,
+                                                                                 nonce))
+            msg = PingMessage(nonce=nonce)
+            self.enqueue_msg(msg)
+            self.sent_response_messages_timestamps.contents[nonce] = msg.timestamp
+            return PING_INTERVAL_SEC
+
+    def msg_ping(self, msg):
+        nonce = msg.nonce()
+        logger.debug("Received ping message from {} {} peer with nonce {}.".format(self.peer_desc, self.CONNECTION_TYPE,
+                                                                                   nonce))
+        self.enqueue_msg(PongMessage(nonce=nonce))
+
+    def msg_pong(self, msg):
+        nonce = msg.nonce()
+        if nonce in self.sent_response_messages_timestamps.contents:
+            request_msg_timestamp = self.sent_response_messages_timestamps.contents[nonce]
+            request_response_time = (datetime.utcnow() - request_msg_timestamp).total_seconds()
+            logger.debug("PingPong time from {} {} {} for nonce {}".format(self.peer_desc, self.CONNECTION_TYPE,
+                                                                           request_response_time, msg.nonce()))
+            try:
+                hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
+            except Exception as e:
+                logger.error("{} {} {}".format(repr(e), self.peer_desc, request_response_time))
+        elif nonce is not None:
+            logger.warn("Received pong message from {} {} with nonce {}, ping request was not found in cache"
+                        .format(self.peer_desc, self.CONNECTION_TYPE, nonce))

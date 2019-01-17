@@ -11,7 +11,6 @@ class ConnectionPool(object):
         self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO
         self.by_ipport = {}
         self.by_connection_type = defaultdict(set)
-
         self.len_fileno = ConnectionPool.INITIAL_FILENO
         self.count_conn_by_ip = defaultdict(lambda: 0)
         self.num_peer_conn = 0

@@ -1,4 +1,4 @@
-from bxcommon.constants import DEFAULT_NETWORK_NUM, NETWORK_NUM_LEN, VERSION_NUM_LEN
+from bxcommon.constants import DEFAULT_NETWORK_NUM, NETWORK_NUM_LEN, VERSION_NUM_LEN, NODE_ID_SIZE_IN_BYTES, UL_INT_SIZE_IN_BYTES
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
@@ -39,7 +39,7 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
         self.assertEqual(1, bloxroute_version_manager.get_connection_protocol_version(input_buffer))
 
     def test_get_connection_protocol_version_v2(self):
-        hello_msg_v1 = HelloMessage(2, 0, 1)
+        hello_msg_v1 = HelloMessage(protocol_version=2, network_num=0)
         input_buffer = InputBuffer()
         input_buffer.add_bytes(hello_msg_v1.rawbytes())
 
@@ -49,17 +49,14 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
         dummy_idx = 11
 
         hello_msg = HelloMessage(protocol_version=bloxroute_version_manager.CURRENT_PROTOCOL_VERSION,
-                                 idx=dummy_idx,
                                  network_num=DEFAULT_NETWORK_NUM)
 
         hello_msg_v1 = bloxroute_version_manager.convert_message_to_older_version(1, hello_msg)
-
         self.assertIsInstance(hello_msg_v1, HelloMessageV1)
-
         self.assertEqual(len(hello_msg_v1.rawbytes()) + NETWORK_NUM_LEN + VERSION_NUM_LEN, len(hello_msg.rawbytes()))
         self.assertEqual(hello_msg_v1.payload_len() + NETWORK_NUM_LEN + VERSION_NUM_LEN, hello_msg.payload_len())
-        self.assertEqual(hello_msg_v1.idx(), hello_msg.idx())
-        self.assertEqual(dummy_idx, hello_msg_v1.idx())
+        self.assertEqual(hello_msg_v1.idx(), 0)
+        self.assertEqual(0, hello_msg_v1.idx())
 
     def test_convert_message_from_older_version__hello_message_v1(self):
         dummy_idx = 15
@@ -69,10 +66,11 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
         hello_msg = bloxroute_version_manager.convert_message_from_older_version(1, hello_msg_v1)
 
         self.assertIsInstance(hello_msg, HelloMessage)
-        self.assertEqual(len(hello_msg_v1.rawbytes()) + NETWORK_NUM_LEN + VERSION_NUM_LEN, len(hello_msg.rawbytes()))
-        self.assertEqual(hello_msg_v1.payload_len() + NETWORK_NUM_LEN + VERSION_NUM_LEN, hello_msg.payload_len())
+        self.assertEqual(len(hello_msg_v1.rawbytes()) + NETWORK_NUM_LEN + VERSION_NUM_LEN + NODE_ID_SIZE_IN_BYTES -
+                         UL_INT_SIZE_IN_BYTES, len(hello_msg.rawbytes()))  # removed idx
+        self.assertEqual(hello_msg_v1.payload_len() + NETWORK_NUM_LEN + VERSION_NUM_LEN + NODE_ID_SIZE_IN_BYTES -
+                         UL_INT_SIZE_IN_BYTES, hello_msg.payload_len())
 
-        self.assertEqual(dummy_idx, hello_msg.idx())
         self.assertEqual(1, hello_msg.protocol_version())
         self.assertEqual(DEFAULT_NETWORK_NUM, hello_msg.network_num())
 
@@ -218,8 +216,6 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
         self._test_message_does_not_change(AckMessage)
         self._test_message_does_not_change(GetTxsMessage, [])
         self._test_message_does_not_change(TxsMessage, [])
-        self._test_message_does_not_change(PingMessage)
-        self._test_message_does_not_change(PongMessage)
 
     def test_size_change(self):
         self.assertEqual(-NETWORK_NUM_LEN,

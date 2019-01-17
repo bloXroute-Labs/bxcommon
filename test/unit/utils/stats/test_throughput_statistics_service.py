@@ -3,8 +3,9 @@ from collections import deque
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils.stats.direction import Direction
+from bxcommon.utils.stats.measurement_type import MeasurementType
 from bxcommon.utils.stats.throughput_service import throughput_statistics
-from bxcommon.utils.stats.hooks import add_throughput_event
+from bxcommon.utils.stats.hooks import add_throughput_event, add_measurement
 from bxcommon.utils.stats.throughput_event import ThroughputEvent
 
 
@@ -117,3 +118,10 @@ class ThroughputServiceTests(AbstractTestCase):
         self.assertEqual(self.outbound_throughput_event1.msg_size + self.outbound_throughput_event2.msg_size,
                          stats_json["total_bytes_sent"])
 
+    def test_adding_ping_event(self):
+        add_throughput_event(Direction.INBOUND,"ping", 40, "localhost 0000")
+        add_measurement("localhost 0000", MeasurementType.PING, 0.1)
+        add_measurement("localhost 0000", MeasurementType.PING, 0.3)
+        add_measurement("localhost 0000", MeasurementType.PING, 0.2)
+        self.assertEqual(throughput_statistics.interval_data.peer_to_stats["localhost 0000"].ping_max, 0.3)
+        throughput_statistics.flush_info()

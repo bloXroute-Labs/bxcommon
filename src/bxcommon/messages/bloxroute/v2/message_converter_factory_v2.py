@@ -2,20 +2,20 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.messages.bloxroute.v1.key_message_converter_v1 import key_message_converter_v1
 from bxcommon.messages.bloxroute.v1.tx_message_converter_v1 import tx_message_converter_v1
 from bxcommon.messages.bloxroute.v1.broadcast_message_converter_v1 import broadcast_message_converter_v1
-from bxcommon.messages.bloxroute.v1.hello_message_converter_v1 import hello_message_converter_v1
-from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
-from bxcommon.messages.versioning.no_changes_message_converter import no_changes_message_converter
+from bxcommon.messages.bloxroute.v2.hello_message_converter_v2 import hello_message_converter_v2
 from bxcommon.messages.bloxroute.v1.keep_alive_message_converter_v1 import ping_message_converter_v1,\
     pong_message_converter_v1
+from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
+from bxcommon.messages.versioning.no_changes_message_converter import no_changes_message_converter
 
 
-class _MessageConverterFactoryV1(AbstractMessageConverterFactory):
+class _MessageConverterFactoryV2(AbstractMessageConverterFactory):
 
     _MESSAGE_CONVERTER_MAPPING = {
-        BloxrouteMessageType.HELLO: hello_message_converter_v1,
-        BloxrouteMessageType.TRANSACTION: tx_message_converter_v1,
-        BloxrouteMessageType.BROADCAST: broadcast_message_converter_v1,
-        BloxrouteMessageType.KEY: key_message_converter_v1,
+        BloxrouteMessageType.HELLO: hello_message_converter_v2,
+        BloxrouteMessageType.TRANSACTION: no_changes_message_converter,
+        BloxrouteMessageType.BROADCAST: no_changes_message_converter,
+        BloxrouteMessageType.KEY: no_changes_message_converter,
 
         BloxrouteMessageType.ACK: no_changes_message_converter,
         BloxrouteMessageType.GET_TRANSACTIONS: no_changes_message_converter,
@@ -34,4 +34,4 @@ class _MessageConverterFactoryV1(AbstractMessageConverterFactory):
         return self._MESSAGE_CONVERTER_MAPPING[msg_type]
 
 
-message_converter_factory_v1 = _MessageConverterFactoryV1()
+message_converter_factory_v2 = _MessageConverterFactoryV2()

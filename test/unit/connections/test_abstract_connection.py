@@ -65,7 +65,7 @@ class AbstractConnectionTest(AbstractTestCase):
             "pong": mock_pong
         }
         self.connection.state = ConnectionState.ESTABLISHED
-        self.connection.inputbuf.add_bytes(HelloMessage(1, 2, 3).rawbytes())
+        self.connection.inputbuf.add_bytes(HelloMessage(protocol_version=1, network_num=2).rawbytes())
         self.connection.inputbuf.add_bytes(PongMessage().rawbytes())
 
         self.connection.process_message()

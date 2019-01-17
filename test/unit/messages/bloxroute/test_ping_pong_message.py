@@ -1,6 +1,7 @@
 from bxcommon.messages.bloxroute.bloxroute_message_factory import _BloxrouteMessageFactory
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
+from bxcommon.messages.bloxroute.keep_alive_message import KeepAliveMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 
 
@@ -23,7 +24,7 @@ class PingPongMessageTests(AbstractTestCase):
 
         self.assertTrue(msg)
         self.assertEqual(msg.msg_type(), msg_type)
-        self.assertEqual(msg.payload_len(), 0)
+        self.assertEqual(msg.payload_len(), KeepAliveMessage.KEEP_ALIVE_MESSAGE_LENGTH)
 
         ping_msg_bytes = msg.rawbytes()
         self.assertTrue(ping_msg_bytes)
@@ -33,4 +34,4 @@ class PingPongMessageTests(AbstractTestCase):
         self.assertIsInstance(parsed_ping_message, msg_cls)
 
         self.assertEqual(parsed_ping_message.msg_type(), msg_type)
-        self.assertEqual(parsed_ping_message.payload_len(), 0)
+        self.assertEqual(parsed_ping_message.payload_len(), KeepAliveMessage.KEEP_ALIVE_MESSAGE_LENGTH)

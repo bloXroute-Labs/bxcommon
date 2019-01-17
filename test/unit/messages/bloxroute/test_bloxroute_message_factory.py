@@ -1,4 +1,4 @@
-from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, VERSION_NUM_LEN
+from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, VERSION_NUM_LEN, NODE_ID_SIZE_IN_BYTES
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
@@ -11,6 +11,7 @@ from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
+from bxcommon.messages.bloxroute.version_message import VersionMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import create_input_buffer_with_message, create_input_buffer_with_bytes
 from bxcommon.utils import crypto
@@ -41,12 +42,20 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.assertIsInstance(result, message_type)
         return result
 
+    def test_message_hello(self):
+        hello_msg = HelloMessage(protocol_version=bloxroute_version_manager.CURRENT_PROTOCOL_VERSION,
+                                 network_num=1,
+                                 node_id="c2b04fd2-7c81-432b-99a5-8b68f43d97e8")
+        self.assertEqual(hello_msg.node_id(), "c2b04fd2-7c81-432b-99a5-8b68f43d97e8")
+        self.assertEqual(hello_msg.network_num(), 1)
+
     def test_message_preview_success_all_types(self):
-        self.get_message_preview_successfully(HelloMessage(1, 2, 3), HelloMessage.MESSAGE_TYPE,
-                                              UL_INT_SIZE_IN_BYTES + NETWORK_NUM_LEN + VERSION_NUM_LEN)
+        self.get_message_preview_successfully(HelloMessage(protocol_version=1, network_num=2), HelloMessage.MESSAGE_TYPE,
+                                              VersionMessage.VERSION_MESSAGE_LENGTH + UL_INT_SIZE_IN_BYTES +
+                                              NODE_ID_SIZE_IN_BYTES - UL_INT_SIZE_IN_BYTES)
         self.get_message_preview_successfully(AckMessage(), AckMessage.MESSAGE_TYPE, 0)
-        self.get_message_preview_successfully(PingMessage(), PingMessage.MESSAGE_TYPE, 0)
-        self.get_message_preview_successfully(PongMessage(), PongMessage.MESSAGE_TYPE, 0)
+        self.get_message_preview_successfully(PingMessage(), PingMessage.MESSAGE_TYPE, 8)
+        self.get_message_preview_successfully(PongMessage(), PongMessage.MESSAGE_TYPE, 8)
 
         blob = bytearray(1 for _ in xrange(4))
         self.get_message_preview_successfully(BroadcastMessage(self.HASH, 1, blob), BroadcastMessage.MESSAGE_TYPE,
@@ -67,13 +76,14 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.get_message_preview_successfully(TxsMessage(txs), TxsMessage.MESSAGE_TYPE, expected_length)
 
     def test_message_preview_incomplete(self):
-        message = HelloMessage(1, 2, 3)
+        message = HelloMessage(protocol_version=1, network_num=2)
         is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview_from_input_buffer(
             create_input_buffer_with_bytes(message.rawbytes()[:-1])
         )
         self.assertFalse(is_full_message)
         self.assertEquals("hello", command)
-        self.assertEquals(VERSION_NUM_LEN + UL_INT_SIZE_IN_BYTES  + NETWORK_NUM_LEN, payload_length)
+        self.assertEquals(VersionMessage.VERSION_MESSAGE_LENGTH + UL_INT_SIZE_IN_BYTES + NODE_ID_SIZE_IN_BYTES -
+                          UL_INT_SIZE_IN_BYTES, payload_length)
 
         is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview_from_input_buffer(
             create_input_buffer_with_bytes(message.rawbytes()[:1])
@@ -113,10 +123,10 @@ class BloxrouteMessageFactory(AbstractTestCase):
         test_protocol_version = bloxroute_version_manager.CURRENT_PROTOCOL_VERSION
 
         hello_message = self.create_message_successfully(HelloMessage(protocol_version=test_protocol_version,
-                                                                      idx=1,
-                                                                      network_num=test_network_num), HelloMessage)
+                                                                      network_num=test_network_num,
+                                                                      ),
+                                                         HelloMessage)
         self.assertEqual(test_protocol_version, hello_message.protocol_version())
-        self.assertEqual(1, hello_message.idx())
         self.assertEqual(test_network_num, hello_message.network_num())
         self.create_message_successfully(AckMessage(), AckMessage)
         self.create_message_successfully(PingMessage(), PingMessage)
@@ -162,6 +172,17 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.assertEqual(result_txs, txs_message.get_txs())
 
     def test_create_message_failure(self):
-        message = HelloMessage(1, 2, 3)
+        message = HelloMessage(protocol_version=1, network_num=2)
         with self.assertRaises(PayloadLenError):
             bloxroute_message_factory.create_message_from_buffer(message.rawbytes()[:-1])
+
+    def test_ping_response_msg(self):
+        ping = PingMessage(nonce=50)
+        self.assertEqual(50, ping.nonce())
+        msg = bloxroute_message_factory.create_message_from_buffer(ping.buf)
+        self.assertEqual(50, msg.nonce())
+
+    def test_pong_response_msg(self):
+        pong = PongMessage(nonce=50)
+        self.assertEqual(50, pong.nonce())
+        msg = bloxroute_message_factory.create_message_from_buffer(pong.buf)

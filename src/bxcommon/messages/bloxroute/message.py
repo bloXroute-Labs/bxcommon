@@ -11,6 +11,7 @@ class Message(AbstractMessage):
     HEADER_LENGTH = constants.HDR_COMMON_OFF
 
     def __init__(self, msg_type=None, payload_len=None, buf=None):
+
         if buf is None or len(buf) < self.HEADER_LENGTH:
             raise ValueError("Buffer must be at least {0} in length.".format(self.HEADER_LENGTH))
 
@@ -97,5 +98,4 @@ class Message(AbstractMessage):
 
     def __repr__(self):
         return "Message<type: {}, length: {}>".format(self.MESSAGE_TYPE, len(self.rawbytes()))
-
 

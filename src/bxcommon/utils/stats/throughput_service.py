@@ -1,9 +1,11 @@
 from collections import defaultdict
 
+from bxcommon.utils import logger
 from bxcommon.utils.stats.statistics_service import StatisticsService
 from bxcommon.constants import THROUGHPUT_STATS_INTERVAL
 from bxcommon.utils.stats.peer_stats import PeerStats
 from bxcommon.utils.stats.direction import Direction
+from bxcommon.utils.stats.measurement_type import MeasurementType
 
 
 class ThroughputStatistics(StatisticsService):
@@ -34,6 +36,15 @@ class ThroughputStatistics(StatisticsService):
         return self.add_event(direction=throughput_event.direction, msg_type=throughput_event.msg_type,
                               msg_size=throughput_event.msg_size, peer_desc=throughput_event.peer_desc)
 
+    def add_measurement(self, peer_desc, measure_type, measure_value):
+        peer_stats = self.interval_data.peer_to_stats[peer_desc]
+        peer_stats.address = peer_desc
+
+        if measure_type is MeasurementType.PING:
+            peer_stats.ping_max = max(peer_stats.ping_max, measure_value)
+        else:
+            logger.error("{} {}".format(measure_type, measure_value))
+
     def get_info(self):
         if self.node is None:
             raise ValueError
@@ -50,7 +61,9 @@ class ThroughputStatistics(StatisticsService):
         )
         for conn in self.interval_data.node.connection_pool:
             payload["node_peers"].append(
-                {"peer_address": "%s:%d" % (conn.peer_ip, conn.peer_port)})
+                {"peer_address": "%s:%d" % (conn.peer_ip, conn.peer_port),
+                 "peer_id": conn.peer_id,
+                 })
         payload["peer_stats"] = self.interval_data.peer_to_stats.values()
         return payload
 

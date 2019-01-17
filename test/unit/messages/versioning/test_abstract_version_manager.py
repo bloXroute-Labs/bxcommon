@@ -78,7 +78,7 @@ class AbstractVersionManagerTest(AbstractTestCase):
         self._test_version_over_v1(4)
 
     def _test_version_over_v1(self, version):
-        hello_msg = HelloMessage(protocol_version=version, idx=0, network_num=1)
+        hello_msg = HelloMessage(protocol_version=version, network_num=1)
         input_buffer = InputBuffer()
         input_buffer.add_bytes(hello_msg.rawbytes())
 

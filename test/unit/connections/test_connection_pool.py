@@ -1,4 +1,5 @@
 import unittest
+import uuid
 
 from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -15,18 +16,23 @@ class ConnectionPoolTest(AbstractTestCase):
         self.ip1 = "123.123.123.123"
         self.port1 = 1000
         self.node1 = MockNode("128.128.128.128", 1001)
+        self.node_id1 = str(uuid.uuid1())
         self.conn1 = MockConnection(self.fileno1, (self.ip1, self.port1), self.node1)
+
 
         self.fileno2 = 5
         self.ip2 = "234.234.234.234"
         self.port2 = 2000
         self.node2 = MockNode("321.321.321.321", 1003)
+        self.node_id2 = str(uuid.uuid1())
         self.conn2 = MockConnection(self.fileno2, (self.ip2, self.port2), self.node2)
+
 
         self.fileno3 = 6
         self.ip3 = "234.234.234.234"
         self.port3 = 3000
         self.node3 = MockNode("213.213.213.213", 1003)
+        self.node_id3 = str(uuid.uuid1())
         self.conn3 = MockConnection(self.fileno3, (self.ip3, self.port3), self.node3)
 
     def test_add(self):

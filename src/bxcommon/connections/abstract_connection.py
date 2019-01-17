@@ -1,14 +1,15 @@
 from abc import ABCMeta
 
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import MAX_BAD_MESSAGES, NULL_IDX, PING_INTERVAL_SEC
+from bxcommon.connections.connection_type import ConnectionType
+from bxcommon.constants import MAX_BAD_MESSAGES, PING_INTERVAL_SEC
 from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.direction import Direction
+from bxcommon.utils.stats import hooks
 
 
 class AbstractConnection(object):
@@ -28,9 +29,9 @@ class AbstractConnection(object):
         # If the version/hello message contains a different port (i.e. connection is not from me), this will
         # be updated to the one in the message.
         self.peer_ip, self.peer_port = address
+        self.peer_id = None
         self.external_ip = node.opts.external_ip
         self.external_port = node.opts.external_port
-        self.idx = NULL_IDX
 
         self.from_me = from_me  # Whether or not I initiated the connection
 
@@ -61,7 +62,6 @@ class AbstractConnection(object):
         self.network_num = node.network_num
 
         logger.info("Initialized new connection: {}".format(self))
-
 
     def __repr__(self):
         return "Connection<type: {}, fileno: {}, address: {}, network_num: {}>".format(self.CONNECTION_TYPE,

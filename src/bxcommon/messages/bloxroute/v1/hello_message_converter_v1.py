@@ -27,19 +27,20 @@ class _HelloMessageConverterV1(AbstractMessageConverter):
 
         off = off_v1 + VERSION_NUM_LEN + NETWORK_NUM_LEN
         result_bytes[off_v1:] = mem_view[off:]
+        struct.pack_into("<L", result_bytes, HDR_COMMON_OFF, 0)  # fill idx value with 0
 
         return Message.initialize_class(HelloMessageV1, result_bytes, (BloxrouteMessageType.HELLO, payload_len))
 
     def convert_from_older_version(self, msg):
 
         if not isinstance(msg, HelloMessageV1):
-            raise TypeError("BroadcastMessageV1 is expected")
+            raise TypeError("HelloMessageV1 is expected")
 
         msg_bytes = msg.rawbytes()
         mem_view = memoryview(msg_bytes)
 
-        result_bytes = bytearray(len(msg_bytes) + NETWORK_NUM_LEN + VERSION_NUM_LEN)
-        payload_len = len(result_bytes) - HDR_COMMON_OFF
+        result_bytes = bytearray(HDR_COMMON_OFF + HelloMessage.HELLO_MESSAGE_LENGTH)
+        payload_len = HelloMessage.HELLO_MESSAGE_LENGTH
 
         off_v1 = 0
 

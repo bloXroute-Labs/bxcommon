@@ -4,4 +4,5 @@ from bxcommon.messages.bloxroute.hello_message import HelloMessage
 
 
 def hello_message():
-    return HelloMessage(bloxroute_version_manager.CURRENT_PROTOCOL_VERSION, DEFAULT_NETWORK_NUM, 1)
+    return HelloMessage(protocol_version=bloxroute_version_manager.CURRENT_PROTOCOL_VERSION,
+                        network_num=DEFAULT_NETWORK_NUM)

@@ -148,6 +148,10 @@ KEY_EXPIRATION_TIME_S = 30 * 60
 # return timeout in abstract node
 CANCEL_ALARMS = 0
 
+NODE_ID_SIZE_IN_BYTES = 16
+
+REQUEST_EXPIRATION_TIME = 60
+
 # keep constants_local.py file to override settings in the constants file
 # this part should be at the bottom of the file
 try:

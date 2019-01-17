@@ -5,25 +5,26 @@ from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
 from bxcommon.messages.bloxroute.v1.ping_message_v1 import PingMessageV1
 from bxcommon.messages.bloxroute.v1.pong_message_v1 import PongMessageV1
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
-from bxcommon.messages.bloxroute.v1.broadcast_message_v1 import BroadcastMessageV1
-from bxcommon.messages.bloxroute.v1.hello_message_v1 import HelloMessageV1
-from bxcommon.messages.bloxroute.v1.key_message_v1 import KeyMessageV1
-from bxcommon.messages.bloxroute.v1.tx_message_v1 import TxMessageV1
+from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
+from bxcommon.messages.bloxroute.v2.hello_message_v2 import HelloMessageV2
+from bxcommon.messages.bloxroute.key_message import KeyMessage
+from bxcommon.messages.bloxroute.tx_message import TxMessage
 
 
-class _BloxrouteMessageFactoryV1(_BloxrouteMessageFactory):
+class _BloxrouteMessageFactoryV2(_BloxrouteMessageFactory):
 
     _MESSAGE_TYPE_MAPPING = {
-        BloxrouteMessageType.HELLO: HelloMessageV1,
+        BloxrouteMessageType.HELLO: HelloMessageV2,
         BloxrouteMessageType.ACK: AckMessage,
         BloxrouteMessageType.PING: PingMessageV1,
         BloxrouteMessageType.PONG: PongMessageV1,
-        BloxrouteMessageType.BROADCAST: BroadcastMessageV1,
-        BloxrouteMessageType.TRANSACTION: TxMessageV1,
+        BloxrouteMessageType.BROADCAST: BroadcastMessage,
+        BloxrouteMessageType.TRANSACTION: TxMessage,
         BloxrouteMessageType.GET_TRANSACTIONS: GetTxsMessage,
         BloxrouteMessageType.TRANSACTIONS: TxsMessage,
-        BloxrouteMessageType.KEY: KeyMessageV1
+        BloxrouteMessageType.KEY: KeyMessage
     }
 
 
-bloxroute_message_factory_v1 = _BloxrouteMessageFactoryV1()
+bloxroute_message_factory_v2 = _BloxrouteMessageFactoryV2()
+
