@@ -34,7 +34,7 @@ def _fetch_peers(route_template, node_id):
         logger.warn("Got no outbound peers for endpoint: {}".format(node_url))
         return []
 
-    outbound_peers = [OutboundPeerModel(**o) for o in outbound_peers]
+    outbound_peers = [model_loader.load(OutboundPeerModel, o) for o in outbound_peers]
     config.blocking_resolve_peers(outbound_peers)
     return outbound_peers
 
@@ -120,3 +120,12 @@ def register_node(node_model):
         raise EnvironmentError("Unable to reach SDN and register this node. Please check connection.")
 
     return model_loader.load(NodeModel, node_config)
+
+
+# TODO: Remove this function once we had decided on a way to mark a gateway as a bloxroute controller gateway
+# Long term, we don't want to allow the gateway itself to specify whether it is an internal gateway - this should
+# rather be done via an admin console on the SDN or similar
+def set_node_as_internal_blockchain(node_id):
+    node_url = BxApiRoutes.node.format(node_id)
+    updated_node = http_service.patch_json(node_url, {"is_internal_blockchain": True})
+    return model_loader.load(NodeModel, updated_node)

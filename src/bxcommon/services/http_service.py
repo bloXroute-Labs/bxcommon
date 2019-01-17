@@ -37,3 +37,8 @@ def get_json(endpoint):
 def post_json(endpoint, payload=None):
     return _http_request("POST", endpoint, data=json.dumps(payload, cls=ClassJsonEncoder),
                          headers={"Content-Type": "application/json"})
+
+
+def patch_json(endpoint, payload=None):
+    return _http_request("PATCH", endpoint, data=json.dumps(payload, cls=ClassJsonEncoder),
+                         headers={"Content-Type": "application/json"})

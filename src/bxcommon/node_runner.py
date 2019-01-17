@@ -3,7 +3,7 @@ import json
 from bxcommon.models.node_model import NodeModel
 from bxcommon.network import network_event_loop_factory
 from bxcommon.services import sdn_http_service
-from bxcommon.utils import cli
+from bxcommon.utils import cli, model_loader
 from bxcommon.utils import config, logger
 from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 
@@ -23,10 +23,8 @@ def run_node(process_id_file_path, opts, node_class):
     cli.set_blockchain_network_number(opts, node_class.NODE_TYPE)
 
     if not node_model:
-        node_model = sdn_http_service.register_node(
-            NodeModel(node_type=node_class.NODE_TYPE, external_ip=opts.external_ip, external_port=opts.external_port,
-                      source_version=opts.source_version, protocol_version=opts.protocol_version,
-                      blockchain_network_num=opts.network_num))
+        opts.node_type = node_class.NODE_TYPE
+        node_model = sdn_http_service.register_node(model_loader.load(NodeModel, opts.__dict__))
 
     # Add opts from SDN, but don't overwrite CLI args
     for key, val in node_model.__dict__.items():

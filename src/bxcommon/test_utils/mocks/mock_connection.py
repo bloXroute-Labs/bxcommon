@@ -33,7 +33,7 @@ class MockConnection(object):
         self.num_bad_messages = 0
         self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
         self.message_handlers = None
-        self.network_num = node.opts.network_num
+        self.network_num = node.opts.blockchain_network_num
 
     def is_active(self):
         return self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED and \

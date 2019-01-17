@@ -38,7 +38,7 @@ class MockOpts(object):
 
     def __init__(self, node_id="foo", external_ip="127.0.0.1", external_port=8000, bloxroute_version="v1.5",
                  log_path="./", to_stdout=True, index=1, sid_start=1, sid_end=100000, sid_expire_time=99999,
-                 outbound_peers=None, network_num=DEFAULT_NETWORK_NUM):
+                 outbound_peers=None, blockchain_network_num=DEFAULT_NETWORK_NUM):
         if outbound_peers is None:
             outbound_peers = []
         self.node_id = node_id
@@ -52,4 +52,4 @@ class MockOpts(object):
         self.sid_end = sid_end
         self.sid_expire_time = sid_expire_time
         self.outbound_peers = outbound_peers
-        self.network_num = network_num
+        self.blockchain_network_num = blockchain_network_num

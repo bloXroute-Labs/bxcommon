@@ -68,8 +68,9 @@ def create_input_buffer_with_bytes(message_bytes):
 def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0.0.0", blockchain_address=None,
                      test_mode=None, peer_gateways=None, peer_relays=None, protocol_version=1, sid_expire_time=30,
                      bloxroute_version="bloxroute 1.5", include_default_btc_args=False, include_default_eth_args=False,
-                     network_num=DEFAULT_NETWORK_NUM, min_peer_gateways=0, remote_blockchain_ip=None,
-                     remote_blockchain_port=None, connect_to_remote_blockchain=False, **kwargs):
+                     blockchain_network_num=DEFAULT_NETWORK_NUM, min_peer_gateways=0, remote_blockchain_ip=None,
+                     remote_blockchain_port=None, connect_to_remote_blockchain=False, is_internal_gateway=False,
+                     is_internal_blockchain=False, ** kwargs):
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -102,12 +103,14 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "peer_relays": peer_relays,
         "outbound_peers": peer_gateways + peer_relays,
         "protocol_version": protocol_version,
-        "network_num": network_num,
+        "blockchain_network_num": blockchain_network_num,
         "min_peer_gateways": min_peer_gateways,
         "remote_blockchain_ip": remote_blockchain_ip,
         "remote_blockchain_port": remote_blockchain_port,
         "remote_blockchain_peer": remote_blockchain_peer,
-        "connect_to_remote_blockchain": connect_to_remote_blockchain
+        "connect_to_remote_blockchain": connect_to_remote_blockchain,
+        "is_internal_gateway": is_internal_gateway,
+        "is_internal_blockchain": is_internal_blockchain
     }
 
     if include_default_btc_args:
@@ -136,7 +139,7 @@ SID_SIZE = 100 * 1000 * 1000
 
 
 def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, sdn_socket_port=8888,
-                   relay_addresses=None, network_num=ALL_NETWORK_NUM, sid_expire_time=1000):
+                   relay_addresses=None, blockchain_network_num=ALL_NETWORK_NUM, sid_expire_time=1000):
     if relay_addresses is None:
         relay_addresses = []
     opts = Namespace()
@@ -154,6 +157,6 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
         "outbound_peers": relay_addresses,
         "idx": index,
         "test_mode": "",
-        "network_num": network_num,
+        "blockchain_network_num": blockchain_network_num,
     }
     return opts

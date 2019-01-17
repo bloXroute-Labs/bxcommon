@@ -125,7 +125,7 @@ def set_blockchain_network_number(opts, node_type):
     """
 
     if node_type == NodeType.RELAY:
-        opts.__dict__["network_num"] = ALL_NETWORK_NUM
+        opts.__dict__["blockchain_network_num"] = ALL_NETWORK_NUM
         return
 
     blockchain_network = sdn_http_service.fetch_blockchain_network(opts.blockchain_protocol, opts.blockchain_network)
@@ -140,7 +140,7 @@ def set_blockchain_network_number(opts, node_type):
         logger.fatal(error_msg)
         exit(1)
 
-    opts.__dict__["network_num"] = blockchain_network.network_num
+    opts.__dict__["blockchain_network_num"] = blockchain_network.network_num
 
 
 def merge_args(from_args, into_args):
