@@ -6,6 +6,7 @@ from contextlib import closing
 from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
+from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, ALL_NETWORK_NUM
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
@@ -88,6 +89,7 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
     opts = Namespace()
     opts.__dict__ = {
         "node_id": node_id,
+        "node_type": NodeType.GATEWAY,
         "sid_expire_time": sid_expire_time,
         "bloxroute_version": bloxroute_version,
         "external_ip": external_ip,
@@ -145,6 +147,7 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
     opts = Namespace()
     opts.__dict__ = {
         "node_id": "Relay {0}".format(index),
+        "node_type": NodeType.RELAY,
         "external_ip": external_ip,
         "external_port": port,
         "internal_ip": "0.0.0.0",

@@ -181,10 +181,10 @@ class AbstractNodeTest(AbstractTestCase):
     def test_add_connection(self, mock_fileno):
         test_socket = MagicMock(spec=socket.socket)
         socket_connection = SocketConnection(test_socket, self.remote_node)
-        self.assertEqual(4, self.local_node.alarm_queue.uniq_count)
+        self.assertEqual(5, self.local_node.alarm_queue.uniq_count)
         self.assertIsNone(self.local_node.connection_pool.by_fileno[self.remote_fileno])
         self.local_node._add_connection(socket_connection, self.remote_ip, self.remote_port, True)
-        self.assertEqual(5, self.local_node.alarm_queue.uniq_count)
+        self.assertEqual(6, self.local_node.alarm_queue.uniq_count)
         self.assertEqual(self.connection.fileno,
                          self.local_node.connection_pool.by_fileno[self.remote_fileno].fileno.fileno())
 

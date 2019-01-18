@@ -11,6 +11,7 @@ from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import logger
 from bxcommon.utils.alarm import AlarmQueue
+from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 
@@ -47,6 +48,7 @@ class AbstractNode(object):
 
         self.init_throughput_logging()
         self.init_node_info_logging()
+        self.init_memory_stats_logging()
 
         # TODO: clean this up alongside outputbuffer holding time
         # this is Nagle's algorithm and we need to implement it properly
@@ -417,9 +419,19 @@ class AbstractNode(object):
         node_info_statistics.set_node(self)
         self.alarm_queue.register_alarm(constants.INFO_STATS_INTERVAL, node_info_statistics.flush_info)
 
+    def init_memory_stats_logging(self):
+        memory_statistics.set_node(self)
+        self.alarm_queue.register_alarm(constants.MEMORY_STATS_INTERVAL, self.record_mem_stats)
+
     def flush_all_send_buffers(self):
         for conn in self.connection_pool:
             if conn.socket_connection.can_send:
                 conn.socket_connection.send()
         return self.FLUSH_SEND_BUFFERS_INTERVAL
 
+    def record_mem_stats(self):
+        """
+        When overridden, records identified memory stats and flushes them to std out
+        :returns memory stats flush interval
+        """
+        return memory_statistics.flush_info()

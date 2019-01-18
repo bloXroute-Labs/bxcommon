@@ -1,6 +1,9 @@
+from pympler import asizeof
+
 from bxcommon import constants
 from bxcommon.utils import logger
 from bxcommon.utils.expiration_queue import ExpirationQueue
+from bxcommon.utils.stats import hooks
 
 
 # A manager for the transaction mappings
@@ -111,3 +114,33 @@ class TransactionService(object):
                 logger.debug("Block recovery: Short id {0} requested by client is unknown by server.".format(short_id))
 
         return txs_details
+
+    def log_tx_service_mem_stats(self, network_num=0):
+        class_name = self.__class__.__name__
+        hooks.add_obj_mem_stats(
+            class_name,
+            network_num,
+            self.txhash_to_sid,
+            "txhash_to_sid",
+            asizeof.asized(self.txhash_to_sid))
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            network_num,
+            self.hash_to_contents,
+            "hash_to_contents",
+            asizeof.asized(self.hash_to_contents))
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            network_num,
+            self.sid_to_txid,
+            "sid_to_txid",
+            asizeof.asized(self.sid_to_txid))
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            network_num,
+            self.unassigned_hashes,
+            "Unassigned_hashes",
+            asizeof.asized(self.unassigned_hashes))
