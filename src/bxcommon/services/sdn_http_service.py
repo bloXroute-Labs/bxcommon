@@ -125,7 +125,7 @@ def register_node(node_model):
 # TODO: Remove this function once we had decided on a way to mark a gateway as a bloxroute controller gateway
 # Long term, we don't want to allow the gateway itself to specify whether it is an internal gateway - this should
 # rather be done via an admin console on the SDN or similar
-def set_node_as_internal_blockchain(node_id):
+def set_node_as_internal_gateway(node_id):
     node_url = BxApiRoutes.node.format(node_id)
-    updated_node = http_service.patch_json(node_url, {"is_internal_blockchain": True})
+    updated_node = http_service.patch_json(node_url, {"is_internal_gateway": True})
     return model_loader.load(NodeModel, updated_node)

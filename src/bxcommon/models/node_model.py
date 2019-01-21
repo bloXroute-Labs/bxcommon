@@ -1,8 +1,8 @@
 class NodeModel(object):
     def __init__(self, node_type=None, external_ip=None, external_port=None, network=None, online=None, node_id=None,
-                 sid_start=None, sid_end=None, sid_expire_time=None, last_pong_time=None,
-                 is_internal_blockchain=None, is_internal_gateway=None, source_version=None, protocol_version=None,
-                 blockchain_network_num=None, blockchain_ip=None, blockchain_port=None, node_public_key=None, hostname=None):
+                 sid_start=None, sid_end=None, sid_expire_time=None, last_pong_time=None, is_gateway_miner=None,
+                 is_internal_gateway=None, source_version=None, protocol_version=None, blockchain_network_num=None,
+                 blockchain_ip=None, blockchain_port=None, node_public_key=None, hostname=None):
         self.external_port = external_port
         self.network = network
         self.online = online
@@ -13,7 +13,7 @@ class NodeModel(object):
         self.node_type = node_type
         self.external_ip = external_ip
         self.last_pong_time = last_pong_time
-        self.is_internal_blockchain = is_internal_blockchain
+        self.is_gateway_miner = is_gateway_miner
         self.is_internal_gateway = is_internal_gateway
         self.source_version = source_version
         self.protocol_version = protocol_version

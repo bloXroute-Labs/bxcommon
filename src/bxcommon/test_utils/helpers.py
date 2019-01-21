@@ -71,7 +71,7 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
                      bloxroute_version="bloxroute 1.5", include_default_btc_args=False, include_default_eth_args=False,
                      blockchain_network_num=DEFAULT_NETWORK_NUM, min_peer_gateways=0, remote_blockchain_ip=None,
                      remote_blockchain_port=None, connect_to_remote_blockchain=False, is_internal_gateway=False,
-                     is_internal_blockchain=False, ** kwargs):
+                     is_gateway_miner=False, ** kwargs):
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -112,7 +112,7 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "remote_blockchain_peer": remote_blockchain_peer,
         "connect_to_remote_blockchain": connect_to_remote_blockchain,
         "is_internal_gateway": is_internal_gateway,
-        "is_internal_blockchain": is_internal_blockchain
+        "is_gateway_miner": is_gateway_miner
     }
 
     if include_default_btc_args:

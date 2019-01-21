@@ -115,7 +115,7 @@ class BxApiRoutes(object):
     node = "/nodes/{0}"
     node_relays = "/nodes/{0}/peers"
     node_gateways = "/nodes/{0}/gateways"
-    node_remote_blockchain = "/nodes/internal-blockchains"
+    node_remote_blockchain = "/nodes/blockchain-peers"
     node_event = "/nodes/{0}/events"
     blockchain_network = "/blockchain-networks/{0}/{1}"
     blockchain_networks = "/blockchain-networks"
