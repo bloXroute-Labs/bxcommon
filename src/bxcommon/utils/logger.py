@@ -88,8 +88,10 @@ class Log(object):
             while alive:
                 with self.lock:
                     alive = self.is_alive
-                    while not self.flush_immediately and self.log_size < Log.LOG_SIZE and self.is_alive:
+                    while self.log_size < Log.LOG_SIZE and self.is_alive:
                         self.needs_flush.wait()
+                        if self.flush_immediately:
+                            break
 
                     oldlog = self.log
                     oldsize = self.log_size
