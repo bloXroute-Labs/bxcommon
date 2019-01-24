@@ -24,8 +24,7 @@ def fetch_config(node_id):
         return None
 
 
-def _fetch_peers(route_template, node_id):
-    node_url = route_template.format(node_id)
+def _fetch_peers(node_url, node_id=None):
     outbound_peers = http_service.get_json(node_url)
     logger.debug("Retrieved outbound peers for id {0} from endpoint {1} : {2}"
                  .format(node_id, node_url, outbound_peers))
@@ -40,15 +39,18 @@ def _fetch_peers(route_template, node_id):
 
 
 def fetch_relay_peers(node_id):
-    return _fetch_peers(BxApiRoutes.node_relays, node_id)
+    node_url = BxApiRoutes.node_relays.format(node_id)
+    return _fetch_peers(node_url, node_id)
 
 
 def fetch_gateway_peers(node_id):
-    return _fetch_peers(BxApiRoutes.node_gateways, node_id)
+    node_url = BxApiRoutes.node_gateways.format(node_id)
+    return _fetch_peers(node_url, node_id)
 
 
-def fetch_remote_blockchain_peer(node_id):
-    peers = _fetch_peers(BxApiRoutes.node_remote_blockchain, node_id)
+def fetch_remote_blockchain_peer(network_num):
+    node_url = BxApiRoutes.node_remote_blockchain.format(network_num)
+    peers = _fetch_peers(node_url)
     if len(peers) != 1:
         logger.warn("Did not get expected number of peers from SDN.")
         return None
