@@ -66,7 +66,7 @@ class Log(object):
                 self.log.append(msg)
                 self.log_size += len(msg)
 
-                if self.log_size >= Log.LOG_SIZE:
+                if self.log_size >= Log.LOG_SIZE or self.flush_immediately:
                     self.needs_flush.notify()
 
     def close(self):
