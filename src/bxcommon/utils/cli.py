@@ -116,20 +116,38 @@ def set_sdn_url():
     return get_args().sdn_url
 
 
-def set_blockchain_network_number(opts, node_type):
+def parse_blockchain_opts(opts, node_type):
     """
-    Retrieves network number from SDN for provided blockchain-protocol and blockchain-network cli arguments and sets
-    it to network_num argument. For relays the values is always ALL_NETWORK_NUM (0).
+    Get the blockchain network info from the SDN and set the default values for the blockchain cli params if they were
+    not passed in the args.
 
+    :param node_type:
     :param opts: argument list
-    :param node_type: node type
     """
+    opts_dict = opts.__dict__
 
     if node_type == NodeType.RELAY:
-        opts.__dict__["blockchain_network_num"] = ALL_NETWORK_NUM
+        opts_dict["blockchain_network_num"] = ALL_NETWORK_NUM
         return
 
-    blockchain_network = sdn_http_service.fetch_blockchain_network(opts.blockchain_protocol, opts.blockchain_network)
+    network_info = get_blockchain_network_info(opts.blockchain_protocol, opts.blockchain_network)
+
+    for key, value in opts_dict.iteritems():
+        if value is None:
+            if key in network_info.default_attributes:
+                opts_dict[key] = network_info.default_attributes[key.encode(constants.DEFAULT_TEXT_ENCODING)]
+
+    opts_dict["blockchain_network_num"] = network_info.network_num
+
+
+def get_blockchain_network_info(protocol, network):
+    """
+    Retrieves the blockchain network info from the SDN based on blockchain-protocol and blockchain-network cli arguments.
+
+    :param protocol: blockchain protocol
+    :param network: blcokchain network
+    """
+    blockchain_network = sdn_http_service.fetch_blockchain_network(protocol, network)
 
     if blockchain_network is None:
         all_blockchain_networks = sdn_http_service.fetch_blockchain_networks()
@@ -137,11 +155,11 @@ def set_blockchain_network_number(opts, node_type):
         all_networks_names = "\n".join(
             map(lambda n: "{} - {}".format(n.protocol, n.network), all_blockchain_networks))
         error_msg = "Network number does not exist for blockchain protocol {} and network {}.\nValid options:\n{}" \
-            .format(opts.blockchain_protocol, opts.blockchain_network, all_networks_names)
+            .format(protocol, network, all_networks_names)
         logger.fatal(error_msg)
         exit(1)
 
-    opts.__dict__["blockchain_network_num"] = blockchain_network.network_num
+    return blockchain_network
 
 
 def merge_args(from_args, into_args):

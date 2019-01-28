@@ -20,7 +20,7 @@ def run_node(process_id_file_path, opts, node_class):
         # Test network, get pre-configured peers from the SDN.
         node_model = sdn_http_service.fetch_config(opts.node_id)
 
-    cli.set_blockchain_network_number(opts, node_class.NODE_TYPE)
+    cli.parse_blockchain_opts(opts, node_class.NODE_TYPE)
 
     if not node_model:
         opts.node_type = node_class.NODE_TYPE
