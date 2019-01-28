@@ -21,6 +21,7 @@ def run_node(process_id_file_path, opts, node_class):
         node_model = sdn_http_service.fetch_config(opts.node_id)
 
     cli.parse_blockchain_opts(opts, node_class.NODE_TYPE)
+    cli.set_os_version(opts)
 
     if not node_model:
         opts.node_type = node_class.NODE_TYPE

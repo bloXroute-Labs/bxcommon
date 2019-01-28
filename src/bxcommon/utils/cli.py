@@ -162,6 +162,10 @@ def get_blockchain_network_info(protocol, network):
     return blockchain_network
 
 
+def set_os_version(opts):
+    opts.__dict__["os_version"] = constants.OS_VERSION
+
+
 def merge_args(from_args, into_args):
     for key, val in from_args.__dict__.items():
         into_args.__dict__[key] = val

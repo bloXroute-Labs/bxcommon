@@ -1,8 +1,10 @@
+import platform
 import socket
 
 from bxcommon.utils.log_level import LogLevel
 
 HOSTNAME = socket.gethostname()
+OS_VERSION = platform.platform()
 
 MAX_CONN_BY_IP = 30  # Maximum number of connections that an IP address can have
 
