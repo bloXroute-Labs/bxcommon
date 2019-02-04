@@ -141,7 +141,8 @@ SID_SIZE = 100 * 1000 * 1000
 
 
 def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, sdn_socket_port=8888,
-                   relay_addresses=None, blockchain_network_num=ALL_NETWORK_NUM, sid_expire_time=1000):
+                   relay_addresses=None, blockchain_network_num=ALL_NETWORK_NUM, sid_size=SID_SIZE,
+                   sid_expire_time=1000):
     if relay_addresses is None:
         relay_addresses = []
     opts = Namespace()
@@ -154,11 +155,10 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
         "internal_port": port,
         "sdn_socket_ip": sdn_socket_ip,
         "sdn_socket_port": sdn_socket_port,
-        "sid_start": index * SID_SIZE + 1,
-        "sid_end": (index + 1) * SID_SIZE,  # tx_service is inclusive
+        "sid_start": index * sid_size + 1,
+        "sid_end": (index + 1) * sid_size,  # tx_service is inclusive
         "sid_expire_time": sid_expire_time,
         "outbound_peers": relay_addresses,
-        "idx": index,
         "test_mode": "",
         "blockchain_network_num": blockchain_network_num,
     }

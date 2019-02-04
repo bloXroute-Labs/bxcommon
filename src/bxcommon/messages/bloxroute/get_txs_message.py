@@ -22,6 +22,7 @@ class GetTxsMessage(Message):
         :param buf: message bytes
         """
 
+        self._short_ids = None
         if buf is None:
             buf = self._short_ids_to_bytes(short_ids)
             super(GetTxsMessage, self).__init__(self.MESSAGE_TYPE, len(buf) - constants.HDR_COMMON_OFF, buf)
@@ -31,7 +32,6 @@ class GetTxsMessage(Message):
 
             self.buf = buf
             self._memoryview = memoryview(self.buf)
-            self._short_ids = None
 
     def get_short_ids(self):
         if self._short_ids is None:

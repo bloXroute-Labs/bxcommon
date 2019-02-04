@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from pympler import asizeof
 
 from bxcommon import constants
@@ -6,141 +8,164 @@ from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.stats import hooks
 
 
-# A manager for the transaction mappings
-# We assume in this class that no more than MAX_ID unassigned services exist at a time
-
-
 class TransactionService(object):
-    # Size of a short id
-    # If this is changed, make sure to change it in the TxMessage
-    SHORT_ID_SIZE = 4
+    """
+    Service for managing transaction mappings.
+    In this class, we assume that no more than MAX_ID unassigned transactions exist at a time.
+
+    Constants
+    ---------
+    MAX_ID: maximum short id value (e.g. number of bits in a short id)
+    SHORT_ID_SIZE: number of bytes in a short id, must match TxMessage
+    MAX_SLOP_TIME: max amount of time we wait for nodes to drop stale short ids
+
+
+    Attributes
+    ----------
+    node: reference to node holding transaction service reference
+    txhash_to_sids: mapping of transaction long hashes to (potentially multiple) short ids
+    sid_to_txhash: mapping of short id to transaction long hashes
+    txhash_to_contents: mapping of transaction long hashes to transaction contents
+    tx_assignment_expire_queue: expiration time of short ids
+    tx_assign_alarm_scheduled: if an alarm to expire a batch of short ids is currently active
+    """
+
     MAX_ID = 2 ** 32
-
-    # Maximum amount of time we wait for the nodes to drop stale IDs
+    SHORT_ID_SIZE = 4
     MAX_SLOP_TIME = 120
-
-    INITIAL_DELAY = 0
 
     def __init__(self, node):
         self.node = node
-        self.sid_start = None
-        self.sid_end = None
-
-        # txhash is the longhash of the transaction, sid is the short ID for the transaction
-        self.txhash_to_sid = {}
-
-        # txid is the (unique) list of [time assigned, txhash]
-        self.sid_to_txid = {}
-        self.hash_to_contents = {}
-        self.unassigned_hashes = set()
+        self.txhash_to_sids = defaultdict(set)
+        self.sid_to_txhash = {}
+        self.txhash_to_contents = {}
         self.tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
         self.tx_assign_alarm_scheduled = False
 
-    def expire_old_ids(self):
-        self.tx_assignment_expire_queue.remove_expired(remove_callback=self.remove_tx_id)
+    def assign_short_id(self, transaction_hash, short_id):
+        """
+        Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
+        :param transaction_hash: transaction long hash
+        :param short_id: short id to be mapped to transaction
+        """
+        if short_id == constants.NULL_TX_SID:
+            logger.warn("Attempt to assign null SID to transaction hash {}. Ignoring.".format(transaction_hash))
+            return
+        self.txhash_to_sids[transaction_hash].add(short_id)
+        self.sid_to_txhash[short_id] = transaction_hash
+        self.tx_assignment_expire_queue.add(short_id)
 
-        if self.tx_assignment_expire_queue:
-            # Reschedule this function to be fired again after MAX_VALID_TIME seconds
+        if not self.tx_assign_alarm_scheduled:
+            self.node.alarm_queue.register_alarm(self.node.opts.sid_expire_time, self.expire_old_assignments)
+            self.tx_assign_alarm_scheduled = True
+
+    def get_short_id(self, transaction_hash):
+        """
+        Fetches a single short id for transaction. If the transaction has multiple short id mappings, just gets
+        the first one.
+        :param transaction_hash: transaction long hash
+        :return: short id
+        """
+        return next(iter(self.get_short_ids(transaction_hash)))
+
+    def get_short_ids(self, transaction_hash):
+        """
+        Fetches all short ids for a given transactions
+        :param transaction_hash: transaction long hash
+        :return: set of short ids
+        """
+        if transaction_hash in self.txhash_to_sids:
+            return self.txhash_to_sids[transaction_hash]
+        else:
+            return {constants.NULL_TX_SID}
+
+    def get_transaction(self, short_id):
+        """
+        Fetches transaction info for a given short id.
+        Results might be None.
+        :param short_id:
+        :return: transaction hash, transaction contents.
+        """
+        if short_id in self.sid_to_txhash:
+            transaction_hash = self.sid_to_txhash[short_id]
+            if transaction_hash in self.txhash_to_contents:
+                return transaction_hash, self.txhash_to_contents[transaction_hash]
+            else:
+                return transaction_hash, None
+        else:
+            return None, None
+
+    def get_transactions(self, short_ids):
+        """
+        Fetches all transaction info for a set of short ids.
+        Short ids without a transaction entry will be omitted.
+        :param short_ids: list of short ids
+        :return: list of (transaction hash, transaction contents)
+        """
+        transactions = []
+        for short_id in short_ids:
+            if short_id in self.sid_to_txhash:
+                transaction_hash = self.sid_to_txhash[short_id]
+                if transaction_hash in self.txhash_to_contents:
+                    tx = self.txhash_to_contents[transaction_hash]
+                    transactions.append((short_id, transaction_hash, tx))
+                else:
+                    logger.warn("Short id {} was requested but is unknown.".format(short_id))
+            else:
+                logger.warn("Short id {} was requested but is unknown.".format(short_id))
+
+        return transactions
+
+    def expire_old_assignments(self):
+        """
+        Clean up expired short ids.
+        """
+        logger.info("Expiring old short id assignments. Total entries: {}".format(len(self.tx_assignment_expire_queue)))
+        self.tx_assignment_expire_queue.remove_expired(remove_callback=self._expire_assignment)
+        logger.info("Finished cleaning up short ids. Entries remaining: {}".format(len(self.tx_assignment_expire_queue)))
+        if len(self.tx_assignment_expire_queue) > 0:
             return self.node.opts.sid_expire_time
         else:
             self.tx_assign_alarm_scheduled = False
             return 0
 
-    def remove_tx_id(self, tx_id):
-        tx_hash = tx_id[1]
-
-        if tx_hash in self.txhash_to_sid:
-            sid = self.txhash_to_sid[tx_hash]
-            del self.txhash_to_sid[tx_hash]
-
-            if sid in self.sid_to_txid:
-                del self.sid_to_txid[sid]
-
-    # Assigns the transaction to the given short id
-    def assign_tx_to_sid(self, tx_hash, sid, tx_time):
-        txid = [tx_time, tx_hash]
-
-        self.txhash_to_sid[tx_hash] = sid
-        self.sid_to_txid[sid] = txid
-
-        self.tx_assignment_expire_queue.add(txid)
-
-        if not self.tx_assign_alarm_scheduled:
-            self.node.alarm_queue.register_alarm(self.node.opts.sid_expire_time, self.expire_old_ids)
-            self.tx_assign_alarm_scheduled = True
-
-    def get_txid(self, tx_hash):
-        if tx_hash in self.txhash_to_sid:
-            logger.debug("XXX: Found the tx_hash in my mappings!")
-            return self.txhash_to_sid[tx_hash]
-
-        return constants.NULL_TX_SID
-
-    def get_tx_from_sid(self, sid):
-        tx_hash = None
-
-        if sid in self.sid_to_txid:
-            tx_hash = self.sid_to_txid[sid][1]
-
-            logger.debug("Looking for hash: " + repr(tx_hash))
-            if tx_hash in self.hash_to_contents:
-                return tx_hash, self.hash_to_contents[tx_hash]
-            logger.debug("Could not find hash: " + repr(self.hash_to_contents.keys()[0:10]))
-
-        return tx_hash, None
-
-    def get_tx_details_from_sids(self, short_ids):
+    def _expire_assignment(self, short_id):
         """
-        Finds details for transactions with short ids
-
-        :param short_ids: array of transactions short ids
-        :return: array of tuples (short id, tx hash, tx contents)
+        Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
+        :param short_id: short id to clean up
         """
+        if short_id in self.sid_to_txhash:
+            transaction_hash = self.sid_to_txhash.pop(short_id)
+            if transaction_hash in self.txhash_to_sids:
+                short_ids = self.txhash_to_sids[transaction_hash]
 
-        txs_details = []
-
-        for short_id in short_ids:
-            if short_id in self.sid_to_txid:
-                tx_hash = self.sid_to_txid[short_id][1]
-
-                if tx_hash in self.hash_to_contents:
-                    tx = self.hash_to_contents[tx_hash]
-
-                    txs_details.append((short_id, tx_hash, tx))
+                # Only clear mapping and txhash_to_contents if last SID assignment
+                if len(short_ids) == 1:
+                    del self.txhash_to_sids[transaction_hash]
+                    if transaction_hash in self.txhash_to_contents:
+                        del self.txhash_to_contents[transaction_hash]
                 else:
-                    logger.debug(
-                        "Block recovery: Contents of tx by short id {0} is unknown by server.".format(short_id))
-            else:
-                logger.debug("Block recovery: Short id {0} requested by client is unknown by server.".format(short_id))
-
-        return txs_details
+                    short_ids.remove(short_id)
 
     def log_tx_service_mem_stats(self, network_num=0):
         class_name = self.__class__.__name__
         hooks.add_obj_mem_stats(
             class_name,
             network_num,
-            self.txhash_to_sid,
+            self.txhash_to_sids,
             "txhash_to_sid",
-            asizeof.asized(self.txhash_to_sid))
+            asizeof.asized(self.txhash_to_sids))
 
         hooks.add_obj_mem_stats(
             class_name,
             network_num,
-            self.hash_to_contents,
+            self.txhash_to_contents,
             "hash_to_contents",
-            asizeof.asized(self.hash_to_contents))
+            asizeof.asized(self.txhash_to_contents))
 
         hooks.add_obj_mem_stats(
             class_name,
             network_num,
-            self.sid_to_txid,
+            self.sid_to_txhash,
             "sid_to_txid",
-            asizeof.asized(self.sid_to_txid))
-
-        hooks.add_obj_mem_stats(
-            class_name,
-            network_num,
-            self.unassigned_hashes,
-            "Unassigned_hashes",
-            asizeof.asized(self.unassigned_hashes))
+            asizeof.asized(self.sid_to_txhash))
