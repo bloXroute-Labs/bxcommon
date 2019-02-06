@@ -177,11 +177,13 @@ def set_immediate_flush(flush_immediately):
         _log.needs_flush.notify()
 
 
-def log(level, logtype, msg, log_time):
+def log(level, msg):
     global _hostname
-
     if level < _log_level:
         return  # No logging if it's not a high enough priority message.
+
+    log_time = datetime.utcnow()
+    logtype = "{}  ".format(level.name)
 
     # loc is kept for debugging purposes. Uncomment the following line if you need to see the execution path.
     #    msg = loc + ": " + msg
@@ -208,24 +210,28 @@ def log(level, logtype, msg, log_time):
 
 
 def debug(msg):
-    log(LogLevel.DEBUG, "DEBUG  ", msg, datetime.utcnow())
+    log(LogLevel.DEBUG, msg)
+
+
+def trace(msg):
+    log(LogLevel.TRACE, msg)
 
 
 def error(msg):
-    log(LogLevel.ERROR, "ERROR  ", msg, datetime.utcnow())
+    log(LogLevel.ERROR, msg)
 
 
 def fatal(msg):
-    log(LogLevel.FATAL, "FATAL  ", msg, datetime.utcnow())
+    log(LogLevel.FATAL, msg)
 
 
 def info(msg):
-    log(LogLevel.INFO, "INFO  ", msg, datetime.utcnow())
+    log(LogLevel.INFO, msg)
 
 
 def warn(msg):
-    log(LogLevel.WARN, "WARN  ", msg, datetime.utcnow())
+    log(LogLevel.WARN, msg)
 
 
 def statistics(msg):
-    log(LogLevel.STATS, "STATS  ", msg, datetime.utcnow())
+    log(LogLevel.STATS, msg)

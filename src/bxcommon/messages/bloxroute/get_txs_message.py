@@ -70,3 +70,6 @@ class GetTxsMessage(Message):
             off += constants.UL_INT_SIZE_IN_BYTES
 
         self._short_ids = short_ids
+
+    def __repr__(self):
+        return "GetTxsMessage<num_short_ids: {}>".format(len(self.get_short_ids()))

@@ -5,6 +5,7 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.crypto import SHA256_HASH_LEN
+from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.object_hash import ObjectHash
 
 
@@ -32,6 +33,9 @@ class BroadcastMessage(Message):
         self._msg_hash = None
         self._network_num = None
         self._blob = None
+
+    def log_level(self):
+        return LogLevel.INFO
 
     def msg_hash(self):
         if self._msg_hash is None:
@@ -69,4 +73,7 @@ class BroadcastMessage(Message):
 
         return network_num
 
-
+    def __repr__(self):
+        return "BroadcastMessage<network_num: {}, msg_hash: {}, blob_length: {}".format(self.network_num(),
+                                                                                        self.msg_hash(),
+                                                                                        len(self.blob()))

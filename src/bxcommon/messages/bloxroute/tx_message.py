@@ -34,7 +34,7 @@ class TxMessage(Message):
             self.buf[off:off + len(tx_val)] = tx_val
             off += len(tx_val)
 
-            Message.__init__(self, self.MESSAGE_TYPE, off - HDR_COMMON_OFF, buf)
+            super(TxMessage, self).__init__(self.MESSAGE_TYPE, off - HDR_COMMON_OFF, buf)
         else:
             assert not isinstance(buf, str)
             self.buf = buf

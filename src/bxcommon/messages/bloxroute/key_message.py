@@ -4,6 +4,7 @@ from bxcommon.constants import HDR_COMMON_OFF, NETWORK_NUM_LEN
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils.crypto import KEY_SIZE, SHA256_HASH_LEN
+from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.object_hash import ObjectHash
 
 
@@ -33,6 +34,9 @@ class KeyMessage(Message):
         self._msg_hash = None
         self._network_num = None
 
+    def log_level(self):
+        return LogLevel.INFO
+
     def msg_hash(self):
         if self._msg_hash is None:
             self._msg_hash = ObjectHash(self._memoryview[HDR_COMMON_OFF:HDR_COMMON_OFF + SHA256_HASH_LEN])
@@ -50,3 +54,7 @@ class KeyMessage(Message):
             self._network_num, = struct.unpack_from("<L", self.buf, off)
 
         return self._network_num
+
+    def __repr__(self):
+        return "KeyMessage<network_num: {}, msg_hash: {}".format(self.network_num(),
+                                                                 self.msg_hash())

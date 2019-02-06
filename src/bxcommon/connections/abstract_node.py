@@ -123,7 +123,7 @@ class AbstractNode(object):
             logger.warn("Got peer update with no peers.")
             return
 
-        logger.info("Processing updated outbound peers: {}.".format(outbound_peer_models))
+        logger.trace("Processing updated outbound peers: {}.".format(outbound_peer_models))
 
         # Remove peers not in updated list or from command-line args.
         remove_peers = []
@@ -149,7 +149,6 @@ class AbstractNode(object):
             peer_id = peer.node_id
             if not self.connection_pool.has_connection(peer_ip, peer_port):
                 self.enqueue_connection(peer_ip, peer_port)
-                logger.debug("enqueue connection: {} {}.".format(peer_ip, peer_port))
         self.outbound_peers = outbound_peer_models
 
     def on_updated_sid_space(self, sid_start, sid_end):
@@ -244,14 +243,13 @@ class AbstractNode(object):
                   connection_type=ConnectionType.RELAY):
         """
         Broadcasts message msg to connections of the specified type except requester.
-
-        TODO: refactor some sort of index so iterate over only connection_type
         """
 
         if broadcasting_conn is not None:
-            logger.info("Broadcasting {} to {} connections from {}.".format(msg, connection_type, broadcasting_conn))
+            logger.log(msg.log_level(), "Broadcasting {} to {} connections from {}."
+                       .format(msg, connection_type, broadcasting_conn))
         else:
-            logger.info("Broadcasting {} to {} connections.".format(msg, connection_type))
+            logger.log(msg.log_level(), "Broadcasting {} to {} connections.".format(msg, connection_type))
 
         if network_num is None:
             broadcast_net_num = self.network_num
@@ -276,13 +274,14 @@ class AbstractNode(object):
         """
         Add address to the queue of outbound connections
         """
-
+        logger.debug("Enqueuing connection to {}:{}".format(ip, port))
         self.connection_queue.append((ip, port))
 
     def enqueue_disconnect(self, fileno):
         """
         Add address to the queue of connections to disconnect
         """
+        logger.debug("Enqueuing disconnect from {}".format(fileno))
         self.disconnect_queue.append(fileno)
 
     def pop_next_connection_address(self):
@@ -326,7 +325,7 @@ class AbstractNode(object):
         if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
             self.sdn_connection = conn_obj
 
-        logger.info("Adding connection: {} with state: {}.".format(conn_obj, conn_obj.state))
+        logger.info("Adding connection: {}.".format(conn_obj))
 
     def _connection_timeout(self, conn):
         """
@@ -334,10 +333,10 @@ class AbstractNode(object):
         If it is not established, we give up for untrusted connections and try again for trusted connections.
         """
 
-        logger.debug("Connection timeout, on connection with {0}".format(conn.peer_desc))
+        logger.debug("Checking connection status: {}".format(conn))
 
         if conn.state & ConnectionState.ESTABLISHED:
-            logger.debug("Turns out connection was initialized, carrying on with {0}".format(conn.peer_desc))
+            logger.debug("Connection is still established: {}".format(conn))
 
             if self.schedule_pings_on_timeout:
                 self.alarm_queue.register_alarm(constants.PING_INTERVAL_SEC, conn.send_ping)
@@ -345,12 +344,11 @@ class AbstractNode(object):
             return constants.CANCEL_ALARMS
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            logger.debug("We're already closing the connection to {0} (or have closed it). Ignoring timeout."
-                         .format(conn.peer_desc))
+            logger.debug("Connection has already been marked for closure: {}".format(conn))
             return constants.CANCEL_ALARMS
 
         # Clean up the old connection and retry it if it is trusted
-        logger.info("Connection has timed out: {}".format(conn))
+        logger.debug("Connection has timed out: {}".format(conn))
         self.destroy_conn(conn, retry_connection=True)
 
         # It is connect_to_address's job to schedule this function.
@@ -393,11 +391,13 @@ class AbstractNode(object):
         self.num_retries_by_ip[ip] += 1
 
         if self.should_retry_connection(ip, port, connection_type):
-            logger.info("Retrying connection to {}:{}.".format(ip, port))
+            logger.info("Retrying {} connection to {}:{}. Attempt #{}."
+                        .format(connection_type, ip, port, self.num_retries_by_ip[ip]))
             self.enqueue_connection(ip, port)
         else:
             del self.num_retries_by_ip[ip]
-            logger.warn("Maximum retry attempts exceeded. Dropping connection to {}:{}.".format(ip, port))
+            logger.warn("Maximum retry attempts exceeded. Dropping {} connection to {}:{}."
+                        .format(connection_type, ip, port))
             self.on_failed_connection_retry(ip, port, connection_type)
 
         return 0

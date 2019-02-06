@@ -34,13 +34,14 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
 
     def get_message_hash_preview_from_input_buffer(self, input_buffer):
         header_plus_hash_length = self.base_message_type.HEADER_LENGTH + SHA256_HASH_LEN
-        is_full_message, _command, payload_length = self.get_message_header_preview_from_input_buffer(input_buffer)
-        if payload_length is None or input_buffer.length < header_plus_hash_length:
+        _is_full_message, _command, payload_length = self.get_message_header_preview_from_input_buffer(input_buffer)
+        is_full_header = input_buffer.length >= header_plus_hash_length
+        if payload_length is None or not is_full_header:
             return False, None, None
         else:
             message_hash = input_buffer.peek_message(header_plus_hash_length)[self.base_message_type.HEADER_LENGTH:
                                                                               header_plus_hash_length]
-            return is_full_message, ObjectHash(message_hash), payload_length
+            return is_full_header, ObjectHash(message_hash), payload_length
 
 
 bloxroute_message_factory = _BloxrouteMessageFactory()

@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.message_buffer_builder import PayloadElement, PayloadBlock
 from bxcommon.constants import HDR_COMMON_OFF
 from bxcommon.messages.bloxroute.message import Message
@@ -40,5 +41,5 @@ class KeepAliveMessage(Message):
             self.__unpack()
         return self._nonce
 
-    def should_log_debug(self):
-        return True
+    def log_level(self):
+        return LogLevel.DEBUG

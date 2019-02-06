@@ -6,4 +6,7 @@ class PingMessage(KeepAliveMessage):
     MESSAGE_TYPE = BloxrouteMessageType.PING
 
     def __init__(self, nonce=None, buf=None):
-        KeepAliveMessage.__init__(self, msg_type=self.MESSAGE_TYPE, nonce=nonce, buf=buf)
+        super(PingMessage, self).__init__(msg_type=self.MESSAGE_TYPE, nonce=nonce, buf=buf)
+
+    def __repr__(self):
+        return "PingMessage<nonce: {}>".format(self.nonce())

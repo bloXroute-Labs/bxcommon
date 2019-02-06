@@ -121,8 +121,6 @@ class InternalNodeConnection(AbstractConnection):
         """
         if self.can_send_pings:
             nonce = nonce_generator.get_nonce()
-            logger.debug("sent ping message to {} {} peer with nonce {}.".format(self.peer_desc, self.CONNECTION_TYPE,
-                                                                                 nonce))
             msg = PingMessage(nonce=nonce)
             self.enqueue_msg(msg)
             self.sent_response_messages_timestamps.contents[nonce] = msg.timestamp
@@ -130,8 +128,6 @@ class InternalNodeConnection(AbstractConnection):
 
     def msg_ping(self, msg):
         nonce = msg.nonce()
-        logger.debug("Received ping message from {} {} peer with nonce {}.".format(self.peer_desc, self.CONNECTION_TYPE,
-                                                                                   nonce))
         self.enqueue_msg(PongMessage(nonce=nonce))
 
     def msg_pong(self, msg):
@@ -139,8 +135,8 @@ class InternalNodeConnection(AbstractConnection):
         if nonce in self.sent_response_messages_timestamps.contents:
             request_msg_timestamp = self.sent_response_messages_timestamps.contents[nonce]
             request_response_time = (datetime.utcnow() - request_msg_timestamp).total_seconds()
-            logger.debug("PingPong time from {} {} {} for nonce {}".format(self.peer_desc, self.CONNECTION_TYPE,
-                                                                           request_response_time, msg.nonce()))
+            logger.debug("Ping-pong for nonce {} response time: {} on connection: {}"
+                         .format(msg.nonce(), request_response_time, self))
             try:
                 hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
             except Exception as e:

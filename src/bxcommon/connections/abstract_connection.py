@@ -1,15 +1,14 @@
 from abc import ABCMeta
 
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import MAX_BAD_MESSAGES, PING_INTERVAL_SEC
 from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.utils.stats.direction import Direction
 from bxcommon.utils.stats import hooks
+from bxcommon.utils.stats.direction import Direction
 
 
 class AbstractConnection(object):
@@ -95,8 +94,8 @@ class AbstractConnection(object):
         self.advance_bytes_on_buffer(self.outputbuf, bytes_sent)
 
     def pre_process_msg(self):
-        is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview_from_input_buffer(self.inputbuf)
-        logger.debug("Starting to process message of type {0}. Is complete message: {1}".format(msg_type, is_full_msg))
+        is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview_from_input_buffer(
+            self.inputbuf)
         return is_full_msg, msg_type, payload_len
 
     def enqueue_msg(self, msg, prepend=False):
@@ -110,10 +109,7 @@ class AbstractConnection(object):
         if self.state & ConnectionState.MARK_FOR_CLOSE:
             return
 
-        if msg.should_log_debug():
-            logger.debug("Enqueued message: {} on connection: {}".format(msg, self))
-        else:
-            logger.info("Enqueued message: {} on connection: {}".format(msg, self))
+        logger.log(msg.log_level(), "Enqueued message: {} on connection: {}".format(msg, self))
 
         self.enqueue_msg_bytes(msg.rawbytes(), prepend)
 
@@ -131,7 +127,7 @@ class AbstractConnection(object):
 
         size = len(msg_bytes)
 
-        logger.debug("Adding message of length {0} to {1}'s outputbuf".format(size, self.peer_desc))
+        logger.debug("Enqueueing {} bytes on connection: {}".format(size, self))
 
         if prepend:
             self.outputbuf.prepend_msgbytes(msg_bytes)
@@ -147,7 +143,7 @@ class AbstractConnection(object):
         """
         while True:
             if self.state & ConnectionState.MARK_FOR_CLOSE:
-                return 0
+                return
 
             is_full_msg, msg_type, payload_len = self.pre_process_msg()
 
@@ -159,9 +155,9 @@ class AbstractConnection(object):
             # If there was some error in parsing this message, then continue the loop.
             if msg is None:
                 if self.num_bad_messages == MAX_BAD_MESSAGES:
-                    logger.warn("Got too many bad messages! Marking connection as closed: {}".format(self))
+                    logger.warn("Received too many bad message. Closing connection: {}".format(self))
                     self.state |= ConnectionState.MARK_FOR_CLOSE
-                    return 0  # I have MAX_BAD_MESSAGES messages that failed to parse in a row.
+                    return
 
                 self.num_bad_messages += 1
                 continue
@@ -173,22 +169,18 @@ class AbstractConnection(object):
                 logger.error("Connection to {0} not established and got {1} message!  Closing."
                              .format(self.peer_desc, msg_type))
                 self.state |= ConnectionState.MARK_FOR_CLOSE
-                return 0
+                return
 
             if self.log_throughput:
                 hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
 
-            if msg.should_log_debug():
-                logger.debug("Processing message: {} on connection: {}".format(msg, self))
-            else:
-                logger.info("Processing message: {} on connection: {}".format(msg, self))
+            logger.log(msg.log_level(), "Processing message: {} on connection: {}".format(msg, self))
 
             if msg_type in self.message_handlers:
                 msg_handler = self.message_handlers[msg_type]
                 msg_handler(msg)
 
-        logger.debug("Done receiving from {0}".format(self.peer_desc))
-        return 0
+        logger.debug("Finished processing messages on connection: {}".format(self.peer_desc))
 
     def pop_next_message(self, payload_len):
         """

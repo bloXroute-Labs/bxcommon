@@ -3,7 +3,7 @@ import socket
 
 from bxcommon import constants
 from bxcommon.network.socket_connection_state import SocketConnectionState
-from bxcommon.utils import logger
+from bxcommon.utils import logger, convert
 
 
 class SocketConnection(object):
@@ -28,7 +28,7 @@ class SocketConnection(object):
 
         fileno = self.fileno()
 
-        logger.debug("Collecting input from {0}".format(fileno))
+        logger.debug("Collecting input from fileno {0}.".format(fileno))
         collect_input = True
 
         while collect_input:
@@ -37,17 +37,17 @@ class SocketConnection(object):
                 bytes_read = self.socket_instance.recv_into(self._receive_buf, constants.RECV_BUFSIZE)
             except socket.error as e:
                 if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
-                    logger.debug("Received errno {0} with msg {1} on connection {2}. Stop collecting input"
+                    logger.debug("Received errno {0} with message: '{1}' on connection {2}. Stop collecting input."
                                  .format(e.errno, e.strerror, fileno))
                     break
                 elif e.errno in [errno.EINTR]:
                     # we were interrupted, try again
-                    logger.debug("Received errno {0} with msg {1}, receive on {2} failed. Continuing recv."
+                    logger.debug("Received errno {0} with message '{1}', receive on {2} failed. Continuing recv."
                                  .format(e.errno, e.strerror, fileno))
                     continue
                 elif e.errno in [errno.ECONNREFUSED]:
                     # Fatal errors for the connections
-                    logger.debug("Received errno {0} with msg {1}, receive on {2} failed. "
+                    logger.debug("Received errno {0} with message '{1}', receive on {2} failed. "
                                  "Closing connection and retrying..."
                                  .format(e.errno, e.strerror, fileno))
                     self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
@@ -65,7 +65,8 @@ class SocketConnection(object):
                     raise e
 
             piece = self._receive_buf[:bytes_read]
-            logger.debug("Got {0} bytes from {2}. They were: {1}".format(bytes_read, repr(piece), fileno))
+            logger.debug("Got {0} bytes from fileno {1}: {2}"
+                         .format(bytes_read, fileno, convert.bytes_to_hex(piece)))
 
             if bytes_read == 0:
                 logger.info("Received 0 length read. Closing connection on fileno: {}.".format(fileno))
@@ -99,7 +100,7 @@ class SocketConnection(object):
                     break
 
                 bytes_written = self.socket_instance.send(send_buffer)
-                logger.debug("Sent {0} bytes on file descriptor {1}".format(bytes_written, fileno))
+                logger.debug("Sent {0} bytes on fileno {1}".format(bytes_written, fileno))
             except socket.error as e:
                 if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOBUFS]:
                     # Normal operation

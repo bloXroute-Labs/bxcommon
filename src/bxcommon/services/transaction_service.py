@@ -51,6 +51,7 @@ class TransactionService(object):
         if short_id == constants.NULL_TX_SID:
             logger.warn("Attempt to assign null SID to transaction hash {}. Ignoring.".format(transaction_hash))
             return
+        logger.debug("Assigning sid {} to transaction {}".format(short_id, transaction_hash))
         self.txhash_to_sids[transaction_hash].add(short_id)
         self.sid_to_txhash[short_id] = transaction_hash
         self.tx_assignment_expire_queue.add(short_id)
@@ -153,7 +154,7 @@ class TransactionService(object):
             class_name,
             network_num,
             self.txhash_to_sids,
-            "txhash_to_sid",
+            "txhash_to_sids",
             asizeof.asized(self.txhash_to_sids))
 
         hooks.add_obj_mem_stats(

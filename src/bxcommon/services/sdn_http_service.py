@@ -26,7 +26,7 @@ def fetch_config(node_id):
 
 def _fetch_peers(node_url, node_id=None):
     outbound_peers = http_service.get_json(node_url)
-    logger.debug("Retrieved outbound peers for id {0} from endpoint {1} : {2}"
+    logger.trace("Retrieved outbound peers for node {0} from endpoint {1}: {2}"
                  .format(node_id, node_url, outbound_peers))
 
     if not outbound_peers:

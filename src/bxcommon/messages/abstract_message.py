@@ -1,5 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
+from bxcommon.utils.log_level import LogLevel
+
 
 class AbstractMessage(object):
     __metaclass__ = ABCMeta
@@ -30,6 +32,6 @@ class AbstractMessage(object):
         """
         pass
 
-    def should_log_debug(self):
-        return False
+    def log_level(self):
+        return LogLevel.TRACE
 

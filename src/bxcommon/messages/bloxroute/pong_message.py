@@ -6,4 +6,7 @@ class PongMessage(KeepAliveMessage):
     MESSAGE_TYPE = BloxrouteMessageType.PONG
 
     def __init__(self, nonce=None, buf=None):
-        KeepAliveMessage.__init__(self, msg_type=self.MESSAGE_TYPE, nonce=nonce, buf=buf)
+        super(PongMessage, self).__init__(msg_type=self.MESSAGE_TYPE, nonce=nonce, buf=buf)
+
+    def __repr__(self):
+        return "PongMessage<nonce: {}>".format(self.nonce())
