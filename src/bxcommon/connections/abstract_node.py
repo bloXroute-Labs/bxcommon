@@ -237,8 +237,6 @@ class AbstractNode(object):
         for _fileno, conn in self.connection_pool.items():
             self.destroy_conn(conn)
 
-        sdn_http_service.submit_node_offline_event(self.opts.node_id)
-
     def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, network_num=None,
                   connection_type=ConnectionType.RELAY):
         """

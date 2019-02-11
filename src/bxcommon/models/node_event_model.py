@@ -10,6 +10,8 @@ class NodeEventModel(object):
 
 class NodeEventType(object):
     PEER_CONN_ERR = "PEER_CONN_ERR"
+    PEER_CONN_ESTABLISHED = "PEER_CONN_ESTABLISHED"
+    PEER_CONN_CLOSED = "PEER_CONN_CLOSED"
     ONLINE = "ONLINE"
     OFFLINE = "OFFLINE"
     SID_SPACE_FULL = "SID_SPACE_FULL"
