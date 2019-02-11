@@ -55,8 +55,6 @@ class AbstractNode(object):
         # flush buffers regularly because of output buffer holding time
         self.alarm_queue.register_alarm(self.FLUSH_SEND_BUFFERS_INTERVAL, self.flush_all_send_buffers)
 
-        self.alarm_queue.register_alarm(constants.SDN_CONTACT_RETRY_SECONDS, self.send_request_for_relay_peers)
-
         self.network_num = opts.blockchain_network_num
 
     def get_sdn_address(self):
