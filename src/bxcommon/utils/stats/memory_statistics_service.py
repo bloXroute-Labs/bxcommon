@@ -4,19 +4,24 @@ from datetime import datetime
 
 from bxcommon import constants
 from bxcommon.utils.stats.class_mem_stats import ClassMemStats
-from bxcommon.utils.stats.statistics_service import StatisticsService
+from bxcommon.utils.stats.statistics_service import StatisticsService, StatsIntervalData
+
+
+class MemoryStatsIntervalData(StatsIntervalData):
+    __slots__ = ["class_mem_stats"]
+
+    def __init__(self, *args, **kwargs):
+        super(MemoryStatsIntervalData, self).__init__(*args, **kwargs)
+        self.class_mem_stats = defaultdict(ClassMemStats)
 
 
 class MemoryStatsService(StatisticsService):
+    INTERVAL_DATA_CLASS = MemoryStatsIntervalData
+
     def __init__(self, interval=0):
-        super(MemoryStatsService, self).__init__(interval=interval, look_back=5, reset=False)
-        self.name = "MemoryStats"
+        super(MemoryStatsService, self).__init__("MemoryStats", interval=interval, look_back=5, reset=False)
 
-    def create_interval_data_object(self):
-        super(MemoryStatsService, self).create_interval_data_object()
-        self.interval_data.class_mem_stats = defaultdict(ClassMemStats)
-
-    def add_mem_stats(self, class_name, network_num,  obj, obj_name, obj_mem_info):
+    def add_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info):
         mem_stats = self.interval_data.class_mem_stats[class_name]
         mem_stats.timestamp = datetime.utcnow()
 
@@ -36,7 +41,8 @@ class MemoryStatsService(StatisticsService):
             node_ip=self.interval_data.node.opts.node_id,
             node_type=self.interval_data.node.opts.node_type,
             node_network_num=self.interval_data.node.opts.blockchain_network_num,
-            node_address="%s:%d" % (self.interval_data.node.opts.external_ip, self.interval_data.node.opts.external_port),
+            node_address="%s:%d" % (
+                self.interval_data.node.opts.external_ip, self.interval_data.node.opts.external_port),
             total_mem_usage=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
             classes=self.interval_data.class_mem_stats
         )

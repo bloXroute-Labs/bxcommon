@@ -2,12 +2,12 @@ import datetime
 
 from bxcommon.constants import HDR_COMMON_OFF
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
-from bxcommon.utils import logger, crypto, convert, publish_stats
+from bxcommon.utils import crypto, convert, publish_stats
 from bxcommon.utils.object_hash import ObjectHash
 from bxcommon.utils.stats.stat_event import StatEvent
 
 
-class _BlockStatisticsService:
+class _BlockStatisticsService(object):
     def __init__(self):
         self.name = "BlockInfo"
 

@@ -24,6 +24,7 @@ class MockNode(AbstractNode):
         super(MockNode, self).__init__(mock_opts)
 
         self._tx_service = TransactionService(self)
+        self._tx_services = {}
 
     def broadcast(self, msg, requester=None, prepend_to_queue=False, network_num=None,
                   connection_type=ConnectionType.RELAY):

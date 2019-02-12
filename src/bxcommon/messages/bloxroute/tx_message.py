@@ -13,6 +13,7 @@ _NULL_SID = constants.NULL_TX_SID
 
 class TxMessage(Message):
     MESSAGE_TYPE = BloxrouteMessageType.TRANSACTION
+    EMPTY_TX_VAL = memoryview(bytes())
 
     def __init__(self, tx_hash=None, network_num=None, tx_val=None, buf=None, sid=_NULL_SID):
         self._tx_hash = None
@@ -21,6 +22,9 @@ class TxMessage(Message):
         self._tx_val = None
 
         if buf is None:
+            if tx_val is None:
+                tx_val = bytes()
+
             buf = bytearray(HDR_COMMON_OFF + SHA256_HASH_LEN + _SID_LEN + NETWORK_NUM_LEN)
             self.buf = buf
 
@@ -63,12 +67,14 @@ class TxMessage(Message):
 
     def tx_val(self):
         if self._tx_val is None:
-            off = HDR_COMMON_OFF + SHA256_HASH_LEN + _SID_LEN + NETWORK_NUM_LEN
-            self._tx_val = self._memoryview[off:off + self.payload_len()]
+            if self.payload_len() == 0:
+                self._tx_val = self.EMPTY_TX_VAL
+            else:
+                off = HDR_COMMON_OFF + SHA256_HASH_LEN + _SID_LEN + NETWORK_NUM_LEN
+                self._tx_val = self._memoryview[off:off + self.payload_len()]
 
-        # TODO check for empty?
         return self._tx_val
 
     def __repr__(self):
-        return "TxMessage<tx_hash: {}, short_id: {}, network_num: {}>".format(self.tx_hash(), self.short_id(),
-                                                                              self.network_num())
+        return ("TxMessage<tx_hash: {}, short_id: {}, network_num: {}, compact:{}>"
+                .format(self.tx_hash(), self.short_id(), self.network_num(), self.tx_val() == self.EMPTY_TX_VAL))

@@ -87,7 +87,6 @@ class AbstractConnection(object):
 
     def get_bytes_to_send(self):
         assert not self.state & ConnectionState.MARK_FOR_CLOSE
-
         return self.get_bytes_on_buffer(self.outputbuf)
 
     def advance_sent_bytes(self, bytes_sent):
@@ -205,7 +204,7 @@ class AbstractConnection(object):
             return None
 
     def get_bytes_on_buffer(self, buf, send_one_msg=False):
-        if buf.has_more_bytes() > 0 and (not send_one_msg or buf.at_msg_boundary()):
+        if buf.has_more_bytes() and (not send_one_msg or buf.at_msg_boundary()):
             return buf.get_buffer()
 
     def advance_bytes_on_buffer(self, buf, bytes_written):

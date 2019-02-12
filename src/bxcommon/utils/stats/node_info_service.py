@@ -5,8 +5,7 @@ from bxcommon.constants import INFO_STATS_INTERVAL
 
 class NodeInfo(StatisticsService):
     def __init__(self, interval=0):
-        super(NodeInfo, self).__init__(interval=interval, look_back=0, reset=False)
-        self.name = "NodeInfo"
+        super(NodeInfo, self).__init__("NodeInfo", interval=interval, look_back=0, reset=False)
 
     def get_info(self):
         payload = dict(self.node.opts.__dict__)

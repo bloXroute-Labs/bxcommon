@@ -170,3 +170,14 @@ class TransactionService(object):
             self.sid_to_txhash,
             "sid_to_txid",
             asizeof.asized(self.sid_to_txhash))
+
+    def get_tx_service_aggregate_stats(self):
+        if len(self.tx_assignment_expire_queue.queue) > 0:
+            oldest_transaction_date = self.tx_assignment_expire_queue.queue[0][0]
+        else:
+            oldest_transaction_date = 0
+        return dict(
+            short_id_mapping_count_gauge=len(self.sid_to_txhash),
+            unique_transaction_content_gauge=len(self.txhash_to_contents),
+            oldest_transaction_date=oldest_transaction_date
+        )

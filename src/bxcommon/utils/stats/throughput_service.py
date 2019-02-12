@@ -1,23 +1,28 @@
 from collections import defaultdict
 
+from bxcommon import constants
 from bxcommon.utils import logger
-from bxcommon.utils.stats.statistics_service import StatisticsService
-from bxcommon.constants import THROUGHPUT_STATS_INTERVAL
-from bxcommon.utils.stats.peer_stats import PeerStats
 from bxcommon.utils.stats.direction import Direction
 from bxcommon.utils.stats.measurement_type import MeasurementType
+from bxcommon.utils.stats.peer_stats import PeerStats
+from bxcommon.utils.stats.statistics_service import StatisticsService, StatsIntervalData
+
+
+class ThroughputIntervalData(StatsIntervalData):
+    __slots__ = ["total_in", "total_out", "peer_to_stats"]
+
+    def __init__(self, *args, **kwargs):
+        super(ThroughputIntervalData, self).__init__(*args, **kwargs)
+        self.total_in = 0
+        self.total_out = 0
+        self.peer_to_stats = defaultdict(PeerStats)
 
 
 class ThroughputStatistics(StatisticsService):
-    def __init__(self, interval=0):
-        super(ThroughputStatistics, self).__init__(interval=interval, look_back=5, reset=True)
-        self.name = "ThroughputStats"
+    INTERVAL_DATA_CLASS = ThroughputIntervalData
 
-    def create_interval_data_object(self):
-        super(ThroughputStatistics, self).create_interval_data_object()
-        self.interval_data.total_in = 0
-        self.interval_data.total_out = 0
-        self.interval_data.peer_to_stats = defaultdict(PeerStats)
+    def __init__(self, interval=constants.THROUGHPUT_STATS_INTERVAL, look_back=constants.THROUGHPUT_STATS_LOOK_BACK):
+        super(ThroughputStatistics, self).__init__("ThroughputStats", interval, look_back, reset=True)
 
     def add_event(self, direction, msg_type, msg_size, peer_desc):
         peer_stats = self.interval_data.peer_to_stats[peer_desc]
@@ -51,7 +56,8 @@ class ThroughputStatistics(StatisticsService):
         payload = dict(
             node_id=self.interval_data.node.opts.node_id,
             node_type=self.interval_data.node.NODE_TYPE,
-            node_address="%s:%d" % (self.interval_data.node.opts.external_ip, self.interval_data.node.opts.external_port),
+            node_address="%s:%d" % (
+                self.interval_data.node.opts.external_ip, self.interval_data.node.opts.external_port),
             node_peers=[],
             total_bytes_received=self.interval_data.total_in,
             total_bytes_sent=self.interval_data.total_out,
@@ -68,4 +74,4 @@ class ThroughputStatistics(StatisticsService):
         return payload
 
 
-throughput_statistics = ThroughputStatistics(interval=THROUGHPUT_STATS_INTERVAL)
+throughput_statistics = ThroughputStatistics()

@@ -79,12 +79,11 @@ class SocketConnection(object):
         self._node.on_finished_receiving(fileno)
 
     def send(self):
-
         if self.state & SocketConnectionState.MARK_FOR_CLOSE:
-            return
+            return 0
 
         if not self.can_send:
-            return
+            return 0
 
         fileno = self.fileno()
 
@@ -118,6 +117,7 @@ class SocketConnection(object):
                     return 0
                 elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
                     # Perform orderly shutdown
+                    logger.debug("Got {0}, send to {1} failed, closing connection.".format(e.strerror, fileno))
                     self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
                     return 0
                 elif e.errno in [errno.EDESTADDRREQ, errno.EFAULT, errno.EINVAL,

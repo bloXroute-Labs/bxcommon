@@ -125,10 +125,9 @@ class BxApiRoutes(object):
 
 SDN_CONTACT_RETRY_SECONDS = 5
 
-# Time (in seconds) between stats gathering runs
 THROUGHPUT_STATS_INTERVAL = 300
-# Look back limit (in seconds) - Stats older then this will be discarded (Should be >= THROUGHPUT_STATS_INTERVAL)
-THROUGHPUT_STATS_LOOK_BACK = 600
+THROUGHPUT_STATS_LOOK_BACK = 5
+
 MSG_NULL_BYTE = "\x00"
 NULL_ENCRYPT_REPEAT_VALUE = "1"  # must be nonzero string character
 BLOXROUTE_HELLO_MESSAGES = ["hello", "ack"]
