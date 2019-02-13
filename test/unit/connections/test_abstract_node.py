@@ -5,7 +5,7 @@ from mock import patch, MagicMock
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
-from bxcommon.constants import THROUGHPUT_STATS_INTERVAL, DEFAULT_SLEEP_TIMEOUT, PING_INTERVAL_SEC, \
+from bxcommon.constants import THROUGHPUT_STATS_INTERVAL, DEFAULT_SLEEP_TIMEOUT, PING_INTERVAL_S, \
     CONNECTION_RETRY_SECONDS, MAX_CONNECT_RETRIES, THROUGHPUT_STATS_INTERVAL
 from bxcommon.exceptions import TerminationError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
@@ -193,7 +193,7 @@ class AbstractNodeTest(AbstractTestCase):
         self.connection.state = ConnectionState.ESTABLISHED
         self.local_node.schedule_pings_on_timeout = True
         self.assertEqual(0, self.local_node._connection_timeout(self.connection))
-        mocked_register_alarm.assert_called_with(PING_INTERVAL_SEC, self.connection.send_ping)
+        mocked_register_alarm.assert_called_with(PING_INTERVAL_S, self.connection.send_ping)
         self.connection.state = ConnectionState.MARK_FOR_CLOSE
         self.assertEqual(0, self.local_node._connection_timeout(self.connection))
 

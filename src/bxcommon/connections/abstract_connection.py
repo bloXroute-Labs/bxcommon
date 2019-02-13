@@ -1,12 +1,14 @@
 from abc import ABCMeta
+from collections import defaultdict
 
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import MAX_BAD_MESSAGES, PING_INTERVAL_SEC
+from bxcommon.constants import MAX_BAD_MESSAGES, PING_INTERVAL_S
 from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
+from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.direction import Direction
 
@@ -60,6 +62,7 @@ class AbstractConnection(object):
         # Default network number to network number of current node. But it can change after hello message is received
         self.network_num = node.network_num
 
+        self._trace_message_tracker = defaultdict(int)
         logger.info("Initialized new connection: {}".format(self))
 
     def __repr__(self):
@@ -87,7 +90,8 @@ class AbstractConnection(object):
 
     def get_bytes_to_send(self):
         assert not self.state & ConnectionState.MARK_FOR_CLOSE
-        return self.get_bytes_on_buffer(self.outputbuf)
+
+        return self.outputbuf.get_buffer()
 
     def advance_sent_bytes(self, bytes_sent):
         self.advance_bytes_on_buffer(self.outputbuf, bytes_sent)
@@ -173,6 +177,12 @@ class AbstractConnection(object):
             if self.log_throughput:
                 hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
 
+            if not logger.should_log_level(msg.log_level()) and logger.should_log_level(LogLevel.INFO):
+                self._trace_message_tracker[msg_type] += 1
+            elif len(self._trace_message_tracker) > 0:
+                logger.info("Processed the following message types: {}".format(self._trace_message_tracker))
+                self._trace_message_tracker.clear()
+
             logger.log(msg.log_level(), "Processing message: {} on connection: {}".format(msg, self))
 
             if msg_type in self.message_handlers:
@@ -203,10 +213,6 @@ class AbstractConnection(object):
             self.state |= ConnectionState.MARK_FOR_CLOSE  # Close, no retry.
             return None
 
-    def get_bytes_on_buffer(self, buf, send_one_msg=False):
-        if buf.has_more_bytes() and (not send_one_msg or buf.at_msg_boundary()):
-            return buf.get_buffer()
-
     def advance_bytes_on_buffer(self, buf, bytes_written):
         hooks.add_throughput_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc)
         buf.advance_buffer(bytes_written)
@@ -217,7 +223,7 @@ class AbstractConnection(object):
         """
         if self.can_send_pings:
             self.enqueue_msg(self.ping_message)
-            return PING_INTERVAL_SEC
+            return PING_INTERVAL_S
 
     def msg_hello(self, msg):
         self.state |= ConnectionState.HELLO_RECVD

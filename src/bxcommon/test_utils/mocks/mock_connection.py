@@ -2,7 +2,7 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.constants import PING_INTERVAL_SEC
+from bxcommon.constants import PING_INTERVAL_S
 
 
 class MockConnection(object):
@@ -73,5 +73,5 @@ class MockConnection(object):
         pass
 
     def send_ping(self):
-        return PING_INTERVAL_SEC
+        return PING_INTERVAL_S
 

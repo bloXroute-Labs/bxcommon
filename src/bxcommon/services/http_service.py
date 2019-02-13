@@ -11,7 +11,7 @@ from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 def build_url(endpoint):
     if not endpoint or not isinstance(endpoint, str):
         raise ValueError("Missing or invalid URL")
-    return constants.BX_API_ROOT_URL + endpoint
+    return constants.SDN_ROOT_URL + endpoint
 
 
 def _http_request(method, endpoint, **kwargs):

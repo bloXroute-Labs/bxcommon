@@ -1,7 +1,7 @@
 import json
 import time
 
-from bxcommon.constants import BxApiRoutes
+from bxcommon.constants import SdnRoutes
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
 from bxcommon.models.node_model import NodeModel
@@ -14,7 +14,7 @@ from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 
 def fetch_config(node_id):
     # Should only be used for test networks.
-    node_url = BxApiRoutes.node.format(node_id)
+    node_url = SdnRoutes.node.format(node_id)
     opts = http_service.get_json(node_url)
     logger.debug("Retrieved config for id {0} : {1}".format(node_id, opts))
 
@@ -39,17 +39,17 @@ def _fetch_peers(node_url, node_id=None):
 
 
 def fetch_relay_peers(node_id):
-    node_url = BxApiRoutes.node_relays.format(node_id)
+    node_url = SdnRoutes.node_relays.format(node_id)
     return _fetch_peers(node_url, node_id)
 
 
 def fetch_gateway_peers(node_id):
-    node_url = BxApiRoutes.node_gateways.format(node_id)
+    node_url = SdnRoutes.node_gateways.format(node_id)
     return _fetch_peers(node_url, node_id)
 
 
 def fetch_remote_blockchain_peer(network_num):
-    node_url = BxApiRoutes.node_remote_blockchain.format(network_num)
+    node_url = SdnRoutes.node_remote_blockchain.format(network_num)
     peers = _fetch_peers(node_url)
     if len(peers) != 1:
         logger.warn("Did not get expected number of peers from SDN.")
@@ -59,7 +59,7 @@ def fetch_remote_blockchain_peer(network_num):
 
 
 def fetch_blockchain_network(protocol_name, network_name):
-    node_url = BxApiRoutes.blockchain_network.format(protocol_name, network_name)
+    node_url = SdnRoutes.blockchain_network.format(protocol_name, network_name)
     blockchain_network = http_service.get_json(node_url)
 
     if blockchain_network is None:
@@ -71,7 +71,7 @@ def fetch_blockchain_network(protocol_name, network_name):
 
 
 def fetch_blockchain_networks():
-    node_url = BxApiRoutes.blockchain_networks
+    node_url = SdnRoutes.blockchain_networks
     blockchain_networks = http_service.get_json(node_url)
 
     if not blockchain_networks:
@@ -104,7 +104,7 @@ def submit_node_event(node_event_model):
     node_event_model.timestamp = str(time.time())
     logger.debug("Submitting event for node {0} {1}"
                  .format(node_event_model.node_id, json.dumps(node_event_model, cls=ClassJsonEncoder)))
-    url = BxApiRoutes.node_event.format(node_event_model.node_id)
+    url = SdnRoutes.node_event.format(node_event_model.node_id)
     http_service.post_json(url, node_event_model)
 
 
@@ -114,7 +114,7 @@ def register_node(node_model):
 
     # Let the SDN know who this is.
     # SDN determines peers and returns full config.
-    node_config = http_service.post_json(BxApiRoutes.nodes, node_model)
+    node_config = http_service.post_json(SdnRoutes.nodes, node_model)
 
     logger.debug("Registered node. Response: {}".format(json.dumps(node_config, cls=ClassJsonEncoder)))
 
@@ -128,6 +128,6 @@ def register_node(node_model):
 # Long term, we don't want to allow the gateway itself to specify whether it is an internal gateway - this should
 # rather be done via an admin console on the SDN or similar
 def set_node_as_internal_gateway(node_id):
-    node_url = BxApiRoutes.node.format(node_id)
+    node_url = SdnRoutes.node.format(node_id)
     updated_node = http_service.patch_json(node_url, {"is_internal_gateway": True})
     return model_loader.load(NodeModel, updated_node)

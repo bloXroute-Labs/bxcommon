@@ -163,6 +163,10 @@ def set_log_level(loglevel):
         raise TypeError("Expects LogLevel Enum or int")
 
 
+def should_log_level(log_level):
+    return log_level >= _log_level
+
+
 def set_immediate_flush(flush_immediately):
     global _log
 

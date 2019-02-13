@@ -340,7 +340,7 @@ class AbstractNode(object):
             logger.debug("Connection is still established: {}".format(conn))
 
             if self.schedule_pings_on_timeout:
-                self.alarm_queue.register_alarm(constants.PING_INTERVAL_SEC, conn.send_ping)
+                self.alarm_queue.register_alarm(constants.PING_INTERVAL_S, conn.send_ping)
 
             return constants.CANCEL_ALARMS
 

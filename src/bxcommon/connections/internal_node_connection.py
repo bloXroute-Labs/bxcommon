@@ -3,7 +3,7 @@ from datetime import datetime
 from bxcommon.constants import REQUEST_EXPIRATION_TIME
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import ALL_NETWORK_NUM, DEFAULT_NETWORK_NUM, PING_INTERVAL_SEC
+from bxcommon.constants import ALL_NETWORK_NUM, DEFAULT_NETWORK_NUM, PING_INTERVAL_S
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
@@ -124,7 +124,7 @@ class InternalNodeConnection(AbstractConnection):
             msg = PingMessage(nonce=nonce)
             self.enqueue_msg(msg)
             self.sent_response_messages_timestamps.contents[nonce] = msg.timestamp
-            return PING_INTERVAL_SEC
+            return PING_INTERVAL_S
 
     def msg_ping(self, msg):
         nonce = msg.nonce()
