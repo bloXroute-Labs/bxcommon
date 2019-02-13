@@ -19,7 +19,6 @@ class BlockStatEventType(object):
     BLOCK_DECOMPRESSED_WITH_UNKNOWN_TXS = "BlockDecompressedWithUnknownTxs"
     BLOCK_RECOVERY_STARTED = "BlockRecoveryStarted"
     BLOCK_RECOVERY_REPEATED = "BlockRecoveryRepeated"
-    GET_TXS_BLOCK_RECOVERY_PROCESSING = "GetTxsBlockRecoveryProcessing"
     BLOCK_RECOVERY_COMPLETED = "BlockRecoveryCompleted"
     BLOCK_SENT_TO_BLOCKCHAIN_NODE = "BlockSentToBlockchainNode"
     ENC_BLOCK_KEY_SENT_FROM_GATEWAY_TO_PEER = "EncBlockKeySentFromGatewayToPeer"

@@ -157,6 +157,11 @@ NODE_ID_SIZE_IN_BYTES = 16
 
 REQUEST_EXPIRATION_TIME = 60
 
+# Percentage for transactions that will be logged by stats service. The value should be controlled by SDN in the future.
+TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR = 5
+
+MAX_BYTE_VALUE = 255
+
 # keep constants_local.py file to override settings in the constants file
 # this part should be at the bottom of the file
 try:

@@ -1,13 +1,11 @@
-import datetime
-
 from bxcommon.constants import HDR_COMMON_OFF
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
-from bxcommon.utils import crypto, convert, publish_stats
+from bxcommon.utils import crypto, convert
 from bxcommon.utils.object_hash import ObjectHash
-from bxcommon.utils.stats.stat_event import StatEvent
+from bxcommon.utils.stats.statistics_event_service import StatisticsEventService
 
 
-class _BlockStatisticsService(object):
+class _BlockStatisticsService(StatisticsEventService):
     def __init__(self):
         self.name = "BlockInfo"
 
@@ -20,7 +18,7 @@ class _BlockStatisticsService(object):
         else:
             block_hash = block_msg[HDR_COMMON_OFF:HDR_COMMON_OFF + crypto.SHA256_HASH_LEN]
 
-        self._log_event(block_event_name, block_hash, start_date_time, end_date_time, **kwargs)
+        self.log_event(block_event_name, convert.bytes_to_hex(block_hash), start_date_time, end_date_time, **kwargs)
 
     def add_block_event_by_block_hash(self, block_hash, block_event_name, start_date_time=None, end_date_time=None,
                                       **kwargs):
@@ -31,18 +29,7 @@ class _BlockStatisticsService(object):
         else:
             block_hash_str = block_hash
 
-        self._log_event(block_event_name, block_hash_str, start_date_time, end_date_time, **kwargs)
-
-    def _log_event(self, event_name, block_hash, start_date_time=None, end_date_time=None, **kwargs):
-
-        if start_date_time is None:
-            start_date_time = datetime.datetime.utcnow()
-
-        if end_date_time is None:
-            end_date_time = start_date_time
-
-        stat_event = StatEvent(event_name, convert.bytes_to_hex(block_hash), start_date_time, end_date_time, **kwargs)
-        publish_stats.publish_stats(self.name, stat_event)
+        self.log_event(block_event_name, convert.bytes_to_hex(block_hash_str), start_date_time, end_date_time, **kwargs)
 
 
 block_stats = _BlockStatisticsService()
