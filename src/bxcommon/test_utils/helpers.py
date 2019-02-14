@@ -35,7 +35,7 @@ def create_connection(connection_cls):
 
 
 def clear_node_buffer(node, fileno):
-    while node.get_bytes_to_send(fileno) is not None:
+    while len(node.get_bytes_to_send(fileno)) > 0:
         node.on_bytes_sent(fileno, len(node.get_bytes_to_send(fileno)))
 
 
