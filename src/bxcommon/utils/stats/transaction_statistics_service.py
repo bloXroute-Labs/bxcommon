@@ -25,6 +25,9 @@ class _TransactionStatisticsService(StatisticsEventService):
             self.log_event(tx_event_name, convert.bytes_to_hex(tx_hash), start_date_time, end_date_time, **kwargs)
 
     def add_txs_by_short_ids_event(self, short_ids, tx_event_name, start_date_time=None, end_date_time=None, **kwargs):
+        if not constants.ENABLE_TRANSACTIONS_STATS_BY_SHORT_IDS:
+            return
+
         if len(short_ids) < 1:
             logger.warn("Attempted to log message with 0 short ids!")
             return
