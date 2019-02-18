@@ -38,7 +38,7 @@ class MemoryStatsService(StatisticsService):
     def get_info(self):
         # total_mem_usage is the peak mem usage fo the process (kilobytes on Linux, bytes on OS X)
         payload = dict(
-            node_ip=self.interval_data.node.opts.node_id,
+            node_id=self.interval_data.node.opts.node_id,
             node_type=self.interval_data.node.opts.node_type,
             node_network_num=self.interval_data.node.opts.blockchain_network_num,
             node_address="%s:%d" % (
