@@ -4,7 +4,7 @@ from datetime import datetime
 
 from bxcommon import constants
 from bxcommon.utils.stats.class_mem_stats import ClassMemStats
-from bxcommon.utils.stats.statistics_service import StatisticsService, StatsIntervalData
+from bxcommon.utils.stats.statistics_service import StatsIntervalData, ThreadedStatisticsService
 
 
 class MemoryStatsIntervalData(StatsIntervalData):
@@ -15,7 +15,7 @@ class MemoryStatsIntervalData(StatsIntervalData):
         self.class_mem_stats = defaultdict(ClassMemStats)
 
 
-class MemoryStatsService(StatisticsService):
+class MemoryStatsService(ThreadedStatisticsService):
     INTERVAL_DATA_CLASS = MemoryStatsIntervalData
 
     def __init__(self, interval=0):

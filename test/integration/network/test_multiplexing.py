@@ -6,6 +6,7 @@ from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
 from bxcommon.network.network_event_loop_factory import create_event_loop
 from bxcommon.test_utils import helpers
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import generate_bytearray
 from bxcommon.test_utils.mocks.mock_node import MockOpts
 from bxcommon.utils import logger
@@ -104,15 +105,7 @@ class TestNode(AbstractNode):
         self.closed = True
 
 
-class MultiplexingTest(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        logger.log_init(None, use_stdout=True)
-
-    @classmethod
-    def tearDownClass(cls):
-        logger.log_close()
+class MultiplexingTest(AbstractTestCase):
 
     def test_multiplexing__send(self):
         receiver_node = TestNode(8001, [], 0.01)

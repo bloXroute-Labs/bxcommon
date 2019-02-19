@@ -112,6 +112,8 @@ THROUGHPUT_STATS_INTERVAL = 300
 THROUGHPUT_STATS_LOOK_BACK = 5
 
 INFO_STATS_INTERVAL = 3600
+
+# TODO: turn this number up to 60 minutes after we've done some testing to ensure that this is ok
 MEMORY_STATS_INTERVAL = 300
 
 # Percentage for transactions that will be logged by stats service. The value should be controlled by SDN in the future.
@@ -124,13 +126,19 @@ ENABLE_TRANSACTIONS_STATS_BY_SHORT_IDS = False
 MAX_KQUEUE_EVENTS_COUNT = 1000
 CANCEL_ALARMS = 0
 
-# Fast executino timeout on alarm queue
+# Fast execution timeout on alarm queue
 DEFAULT_SLEEP_TIMEOUT = 0.1
 
 REQUEST_EXPIRATION_TIME = 60
 
 # Expiration time for block broadcast message if services info is missing
 MISSING_BLOCK_EXPIRE_TIME = 60
+
+# Duration to warn on if alarm doesn't execute
+WARN_ALARM_EXECUTION_DURATION = 5
+
+# Timeout to warn on if alarm executed later than expected
+WARN_ALARM_EXECUTION_OFFSET = 5
 # </editor-fold>
 
 # keep constants_local.py file to override settings in the constants file

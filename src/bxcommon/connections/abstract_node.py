@@ -422,7 +422,7 @@ class AbstractNode(object):
 
     def init_memory_stats_logging(self):
         memory_statistics.set_node(self)
-        self.alarm_queue.register_alarm(constants.MEMORY_STATS_INTERVAL, self.record_mem_stats)
+        memory_statistics.start_recording(self.record_mem_stats)
 
     def init_block_stats_logging(self):
         tx_stats.set_node_id(self.opts.node_id)

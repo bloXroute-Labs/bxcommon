@@ -6,7 +6,7 @@ class AlarmTests(AbstractTestCase):
 
     def setUp(self):
         self.args = (1, 5)
-        self.alarm = Alarm(self.function_to_pass, self.args[0], self.args[1])
+        self.alarm = Alarm(self.function_to_pass, 0, self.args[0], self.args[1])
 
     def function_to_pass(self, first, second):
         return first + second

@@ -1,7 +1,10 @@
+import time
 from abc import ABCMeta, abstractmethod
 from collections import deque
 from datetime import datetime
+from threading import Thread
 
+from bxcommon.utils import logger
 from bxcommon.utils.publish_stats import publish_stats
 
 
@@ -59,3 +62,34 @@ class StatisticsService(object):
         if self.reset:
             self.create_interval_data_object()
         return self.interval
+
+
+class ThreadedStatisticsService(StatisticsService):
+    """
+    Abstract class for stats service that may take a long time to execute.
+    """
+    __metaclass__ = ABCMeta
+
+    def __init__(self, name, interval=0, look_back=1, reset=False):
+        super(ThreadedStatisticsService, self).__init__(name, interval, look_back, reset)
+        self._thread = None
+
+    def start_recording(self, record_fn):
+        self._thread = Thread(target=self.loop_record_on_thread, args=(record_fn,))
+        self._thread.start()
+
+    def loop_record_on_thread(self, record_fn):
+        time.sleep(self.interval)
+        while True:
+            start_time = time.time()
+            try:
+                record_fn()
+            except Exception as e:
+                logger.error("Recording {} stats failed with exception: {}".format(self.name, e))
+                runtime = 0
+            else:
+                runtime = time.time() - start_time
+                logger.info("Recording {} stats took {} seconds".format(self.name, runtime))
+
+            if runtime < self.interval:
+                time.sleep(self.interval - runtime)
