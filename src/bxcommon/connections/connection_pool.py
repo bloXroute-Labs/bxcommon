@@ -25,7 +25,7 @@ class ConnectionPool(object):
 
         assert (ip, port) not in self.by_ipport
 
-        while fileno > self.len_fileno:
+        while fileno >= self.len_fileno:
             self.by_fileno.extend([None] * ConnectionPool.INITIAL_FILENO)
             self.len_fileno += ConnectionPool.INITIAL_FILENO
 
