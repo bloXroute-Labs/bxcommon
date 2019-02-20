@@ -71,7 +71,8 @@ class InputBuffer(object):
         Additionally, the start value of the slice must exist.
         """
         if start is None or end is None or self.length < start:
-            raise ValueError("Start and end must exist and start must be greater or equal to length.")
+            raise ValueError("Start ({}) and end ({}) must exist and start must be less or equal to length ({})."
+                             .format(start, end, self.length))
 
         # Combine all of the pieces in this slice into the first item on the list.
         # Since we will need to do so anyway when handing the message.
