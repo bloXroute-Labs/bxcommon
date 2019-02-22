@@ -22,6 +22,7 @@ from bxcommon.utils.object_hash import ObjectHash
 
 class BloxrouteMessageFactory(AbstractTestCase):
     HASH = ObjectHash(crypto.double_sha256("123"))
+    NETWORK_NUM = 12345
 
     def get_message_preview_successfully(self, message, expected_command, expected_payload_length):
         is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview_from_input_buffer(
@@ -31,12 +32,14 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.assertEqual(expected_command, command)
         self.assertEqual(expected_payload_length, payload_length)
 
-    def get_message_hash_preview_successfully(self, message, expected_hash):
-        is_full_message, msg_hash, _payload_length = bloxroute_message_factory.get_message_hash_preview_from_input_buffer(
-            create_input_buffer_with_bytes(message.rawbytes()[:HDR_COMMON_OFF + SHA256_HASH_LEN])
-        )
+    def get_hashed_message_preview_successfully(self, message, expected_hash):
+        is_full_message, msg_hash, network_num, _payload_length = \
+            bloxroute_message_factory.get_hashed_message_preview_from_input_buffer(
+                create_input_buffer_with_bytes(message.rawbytes()[:HDR_COMMON_OFF + SHA256_HASH_LEN + NETWORK_NUM_LEN])
+            )
         self.assertTrue(is_full_message)
         self.assertEqual(expected_hash, msg_hash)
+        self.assertEqual(self.NETWORK_NUM, network_num)
 
     def create_message_successfully(self, message, message_type):
         result = bloxroute_message_factory.create_message_from_buffer(message.rawbytes())
@@ -95,23 +98,21 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.assertIsNone(payload_length)
 
     def test_message_hash_preview(self):
-        dummy_network_num = 12345
         blob = bytearray(1 for _ in xrange(4))
-        self.get_message_hash_preview_successfully(BroadcastMessage(self.HASH, dummy_network_num, blob), self.HASH)
-        self.get_message_hash_preview_successfully(TxMessage(self.HASH, dummy_network_num, blob, sid=12), self.HASH)
-        self.get_message_hash_preview_successfully(
-            KeyMessage(self.HASH, bytearray(1 for _ in range(KEY_SIZE)), dummy_network_num),
-            self.HASH)
+        self.get_hashed_message_preview_successfully(BroadcastMessage(self.HASH, self.NETWORK_NUM, blob), self.HASH)
 
     def test_message_hash_preview_incomplete(self):
         blob = bytearray(1 for _ in xrange(4))
         broadcast_message = BroadcastMessage(self.HASH, 123, blob)
 
-        is_full_message, msg_hash, payload_length = bloxroute_message_factory.get_message_hash_preview_from_input_buffer(
-            create_input_buffer_with_bytes(broadcast_message.rawbytes()[:HDR_COMMON_OFF + SHA256_HASH_LEN - 1])
-        )
+        is_full_message, msg_hash, network_num, payload_length = \
+            bloxroute_message_factory.get_hashed_message_preview_from_input_buffer(
+                create_input_buffer_with_bytes(broadcast_message.rawbytes()
+                                               [:HDR_COMMON_OFF + SHA256_HASH_LEN + NETWORK_NUM_LEN - 1])
+            )
         self.assertFalse(is_full_message)
         self.assertIsNone(msg_hash)
+        self.assertIsNone(network_num)
         self.assertIsNone(payload_length)
 
     def test_create_message_success_all_types(self):
