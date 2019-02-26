@@ -1,5 +1,5 @@
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-from bxcommon.utils.alarm import Alarm
+from bxcommon.utils.alarm_queue import Alarm
 
 
 class AlarmTests(AbstractTestCase):

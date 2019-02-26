@@ -5,7 +5,7 @@ from mock import MagicMock
 from bxcommon.exceptions import DecryptionError
 from bxcommon.storage.encrypted_cache import EncryptedCache
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-from bxcommon.utils.alarm import AlarmQueue
+from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.crypto import symmetric_decrypt, KEY_SIZE
 
 
