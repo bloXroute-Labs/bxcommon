@@ -134,6 +134,9 @@ REQUEST_EXPIRATION_TIME = 60
 # Expiration time for block broadcast message if services info is missing
 MISSING_BLOCK_EXPIRE_TIME = 60
 
+# Expiration time for encrypted blocks in cache on relays and gateways
+BLOCK_CACHE_TIMEOUT_S = 60 * 60
+
 # Duration to warn on if alarm doesn't execute
 WARN_ALARM_EXECUTION_DURATION = 5
 

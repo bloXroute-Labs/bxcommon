@@ -25,14 +25,17 @@ class _KeyMessageConverterV1(AbstractMessageConverter):
         struct.pack_into("<12sL", result_bytes, off, BloxrouteMessageType.KEY, payload_len)
         off += HDR_COMMON_OFF
 
-        result_bytes[off:off + SHA256_HASH_LEN + KEY_SIZE] = mem_view[off:off + SHA256_HASH_LEN + KEY_SIZE]
-        off += KEY_SIZE + SHA256_HASH_LEN
+        result_bytes[off:off + SHA256_HASH_LEN] = mem_view[off:off + SHA256_HASH_LEN]
+        off += SHA256_HASH_LEN
 
         network_num, = struct.unpack_from("<L", mem_view, off)
 
         if network_num != DEFAULT_NETWORK_NUM:
             raise ValueError("Key message can be converted to V1 only for default version {}, but was version"
                              .format(DEFAULT_NETWORK_NUM, network_num))
+
+        result_bytes[off:off + KEY_SIZE] = mem_view[off + NETWORK_NUM_LEN:off + NETWORK_NUM_LEN + KEY_SIZE]
+        off += NETWORK_NUM_LEN
 
         return Message.initialize_class(KeyMessageV1, result_bytes, (BloxrouteMessageType.KEY, payload_len))
 
@@ -52,10 +55,13 @@ class _KeyMessageConverterV1(AbstractMessageConverter):
         struct.pack_into("<12sL", result_bytes, off, BloxrouteMessageType.KEY, payload_len)
         off += HDR_COMMON_OFF
 
-        result_bytes[off:off + SHA256_HASH_LEN + KEY_SIZE] = mem_view[off:off + SHA256_HASH_LEN + KEY_SIZE]
-        off += KEY_SIZE + SHA256_HASH_LEN
+        result_bytes[off:off + SHA256_HASH_LEN] = mem_view[off:off + SHA256_HASH_LEN]
+        off += SHA256_HASH_LEN
 
         struct.pack_into("<L", result_bytes, off, DEFAULT_NETWORK_NUM)
+
+        result_bytes[off + NETWORK_NUM_LEN:off + NETWORK_NUM_LEN + KEY_SIZE] = mem_view[off:off + KEY_SIZE]
+        off += KEY_SIZE
 
         return Message.initialize_class(KeyMessage, result_bytes, (BloxrouteMessageType.KEY, payload_len))
 

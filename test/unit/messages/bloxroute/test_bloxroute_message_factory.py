@@ -65,9 +65,9 @@ class BloxrouteMessageFactory(AbstractTestCase):
         blob = bytearray(1 for _ in xrange(4))
         self.get_message_preview_successfully(BroadcastMessage(self.HASH, 1, blob), BroadcastMessage.MESSAGE_TYPE,
                                               SHA256_HASH_LEN + NETWORK_NUM_LEN + len(blob))
-        self.get_message_preview_successfully(TxMessage(self.HASH, 1, blob, sid=12), TxMessage.MESSAGE_TYPE,
+        self.get_message_preview_successfully(TxMessage(self.HASH, 1, 12, blob), TxMessage.MESSAGE_TYPE,
                                               SHA256_HASH_LEN + NETWORK_NUM_LEN + UL_INT_SIZE_IN_BYTES + len(blob))
-        self.get_message_preview_successfully(KeyMessage(self.HASH, bytearray(1 for _ in range(KEY_SIZE)), 1),
+        self.get_message_preview_successfully(KeyMessage(self.HASH, 1, bytearray(1 for _ in range(KEY_SIZE))),
                                               KeyMessage.MESSAGE_TYPE, SHA256_HASH_LEN + KEY_SIZE + NETWORK_NUM_LEN)
 
         get_txs = [1, 2, 3]
@@ -142,8 +142,8 @@ class BloxrouteMessageFactory(AbstractTestCase):
         tx_val = bytes(1 for _ in range(5))
         tx_message = self.create_message_successfully(TxMessage(self.HASH,
                                                                 network_num=test_network_num,
-                                                                tx_val=tx_val,
-                                                                sid=sid),
+                                                                sid=sid,
+                                                                tx_val=tx_val),
                                                       TxMessage)
         self.assertEqual(self.HASH, tx_message.tx_hash())
         self.assertEqual(sid, tx_message.short_id())
@@ -152,7 +152,7 @@ class BloxrouteMessageFactory(AbstractTestCase):
 
         key = bytearray(1 for _ in range(KEY_SIZE))
         key_message = self.create_message_successfully(
-            KeyMessage(self.HASH, bytearray(1 for _ in range(KEY_SIZE)), network_num=test_network_num),
+            KeyMessage(self.HASH, test_network_num, bytearray(1 for _ in range(KEY_SIZE))),
             KeyMessage)
         self.assertEqual(key, key_message.key())
         self.assertEqual(test_network_num, key_message.network_num())

@@ -65,7 +65,7 @@ class Message(AbstractMessage):
         Returns a memoryview of the message
         """
         if self._payload_len is None:
-            self._payload_len, _ = struct.unpack_from('<L', self.buf, constants.MSG_TYPE_LEN)
+            self._payload_len, = struct.unpack_from('<L', self.buf, constants.MSG_TYPE_LEN)
 
         if self._payload_len + self.HEADER_LENGTH == len(self.buf):
             return self._memoryview

@@ -1,13 +1,14 @@
 import os
 import socket
-from argparse import Namespace
 from contextlib import closing
 
+from argparse import Namespace
 from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, ALL_NETWORK_NUM
+from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -71,7 +72,7 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
                      bloxroute_version="bloxroute 1.5", include_default_btc_args=False, include_default_eth_args=False,
                      blockchain_network_num=DEFAULT_NETWORK_NUM, min_peer_gateways=0, remote_blockchain_ip=None,
                      remote_blockchain_port=None, connect_to_remote_blockchain=False, is_internal_gateway=False,
-                     is_gateway_miner=False, ** kwargs):
+                     is_gateway_miner=False, **kwargs):
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -112,7 +113,13 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "remote_blockchain_peer": remote_blockchain_peer,
         "connect_to_remote_blockchain": connect_to_remote_blockchain,
         "is_internal_gateway": is_internal_gateway,
-        "is_gateway_miner": is_gateway_miner
+        "is_gateway_miner": is_gateway_miner,
+        "blockchain_networks": [
+            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0),
+            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1),
+            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2),
+            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3)
+        ]
     }
 
     if include_default_btc_args:
@@ -161,5 +168,11 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
         "outbound_peers": relay_addresses,
         "test_mode": "",
         "blockchain_network_num": blockchain_network_num,
+        "blockchain_networks": [
+            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0),
+            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1),
+            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2),
+            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3)
+        ]
     }
     return opts

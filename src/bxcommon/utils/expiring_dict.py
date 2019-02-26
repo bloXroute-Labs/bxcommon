@@ -22,5 +22,9 @@ class ExpiringDict(object):
         self._alarm_queue.register_approx_alarm(self._expiration_time * 2, self._expiration_time, self.cleanup)
 
     def cleanup(self):
-        self._expiration_queue.remove_expired(remove_callback=self.contents.pop)
+        self._expiration_queue.remove_expired(remove_callback=self.remove_item)
         return 0
+
+    def remove_item(self, key):
+        if key in self.contents:
+            del self.contents[key]

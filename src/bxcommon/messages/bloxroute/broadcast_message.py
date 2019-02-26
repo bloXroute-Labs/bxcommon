@@ -33,6 +33,7 @@ class BroadcastMessage(Message):
         self._msg_hash = None
         self._network_num = None
         self._blob = None
+        self._payload_len = None
 
     def log_level(self):
         return LogLevel.INFO

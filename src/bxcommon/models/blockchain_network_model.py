@@ -8,3 +8,7 @@ class BlockchainNetworkModel(object):
         self.type = type
         self.environment = environment
         self.default_attributes = default_attributes
+
+        # TODO: This value needs to be coming from SDN
+        self.final_tx_confirmations_count = 6
+

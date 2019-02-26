@@ -1,18 +1,18 @@
-import argparse
 import json
-
-from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
-from bxcommon.utils.log_level import LogLevel
-from bxcommon.utils import config
 import os
 import re
 import sys
 
+import argparse
+
 from bxcommon import constants
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import ALL_NETWORK_NUM
+from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
 from bxcommon.services import sdn_http_service
+from bxcommon.utils import config
 from bxcommon.utils import convert, logger
+from bxcommon.utils.log_level import LogLevel
 
 # Keep here instead of constants to avoid circular import.
 
@@ -130,7 +130,7 @@ def parse_blockchain_opts(opts, node_type):
         opts_dict["blockchain_network_num"] = ALL_NETWORK_NUM
         return
 
-    network_info = get_blockchain_network_info(opts.blockchain_protocol, opts.blockchain_network)
+    network_info = _get_blockchain_network_info(opts)
 
     for key, value in opts_dict.iteritems():
         if value is None:
@@ -140,26 +140,28 @@ def parse_blockchain_opts(opts, node_type):
     opts_dict["blockchain_network_num"] = network_info.network_num
 
 
-def get_blockchain_network_info(protocol, network):
+def set_blockchain_networks_info(opts):
+    opts.blockchain_networks = sdn_http_service.fetch_blockchain_networks()
+
+
+def _get_blockchain_network_info(opts):
     """
     Retrieves the blockchain network info from the SDN based on blockchain-protocol and blockchain-network cli arguments.
 
     :param protocol: blockchain protocol
     :param network: blcokchain network
     """
-    blockchain_network = sdn_http_service.fetch_blockchain_network(protocol, network)
 
-    if blockchain_network is None:
-        all_blockchain_networks = sdn_http_service.fetch_blockchain_networks()
+    for blockchain_network in opts.blockchain_networks:
+        if blockchain_network.protocol == opts.blockchain_protocol and blockchain_network.network == opts.blockchain_network:
+            return blockchain_network
 
-        all_networks_names = "\n".join(
-            map(lambda n: "{} - {}".format(n.protocol, n.network), all_blockchain_networks))
-        error_msg = "Network number does not exist for blockchain protocol {} and network {}.\nValid options:\n{}" \
-            .format(protocol, network, all_networks_names)
-        logger.fatal(error_msg)
-        exit(1)
-
-    return blockchain_network
+    all_networks_names = "\n".join(
+        map(lambda n: "{} - {}".format(n.protocol, n.network), opts.blockchain_networks))
+    error_msg = "Network number does not exist for blockchain protocol {} and network {}.\nValid options:\n{}" \
+        .format(opts.blockchain_protocol, opts.blockchain_network, all_networks_names)
+    logger.fatal(error_msg)
+    exit(1)
 
 
 def set_os_version(opts):

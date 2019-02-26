@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 
 from pympler import asizeof
 
@@ -17,7 +17,6 @@ class TransactionService(object):
     ---------
     MAX_ID: maximum short id value (e.g. number of bits in a short id)
     SHORT_ID_SIZE: number of bytes in a short id, must match TxMessage
-    MAX_SLOP_TIME: max amount of time we wait for nodes to drop stale short ids
 
 
     Attributes
@@ -28,19 +27,26 @@ class TransactionService(object):
     txhash_to_contents: mapping of transaction long hashes to transaction contents
     tx_assignment_expire_queue: expiration time of short ids
     tx_assign_alarm_scheduled: if an alarm to expire a batch of short ids is currently active
+    network_num: network number that current transaction service serves
     """
 
     MAX_ID = 2 ** 32
     SHORT_ID_SIZE = 4
-    MAX_SLOP_TIME = 120
+    DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT = 24
 
-    def __init__(self, node):
+    def __init__(self, node, network_num):
         self.node = node
         self.txhash_to_sids = defaultdict(set)
         self.sid_to_txhash = {}
         self.txhash_to_contents = {}
         self.tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
         self.tx_assign_alarm_scheduled = False
+        self.network_num = network_num
+
+        self.final_tx_confirmations_count = self._get_final_tx_confirmations_count()
+
+        # deque of short ids in blocks in the order they are received
+        self.short_ids_seen_in_block = deque()
 
     def assign_short_id(self, transaction_hash, short_id):
         """
@@ -122,15 +128,36 @@ class TransactionService(object):
         Clean up expired short ids.
         """
         logger.info("Expiring old short id assignments. Total entries: {}".format(len(self.tx_assignment_expire_queue)))
-        self.tx_assignment_expire_queue.remove_expired(remove_callback=self._expire_assignment)
-        logger.info("Finished cleaning up short ids. Entries remaining: {}".format(len(self.tx_assignment_expire_queue)))
+        self.tx_assignment_expire_queue.remove_expired(remove_callback=self._remove_transaction_by_short_id)
+        logger.info(
+            "Finished cleaning up short ids. Entries remaining: {}".format(len(self.tx_assignment_expire_queue)))
         if len(self.tx_assignment_expire_queue) > 0:
             return self.node.opts.sid_expire_time
         else:
             self.tx_assign_alarm_scheduled = False
             return 0
 
-    def _expire_assignment(self, short_id):
+    def track_seen_short_ids(self, short_ids):
+        """
+        Track short ids that has been seen in a routed block.
+        That information helps transaction service make a decision when to remove transactions from cache.
+
+        :param short_ids: transaction short ids
+        """
+
+        if short_ids is None:
+            return ValueError("short_ids is required.")
+
+        self.short_ids_seen_in_block.append(short_ids)
+
+        if len(self.short_ids_seen_in_block) > self.final_tx_confirmations_count:
+
+            final_short_ids = self.short_ids_seen_in_block.popleft()
+
+            for short_id in final_short_ids:
+                self._remove_transaction_by_short_id(short_id)
+
+    def _remove_transaction_by_short_id(self, short_id):
         """
         Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
         :param short_id: short id to clean up
@@ -148,30 +175,47 @@ class TransactionService(object):
                 else:
                     short_ids.remove(short_id)
 
-    def log_tx_service_mem_stats(self, network_num=0):
+    def log_tx_service_mem_stats(self):
+        """
+        Logs transactions service memory statistics
+        """
+
         class_name = self.__class__.__name__
         hooks.add_obj_mem_stats(
             class_name,
-            network_num,
+            self.network_num,
             self.txhash_to_sids,
             "txhash_to_sids",
             asizeof.asized(self.txhash_to_sids))
 
         hooks.add_obj_mem_stats(
             class_name,
-            network_num,
+            self.network_num,
             self.txhash_to_contents,
             "hash_to_contents",
             asizeof.asized(self.txhash_to_contents))
 
         hooks.add_obj_mem_stats(
             class_name,
-            network_num,
+            self.network_num,
             self.sid_to_txhash,
             "sid_to_txid",
             asizeof.asized(self.sid_to_txhash))
 
+        hooks.add_obj_mem_stats(
+            class_name,
+            self.network_num,
+            self.short_ids_seen_in_block,
+            "short_ids_seen_in_block",
+            asizeof.asized(self.short_ids_seen_in_block))
+
     def get_tx_service_aggregate_stats(self):
+        """
+        Returns dictionary with aggregated statistics of transactions service
+
+        :return: dictionary with aggregated statistics
+        """
+
         if len(self.tx_assignment_expire_queue.queue) > 0:
             oldest_transaction_date = self.tx_assignment_expire_queue.queue[0][0]
         else:
@@ -181,3 +225,13 @@ class TransactionService(object):
             unique_transaction_content_gauge=len(self.txhash_to_contents),
             oldest_transaction_date=oldest_transaction_date
         )
+
+    def _get_final_tx_confirmations_count(self):
+        for blockchain_network in self.node.opts.blockchain_networks:
+            if blockchain_network.network_num == self.network_num:
+                return blockchain_network.final_tx_confirmations_count
+
+        logger.warn("Tx service could not determine final confirmations count for network number {}. Using default {}."
+                    .format(self.network_num, self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT))
+
+        return self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT

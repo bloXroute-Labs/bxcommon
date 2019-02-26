@@ -25,9 +25,8 @@ class _TxMessageConverterV1(AbstractMessageConverter):
         struct.pack_into("<12sL", result_bytes, off, BloxrouteMessageType.TRANSACTION, payload_len)
         off += HDR_COMMON_OFF
 
-        result_bytes[off:off + SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES] = mem_view[
-                                                                         off:off + SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES]
-        off += SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES
+        result_bytes[off:off + SHA256_HASH_LEN] = mem_view[off:off + SHA256_HASH_LEN]
+        off += SHA256_HASH_LEN
 
         off_v1 = off
 
@@ -59,9 +58,8 @@ class _TxMessageConverterV1(AbstractMessageConverter):
         struct.pack_into("<12sL", result_bytes, off, BloxrouteMessageType.TRANSACTION, payload_len)
         off += HDR_COMMON_OFF
 
-        result_bytes[off:off + SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES] = mem_view[
-                                                                         off:off + SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES]
-        off += SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES
+        result_bytes[off:off + SHA256_HASH_LEN] = mem_view[off:off + SHA256_HASH_LEN]
+        off += SHA256_HASH_LEN
 
         off_v1 = off
 

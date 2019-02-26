@@ -1,6 +1,7 @@
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import DEFAULT_NETWORK_NUM
+from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils.alarm import AlarmQueue
 from bxcommon.connections.abstract_node import AbstractNode
@@ -23,7 +24,7 @@ class MockNode(AbstractNode):
         mock_opts = MockOpts()
         super(MockNode, self).__init__(mock_opts)
 
-        self._tx_service = TransactionService(self)
+        self._tx_service = TransactionService(self, self.network_num)
         self._tx_services = {}
 
     def broadcast(self, msg, requester=None, prepend_to_queue=False, network_num=None,
@@ -55,3 +56,9 @@ class MockOpts(object):
         self.outbound_peers = outbound_peers
         self.blockchain_network_num = blockchain_network_num
         self.node_type = node_type
+        self.blockchain_networks = [
+            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0),
+            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1),
+            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2),
+            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3)
+        ]
