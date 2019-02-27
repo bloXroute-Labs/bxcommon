@@ -1,4 +1,3 @@
-
 # TODO: these functions arent intended to be permanent, but pulling
 # them out here for now for easier tests to convert these to different
 # formats for symmetric encryption / hashing.
@@ -8,10 +7,17 @@
 # of the payload, which is probably the mort significant part.
 from bxcommon import constants
 from bxcommon.storage.encrypted_cache import EncryptedCache
+from bxcommon.utils.object_hash import ObjectHash
 
 
 def message_hash_to_hash_key(msg_hash):
-    return bytes(msg_hash.binary)
+    if isinstance(msg_hash, ObjectHash):
+        return bytes(msg_hash.binary)
+
+    if isinstance(msg_hash, memoryview):
+        return msg_hash.tobytes()
+
+    return bytes(msg_hash)
 
 
 def message_blob_to_ciphertext(msg_blob):

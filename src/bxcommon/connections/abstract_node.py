@@ -54,7 +54,6 @@ class AbstractNode(object):
         self.init_block_stats_logging()
         self.init_tx_stats_logging()
 
-
         # TODO: clean this up alongside outputbuffer holding time
         # this is Nagle's algorithm and we need to implement it properly
         # flush buffers regularly because of output buffer holding time
@@ -241,7 +240,7 @@ class AbstractNode(object):
             self.destroy_conn(conn)
 
     def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, network_num=None,
-                  connection_type=ConnectionType.RELAY):
+                  connection_type=ConnectionType.RELAY, exclude_relays=False):
         """
         Broadcasts message msg to connections of the specified type except requester.
         """
@@ -259,8 +258,8 @@ class AbstractNode(object):
 
         broadcast_connections = []
         for conn in self.connection_pool.get_by_connection_type(connection_type):
-            is_matching_network_num = conn.network_num == constants.ALL_NETWORK_NUM or \
-                                      conn.network_num == broadcast_net_num
+            is_matching_network_num = (not exclude_relays and conn.network_num == constants.ALL_NETWORK_NUM) or \
+                                       conn.network_num == broadcast_net_num
             if conn.is_active() and conn != broadcasting_conn and is_matching_network_num:
                 conn.enqueue_msg(msg, prepend_to_queue)
                 broadcast_connections.append(conn)
