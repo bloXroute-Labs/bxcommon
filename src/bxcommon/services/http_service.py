@@ -21,10 +21,10 @@ def _http_request(method, endpoint, **kwargs):
         response = requests.request(method=method, url=url, **kwargs)
         response.raise_for_status()
     except HTTPError as e:
-        logger.error("{0} to {1} returned error: {1}".format(method, url, e))
+        logger.error("{0} to {1} returned error: {2}".format(method, url, e))
         return None
     except RequestException as e:
-        logger.error("{0} to {1} failed with error: {1}".format(method, url, e))
+        logger.error("{0} to {1} failed with error: {2}".format(method, url, e))
         return None
 
     return response.json()
