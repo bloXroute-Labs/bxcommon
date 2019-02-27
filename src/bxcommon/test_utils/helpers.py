@@ -107,6 +107,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "outbound_peers": peer_gateways + peer_relays,
         "protocol_version": protocol_version,
         "blockchain_network_num": blockchain_network_num,
+        "blockchain_block_interval": 600,
+        "blockchain_ignore_block_interval_count": 3,
         "min_peer_gateways": min_peer_gateways,
         "remote_blockchain_ip": remote_blockchain_ip,
         "remote_blockchain_port": remote_blockchain_port,
@@ -115,10 +117,10 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "is_internal_gateway": is_internal_gateway,
         "is_gateway_miner": is_gateway_miner,
         "blockchain_networks": [
-            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0),
-            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1),
-            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2),
-            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3)
+            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0, block_interval=600),
+            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1, block_interval=600),
+            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2, block_interval=15),
+            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3, block_interval=15)
         ]
     }
 

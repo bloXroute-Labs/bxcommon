@@ -121,8 +121,8 @@ def parse_blockchain_opts(opts, node_type):
     Get the blockchain network info from the SDN and set the default values for the blockchain cli params if they were
     not passed in the args.
 
-    :param node_type:
     :param opts: argument list
+    :param node_type:
     """
     opts_dict = opts.__dict__
 
@@ -138,6 +138,8 @@ def parse_blockchain_opts(opts, node_type):
                 opts_dict[key] = network_info.default_attributes[key.encode(constants.DEFAULT_TEXT_ENCODING)]
 
     opts_dict["blockchain_network_num"] = network_info.network_num
+    opts_dict["blockchain_block_interval"] = network_info.block_interval
+    opts_dict["blockchain_ignore_block_interval_count"] = network_info.ignore_block_interval_count
 
 
 def set_blockchain_networks_info(opts):
@@ -148,8 +150,7 @@ def _get_blockchain_network_info(opts):
     """
     Retrieves the blockchain network info from the SDN based on blockchain-protocol and blockchain-network cli arguments.
 
-    :param protocol: blockchain protocol
-    :param network: blcokchain network
+    :param opts: argument list
     """
 
     for blockchain_network in opts.blockchain_networks:
