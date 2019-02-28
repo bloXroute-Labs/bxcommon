@@ -154,7 +154,8 @@ def _get_blockchain_network_info(opts):
     """
 
     for blockchain_network in opts.blockchain_networks:
-        if blockchain_network.protocol == opts.blockchain_protocol and blockchain_network.network == opts.blockchain_network:
+        if blockchain_network.protocol.lower() == opts.blockchain_protocol.lower() and \
+                blockchain_network.network.lower() == opts.blockchain_network.lower():
             return blockchain_network
 
     all_networks_names = "\n".join(
