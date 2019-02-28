@@ -117,7 +117,7 @@ INFO_STATS_INTERVAL = 3600
 MEMORY_STATS_INTERVAL = 3600
 
 # Percentage for transactions that will be logged by stats service. The value should be controlled by SDN in the future.
-TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR = 5
+TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR = 0.5
 ENABLE_TRANSACTIONS_STATS_BY_SHORT_IDS = False
 
 # </editor-fold>

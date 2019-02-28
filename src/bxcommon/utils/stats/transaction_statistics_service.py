@@ -44,7 +44,9 @@ class _TransactionStatisticsService(StatisticsEventService):
 
         last_byte_value, = struct.unpack_from("<B", tx_hash_bytes, len(tx_hash_bytes) - 1)
 
-        return last_byte_value * 100 / constants.MAX_BYTE_VALUE <= constants.TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR
+        log_tx_stat_probability_value = float(last_byte_value) * 100 / constants.MAX_BYTE_VALUE
+
+        return log_tx_stat_probability_value <= constants.TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR
 
 
 tx_stats = _TransactionStatisticsService()
