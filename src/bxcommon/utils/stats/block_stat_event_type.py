@@ -30,3 +30,5 @@ class BlockStatEventType(object):
     ENC_BLOCK_KEY_RECEIVED_BY_GATEWAY_FROM_NETWORK = "EncBlockKeyReceivedByGatewayFromNetwork"
     ENC_BLOCK_KEY_RECEIVED_BY_RELAY_FROM_PEER = "EncBlockKeyReceivedByRelayFromPeer"
     ENC_BLOCK_KEY_SENT_BY_RELAY_TO_PEER = "EncBlockKeySentByRelayToPeer"
+    REMOTE_BLOCK_RECEIVED_BY_GATEWAY = "RemoteBlockReceivedByGateway"
+    REMOTE_BLOCK_REQUESTED_BY_GATEWAY = "RemoteBlockRequestedByGateway"
