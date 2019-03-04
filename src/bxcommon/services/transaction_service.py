@@ -117,9 +117,9 @@ class TransactionService(object):
                     tx = self.txhash_to_contents[transaction_hash]
                     transactions.append((short_id, transaction_hash, tx))
                 else:
-                    logger.warn("Short id {} was requested but is unknown.".format(short_id))
+                    logger.debug("Short id {} was requested but is unknown.".format(short_id))
             else:
-                logger.warn("Short id {} was requested but is unknown.".format(short_id))
+                logger.debug("Short id {} was requested but is unknown.".format(short_id))
 
         return transactions
 
