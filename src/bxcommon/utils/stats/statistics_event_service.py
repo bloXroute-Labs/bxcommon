@@ -7,13 +7,12 @@ from bxcommon.utils.stats.stat_event import StatEvent
 class StatisticsEventService(object):
     def __init__(self):
         self.name = None
+        self.node = None
         self.node_id = None
 
-    def set_node_id(self, node_id):
-        if not node_id:
-            raise ValueError("node_id is required")
-
-        self.node_id = node_id
+    def set_node(self, node):
+        self.node = node
+        self.node_id = self.node.opts.node_id
 
     def log_event(self, event_name, object_id, start_date_time=None, end_date_time=None, **kwargs):
 

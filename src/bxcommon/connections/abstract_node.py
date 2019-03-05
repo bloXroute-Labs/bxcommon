@@ -425,10 +425,10 @@ class AbstractNode(object):
         memory_statistics.start_recording(self.record_mem_stats)
 
     def init_block_stats_logging(self):
-        tx_stats.set_node_id(self.opts.node_id)
+        tx_stats.set_node(self)
 
     def init_tx_stats_logging(self):
-        block_stats.set_node_id(self.opts.node_id)
+        block_stats.set_node(self)
 
     def flush_all_send_buffers(self):
         for conn in self.connection_pool:
@@ -447,3 +447,4 @@ class AbstractNode(object):
 
         # TODO: currently hard-coding configuration values
         opts.stats_calculate_actual_size = False
+        opts.log_detailed_block_stats = False

@@ -9,8 +9,11 @@ class _BlockStatisticsService(StatisticsEventService):
     def __init__(self):
         self.name = "BlockInfo"
 
-    def add_block_event(self, block_msg, block_event_name, start_date_time=None, end_date_time=None,
+    def add_block_event(self, block_msg, block_event_settings, start_date_time=None, end_date_time=None,
                         **kwargs):
+        if not self._should_log_stat_event(block_event_settings):
+            return
+
         if isinstance(block_msg, BroadcastMessage):
             block_hash = block_msg.msg_hash().binary
         elif isinstance(block_msg, memoryview):
@@ -18,10 +21,14 @@ class _BlockStatisticsService(StatisticsEventService):
         else:
             block_hash = block_msg[HDR_COMMON_OFF:HDR_COMMON_OFF + crypto.SHA256_HASH_LEN]
 
-        self.log_event(block_event_name, convert.bytes_to_hex(block_hash), start_date_time, end_date_time, **kwargs)
+        self.log_event(block_event_settings.name, convert.bytes_to_hex(block_hash), start_date_time, end_date_time,
+                       **kwargs)
 
-    def add_block_event_by_block_hash(self, block_hash, block_event_name, start_date_time=None, end_date_time=None,
+    def add_block_event_by_block_hash(self, block_hash, block_event_settings, start_date_time=None, end_date_time=None,
                                       **kwargs):
+        if not self._should_log_stat_event(block_event_settings):
+            return
+
         if isinstance(block_hash, ObjectHash):
             block_hash_str = block_hash.binary
         elif isinstance(block_hash, memoryview):
@@ -29,7 +36,11 @@ class _BlockStatisticsService(StatisticsEventService):
         else:
             block_hash_str = block_hash
 
-        self.log_event(block_event_name, convert.bytes_to_hex(block_hash_str), start_date_time, end_date_time, **kwargs)
+        self.log_event(block_event_settings.name, convert.bytes_to_hex(block_hash_str), start_date_time, end_date_time,
+                       **kwargs)
+
+    def _should_log_stat_event(self, event_type_settings):
+        return self.node.opts.log_detailed_block_stats or not event_type_settings.detailed_stat_event
 
 
 block_stats = _BlockStatisticsService()
