@@ -26,6 +26,7 @@ class AbstractNode(object):
     def __init__(self, opts):
         logger.info("Initializing node of type: {}".format(self.NODE_TYPE))
 
+        self.set_node_config_opts_from_sdn(opts)
         self.opts = opts
 
         self.connection_queue = deque()
@@ -259,7 +260,7 @@ class AbstractNode(object):
         broadcast_connections = []
         for conn in self.connection_pool.get_by_connection_type(connection_type):
             is_matching_network_num = (not exclude_relays and conn.network_num == constants.ALL_NETWORK_NUM) or \
-                                       conn.network_num == broadcast_net_num
+                                      conn.network_num == broadcast_net_num
             if conn.is_active() and conn != broadcasting_conn and is_matching_network_num:
                 conn.enqueue_msg(msg, prepend_to_queue)
                 broadcast_connections.append(conn)
@@ -441,3 +442,8 @@ class AbstractNode(object):
         :returns memory stats flush interval
         """
         return memory_statistics.flush_info()
+
+    def set_node_config_opts_from_sdn(self, opts):
+
+        # TODO: currently hard-coding configuration values
+        opts.stats_calculate_actual_size = False

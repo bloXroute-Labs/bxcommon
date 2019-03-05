@@ -186,28 +186,28 @@ class TransactionService(object):
             self.network_num,
             self.txhash_to_sids,
             "txhash_to_sids",
-            asizeof.asized(self.txhash_to_sids))
+            self.get_collection_mem_stats(self.txhash_to_sids))
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self.txhash_to_contents,
             "hash_to_contents",
-            asizeof.asized(self.txhash_to_contents))
+            self.get_collection_mem_stats(self.txhash_to_contents))
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self.sid_to_txhash,
             "sid_to_txid",
-            asizeof.asized(self.sid_to_txhash))
+            self.get_collection_mem_stats(self.sid_to_txhash))
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self.short_ids_seen_in_block,
             "short_ids_seen_in_block",
-            asizeof.asized(self.short_ids_seen_in_block))
+            self.get_collection_mem_stats(self.short_ids_seen_in_block))
 
     def get_tx_service_aggregate_stats(self):
         """
@@ -225,6 +225,13 @@ class TransactionService(object):
             unique_transaction_content_gauge=len(self.txhash_to_contents),
             oldest_transaction_date=oldest_transaction_date
         )
+
+    def get_collection_mem_stats(self, collection_obj, ):
+        if self.node.opts.stats_calculate_actual_size:
+            obj_size = asizeof.asized(collection_obj)
+            return (obj_size.size, obj_size.flat, True)
+        else:
+            return (0, 0, False)
 
     def _get_final_tx_confirmations_count(self):
         for blockchain_network in self.node.opts.blockchain_networks:

@@ -26,14 +26,17 @@ class MemoryStatsService(ThreadedStatisticsService):
         mem_stats.timestamp = datetime.utcnow()
 
         # If the object being analyzed doesn't have a length property
-        try:
+        if hasattr(obj, "__len__"):
             object_item_count = len(obj)
-        except TypeError:
-            object_item_count = -1
+        else:
+            object_item_count = 0
+
+        size, flat_size, is_actual_size = obj_mem_info
 
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_item_count = object_item_count
-        mem_stats.networks[network_num].analyzed_objects[obj_name].object_size = obj_mem_info.size
-        mem_stats.networks[network_num].analyzed_objects[obj_name].object_flat_size = obj_mem_info.flat
+        mem_stats.networks[network_num].analyzed_objects[obj_name].object_size = size
+        mem_stats.networks[network_num].analyzed_objects[obj_name].object_flat_size = flat_size
+        mem_stats.networks[network_num].analyzed_objects[obj_name].is_actual_size = is_actual_size
 
     def get_info(self):
         # total_mem_usage is the peak mem usage fo the process (kilobytes on Linux, bytes on OS X)
