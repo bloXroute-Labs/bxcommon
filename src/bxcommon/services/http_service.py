@@ -42,3 +42,8 @@ def post_json(endpoint, payload=None):
 def patch_json(endpoint, payload=None):
     return _http_request("PATCH", endpoint, data=json.dumps(payload, cls=ClassJsonEncoder),
                          headers={"Content-Type": "application/json"})
+
+
+def delete_json(endpoint, payload=None):
+    return _http_request("DELETE", endpoint, data=json.dumps(payload, cls=ClassJsonEncoder),
+                         headers={"Content-Type": "application/json"})

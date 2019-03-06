@@ -102,6 +102,7 @@ class SdnRoutes(object):
     node_event = "/nodes/{0}/events"
     blockchain_network = "/blockchain-networks/{0}/{1}"
     blockchain_networks = "/blockchain-networks"
+    gateway_inbound_connection = "/nodes/{0}/gateway-inbound-connection"
 
 
 # </editor-fold>

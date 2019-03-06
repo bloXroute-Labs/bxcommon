@@ -100,6 +100,14 @@ def submit_peer_connection_error_event(node_id, peer_ip, peer_port):
         NodeEventModel(node_id=node_id, event_type=NodeEventType.PEER_CONN_ERR, peer_ip=peer_ip, peer_port=peer_port))
 
 
+def submit_gateway_inbound_connection(node_id, peer_id):
+    http_service.post_json(SdnRoutes.gateway_inbound_connection.format(node_id), peer_id)
+
+
+def delete_gateway_inbound_connection(node_id, peer_id):
+    http_service.delete_json(SdnRoutes.gateway_inbound_connection.format(node_id), peer_id)
+
+
 def submit_node_event(node_event_model):
     node_event_model.timestamp = str(time.time())
     logger.debug("Submitting event for node {0} {1}"
