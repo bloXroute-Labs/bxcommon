@@ -75,6 +75,9 @@ class EncryptedCache(object):
     def get_encryption_key(self, hash_key):
         return self._cache[hash_key].key
 
+    def pop_ciphertext(self, hash_key):
+        return self._cache.pop(hash_key).ciphertext
+
     def has_encryption_key_for_hash(self, hash_key):
         return hash_key in self._cache and self._cache[hash_key].key is not None
 

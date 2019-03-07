@@ -74,6 +74,11 @@ class BlockEncryptedCache(EncryptedCache):
             message_blob_to_ciphertext(encryption_key)
         )
 
+    def pop_ciphertext(self, hash_key):
+        return super(BlockEncryptedCache, self).pop_ciphertext(
+            message_hash_to_hash_key(hash_key)
+        )
+
     def remove_item(self, hash_key):
         return super(BlockEncryptedCache, self).remove_item(
             message_hash_to_hash_key(hash_key)
