@@ -12,7 +12,7 @@ class BlockStatEventType(object):
     BLOCK_ENCRYPTED = BlockStatEventTypeSettings("BlockEncrypted")
     BLOCK_HOLD_REQUESTED = BlockStatEventTypeSettings("BlockHoldRequested", detailed_stat_event=True)
     BLOCK_HOLD_HELD_BLOCK = BlockStatEventTypeSettings("BlockHoldHeldBlock")
-    BLOCK_HOLD_LIFTED = BlockStatEventTypeSettings("BlockHoldLifted")
+    BLOCK_HOLD_LIFTED = BlockStatEventTypeSettings("BlockHoldLifted", detailed_stat_event=True)
     BLOCK_HOLD_TIMED_OUT = BlockStatEventTypeSettings("BlockHoldTimeout")
     ENC_BLOCK_SENT_FROM_GATEWAY_TO_NETWORK = BlockStatEventTypeSettings("EncBlockSentFromGatewayToNetwork",
                                                                         detailed_stat_event=True)
