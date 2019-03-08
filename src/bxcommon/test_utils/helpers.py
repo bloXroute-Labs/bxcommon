@@ -121,7 +121,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
             BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1, block_interval=600),
             BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2, block_interval=15),
             BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3, block_interval=15)
-        ]
+        ],
+        "transaction_pool_memory_limit": 200000000
     }
 
     if include_default_btc_args:
@@ -175,6 +176,7 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
             BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1),
             BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2),
             BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3)
-        ]
+        ],
+        "transaction_pool_memory_limit": 200000000
     }
     return opts

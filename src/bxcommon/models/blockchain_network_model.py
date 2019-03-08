@@ -13,3 +13,4 @@ class BlockchainNetworkModel(object):
         self.block_interval = block_interval
         self.ignore_block_interval_count = ignore_block_interval_count
         self.final_tx_confirmations_count = 6
+        self.tx_contents_memory_limit_bytes = 200 * 1024 * 1024

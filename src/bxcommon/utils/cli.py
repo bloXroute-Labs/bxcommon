@@ -35,6 +35,9 @@ arg_parser.add_argument("--node-id", help="(TEST ONLY) Set the node_id for using
 arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__getattr__, choices=list(LogLevel))
 arg_parser.add_argument("--log-flush-immediately", help="Enables immediate flush for logs",
                         type=convert.str_to_bool, default=False)
+arg_parser.add_argument("--transaction-pool-memory-limit",
+                            help="Maximum size of transactions to keep in memory pool (MB)",
+                            type=int)
 
 _args = None
 

@@ -22,31 +22,97 @@ class TransactionService(object):
     Attributes
     ----------
     node: reference to node holding transaction service reference
-    txhash_to_sids: mapping of transaction long hashes to (potentially multiple) short ids
-    sid_to_txhash: mapping of short id to transaction long hashes
-    txhash_to_contents: mapping of transaction long hashes to transaction contents
-    tx_assignment_expire_queue: expiration time of short ids
     tx_assign_alarm_scheduled: if an alarm to expire a batch of short ids is currently active
     network_num: network number that current transaction service serves
+    _tx_hash_to_short_ids: mapping of transaction long hashes to (potentially multiple) short ids
+    _short_id_to_tx_hash: mapping of short id to transaction long hashes
+    _tx_hash_to_contents: mapping of transaction long hashes to transaction contents
+    _tx_assignment_expire_queue: expiration time of short ids
     """
 
     MAX_ID = 2 ** 32
     SHORT_ID_SIZE = 4
     DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT = 24
+    DEFAULT_TX_MEMORY_LIMIT = 200 * 1024 * 1024
 
     def __init__(self, node, network_num):
+        """
+        Constructor
+        :param node: reference to node object
+        :param network_num: network number
+        """
+
+        if node is None:
+            raise ValueError("Node is required")
+
+        if network_num is None:
+            raise ValueError("Network number is required")
+
         self.node = node
-        self.txhash_to_sids = defaultdict(set)
-        self.sid_to_txhash = {}
-        self.txhash_to_contents = {}
-        self.tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
-        self.tx_assign_alarm_scheduled = False
         self.network_num = network_num
 
-        self.final_tx_confirmations_count = self._get_final_tx_confirmations_count()
+        self.tx_assign_alarm_scheduled = False
+
+        self._tx_hash_to_short_ids = defaultdict(set)
+        self._short_id_to_tx_hash = {}
+        self._tx_hash_to_contents = {}
+        self._tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
+
+        self._final_tx_confirmations_count = self._get_final_tx_confirmations_count()
+        self._tx_content_memory_limit = self._get_tx_contents_memory_limit()
 
         # deque of short ids in blocks in the order they are received
-        self.short_ids_seen_in_block = deque()
+        self._short_ids_seen_in_block = deque()
+
+        self._total_tx_contents_size = 0
+        self._total_tx_removed_by_memory_limit = 0
+
+    def set_transaction_contents(self, transaction_hash, transaction_contents):
+        """
+        Adds transaction contents to transaction service cache with lookup key by transaction hash
+
+        :param transaction_hash: transaction hash
+        :param transaction_contents: transaction contents bytes
+        """
+
+        previous_size = 0
+
+        if transaction_hash in self._tx_hash_to_contents:
+            previous_size = len(self._tx_hash_to_contents[transaction_hash])
+
+        self._tx_hash_to_contents[transaction_hash] = transaction_contents
+        self._total_tx_contents_size += len(transaction_contents) - previous_size
+
+        self._memory_limit_clean_up()
+
+    def has_transaction_contents(self, transaction_hash):
+        """
+        Checks if transaction contents is available in transaction service cache
+
+        :param transaction_hash: transaction hash
+        :return: Boolean indicating if transaction contents exists
+        """
+
+        return transaction_hash in self._tx_hash_to_contents
+
+    def has_transaction_short_id(self, transaction_hash):
+        """
+        Checks if transaction short id is available in transaction service cache
+
+        :param transaction_hash: transaction hash
+        :return: Boolean indicating if transaction short id exists
+        """
+
+        return transaction_hash in self._tx_hash_to_short_ids
+
+    def has_short_id(self, short_id):
+        """
+        Checks if short id is stored in transaction service cache
+        :param short_id: transaction short id
+        :return: Boolean indicating if short id is found in cache
+        """
+
+        return short_id in self._short_id_to_tx_hash
 
     def assign_short_id(self, transaction_hash, short_id):
         """
@@ -58,9 +124,9 @@ class TransactionService(object):
             logger.warn("Attempt to assign null SID to transaction hash {}. Ignoring.".format(transaction_hash))
             return
         logger.debug("Assigning sid {} to transaction {}".format(short_id, transaction_hash))
-        self.txhash_to_sids[transaction_hash].add(short_id)
-        self.sid_to_txhash[short_id] = transaction_hash
-        self.tx_assignment_expire_queue.add(short_id)
+        self._tx_hash_to_short_ids[transaction_hash].add(short_id)
+        self._short_id_to_tx_hash[short_id] = transaction_hash
+        self._tx_assignment_expire_queue.add(short_id)
 
         if not self.tx_assign_alarm_scheduled:
             self.node.alarm_queue.register_alarm(self.node.opts.sid_expire_time, self.expire_old_assignments)
@@ -81,8 +147,8 @@ class TransactionService(object):
         :param transaction_hash: transaction long hash
         :return: set of short ids
         """
-        if transaction_hash in self.txhash_to_sids:
-            return self.txhash_to_sids[transaction_hash]
+        if transaction_hash in self._tx_hash_to_short_ids:
+            return self._tx_hash_to_short_ids[transaction_hash]
         else:
             return {constants.NULL_TX_SID}
 
@@ -93,14 +159,27 @@ class TransactionService(object):
         :param short_id:
         :return: transaction hash, transaction contents.
         """
-        if short_id in self.sid_to_txhash:
-            transaction_hash = self.sid_to_txhash[short_id]
-            if transaction_hash in self.txhash_to_contents:
-                return transaction_hash, self.txhash_to_contents[transaction_hash]
+        if short_id in self._short_id_to_tx_hash:
+            transaction_hash = self._short_id_to_tx_hash[short_id]
+            if transaction_hash in self._tx_hash_to_contents:
+                return transaction_hash, self._tx_hash_to_contents[transaction_hash]
             else:
                 return transaction_hash, None
         else:
             return None, None
+
+    def get_transaction_by_hash(self, transaction_hash):
+        """
+        Fetches transaction contents for a given transaction hash.
+        Results might be None.
+        :param transaction_hash: transaction hash
+        :return: transaction contents.
+        """
+
+        if transaction_hash in self._tx_hash_to_contents:
+            return self._tx_hash_to_contents[transaction_hash]
+
+        return None
 
     def get_transactions(self, short_ids):
         """
@@ -111,10 +190,10 @@ class TransactionService(object):
         """
         transactions = []
         for short_id in short_ids:
-            if short_id in self.sid_to_txhash:
-                transaction_hash = self.sid_to_txhash[short_id]
-                if transaction_hash in self.txhash_to_contents:
-                    tx = self.txhash_to_contents[transaction_hash]
+            if short_id in self._short_id_to_tx_hash:
+                transaction_hash = self._short_id_to_tx_hash[short_id]
+                if transaction_hash in self._tx_hash_to_contents:
+                    tx = self._tx_hash_to_contents[transaction_hash]
                     transactions.append((short_id, transaction_hash, tx))
                 else:
                     logger.debug("Short id {} was requested but is unknown.".format(short_id))
@@ -127,11 +206,12 @@ class TransactionService(object):
         """
         Clean up expired short ids.
         """
-        logger.info("Expiring old short id assignments. Total entries: {}".format(len(self.tx_assignment_expire_queue)))
-        self.tx_assignment_expire_queue.remove_expired(remove_callback=self._remove_transaction_by_short_id)
         logger.info(
-            "Finished cleaning up short ids. Entries remaining: {}".format(len(self.tx_assignment_expire_queue)))
-        if len(self.tx_assignment_expire_queue) > 0:
+            "Expiring old short id assignments. Total entries: {}".format(len(self._tx_assignment_expire_queue)))
+        self._tx_assignment_expire_queue.remove_expired(remove_callback=self._remove_transaction_by_short_id)
+        logger.info(
+            "Finished cleaning up short ids. Entries remaining: {}".format(len(self._tx_assignment_expire_queue)))
+        if len(self._tx_assignment_expire_queue) > 0:
             return self.node.opts.sid_expire_time
         else:
             self.tx_assign_alarm_scheduled = False
@@ -148,32 +228,14 @@ class TransactionService(object):
         if short_ids is None:
             return ValueError("short_ids is required.")
 
-        self.short_ids_seen_in_block.append(short_ids)
+        self._short_ids_seen_in_block.append(short_ids)
 
-        if len(self.short_ids_seen_in_block) > self.final_tx_confirmations_count:
+        if len(self._short_ids_seen_in_block) > self._final_tx_confirmations_count:
 
-            final_short_ids = self.short_ids_seen_in_block.popleft()
+            final_short_ids = self._short_ids_seen_in_block.popleft()
 
             for short_id in final_short_ids:
                 self._remove_transaction_by_short_id(short_id)
-
-    def _remove_transaction_by_short_id(self, short_id):
-        """
-        Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
-        :param short_id: short id to clean up
-        """
-        if short_id in self.sid_to_txhash:
-            transaction_hash = self.sid_to_txhash.pop(short_id)
-            if transaction_hash in self.txhash_to_sids:
-                short_ids = self.txhash_to_sids[transaction_hash]
-
-                # Only clear mapping and txhash_to_contents if last SID assignment
-                if len(short_ids) == 1:
-                    del self.txhash_to_sids[transaction_hash]
-                    if transaction_hash in self.txhash_to_contents:
-                        del self.txhash_to_contents[transaction_hash]
-                else:
-                    short_ids.remove(short_id)
 
     def log_tx_service_mem_stats(self):
         """
@@ -184,30 +246,30 @@ class TransactionService(object):
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
-            self.txhash_to_sids,
-            "txhash_to_sids",
-            self.get_collection_mem_stats(self.txhash_to_sids))
+            self._tx_hash_to_short_ids,
+            "tx_hash_to_short_ids",
+            self.get_collection_mem_stats(self._tx_hash_to_short_ids))
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
-            self.txhash_to_contents,
-            "hash_to_contents",
-            self.get_collection_mem_stats(self.txhash_to_contents))
+            self._tx_hash_to_contents,
+            "tx_hash_to_contents",
+            self.get_collection_mem_stats(self._tx_hash_to_contents))
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
-            self.sid_to_txhash,
-            "sid_to_txid",
-            self.get_collection_mem_stats(self.sid_to_txhash))
+            self._short_id_to_tx_hash,
+            "short_id_to_tx_hash",
+            self.get_collection_mem_stats(self._short_id_to_tx_hash))
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
-            self.short_ids_seen_in_block,
+            self._short_ids_seen_in_block,
             "short_ids_seen_in_block",
-            self.get_collection_mem_stats(self.short_ids_seen_in_block))
+            self.get_collection_mem_stats(self._short_ids_seen_in_block))
 
     def get_tx_service_aggregate_stats(self):
         """
@@ -216,14 +278,15 @@ class TransactionService(object):
         :return: dictionary with aggregated statistics
         """
 
-        if len(self.tx_assignment_expire_queue.queue) > 0:
-            oldest_transaction_date = self.tx_assignment_expire_queue.queue[0][0]
+        if len(self._tx_assignment_expire_queue.queue) > 0:
+            oldest_transaction_date = self._tx_assignment_expire_queue.queue[0][0]
         else:
             oldest_transaction_date = 0
         return dict(
-            short_id_mapping_count_gauge=len(self.sid_to_txhash),
-            unique_transaction_content_gauge=len(self.txhash_to_contents),
-            oldest_transaction_date=oldest_transaction_date
+            short_id_mapping_count_gauge=len(self._short_id_to_tx_hash),
+            unique_transaction_content_gauge=len(self._tx_hash_to_contents),
+            oldest_transaction_date=oldest_transaction_date,
+            transactions_removed_by_memory_limit=self._total_tx_removed_by_memory_limit
         )
 
     def get_collection_mem_stats(self, collection_obj, ):
@@ -233,7 +296,46 @@ class TransactionService(object):
         else:
             return (0, 0, False)
 
+    def _remove_transaction_by_short_id(self, short_id):
+        """
+        Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
+        :param short_id: short id to clean up
+        """
+        if short_id in self._short_id_to_tx_hash:
+            transaction_hash = self._short_id_to_tx_hash.pop(short_id)
+            if transaction_hash in self._tx_hash_to_short_ids:
+                short_ids = self._tx_hash_to_short_ids[transaction_hash]
+
+                # Only clear mapping and txhash_to_contents if last SID assignment
+                if len(short_ids) == 1:
+                    del self._tx_hash_to_short_ids[transaction_hash]
+
+                    if transaction_hash in self._tx_hash_to_contents:
+                        self._total_tx_contents_size -= len(self._tx_hash_to_contents[transaction_hash])
+                        del self._tx_hash_to_contents[transaction_hash]
+                else:
+                    short_ids.remove(short_id)
+
+    def _memory_limit_clean_up(self):
+        """
+        Removes oldest transactions if total bytes consumed by transaction contents exceed memory limit
+        """
+        logger.debug("Transaction service exceeds memory limit for transaction contents. Limit: {}. Current size: {}."
+                     .format(self._tx_content_memory_limit, self._total_tx_contents_size))
+        removed_tx_count = 0
+
+        while self._total_tx_contents_size > self._tx_content_memory_limit:
+            self._tx_assignment_expire_queue.remove_oldest(remove_callback=self._remove_transaction_by_short_id)
+            removed_tx_count += 1
+
+        self._total_tx_removed_by_memory_limit += removed_tx_count
+        logger.debug("Removed {} oldest transactions from transaction service cache. Size after clean up: {}".format(
+            removed_tx_count, self._total_tx_contents_size))
+
     def _get_final_tx_confirmations_count(self):
+        """
+        Returns configuration value of number of block confirmations required before transaction can be removed
+        """
         for blockchain_network in self.node.opts.blockchain_networks:
             if blockchain_network.network_num == self.network_num:
                 return blockchain_network.final_tx_confirmations_count
@@ -242,3 +344,19 @@ class TransactionService(object):
                     .format(self.network_num, self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT))
 
         return self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT
+
+    def _get_tx_contents_memory_limit(self):
+        """
+        Returns configuration value for memory limit for total transaction contents
+        """
+        if self.node.opts.transaction_pool_memory_limit is not None:
+            # convert MB to bytes
+            return self.node.opts.transaction_pool_memory_limit * 1024 * 1024
+
+        for blockchain_network in self.node.opts.blockchain_networks:
+            if blockchain_network.network_num == self.network_num:
+                return blockchain_network.tx_contents_memory_limit_bytes
+
+        logger.warn("Tx service could not determine transactions memory limit for network number {}. Using default {}."
+                    .format(self.network_num, self.DEFAULT_TX_MEMORY_LIMIT))
+        return self.DEFAULT_TX_MEMORY_LIMIT

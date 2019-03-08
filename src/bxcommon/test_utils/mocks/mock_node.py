@@ -62,3 +62,4 @@ class MockOpts(object):
             BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2),
             BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3)
         ]
+        self.transaction_pool_memory_limit = 200000000
