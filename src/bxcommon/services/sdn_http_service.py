@@ -12,6 +12,12 @@ from bxcommon.utils import config, logger, model_loader
 from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 
 
+# TODO next sprint
+# def sort_geo_location_traffic(node_id):
+#     node_url = SdnRoutes.sort_geo_location_traffic.format(node_id)
+#     http_service.get_json(node_url)
+
+
 def fetch_config(node_id):
     # Should only be used for test networks.
     node_url = SdnRoutes.node.format(node_id)
@@ -38,8 +44,8 @@ def _fetch_peers(node_url, node_id=None):
     return outbound_peers
 
 
-def fetch_relay_peers(node_id):
-    node_url = SdnRoutes.node_relays.format(node_id)
+def fetch_potential_relay_peers(node_id):
+    node_url = SdnRoutes.node_potential_relays.format(node_id)
     return _fetch_peers(node_url, node_id)
 
 

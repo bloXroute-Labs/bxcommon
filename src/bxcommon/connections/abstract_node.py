@@ -28,7 +28,6 @@ class AbstractNode(object):
 
         self.set_node_config_opts_from_sdn(opts)
         self.opts = opts
-
         self.connection_queue = deque()
         self.disconnect_queue = deque()
         self.outbound_peers = opts.outbound_peers[:]

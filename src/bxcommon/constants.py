@@ -97,12 +97,15 @@ class SdnRoutes(object):
     nodes = "/nodes"
     node = "/nodes/{0}"
     node_relays = "/nodes/{0}/peers"
+    node_potential_relays = "/nodes/{0}/potential_relays"
     node_gateways = "/nodes/{0}/gateways"
     node_remote_blockchain = "/nodes/blockchain-peers/{0}"
     node_event = "/nodes/{0}/events"
     blockchain_network = "/blockchain-networks/{0}/{1}"
     blockchain_networks = "/blockchain-networks"
     gateway_inbound_connection = "/nodes/{0}/gateway-inbound-connection"
+    # TODO next sprint
+    # sort_geo_location_traffic = "/geo_location_traffic/{0}"
 
 
 # </editor-fold>
