@@ -1,10 +1,9 @@
 from collections import defaultdict, deque
 
-from pympler import asizeof
-
 from bxcommon import constants
-from bxcommon.utils import logger
+from bxcommon.utils import logger, memory_utils
 from bxcommon.utils.expiration_queue import ExpirationQueue
+from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.stats import hooks
 
 
@@ -291,10 +290,9 @@ class TransactionService(object):
 
     def get_collection_mem_stats(self, collection_obj, ):
         if self.node.opts.stats_calculate_actual_size:
-            obj_size = asizeof.asized(collection_obj)
-            return (obj_size.size, obj_size.flat, True)
+            return memory_utils.get_object_size(collection_obj)
         else:
-            return (0, 0, False)
+            return ObjectSize(size=0, flat_size=0, is_actual_size=False)
 
     def _remove_transaction_by_short_id(self, short_id):
         """

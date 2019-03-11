@@ -1,3 +1,4 @@
+import json
 import signal
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict, deque
@@ -9,8 +10,9 @@ from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import TerminationError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_http_service
-from bxcommon.utils import logger
+from bxcommon.utils import logger, memory_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
+from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
@@ -60,6 +62,8 @@ class AbstractNode(object):
         self.alarm_queue.register_alarm(self.FLUSH_SEND_BUFFERS_INTERVAL, self.flush_all_send_buffers)
 
         self.network_num = opts.blockchain_network_num
+
+        self.memory_dumped_once = False
 
     def get_sdn_address(self):
         """
@@ -447,3 +451,19 @@ class AbstractNode(object):
         # TODO: currently hard-coding configuration values
         opts.stats_calculate_actual_size = False
         opts.log_detailed_block_stats = False
+
+    def dump_memory_usage(self):
+        # Dump memory only once
+        if self.memory_dumped_once:
+            return
+
+        # converting setting in MB to bytes
+        report_mem_usage_bytes = self.opts.dump_detailed_report_at_memory_usage * 1024 * 1024
+        total_mem_usage = memory_utils.get_app_memory_usage()
+
+        if total_mem_usage >= report_mem_usage_bytes:
+            node_size = memory_utils.get_detailed_object_size(self)
+            logger.statistics(
+                "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}"
+                .format(total_mem_usage, report_mem_usage_bytes, json.dumps(node_size, cls=ClassJsonEncoder)))
+            self.memory_dumped_once = True

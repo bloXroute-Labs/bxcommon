@@ -5,7 +5,7 @@ from mock import patch, MagicMock
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
-from bxcommon.constants import THROUGHPUT_STATS_INTERVAL, DEFAULT_SLEEP_TIMEOUT, PING_INTERVAL_S, \
+from bxcommon.constants import DEFAULT_SLEEP_TIMEOUT, PING_INTERVAL_S, \
     CONNECTION_RETRY_SECONDS, MAX_CONNECT_RETRIES, THROUGHPUT_STATS_INTERVAL
 from bxcommon.exceptions import TerminationError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
@@ -14,12 +14,15 @@ from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.test_utils.mocks.mock_message import MockMessage
 from bxcommon.test_utils.mocks.mock_node import MockOpts, MockNode
+from bxcommon.utils import memory_utils
 from bxcommon.utils.stats.throughput_service import throughput_statistics
+
 
 def create_connection(fileno, ip, port):
     node = MockNode(ip, port)
     connection = MockConnection(fileno, (ip, port), node)
     return connection
+
 
 class AbstractNodeTest(AbstractTestCase):
     def setUp(self):
@@ -244,6 +247,35 @@ class AbstractNodeTest(AbstractTestCase):
     def test_init_throughput_logging(self, mocked_alarm_queue):
         self.local_node.init_throughput_logging()
         mocked_alarm_queue.assert_called_once_with(THROUGHPUT_STATS_INTERVAL, throughput_statistics.flush_info)
+
+    @patch("bxcommon.utils.logger.statistics")
+    def test_dump_memory_usage(self, mock_warn):
+        # set to dump memory at 10 MB
+        self.local_node.opts.dump_detailed_report_at_memory_usage = 10
+
+        # current memory usage is 5 MB
+        memory_utils.get_app_memory_usage = MagicMock(return_value=5 * 1024 * 1024)
+
+        self.local_node.dump_memory_usage()
+        # expect that memory details are not logged
+        self.assertFalse(self.local_node.memory_dumped_once)
+        mock_warn.assert_not_called()
+
+        # current memory usage goes up to 11 MB
+        memory_utils.get_app_memory_usage = MagicMock(return_value=11 * 1024 * 1024)
+
+        self.local_node.dump_memory_usage()
+        # expect that memory details are logged
+        self.assertTrue(self.local_node.memory_dumped_once)
+        mock_warn.assert_called_once()
+
+        # current memory usage goes up to 15 MB
+        memory_utils.get_app_memory_usage = MagicMock(return_value=15 * 1024 * 1024)
+
+        self.local_node.dump_memory_usage()
+        # expect that memory details are not logged again
+        self.assertTrue(self.local_node.memory_dumped_once)
+        mock_warn.assert_called_once()
 
 
 class TestNode(AbstractNode):

@@ -1,8 +1,8 @@
-import resource
 from collections import defaultdict
 from datetime import datetime
 
 from bxcommon import constants
+from bxcommon.utils import memory_utils
 from bxcommon.utils.stats.class_mem_stats import ClassMemStats
 from bxcommon.utils.stats.statistics_service import StatsIntervalData, ThreadedStatisticsService
 
@@ -31,12 +31,10 @@ class MemoryStatsService(ThreadedStatisticsService):
         else:
             object_item_count = 0
 
-        size, flat_size, is_actual_size = obj_mem_info
-
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_item_count = object_item_count
-        mem_stats.networks[network_num].analyzed_objects[obj_name].object_size = size
-        mem_stats.networks[network_num].analyzed_objects[obj_name].object_flat_size = flat_size
-        mem_stats.networks[network_num].analyzed_objects[obj_name].is_actual_size = is_actual_size
+        mem_stats.networks[network_num].analyzed_objects[obj_name].object_size = obj_mem_info.size
+        mem_stats.networks[network_num].analyzed_objects[obj_name].object_flat_size = obj_mem_info.flat_size
+        mem_stats.networks[network_num].analyzed_objects[obj_name].is_actual_size = obj_mem_info.is_actual_size
 
     def get_info(self):
         # total_mem_usage is the peak mem usage fo the process (kilobytes on Linux, bytes on OS X)
@@ -46,11 +44,15 @@ class MemoryStatsService(ThreadedStatisticsService):
             node_network_num=self.interval_data.node.opts.blockchain_network_num,
             node_address="%s:%d" % (
                 self.interval_data.node.opts.external_ip, self.interval_data.node.opts.external_port),
-            total_mem_usage=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+            total_mem_usage=memory_utils.get_app_memory_usage(),
             classes=self.interval_data.class_mem_stats
         )
 
         return payload
+
+    def flush_info(self):
+        self.node.dump_memory_usage()
+        return super(MemoryStatsService, self).flush_info()
 
 
 memory_statistics = MemoryStatsService(constants.MEMORY_STATS_INTERVAL)

@@ -38,6 +38,10 @@ arg_parser.add_argument("--log-flush-immediately", help="Enables immediate flush
 arg_parser.add_argument("--transaction-pool-memory-limit",
                             help="Maximum size of transactions to keep in memory pool (MB)",
                             type=int)
+arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
+                            help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
+                            type=int,
+                            default=(2 * 1024))
 
 _args = None
 
