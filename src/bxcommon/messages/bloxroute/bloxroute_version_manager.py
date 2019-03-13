@@ -5,6 +5,8 @@ from bxcommon.messages.bloxroute.v1.bloxroute_message_factory_v1 import bloxrout
 from bxcommon.messages.bloxroute.v1.message_converter_factory_v1 import message_converter_factory_v1
 from bxcommon.messages.bloxroute.v2.bloxroute_message_factory_v2 import bloxroute_message_factory_v2
 from bxcommon.messages.bloxroute.v2.message_converter_factory_v2 import message_converter_factory_v2
+from bxcommon.messages.bloxroute.v3.bloxroute_message_factory_v3 import bloxroute_message_factory_v3
+from bxcommon.messages.bloxroute.v3.message_converter_factory_v3 import message_converter_factory_v3
 from bxcommon.messages.versioning.abstract_version_manager import AbstractVersionManager
 from bxcommon.messages.bloxroute.protocol_version import PROTOCOL_VERSION
 
@@ -14,12 +16,14 @@ class _BloxrouteVersionManager(AbstractVersionManager):
     VERSION_MESSAGE_MAIN_LENGTH = constants.VERSIONED_HELLO_MSG_MIN_PAYLOAD_LEN
     _PROTOCOL_TO_CONVERTER_FACTORY_MAPPING = {
         1: message_converter_factory_v1,
-        2: message_converter_factory_v2
+        2: message_converter_factory_v2,
+        3: message_converter_factory_v3
     }
     _PROTOCOL_TO_FACTORY_MAPPING = {
         1: bloxroute_message_factory_v1,
         2: bloxroute_message_factory_v2,
-        3: bloxroute_message_factory
+        3: bloxroute_message_factory_v3,
+        4: bloxroute_message_factory
     }
 
     def __init__(self):

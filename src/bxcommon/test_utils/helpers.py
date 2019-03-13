@@ -122,7 +122,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
             BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2, block_interval=15),
             BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3, block_interval=15)
         ],
-        "transaction_pool_memory_limit": 200000000
+        "transaction_pool_memory_limit": 200000000,
+        "encrypt_blocks": True
     }
 
     if include_default_btc_args:

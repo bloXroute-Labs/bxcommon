@@ -1,6 +1,6 @@
 import struct
 
-from bxcommon.constants import HDR_COMMON_OFF, NETWORK_NUM_LEN, BLOCK_ENCRYPTED_FLAG_LEN
+from bxcommon.constants import HDR_COMMON_OFF, NETWORK_NUM_LEN
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -9,10 +9,10 @@ from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.object_hash import ObjectHash
 
 
-class BroadcastMessage(Message):
+class BroadcastMessageV3(Message):
     MESSAGE_TYPE = BloxrouteMessageType.BROADCAST
 
-    def __init__(self, msg_hash=None, network_num=None, is_encrypted=False, blob=None, buf=None):
+    def __init__(self, msg_hash=None, network_num=None, blob=None, buf=None):
         if buf is None:
             self.buf = bytearray(HDR_COMMON_OFF + SHA256_HASH_LEN + NETWORK_NUM_LEN + len(blob))
 
@@ -21,13 +21,10 @@ class BroadcastMessage(Message):
             off += SHA256_HASH_LEN
             struct.pack_into("<L", self.buf, off, network_num)
             off += NETWORK_NUM_LEN
-            struct.pack_into("?", self.buf, off, is_encrypted)
-            off += BLOCK_ENCRYPTED_FLAG_LEN
-
             self.buf[off:off + len(blob)] = blob
             off += len(blob)
 
-            super(BroadcastMessage, self).__init__(self.MESSAGE_TYPE, off - HDR_COMMON_OFF, self.buf)
+            super(BroadcastMessageV3, self).__init__(self.MESSAGE_TYPE, off - HDR_COMMON_OFF, self.buf)
         else:
             assert not isinstance(buf, str)
             self.buf = buf
@@ -35,7 +32,6 @@ class BroadcastMessage(Message):
 
         self._msg_hash = None
         self._network_num = None
-        self._is_encrypted = None
         self._blob = None
         self._payload_len = None
 
@@ -55,15 +51,9 @@ class BroadcastMessage(Message):
 
         return self._network_num
 
-    def is_encrypted(self):
-        if self._is_encrypted is None:
-            off = HDR_COMMON_OFF + SHA256_HASH_LEN + NETWORK_NUM_LEN
-            self._is_encrypted, = struct.unpack_from("?", self.buf, off)
-        return self._is_encrypted
-
     def blob(self):
         if self._blob is None:
-            off = HDR_COMMON_OFF + SHA256_HASH_LEN + NETWORK_NUM_LEN + BLOCK_ENCRYPTED_FLAG_LEN
+            off = HDR_COMMON_OFF + SHA256_HASH_LEN + NETWORK_NUM_LEN
             self._blob = self._memoryview[off:off + self.payload_len()]
 
         return self._blob

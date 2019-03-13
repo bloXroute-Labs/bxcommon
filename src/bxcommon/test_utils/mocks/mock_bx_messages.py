@@ -22,6 +22,6 @@ def broadcast_key_pair(short_ids=None, network_num=0):
     broadcast_message_bytes.extend(helpers.generate_bytearray(500))
     key_bytes, enc_broadcast_message_bytes = crypto.symmetric_encrypt(bytes(broadcast_message_bytes))
 
-    broadcast_message = BroadcastMessage(broadcast_message_hash, network_num, enc_broadcast_message_bytes)
+    broadcast_message = BroadcastMessage(broadcast_message_hash, network_num, True, enc_broadcast_message_bytes)
     key_message = KeyMessage(broadcast_message_hash, network_num, key_bytes)
     return broadcast_message, key_message

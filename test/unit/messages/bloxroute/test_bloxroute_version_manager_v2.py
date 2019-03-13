@@ -1,28 +1,19 @@
-from bxcommon.constants import DEFAULT_NETWORK_NUM, NETWORK_NUM_LEN, VERSION_NUM_LEN, NODE_ID_SIZE_IN_BYTES, UL_INT_SIZE_IN_BYTES
+from bxcommon.constants import DEFAULT_NETWORK_NUM, NETWORK_NUM_LEN, VERSION_NUM_LEN, NODE_ID_SIZE_IN_BYTES, \
+    UL_INT_SIZE_IN_BYTES, BLOCK_ENCRYPTED_FLAG_LEN
 from bxcommon.messages.bloxroute.ack_message import AckMessage
-from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
-from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
-from bxcommon.messages.bloxroute.key_message import KeyMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
-from bxcommon.messages.bloxroute.v1.ping_message_v1 import PingMessageV1
-from bxcommon.messages.bloxroute.v1.keep_alive_message_v1 import KeepAliveMessageV1
-from bxcommon.messages.bloxroute.pong_message import PongMessage
-from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
-from bxcommon.messages.bloxroute.v1.bloxroute_message_factory_v1 import bloxroute_message_factory_v1
-from bxcommon.messages.bloxroute.v1.broadcast_message_v1 import BroadcastMessageV1
 from bxcommon.messages.bloxroute.v1.hello_message_v1 import HelloMessageV1
+from bxcommon.messages.bloxroute.v1.ping_message_v1 import PingMessageV1
 from bxcommon.messages.bloxroute.v2.hello_message_v2 import HelloMessageV2
-from bxcommon.messages.bloxroute.v1.key_message_v1 import KeyMessageV1
-from bxcommon.messages.bloxroute.v1.tx_message_v1 import TxMessageV1
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.buffers.input_buffer import InputBuffer
-from bxcommon.utils.crypto import SHA256_HASH_LEN, KEY_SIZE
+from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import ObjectHash
 
 
@@ -78,7 +69,7 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
     def test_convert_message_from_older_version__hello_message_v2_v3(self):
         dummy_idx = 15
 
-        hello_msg_v2 = HelloMessageV2(idx=dummy_idx, protocol_version=2, network_num=DEFAULT_NETWORK_NUM )
+        hello_msg_v2 = HelloMessageV2(idx=dummy_idx, protocol_version=2, network_num=DEFAULT_NETWORK_NUM)
         hello_msg = bloxroute_version_manager.convert_message_from_older_version(2, hello_msg_v2)
 
         self.assertIsInstance(hello_msg, HelloMessage)
@@ -97,17 +88,16 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
         self.assertIsInstance(ping, PingMessage)
         self.assertEqual(len(ping_v0.rawbytes()) + 8, len(ping.rawbytes()))
 
-
     def test_convert_message_from_older_version__not_changed_messages(self):
         self._test_message_does_not_change(AckMessage)
         self._test_message_does_not_change(GetTxsMessage, [])
         self._test_message_does_not_change(TxsMessage, [])
 
     def test_size_change(self):
-        self.assertEqual(-NETWORK_NUM_LEN,
+        self.assertEqual(- NETWORK_NUM_LEN - BLOCK_ENCRYPTED_FLAG_LEN,
                          bloxroute_version_manager.get_message_size_change_to_older_version(1,
                                                                                             BloxrouteMessageType.BROADCAST))
-        self.assertEqual(NETWORK_NUM_LEN,
+        self.assertEqual(NETWORK_NUM_LEN + BLOCK_ENCRYPTED_FLAG_LEN,
                          bloxroute_version_manager.get_message_size_change_from_older_version(1,
                                                                                               BloxrouteMessageType.BROADCAST))
 
