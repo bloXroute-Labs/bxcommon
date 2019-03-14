@@ -23,6 +23,7 @@ class BlockStatEventType(object):
     ENC_BLOCK_CUT_THROUGH_IGNORE_SEEN_BLOCK = BlockStatEventTypeSettings("EncBlockCutThroughIgnoreSeenBlock")
     ENC_BLOCK_RECEIVED_BY_GATEWAY_FROM_NETWORK = BlockStatEventTypeSettings("EncBlockReceivedByGatewayFromNetwork")
     ENC_BLOCK_DECRYPTED_SUCCESS = BlockStatEventTypeSettings("EncBlockDecryptedSuccess")
+    ENC_BLOCK_DECRYPTION_ERROR = BlockStatEventTypeSettings("EncBlockDecryptionError")
     ENC_BLOCK_SENT_BLOCK_RECEIPT = BlockStatEventTypeSettings("EncBlockSentBlockReceipt", detailed_stat_event=True)
     ENC_BLOCK_RECEIVED_BLOCK_RECEIPT = BlockStatEventTypeSettings("EncBlockReceivedBlockReceipt")
     ENC_BLOCK_PROPAGATION_NEEDED = BlockStatEventTypeSettings("EncBlockPropagationNeeded")

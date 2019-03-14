@@ -1,7 +1,7 @@
 from nacl.exceptions import CryptoError
 
 from bxcommon.exceptions import DecryptionError
-from bxcommon.utils import crypto
+from bxcommon.utils import crypto, logger, convert
 from bxcommon.utils.crypto import symmetric_decrypt, symmetric_encrypt
 from bxcommon.utils.expiration_queue import ExpirationQueue
 
@@ -59,18 +59,22 @@ class EncryptedCache(object):
     def decrypt_and_get_payload(self, hash_key, encryption_key):
         """
         Retrieves and decrypts stored ciphertext.
+        Returns None if unable to decrypt.
         """
         cache_item = self._cache[hash_key]
         cache_item.key = encryption_key
-        return cache_item.decrypt()
+        return self._safe_decrypt_item(cache_item, hash_key)
 
     def decrypt_ciphertext(self, hash_key, ciphertext):
         """
         Retrieves and decrypts ciphertext with stored key info. Stores info in cache.
+        Returns None if unable to decrypt.
         """
+
         cache_item = self._cache[hash_key]
         cache_item.ciphertext = ciphertext
-        return cache_item.decrypt()
+
+        return self._safe_decrypt_item(cache_item, hash_key)
 
     def get_encryption_key(self, hash_key):
         return self._cache[hash_key].key
@@ -108,3 +112,13 @@ class EncryptedCache(object):
 
     def __len__(self):
         return len(self._cache)
+
+    def _safe_decrypt_item(self, cache_item, hash_key):
+        try:
+            return cache_item.decrypt()
+        except DecryptionError:
+            failed_ciphertext = self.pop_ciphertext(hash_key)
+            logger.warn("Could not decrypt encrypted item with hash {}. Last four bytes: {}".format(
+                convert.bytes_to_hex(hash_key), convert.bytes_to_hex(failed_ciphertext[-4:])))
+            return None
+

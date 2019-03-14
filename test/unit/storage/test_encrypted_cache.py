@@ -54,8 +54,7 @@ class EncryptedCacheTest(AbstractTestCase):
         sut1 = EncryptedCache(10, self.ALARM_QUEUE)
         sut1.add_ciphertext(hash_key, ciphertext)
 
-        with self.assertRaises(DecryptionError):
-            sut1.decrypt_ciphertext(hash_key, ciphertext)
+        self.assertIsNone(sut1.decrypt_ciphertext(hash_key, ciphertext))
 
     def test_cant_decrypt_wrong_keys(self):
         ciphertext = "foobar" * 50  # ciphertext needs to be long enough to contain a nonce
@@ -66,8 +65,7 @@ class EncryptedCacheTest(AbstractTestCase):
         sut1.add_ciphertext(hash_key, ciphertext)
         sut1.add_key(hash_key, bad_encryption_key)
 
-        with self.assertRaises(DecryptionError):
-            sut1.decrypt_ciphertext(hash_key, ciphertext)
+        self.assertIsNone(sut1.decrypt_ciphertext(hash_key, ciphertext))
 
     def test_cache_cleanup(self):
         ciphertext = "foobar"
