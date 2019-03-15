@@ -85,6 +85,5 @@ class BroadcastMessage(Message):
         return network_num
 
     def __repr__(self):
-        return "BroadcastMessage<network_num: {}, msg_hash: {}, blob_length: {}>".format(self.network_num(),
-                                                                                         self.msg_hash(),
-                                                                                         len(self.blob()))
+        return "BroadcastMessage<network_num: {}, msg_hash: {}, blob_length: {}, is_encrypted: {}>"\
+            .format(self.network_num(), self.msg_hash(), len(self.blob()), self.is_encrypted())

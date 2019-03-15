@@ -1,11 +1,12 @@
+import traceback
 from abc import ABCMeta
 from collections import defaultdict
 
+from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import MAX_BAD_MESSAGES, PING_INTERVAL_S
 from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
 from bxcommon.network.socket_connection import SocketConnection
-from bxcommon.utils import logger
+from bxcommon.utils import logger, convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.log_level import LogLevel
@@ -155,41 +156,58 @@ class AbstractConnection(object):
 
             # Full messages must be a version or verack if the connection isn't established yet.
             msg = self.pop_next_message(payload_len)
-            # If there was some error in parsing this message, then continue the loop.
-            if msg is None:
-                if self.num_bad_messages == MAX_BAD_MESSAGES:
-                    logger.warn("Received too many bad message. Closing connection: {}".format(self))
-                    self.state |= ConnectionState.MARK_FOR_CLOSE
+            try:
+                # If there was some error in parsing this message, then continue the loop.
+                if msg is None:
+                    if self._report_bad_message():
+                        return
+                    continue
+
+                if not (self.is_active()) \
+                        and msg_type not in self.hello_messages:
+                    logger.error("Connection to {0} not established and got {1} message!  Closing."
+                                 .format(self.peer_desc, msg_type))
+                    self.mark_for_close()
                     return
 
-                self.num_bad_messages += 1
-                continue
+                if self.log_throughput:
+                    hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
 
-            self.num_bad_messages = 0
+                if not logger.should_log_level(msg.log_level()) and logger.should_log_level(LogLevel.INFO):
+                    self._trace_message_tracker[msg_type] += 1
+                elif len(self._trace_message_tracker) > 0:
+                    logger.info("Processed the following message types: {}".format(self._trace_message_tracker))
+                    self._trace_message_tracker.clear()
 
-            if not (self.is_active()) \
-                    and msg_type not in self.hello_messages:
-                logger.error("Connection to {0} not established and got {1} message!  Closing."
-                             .format(self.peer_desc, msg_type))
-                self.state |= ConnectionState.MARK_FOR_CLOSE
-                return
+                logger.log(msg.log_level(), "Processing message: {} on connection: {}".format(msg, self))
 
-            if self.log_throughput:
-                hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
+                if msg_type in self.message_handlers:
+                    msg_handler = self.message_handlers[msg_type]
+                    msg_handler(msg)
 
-            if not logger.should_log_level(msg.log_level()) and logger.should_log_level(LogLevel.INFO):
-                self._trace_message_tracker[msg_type] += 1
-            elif len(self._trace_message_tracker) > 0:
-                logger.info("Processed the following message types: {}".format(self._trace_message_tracker))
-                self._trace_message_tracker.clear()
+            except Exception as e:
+                logger.error("Processing message failed. Last message: {}, Error: {}, Stacktrace: {}"
+                             .format(convert.bytes_to_hex(msg.rawbytes()), e, traceback.format_exc()))
+                if self._report_bad_message():
+                    return
 
-            logger.log(msg.log_level(), "Processing message: {} on connection: {}".format(msg, self))
-
-            if msg_type in self.message_handlers:
-                msg_handler = self.message_handlers[msg_type]
-                msg_handler(msg)
+            else:
+                self.num_bad_messages = 0
 
         logger.debug("Finished processing messages on connection: {}".format(self.peer_desc))
+
+    def _report_bad_message(self):
+        """
+        Increments counter for bad messages. Returns True if connection should be closed.
+        :return: if connection should be closed
+        """
+        if self.num_bad_messages == constants.MAX_BAD_MESSAGES:
+            logger.warn("Received too many bad message. Closing connection: {}".format(self))
+            self.mark_for_close()
+            return True
+        else:
+            self.num_bad_messages += 1
+            return False
 
     def pop_next_message(self, payload_len):
         """
@@ -210,7 +228,7 @@ class AbstractConnection(object):
             return None
         except PayloadLenError as e:
             logger.error("ParseError on connection {}. Error: {}.".format(self, e.msg))
-            self.state |= ConnectionState.MARK_FOR_CLOSE  # Close, no retry.
+            self.mark_for_close()
             return None
 
     def advance_bytes_on_buffer(self, buf, bytes_written):
@@ -223,7 +241,7 @@ class AbstractConnection(object):
         """
         if self.can_send_pings:
             self.enqueue_msg(self.ping_message)
-            return PING_INTERVAL_S
+            return constants.PING_INTERVAL_S
 
     def msg_hello(self, msg):
         self.state |= ConnectionState.HELLO_RECVD
