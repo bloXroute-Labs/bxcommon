@@ -1,7 +1,10 @@
 import struct
+from collections import namedtuple
 
 from bxcommon import constants
 
+
+BlockOffsets = namedtuple("BlockOffsets", ["short_id_offset", "block_begin_offset"])
 
 def get_serialized_short_ids_bytes_len(short_ids):
     """
@@ -54,3 +57,8 @@ def deserialize_short_ids_from_buffer(buffer, offset):
         short_ids.append(short_id)
 
     return short_ids, length
+
+
+def get_bx_block_offsets(bx_block):
+    short_id_offset, = struct.unpack_from("@Q", bx_block)
+    return BlockOffsets(short_id_offset, constants.C_SIZE_T_SIZE_IN_BYTES)
