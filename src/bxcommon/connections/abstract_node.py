@@ -244,24 +244,30 @@ class AbstractNode(object):
             self.destroy_conn(conn)
 
     def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, network_num=None,
-                  connection_type=ConnectionType.RELAY, exclude_relays=False):
+                  connection_types=None, exclude_relays=False):
         """
         Broadcasts message msg to connections of the specified type except requester.
         """
+        if connection_types is None:
+            connection_types = [ConnectionType.RELAY]
 
         if broadcasting_conn is not None:
-            logger.log(msg.log_level(), "Broadcasting {} to {} connections from {}."
-                       .format(msg, connection_type, broadcasting_conn))
+            logger.log(msg.log_level(), "Broadcasting {} to [{}] connections from {}."
+                       .format(msg, ",".join(connection_types), broadcasting_conn))
         else:
-            logger.log(msg.log_level(), "Broadcasting {} to {} connections.".format(msg, connection_type))
+            logger.log(msg.log_level(), "Broadcasting {} to [{}] connections.".format(msg, ",".join(connection_types)))
 
         if network_num is None:
             broadcast_net_num = self.network_num
         else:
             broadcast_net_num = network_num
 
+        connections_by_types = []
+        for connection_type in connection_types:
+            connections_by_types.extend(self.connection_pool.get_by_connection_type(connection_type))
+
         broadcast_connections = []
-        for conn in self.connection_pool.get_by_connection_type(connection_type):
+        for conn in connections_by_types:
             is_matching_network_num = (not exclude_relays and conn.network_num == constants.ALL_NETWORK_NUM) or \
                                       conn.network_num == broadcast_net_num
             if conn.is_active() and conn != broadcasting_conn and is_matching_network_num:
@@ -465,5 +471,5 @@ class AbstractNode(object):
             node_size = memory_utils.get_detailed_object_size(self)
             logger.statistics(
                 "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}"
-                .format(total_mem_usage, report_mem_usage_bytes, json.dumps(node_size, cls=ClassJsonEncoder)))
+                    .format(total_mem_usage, report_mem_usage_bytes, json.dumps(node_size, cls=ClassJsonEncoder)))
             self.memory_dumped_once = True

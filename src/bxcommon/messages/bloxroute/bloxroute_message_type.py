@@ -9,3 +9,4 @@ class BloxrouteMessageType(object):
     GET_TRANSACTIONS = "gettxs"
     TRANSACTIONS = "txs"
     KEY = "key"
+    BLOCK_HOLDING = "blockhold"

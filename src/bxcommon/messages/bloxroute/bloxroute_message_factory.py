@@ -3,6 +3,7 @@ import struct
 from bxcommon import constants
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
 from bxcommon.messages.bloxroute.ack_message import AckMessage
+from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
@@ -27,7 +28,8 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         BloxrouteMessageType.TRANSACTION: TxMessage,
         BloxrouteMessageType.GET_TRANSACTIONS: GetTxsMessage,
         BloxrouteMessageType.TRANSACTIONS: TxsMessage,
-        BloxrouteMessageType.KEY: KeyMessage
+        BloxrouteMessageType.KEY: KeyMessage,
+        BloxrouteMessageType.BLOCK_HOLDING: BlockHoldingMessage
     }
 
     def __init__(self):

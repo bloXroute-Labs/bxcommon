@@ -14,6 +14,12 @@ class BlockStatEventType(object):
     BLOCK_HOLD_HELD_BLOCK = BlockStatEventTypeSettings("BlockHoldHeldBlock")
     BLOCK_HOLD_LIFTED = BlockStatEventTypeSettings("BlockHoldLifted", detailed_stat_event=True)
     BLOCK_HOLD_TIMED_OUT = BlockStatEventTypeSettings("BlockHoldTimeout")
+    BLOCK_HOLD_SENT_BY_GATEWAY_TO_PEERS = BlockStatEventTypeSettings("BlockHoldSentByGatewayToPeers",
+                                                                     detailed_stat_event=True)
+    BLOCK_HOLD_RECEIVED_BY_RELAY_FROM_PEER = BlockStatEventTypeSettings("BlockHoldReceivedByRelayFromPeer",
+                                                                        detailed_stat_event=True)
+    BLOCK_HOLD_SENT_BY_RELAY_TO_PEERS = BlockStatEventTypeSettings("BlockHoldSentByRelayToPeers",
+                                                                   detailed_stat_event=True)
     ENC_BLOCK_SENT_FROM_GATEWAY_TO_NETWORK = BlockStatEventTypeSettings("EncBlockSentFromGatewayToNetwork",
                                                                         detailed_stat_event=True)
     ENC_BLOCK_CUT_THROUGH_SEND_START = BlockStatEventTypeSettings("EncBlockCutThroughSendStart")
@@ -38,6 +44,8 @@ class BlockStatEventType(object):
     ENC_BLOCK_KEY_SENT_FROM_GATEWAY_TO_NETWORK = BlockStatEventTypeSettings("EncBlockKeySentFromGatewayToNetwork")
     ENC_BLOCK_KEY_RECEIVED_BY_GATEWAY_FROM_NETWORK = BlockStatEventTypeSettings(
         "EncBlockKeyReceivedByGatewayFromNetwork")
+    ENC_BLOCK_KEY_SENT_BY_GATEWAY_TO_PEERS = BlockStatEventTypeSettings("EncBlockKeySentByGatewayToPeers",
+                                                                        detailed_stat_event=True)
     ENC_BLOCK_KEY_RECEIVED_BY_RELAY_FROM_PEER = BlockStatEventTypeSettings("EncBlockKeyReceivedByRelayFromPeer")
     ENC_BLOCK_KEY_SENT_BY_RELAY_TO_PEER = BlockStatEventTypeSettings("EncBlockKeySentByRelayToPeer")
     REMOTE_BLOCK_RECEIVED_BY_GATEWAY = BlockStatEventTypeSettings("RemoteBlockReceivedByGateway")

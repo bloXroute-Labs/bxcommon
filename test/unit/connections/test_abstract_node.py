@@ -154,7 +154,7 @@ class AbstractNodeTest(AbstractTestCase):
 
         msg = MockMessage(payload_len=32, buf=self.to_31)
         self.local_node.broadcast(msg, self.connection, network_num=self.connection.network_num,
-                                  connection_type=MockConnection.CONNECTION_TYPE)
+                                  connection_types=[MockConnection.CONNECTION_TYPE])
         connection2.enqueue_msg.assert_called_with(msg, False)
         connection3.enqueue_msg.assert_not_called()
 
