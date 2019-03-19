@@ -57,6 +57,7 @@ class AbstractNetworkEventLoop(object):
 
                 timeout = self._node.get_sleep_timeout(events_count == 0)
         finally:
+            logger.info("Ending event loop. Shutdown has been requested.")
             self.close()
 
     def close(self):
@@ -134,11 +135,21 @@ class AbstractNetworkEventLoop(object):
 
         while fileno is not None:
             if fileno in self._socket_connections:
+                logger.debug("Closing connection to {0}".format(fileno))
+                print("Closing connection to {0}".format(fileno))
                 socket_connection = self._socket_connections[fileno]
+                socket_connection.close()
 
+                # TODO this line should be removed as well. The network layer should not be telling
+                # the node when a connection is closed.
+                self._node.on_connection_closed(fileno)
+
+                # TODO: This if statement should be removed (i.e. MARK_FOR_CLOSE should be set more carefully)
                 if not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-                    socket_connection.close()
-                    self._node.on_connection_closed(fileno)
+                    logger.error("Connection on fileno {0} was enqueued for disconnect without being marked for close!".format(fileno))
+            else:
+                logger.warn("Fileno {0} could not be closed".format(fileno))
+
             fileno = self._node.pop_next_disconnect_connection()
 
     def _connect_to_server(self, ip, port, protocol=TransportLayerProtocol.TCP):

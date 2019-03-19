@@ -54,5 +54,4 @@ class MemoryStatsService(ThreadedStatisticsService):
         self.node.dump_memory_usage()
         return super(MemoryStatsService, self).flush_info()
 
-
 memory_statistics = MemoryStatsService(constants.MEMORY_STATS_INTERVAL)

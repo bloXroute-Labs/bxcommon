@@ -83,7 +83,13 @@ class AbstractNode(object):
     def connection_exists(self, ip, port):
         return self.connection_pool.has_connection(ip, port)
 
+    # TODO: This needs a better name... "notify_connection"
+    # TODO: we cannot call this a "socket_connection" It is very unclear what the term "connection" means in our
+    # codebase.
     def on_connection_added(self, socket_connection, ip, port, from_me):
+        """
+        Notifies the node that a connection is coming in.
+        """
 
         if not isinstance(socket_connection, SocketConnection):
             raise ValueError("Type SocketConnection is expected for socket_connection argument but was {0}"
@@ -98,7 +104,7 @@ class AbstractNode(object):
             # Schedule dropping the added connection and keep the old one.
             self.enqueue_disconnect(fileno)
         else:
-            self._add_connection(socket_connection, ip, port, from_me)
+            self._init_conn_object(socket_connection, ip, port, from_me)
 
     def on_connection_initialized(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)
@@ -114,10 +120,10 @@ class AbstractNode(object):
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Closed connection not in pool. Fileno: {0}".format(fileno))
+            logger.warn("Connection not in pool. Fileno: {0}".format(fileno))
             return
 
-        logger.info("Closed connection: {}".format(conn))
+        logger.info("Destroying connection: {}".format(conn))
         self.destroy_conn(conn, retry_connection=True)
 
     @abstractmethod
@@ -213,6 +219,8 @@ class AbstractNode(object):
         conn.advance_sent_bytes(bytes_sent)
 
     def get_sleep_timeout(self, triggered_by_timeout, first_call=False):
+        # TODO: remove first_call from this function. You can just fire all of the ready alarms on every call
+        # to get the timeout.
         if first_call:
             _, timeout = self.alarm_queue.time_to_next_alarm()
 
@@ -224,6 +232,8 @@ class AbstractNode(object):
         else:
             time_to_next = self.alarm_queue.fire_ready_alarms(triggered_by_timeout)
             if self.connection_queue or self.disconnect_queue:
+                # TODO: this should be constants.MIN_SLEEP_TIMEOUT, which is different for kqueues and epoll.
+                # We want to process connection/disconnection requests ASAP.
                 time_to_next = constants.DEFAULT_SLEEP_TIMEOUT
 
             return time_to_next
@@ -239,6 +249,8 @@ class AbstractNode(object):
 
     def close(self):
         logger.error("Node is closing! Closing everything.")
+
+        self.cleanup_memory_stats_logging()
 
         for _fileno, conn in self.connection_pool.items():
             self.destroy_conn(conn)
@@ -318,7 +330,7 @@ class AbstractNode(object):
 
         return
 
-    def _add_connection(self, socket_connection, ip, port, from_me):
+    def _init_conn_object(self, socket_connection, ip, port, from_me):
         conn_cls = self.get_connection_class(ip, port, from_me)
         if conn_cls is None:
             logger.warn("Could not find connection class for {}:{}, from_me={}. Ignoring."
@@ -382,8 +394,7 @@ class AbstractNode(object):
         conn.mark_for_close()
 
         if retry_connection:
-            peer_ip = conn.peer_ip
-            peer_port = conn.peer_port
+            peer_ip, peer_port = conn.peer_ip, conn.peer_port
 
             if self.is_outbound_peer(peer_ip, peer_port) or \
                     conn.CONNECTION_TYPE == ConnectionType.BLOCKCHAIN_NODE or \
@@ -432,6 +443,9 @@ class AbstractNode(object):
     def init_memory_stats_logging(self):
         memory_statistics.set_node(self)
         memory_statistics.start_recording(self.record_mem_stats)
+
+    def cleanup_memory_stats_logging(self):
+        memory_statistics.stop_recording()
 
     def init_block_stats_logging(self):
         tx_stats.set_node(self)

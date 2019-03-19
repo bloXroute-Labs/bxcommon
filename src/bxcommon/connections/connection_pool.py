@@ -34,11 +34,11 @@ class ConnectionPool(object):
         self.by_connection_type[conn.CONNECTION_TYPE].add(conn)
         self.count_conn_by_ip[ip] += 1
 
-    def update_port(self, new_port, conn):
+    def update_port(self, old_port, new_port, conn):
         """
         Updates port mapping of connection. Clears out old one.
         """
-        old_ipport = (conn.peer_ip, conn.peer_port)
+        old_ipport = (conn.peer_ip, old_port)
         if old_ipport in self.by_ipport:
             del self.by_ipport[old_ipport]
 

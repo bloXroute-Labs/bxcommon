@@ -6,6 +6,8 @@ from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.utils import logger, convert
 
 
+# TODO: This needs to be renamed to "SocketWrapper". This just wraps the socket object- does not contain any connection
+# logic.
 class SocketConnection(object):
     def __init__(self, socket_instance, node, is_server=False):
         if not isinstance(socket_instance, socket.socket):
@@ -145,5 +147,10 @@ class SocketConnection(object):
         return self.socket_instance.fileno()
 
     def close(self):
+        # TODO: There should either be no state change here or
+        # the state change should be to the CLOSED state.
+        # A socket should have the state MARK_FOR_CLOSE *before* close()
+        # is called on it.
         self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
         self.socket_instance.close()
+

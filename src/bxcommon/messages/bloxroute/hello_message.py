@@ -41,3 +41,4 @@ class HelloMessage(VersionMessage):
         if self._node_id is None:
             self.__unpack()
         return self._node_id
+

@@ -50,7 +50,7 @@ class ConnectionPoolTest(AbstractTestCase):
     def test_update(self):
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
         self.conn_pool1.add(self.fileno2, self.ip2, self.port2, self.conn2)
-        self.conn_pool1.update_port(self.port2, self.conn1)
+        self.conn_pool1.update_port(self.port1, self.port2, self.conn1)
         self.assertEqual(self.conn1, self.conn_pool1.get_by_ipport(self.ip1, self.port2))
         self.assertFalse(self.conn_pool1.has_connection(self.ip1, self.port1))
 

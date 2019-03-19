@@ -2,7 +2,7 @@ import time
 from abc import ABCMeta, abstractmethod
 from collections import deque
 from datetime import datetime
-from threading import Thread
+from threading import Thread, Lock
 
 from bxcommon.utils import logger
 from bxcommon.utils.publish_stats import publish_stats
@@ -63,7 +63,6 @@ class StatisticsService(object):
             self.create_interval_data_object()
         return self.interval
 
-
 class ThreadedStatisticsService(StatisticsService):
     """
     Abstract class for stats service that may take a long time to execute.
@@ -73,14 +72,50 @@ class ThreadedStatisticsService(StatisticsService):
     def __init__(self, name, interval=0, look_back=1, reset=False):
         super(ThreadedStatisticsService, self).__init__(name, interval, look_back, reset)
         self._thread = None
+        self._alive = True
+        self._lock = Lock()
 
     def start_recording(self, record_fn):
         self._thread = Thread(target=self.loop_record_on_thread, args=(record_fn,))
         self._thread.start()
 
+    def stop_recording(self):
+        # TODO: This is necessary in order to make the tests pass. We are initializing multiple
+        # nodes in a process in a test, both of which are initializing the memory_statistics_service.
+        # Thus, there is unclear ownership of the global variable. The right fix here is to make
+        # memory_statistics_service not a singleton anymore and have it be a variable that is assigned
+        # on a per-node basis.
+        if self._thread == None:
+            logger.error("Thread was not initialized yet, but stop_recording was called. An invariant in the code is broken.")
+            return
+
+        with self._lock:
+            self._alive = False
+
+        self._thread.join()
+
+    def sleep_and_check_alive(self, sleeptime):
+        """
+        Sleeps for sleeptime seconds and checks whether or this service is alive every 30 seconds.
+        Returns whether or not this service is alive at the end of this sleep time.
+        """
+
+        with self._lock:
+            alive = self._alive
+        while sleeptime > 30 and alive:
+            time.sleep(30)
+            sleeptime -= 30
+            with self._lock:
+                alive = self._alive
+
+        return alive
+
     def loop_record_on_thread(self, record_fn):
-        time.sleep(self.interval)
-        while True:
+        """
+        Assume that record_fn is a read-only function and its okay to get somewhat stale data.
+        """
+        alive = self.sleep_and_check_alive(self.interval)
+        while alive:
             start_time = time.time()
             try:
                 record_fn()
@@ -91,5 +126,6 @@ class ThreadedStatisticsService(StatisticsService):
                 runtime = time.time() - start_time
                 logger.info("Recording {} stats took {} seconds".format(self.name, runtime))
 
-            if runtime < self.interval:
-                time.sleep(self.interval - runtime)
+            sleeptime = self.interval - runtime
+            alive = self.sleep_and_check_alive(sleeptime)
+

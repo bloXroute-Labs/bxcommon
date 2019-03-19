@@ -207,7 +207,7 @@ class MultiplexingTest(AbstractTestCase):
             self.assertEqual(len(receiver_node.connections), 1)
             self.assertEqual(len(sender_node.connections), 1)
 
-            # request connection while clients are running
+            # request disconnect while clients are running
             sender_node.enqueue_disconnect(sender_node.connections[0][0])
 
             # sender and receiver have to disconnect and exit

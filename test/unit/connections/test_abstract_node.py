@@ -42,10 +42,10 @@ class AbstractNodeTest(AbstractTestCase):
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         self.assertTrue(self.local_node.connection_exists(self.remote_ip, self.remote_port))
 
-    @patch("bxcommon.connections.abstract_node.AbstractNode._add_connection")
-    def test_on_connection_added_new_connection(self, mocked_add_connection):
+    @patch("bxcommon.connections.abstract_node.AbstractNode._init_conn_object")
+    def test_on_connection_added_new_connection(self, mocked_init_conn_object):
         self.local_node.on_connection_added(self.socket_connection, self.remote_ip, self.remote_port, True)
-        mocked_add_connection.assert_called_once_with(self.socket_connection, self.remote_ip, self.remote_port, True)
+        mocked_init_conn_object.assert_called_once_with(self.socket_connection, self.remote_ip, self.remote_port, True)
 
     @patch("bxcommon.connections.abstract_node.AbstractNode.enqueue_disconnect")
     @patch("bxcommon.connections.abstract_node.AbstractNode.connection_exists", return_value=True)
@@ -181,12 +181,12 @@ class AbstractNodeTest(AbstractTestCase):
         self.assertIsNone(self.local_node.pop_next_disconnect_connection())
 
     @patch("bxcommon.connections.abstract_node.SocketConnection.fileno", return_value=5)
-    def test_add_connection(self, mock_fileno):
+    def test_init_conn_object(self, mock_fileno):
         test_socket = MagicMock(spec=socket.socket)
         socket_connection = SocketConnection(test_socket, self.remote_node)
         self.assertEqual(3, self.local_node.alarm_queue.uniq_count)
         self.assertIsNone(self.local_node.connection_pool.by_fileno[self.remote_fileno])
-        self.local_node._add_connection(socket_connection, self.remote_ip, self.remote_port, True)
+        self.local_node._init_conn_object(socket_connection, self.remote_ip, self.remote_port, True)
         self.assertEqual(4, self.local_node.alarm_queue.uniq_count)
         self.assertEqual(self.connection.fileno,
                          self.local_node.connection_pool.by_fileno[self.remote_fileno].fileno.fileno())
@@ -279,6 +279,8 @@ class AbstractNodeTest(AbstractTestCase):
 
 
 class TestNode(AbstractNode):
+    NODE_TYPE = "TestNode"
+
     def __init__(self, opts):
         super(TestNode, self).__init__(opts)
 
