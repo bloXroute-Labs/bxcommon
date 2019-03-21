@@ -1,9 +1,12 @@
 import resource
+import sys
 
 from pympler import asizeof
 from pympler.asizeof import Asized
 
 # Default to 50 kB
+from bxcommon import constants
+
 DEFAULT_DETAILED_MEMORY_BREAKDOWN_LIMIT = 50 * 1024
 
 
@@ -26,7 +29,13 @@ def get_app_memory_usage():
     Provides total application memory usage in bytes
     :return: int
     """
-    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    mem_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+
+    # resource.getrusage provides memory usage in bytes on OSX but in kilo bytes for other platforms
+    if sys.platform != constants.PLATFORM_MAC:
+        mem_usage *= 1024
+
+    return mem_usage
 
 
 def get_object_size(obj):

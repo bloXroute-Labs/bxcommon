@@ -7,7 +7,12 @@ from bxcommon.utils.memory_utils import ObjectSize
 class MemoryUtilsTest(AbstractTestCase):
 
     def test_get_app_memory_usage(self):
-        self.assertTrue(memory_utils.get_app_memory_usage() > 0)
+        memory_usage = memory_utils.get_app_memory_usage()
+
+        # verify that memory usage is reported in MB.
+        # Expected to me less than 100 MB but greater than 1 MB
+        self.assertLess(memory_usage, 100 * 1024 * 1024)
+        self.assertGreater(memory_usage, 1 * 1024 * 1024)
 
     def get_object_size(self):
         mock_node = MockNode("127.0.0.1", 12345)
