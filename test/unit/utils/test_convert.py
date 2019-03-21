@@ -20,8 +20,8 @@ class ConvertTests(AbstractTestCase):
         self.assertEqual("0001ab", convert.bytes_to_hex(b"\x00\x01\xab"))
 
     def test_hex_to_bytes(self):
-        self.assertEqual(b"\x00", convert.hex_to_bytes("00"))
-        self.assertEqual(b"\x00\x01", convert.hex_to_bytes("0001"))
-        self.assertEqual(b"\x00\x01\xab", convert.hex_to_bytes("0001ab"))
+        self.assertEqual(b"\x00", convert.hex_to_bytes(b"00"))
+        self.assertEqual(b"\x00\x01", convert.hex_to_bytes(b"0001"))
+        self.assertEqual(b"\x00\x01\xab", convert.hex_to_bytes(b"0001ab"))
 
 

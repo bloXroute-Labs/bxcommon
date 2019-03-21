@@ -67,7 +67,7 @@ class AbstractNetworkEventLoop(object):
 
         self._node.close()
 
-        for _, socket_connection in self._socket_connections.iteritems():
+        for _, socket_connection in self._socket_connections.items():
             socket_connection.close()
 
     @abstractmethod
@@ -85,7 +85,7 @@ class AbstractNetworkEventLoop(object):
         try:
             server_socket.bind((LISTEN_ON_IP_ADDRESS, external_port))
             server_socket.listen(50)
-            server_socket.setblocking(0)
+            server_socket.setblocking(False)
 
             self._register_socket(server_socket, (LISTEN_ON_IP_ADDRESS, external_port), is_server=True)
 
@@ -136,7 +136,6 @@ class AbstractNetworkEventLoop(object):
         while fileno is not None:
             if fileno in self._socket_connections:
                 logger.debug("Closing connection to {0}".format(fileno))
-                print("Closing connection to {0}".format(fileno))
                 socket_connection = self._socket_connections[fileno]
                 socket_connection.close()
 

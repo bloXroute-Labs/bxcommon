@@ -51,7 +51,7 @@ def deserialize_short_ids_from_buffer(buffer, offset):
 
     short_ids = []
 
-    for _ in xrange(short_ids_len):
+    for _ in range(short_ids_len):
         short_id, = struct.unpack_from("<L", buffer, offset + length)
         length += constants.UL_INT_SIZE_IN_BYTES
         short_ids.append(short_id)

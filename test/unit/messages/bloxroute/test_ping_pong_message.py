@@ -9,15 +9,15 @@ class PingPongMessageTests(AbstractTestCase):
     def setUp(self):
         self.message_factory = _BloxrouteMessageFactory()
         self.message_factory._MESSAGE_TYPE_MAPPING = {
-            "pong": PongMessage,
-            "ping": PingMessage
+            b"pong": PongMessage,
+            b"ping": PingMessage
         }
 
     def test_ping_message(self):
-        self._test_message("ping", PingMessage)
+        self._test_message(b"ping", PingMessage)
 
     def test_pong_message(self):
-        self._test_message("pong", PongMessage)
+        self._test_message(b"pong", PongMessage)
 
     def _test_message(self, msg_type, msg_cls):
         msg = msg_cls()

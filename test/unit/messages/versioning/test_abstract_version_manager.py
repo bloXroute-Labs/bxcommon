@@ -33,7 +33,7 @@ class VersionManager(AbstractVersionManager):
             2: message_factory
         }
         self.protocol_to_converter_factory_mapping = {}
-        self.version_message_command = "hello"
+        self.version_message_command = b"hello"
 
 
 class AbstractVersionManagerTest(AbstractTestCase):
@@ -57,7 +57,7 @@ class AbstractVersionManagerTest(AbstractTestCase):
 
     def test_get_connection_protocol_version__wrong_message(self):
         wrong_message = BroadcastMessage(
-            msg_hash=ObjectHash(crypto.double_sha256("hello")),
+            msg_hash=ObjectHash(crypto.double_sha256(b"hello")),
             network_num=1,
             blob=bytearray(1))
         input_buffer = InputBuffer()

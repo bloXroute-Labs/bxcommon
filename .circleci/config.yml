@@ -2,7 +2,7 @@ version: 2.1
 executors:
   bloxroute-executor:
     docker:
-      - image: circleci/python:2.7
+      - image: circleci/python:3.7.0
     environment:
       PYTHONPATH: /home/circleci/ws/bxcommon/src
     working_directory: ~/ws

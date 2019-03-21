@@ -15,12 +15,12 @@ class TestOutputBuffer(unittest.TestCase):
     def test_get_buffer(self):
         self.assertEqual(OutputBuffer.EMPTY, self.out_buf.get_buffer())
 
-        data1 = bytearray([i for i in xrange(20)])
+        data1 = bytearray([i for i in range(20)])
         self.out_buf.enqueue_msgbytes(data1)
         self.out_buf._flush_to_buffer()
         self.assertEqual(data1, self.out_buf.get_buffer())
 
-        data2 = bytearray([i for i in xrange(20, 40)])
+        data2 = bytearray([i for i in range(20, 40)])
         self.out_buf.enqueue_msgbytes(data2)
         self.out_buf._flush_to_buffer()
         self.assertEqual(data1, self.out_buf.get_buffer())
@@ -33,10 +33,10 @@ class TestOutputBuffer(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.out_buf.advance_buffer(5)
 
-        data1 = bytearray([i for i in xrange(20)])
+        data1 = bytearray([i for i in range(20)])
         self.out_buf.enqueue_msgbytes(data1)
         self.out_buf._flush_to_buffer()
-        data2 = bytearray([i for i in xrange(20, 40)])
+        data2 = bytearray([i for i in range(20, 40)])
         self.out_buf.enqueue_msgbytes(data2)
         self.out_buf._flush_to_buffer()
 
@@ -57,12 +57,12 @@ class TestOutputBuffer(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.out_buf.enqueue_msgbytes("f")
 
-        data1 = bytearray([i for i in xrange(20)])
+        data1 = bytearray([i for i in range(20)])
         self.out_buf.enqueue_msgbytes(data1)
         self.out_buf._flush_to_buffer()
         self.assertEqual(data1, self.out_buf.get_buffer())
 
-        data2 = bytearray([i for i in xrange(20, 40)])
+        data2 = bytearray([i for i in range(20, 40)])
         self.out_buf.enqueue_msgbytes(data2)
         self.out_buf._flush_to_buffer()
         self.assertEqual(data1, self.out_buf.get_buffer())
@@ -75,10 +75,10 @@ class TestOutputBuffer(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.out_buf.prepend_msgbytes("f")
 
-        data1 = bytearray([i for i in xrange(20)])
+        data1 = bytearray([i for i in range(20)])
         self.out_buf.prepend_msgbytes(data1)
 
-        data2 = bytearray([i for i in xrange(20, 40)])
+        data2 = bytearray([i for i in range(20, 40)])
         self.out_buf.prepend_msgbytes(data2)
 
         confirm1 = deque()
@@ -90,7 +90,7 @@ class TestOutputBuffer(unittest.TestCase):
 
         self.out_buf.advance_buffer(10)
 
-        data3 = bytearray([i for i in xrange(40, 60)])
+        data3 = bytearray([i for i in range(40, 60)])
         self.out_buf.prepend_msgbytes(data3)
 
         confirm2 = deque()
@@ -107,7 +107,7 @@ class TestOutputBuffer(unittest.TestCase):
         self.assertTrue(self.out_buf.has_more_bytes())
 
     def test_flush_get_buffer_on_time(self):
-        data1 = bytearray(i for i in xrange(20))
+        data1 = bytearray(i for i in range(20))
         self.out_buf.enqueue_msgbytes(data1)
         self.assertEqual(OutputBuffer.EMPTY, self.out_buf.get_buffer())
 
@@ -115,10 +115,10 @@ class TestOutputBuffer(unittest.TestCase):
         self.assertEqual(data1, self.out_buf.get_buffer())
 
     def test_flush_get_buffer_on_size(self):
-        data1 = bytearray(i for i in xrange(20))
+        data1 = bytearray(i for i in range(20))
         self.out_buf.enqueue_msgbytes(data1)
         self.assertEqual(OutputBuffer.EMPTY, self.out_buf.get_buffer())
 
-        data2 = bytearray(1 for _ in xrange(OUTPUT_BUFFER_MIN_SIZE))
+        data2 = bytearray(1 for _ in range(OUTPUT_BUFFER_MIN_SIZE))
         self.out_buf.enqueue_msgbytes(data2)
         self.assertNotEqual(OutputBuffer.EMPTY, self.out_buf.get_buffer())

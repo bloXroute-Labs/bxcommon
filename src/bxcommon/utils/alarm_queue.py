@@ -109,7 +109,7 @@ class AlarmQueue(object):
                 if end_time - start_time > constants.WARN_ALARM_EXECUTION_DURATION:
                     logger.warn("{} took {} seconds to execute.".format(alarm, end_time - start_time))
 
-                if next_delay > 0:
+                if next_delay is not None and next_delay > 0:
                     next_time = time.time() + next_delay
                     alarm_id[0] = next_time
                     alarm_id[-1].fire_time = next_time

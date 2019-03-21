@@ -23,12 +23,11 @@ class ObjectHash(object):
     def __hash__(self):
         return self._hash
 
-    def __cmp__(self, id1):
-        if id1 is None or self.binary < id1.binary:
-            return -1
-        elif self.binary > id1.binary:
-            return 1
-        return 0
+    def __eq__(self, other):
+        return other is not None and self.binary == other.binary
+
+    def __lt__(self, other):
+        return other is None or self.binary < other.binary
 
     def __repr__(self):
         return "ObjectHash<binary: {}>".format(convert.bytes_to_hex(self.binary))

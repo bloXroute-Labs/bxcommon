@@ -25,7 +25,7 @@ class PayloadBlockTests(AbstractTestCase):
                                                 )
         self.kwargs = {
             "node_id": "31f93bcc-ad56-431f-9c14-28ffb0e8e41a",
-            "msg_type": "HelloMessage",
+            "msg_type": b"HelloMessage",
             "protocol_version": 3,
             "network_num": 12345
         }
@@ -40,7 +40,7 @@ class PayloadBlockTests(AbstractTestCase):
         # verify buffer
         msg_type, payload_len, protocol_version, network_num, node_id = struct.unpack_from("<12sLLL16s", buf)
         self.assertEqual(len(buf), self.MESSAGE_BLOCK_HELLO.size)
-        self.assertEqual(msg_type, "HelloMessage")
+        self.assertEqual(msg_type, b"HelloMessage")
         self.assertEqual(payload_len, 24)
         self.assertEqual(protocol_version, 3)
         self.assertEqual(network_num, 12345)

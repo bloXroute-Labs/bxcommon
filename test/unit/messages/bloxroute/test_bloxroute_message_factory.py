@@ -21,7 +21,7 @@ from bxcommon.utils.object_hash import ObjectHash
 
 
 class BloxrouteMessageFactory(AbstractTestCase):
-    HASH = ObjectHash(crypto.double_sha256("123"))
+    HASH = ObjectHash(crypto.double_sha256(b"123"))
     NETWORK_NUM = 12345
 
     def get_message_preview_successfully(self, message, expected_command, expected_payload_length):
@@ -62,7 +62,7 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.get_message_preview_successfully(PingMessage(), PingMessage.MESSAGE_TYPE, 8)
         self.get_message_preview_successfully(PongMessage(), PongMessage.MESSAGE_TYPE, 8)
 
-        blob = bytearray(1 for _ in xrange(4))
+        blob = bytearray(1 for _ in range(4))
         self.get_message_preview_successfully(BroadcastMessage(self.HASH, 1, True, blob), BroadcastMessage.MESSAGE_TYPE,
                                               SHA256_HASH_LEN + NETWORK_NUM_LEN + BLOCK_ENCRYPTED_FLAG_LEN + len(blob))
         self.get_message_preview_successfully(TxMessage(self.HASH, 1, 12, blob), TxMessage.MESSAGE_TYPE,
@@ -74,7 +74,7 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.get_message_preview_successfully(GetTxsMessage(get_txs), GetTxsMessage.MESSAGE_TYPE,
                                               UL_INT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES * len(get_txs))
 
-        txs = [(1, crypto.double_sha256("123"), bytearray(4)), (2, crypto.double_sha256("234"), bytearray(8))]
+        txs = [(1, crypto.double_sha256(b"123"), bytearray(4)), (2, crypto.double_sha256(b"234"), bytearray(8))]
         expected_length = (UL_INT_SIZE_IN_BYTES +
                            sum(UL_INT_SIZE_IN_BYTES + SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES +
                                len(tx[2]) for tx in txs))
@@ -86,7 +86,7 @@ class BloxrouteMessageFactory(AbstractTestCase):
             create_input_buffer_with_bytes(message.rawbytes()[:-1])
         )
         self.assertFalse(is_full_message)
-        self.assertEquals("hello", command)
+        self.assertEquals(b"hello", command)
         self.assertEquals(VersionMessage.VERSION_MESSAGE_LENGTH + UL_INT_SIZE_IN_BYTES + NODE_ID_SIZE_IN_BYTES -
                           UL_INT_SIZE_IN_BYTES, payload_length)
 
@@ -98,11 +98,11 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.assertIsNone(payload_length)
 
     def test_message_hash_preview(self):
-        blob = bytearray(1 for _ in xrange(4))
+        blob = bytearray(1 for _ in range(4))
         self.get_hashed_message_preview_successfully(BroadcastMessage(self.HASH, self.NETWORK_NUM, True, blob), self.HASH)
 
     def test_message_hash_preview_incomplete(self):
-        blob = bytearray(1 for _ in xrange(4))
+        blob = bytearray(1 for _ in range(4))
         broadcast_message = BroadcastMessage(self.HASH, 123, True, blob)
 
         is_full_message, msg_hash, network_num, payload_length = \
@@ -164,15 +164,16 @@ class BloxrouteMessageFactory(AbstractTestCase):
         get_txs_message = self.create_message_successfully(GetTxsMessage(get_txs), GetTxsMessage)
         self.assertEqual(get_txs, get_txs_message.get_short_ids())
 
-        txs = [(1, crypto.double_sha256("123"), bytearray(4)), (2, crypto.double_sha256("234"), bytearray(8))]
+        txs = [(1, crypto.double_sha256(b"123"), bytearray(4)), (2, crypto.double_sha256(b"234"), bytearray(8))]
         txs_message = self.create_message_successfully(TxsMessage(txs), TxsMessage)
-        result_txs = [(1, ObjectHash(crypto.double_sha256("123")), bytearray(4)),
-                      (2, ObjectHash(crypto.double_sha256("234")), bytearray(8))]
+        result_txs = [(1, ObjectHash(crypto.double_sha256(b"123")), bytearray(4)),
+                      (2, ObjectHash(crypto.double_sha256(b"234")), bytearray(8))]
         self.assertEqual(result_txs, txs_message.get_txs())
 
     def test_create_message_failure(self):
         message = HelloMessage(protocol_version=1, network_num=2)
         with self.assertRaises(PayloadLenError):
+            bloxroute_message_factory.create_message_from_buffer(message.rawbytes()[:-1])
             bloxroute_message_factory.create_message_from_buffer(message.rawbytes()[:-1])
 
     def test_ping_response_msg(self):

@@ -70,7 +70,7 @@ class ThroughputStatistics(StatisticsService):
                 {"peer_address": "%s:%d" % (conn.peer_ip, conn.peer_port),
                  "peer_id": conn.peer_id,
                  })
-        payload["peer_stats"] = self.interval_data.peer_to_stats.values()
+        payload["peer_stats"] = list(self.interval_data.peer_to_stats.values())
         return payload
 
 

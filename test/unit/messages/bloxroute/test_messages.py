@@ -8,20 +8,20 @@ class MessageTest(AbstractTestCase):
     def setUp(self):
         self.buf1 = bytearray([i for i in range(40)])
         self.payload_len1 = 20
-        self.msg_type1 = "example"
+        self.msg_type1 = b"example"
         self.message1 = Message(msg_type=self.msg_type1, payload_len=self.payload_len1, buf=self.buf1)
         self.buf2 = bytearray([i for i in range(20)])
         self.payload_len2 = 50
-        self.msg_type2 = "hello"
+        self.msg_type2 = b"hello"
         self.message2 = Message(msg_type=self.msg_type2, payload_len=self.payload_len2, buf=self.buf2)
 
     def test_init(self):
         with self.assertRaises(ValueError):
             Message(msg_type=None, payload_len=20, buf=bytearray([i for i in range(40)]))
         with self.assertRaises(ValueError):
-            Message(msg_type="hello", payload_len=-5, buf=bytearray([i for i in range(40)]))
+            Message(msg_type=b"hello", payload_len=-5, buf=bytearray([i for i in range(40)]))
         with self.assertRaises(ValueError):
-            Message(msg_type="hello", payload_len=20, buf=bytearray([i for i in range(10)]))
+            Message(msg_type=b"hello", payload_len=20, buf=bytearray([i for i in range(10)]))
 
         self.assertEqual(self.buf1, self.message1.buf)
         self.assertEqual(self.buf1, self.message1._memoryview)

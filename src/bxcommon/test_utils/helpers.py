@@ -1,8 +1,8 @@
 import os
 import socket
+from argparse import Namespace
 from contextlib import closing
 
-from argparse import Namespace
 from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
@@ -12,6 +12,10 @@ from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils.buffers.input_buffer import InputBuffer
+
+
+def generate_bytes(size):
+    return bytes(generate_bytearray(size))
 
 
 def generate_bytearray(size):
@@ -36,8 +40,10 @@ def create_connection(connection_cls):
 
 
 def clear_node_buffer(node, fileno):
-    while len(node.get_bytes_to_send(fileno)) > 0:
-        node.on_bytes_sent(fileno, len(node.get_bytes_to_send(fileno)))
+    bytes_to_send = node.get_bytes_to_send(fileno)
+    while bytes_to_send is not None and len(bytes_to_send) > 0:
+        node.on_bytes_sent(fileno, len(bytes_to_send))
+        bytes_to_send = node.get_bytes_to_send(fileno)
 
 
 def receive_node_message(node, fileno, message):

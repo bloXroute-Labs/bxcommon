@@ -21,7 +21,7 @@ class AbstractMessageFactoryTest(AbstractTestCase):
     class TestMessage(Message):
         HEADER_LENGTH = HDR_COMMON_OFF
 
-        def __init__(self, message_type="test", buf=None):
+        def __init__(self, message_type=b"test", buf=None):
             self.initialized = False
             if buf is None:
                 buf = bytearray(AbstractMessageFactoryTest.PAYLOAD_LENGTH + HDR_COMMON_OFF)
@@ -31,12 +31,12 @@ class AbstractMessageFactoryTest(AbstractTestCase):
 
         @classmethod
         def unpack(cls, buf):
-            command, payload_length = struct.unpack_from('<12sL', buf)
+            command, payload_length = struct.unpack_from("<12sL", buf)
             return command.rstrip(MSG_NULL_BYTE), payload_length
 
         @classmethod
         def validate_payload(cls, buf, unpacked_args):
-            if all(ord(i) == 12 for i in buf[HDR_COMMON_OFF:]):
+            if all(i == 12 for i in buf[HDR_COMMON_OFF:]):
                 raise ValueError("test failure")
 
         @classmethod
@@ -50,7 +50,7 @@ class AbstractMessageFactoryTest(AbstractTestCase):
             super(AbstractMessageFactoryTest.TestMessageFactory, self).__init__()
             self.base_message_type = AbstractMessageFactoryTest.TestMessage
             self.message_type_mapping = {
-                "test": AbstractMessageFactoryTest.TestMessage
+                b"test": AbstractMessageFactoryTest.TestMessage
             }
 
     def setUp(self):
@@ -69,7 +69,7 @@ class AbstractMessageFactoryTest(AbstractTestCase):
 
         is_full_message, command, payload_length = self.sut.get_message_header_preview_from_input_buffer(input_buffer)
         self.assertTrue(is_full_message)
-        self.assertEquals("test", command)
+        self.assertEquals(b"test", command)
         self.assertEquals(self.PAYLOAD_LENGTH, payload_length)
 
     def test_create_message_too_short(self):
@@ -79,7 +79,7 @@ class AbstractMessageFactoryTest(AbstractTestCase):
     def test_create_message_unrecognized_message_type(self):
         with self.assertRaises(UnrecognizedCommandError):
             self.sut.create_message_from_buffer(
-                AbstractMessageFactoryTest.TestMessage("fake", bytearray(self.TOTAL_LENGTH)).rawbytes())
+                AbstractMessageFactoryTest.TestMessage(b"fake", bytearray(self.TOTAL_LENGTH)).rawbytes())
 
     def test_create_message_validation_failed(self):
         invalid_bytes = bytearray(12 for _ in range(self.TOTAL_LENGTH))

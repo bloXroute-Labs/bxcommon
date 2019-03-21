@@ -74,8 +74,8 @@ def get_server_socket(event_loop):
     """
     ipports = event_loop._node.connection_pool.by_ipport.keys()
     outbound_filenos = [event_loop._node.connection_pool.by_ipport[ipport].fileno for ipport in ipports]
-    server_initiated_connection_fileno = filter(lambda fileno: fileno not in outbound_filenos,
-                                                event_loop._socket_connections.keys())[0]
+    server_initiated_connection_fileno = next(filter(lambda fileno: fileno not in outbound_filenos,
+                                                event_loop._socket_connections.keys()))
     return event_loop._socket_connections[server_initiated_connection_fileno]
 
 

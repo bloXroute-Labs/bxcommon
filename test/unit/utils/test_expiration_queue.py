@@ -48,19 +48,19 @@ class ExpirationQueueTests(unittest.TestCase):
     def test_remove_oldest_item(self):
         items_count = 10
 
-        for i in xrange(items_count):
+        for i in range(items_count):
             self.queue.add(i)
 
         self.assertEqual(items_count, len(self.queue))
 
-        for i in xrange(items_count):
+        for i in range(items_count):
             self.assertEqual(i, self.queue.get_oldest())
             self.queue.remove_oldest()
             self.queue.add(1000 + i)
 
         self.assertEqual(items_count, len(self.queue))
 
-        for i in xrange(items_count):
+        for i in range(items_count):
             self.assertEqual(i + 1000, self.queue.get_oldest())
             self.queue.remove_oldest()
 

@@ -6,8 +6,7 @@ from bxcommon.utils import logger
 def to_bytes(string_input):
     if not string_input:
         return constants.MSG_NULL_BYTE * 16
-    if hasattr(string_input, "encode"):
-        string_input = string_input.encode()
+
     try:
         raw = uuid.UUID(string_input).bytes
     except ValueError as e:

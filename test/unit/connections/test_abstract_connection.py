@@ -17,8 +17,8 @@ class AbstractConnectionTest(AbstractTestCase):
     class TestMessageFactory(_BloxrouteMessageFactory):
         def get_message_type_mapping(self):
             return {
-                "hello": HelloMessage,
-                "pong": PongMessage
+                b"hello": HelloMessage,
+                b"pong": PongMessage
             }
 
     class TestAbstractConnection(AbstractConnection):
@@ -42,7 +42,7 @@ class AbstractConnectionTest(AbstractTestCase):
         self.connection.pop_next_message.assert_not_called()
 
     def test_process_message_quit_on_bad_message(self):
-        bad_message = Message("badtype", 0, bytearray(HDR_COMMON_OFF)).rawbytes()
+        bad_message = Message(b"badtype", 0, bytearray(HDR_COMMON_OFF)).rawbytes()
         self.connection.inputbuf.add_bytes(bad_message)
         self.connection.inputbuf.add_bytes(bad_message)
         self.connection.inputbuf.add_bytes(bad_message)
@@ -61,8 +61,8 @@ class AbstractConnectionTest(AbstractTestCase):
     def test_process_message_handler_(self):
         mock_pong = MagicMock()
         self.connection.message_handlers = {
-            "hello": self.connection.msg_hello,
-            "pong": mock_pong
+            b"hello": self.connection.msg_hello,
+            b"pong": mock_pong
         }
         self.connection.state = ConnectionState.ESTABLISHED
         self.connection.inputbuf.add_bytes(HelloMessage(protocol_version=1, network_num=2).rawbytes())

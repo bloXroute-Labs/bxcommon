@@ -7,7 +7,7 @@ from bxcommon.utils import logger
 
 
 class Message(AbstractMessage):
-    MESSAGE_TYPE = "internal"
+    MESSAGE_TYPE = b"internal"
     HEADER_LENGTH = constants.HDR_COMMON_OFF
 
     def __init__(self, msg_type=None, payload_len=None, buf=None):
@@ -15,7 +15,7 @@ class Message(AbstractMessage):
         if buf is None or len(buf) < self.HEADER_LENGTH:
             raise ValueError("Buffer must be at least {0} in length.".format(self.HEADER_LENGTH))
 
-        if not (isinstance(payload_len, (int, long))):
+        if not (isinstance(payload_len, int)):
             raise ValueError("Payload_len must be an integer or long.")
 
         if payload_len < 0:
@@ -28,7 +28,7 @@ class Message(AbstractMessage):
         self._memoryview = memoryview(buf)
 
         off = 0
-        struct.pack_into('<12sL', buf, off, msg_type, payload_len)
+        struct.pack_into("<12sL", buf, off, msg_type, payload_len)
         off += 16
 
         self._msg_type = msg_type

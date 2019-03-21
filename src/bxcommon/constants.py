@@ -71,7 +71,7 @@ C_SIZE_T_SIZE_IN_BYTES = ctypes.sizeof(ctypes.c_size_t)
 IP_V4_PREFIX = bytearray(b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff")
 IP_V4_PREFIX_LENGTH = 12
 IP_ADDR_SIZE_IN_BYTES = 16
-MSG_NULL_BYTE = "\x00"
+MSG_NULL_BYTE = b"\x00"
 
 # bytes of basic message header
 HDR_COMMON_OFF = 16
@@ -88,7 +88,7 @@ VERSIONED_HELLO_MSG_MIN_PAYLOAD_LEN = UL_INT_SIZE_IN_BYTES + NETWORK_NUM_LEN + V
 NODE_ID_SIZE_IN_BYTES = 16
 
 NULL_ENCRYPT_REPEAT_VALUE = "1"  # must be nonzero string character
-BLOXROUTE_HELLO_MESSAGES = ["hello", "ack"]
+BLOXROUTE_HELLO_MESSAGES = [b"hello", b"ack"]
 
 # </editor-fold>
 

@@ -13,7 +13,7 @@ class EncryptedCacheTest(AbstractTestCase):
     ALARM_QUEUE = AlarmQueue()
 
     def test_encrypt_and_store(self):
-        payload = bytearray(i for i in xrange(100))
+        payload = bytearray(i for i in range(100))
         sut = EncryptedCache(10, self.ALARM_QUEUE)
         ciphertext, block_hash = sut.encrypt_and_add_payload(payload)
 
@@ -24,7 +24,7 @@ class EncryptedCacheTest(AbstractTestCase):
         self.assertEquals(payload, symmetric_decrypt(cache_item.key, cache_item.ciphertext))
 
     def test_decrypt_and_get(self):
-        payload = bytearray(i for i in xrange(100))
+        payload = bytearray(i for i in range(100))
         sut1 = EncryptedCache(10, self.ALARM_QUEUE)
         ciphertext, block_hash = sut1.encrypt_and_add_payload(payload)
         key = sut1.get_encryption_key(block_hash)
@@ -36,7 +36,7 @@ class EncryptedCacheTest(AbstractTestCase):
         self.assertEqual(payload, decrypted)
 
     def test_decrypt_ciphertext(self):
-        payload = bytearray(i for i in xrange(100))
+        payload = bytearray(i for i in range(100))
         sut1 = EncryptedCache(10, self.ALARM_QUEUE)
         ciphertext, block_hash = sut1.encrypt_and_add_payload(payload)
         key = sut1.get_encryption_key(block_hash)
@@ -48,8 +48,8 @@ class EncryptedCacheTest(AbstractTestCase):
         self.assertEqual(payload, decrypted)
 
     def test_cant_decrypt_incomplete_content(self):
-        ciphertext = "foobar"
-        hash_key = "baz"
+        ciphertext = b"foobar"
+        hash_key = b"baz"
 
         sut1 = EncryptedCache(10, self.ALARM_QUEUE)
         sut1.add_ciphertext(hash_key, ciphertext)
@@ -57,9 +57,9 @@ class EncryptedCacheTest(AbstractTestCase):
         self.assertIsNone(sut1.decrypt_ciphertext(hash_key, ciphertext))
 
     def test_cant_decrypt_wrong_keys(self):
-        ciphertext = "foobar" * 50  # ciphertext needs to be long enough to contain a nonce
-        hash_key = "baz"
-        bad_encryption_key = "q" * KEY_SIZE
+        ciphertext = b"foobar" * 50  # ciphertext needs to be long enough to contain a nonce
+        hash_key = b"bbaz"
+        bad_encryption_key = b"q" * KEY_SIZE
 
         sut1 = EncryptedCache(10, self.ALARM_QUEUE)
         sut1.add_ciphertext(hash_key, ciphertext)
@@ -68,8 +68,8 @@ class EncryptedCacheTest(AbstractTestCase):
         self.assertIsNone(sut1.decrypt_ciphertext(hash_key, ciphertext))
 
     def test_cache_cleanup(self):
-        ciphertext = "foobar"
-        hash_key = "baz"
+        ciphertext = b"foobar"
+        hash_key = b"baz"
 
         sut = EncryptedCache(10, self.ALARM_QUEUE)
         sut.add_ciphertext(hash_key, ciphertext)

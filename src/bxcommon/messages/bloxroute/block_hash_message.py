@@ -9,7 +9,7 @@ from bxcommon.utils.object_hash import ObjectHash
 class BlockHashMessage(Message):
     __metaclass__ = ABCMeta
 
-    MESSAGE_TYPE = ""
+    MESSAGE_TYPE = b""
     PAYLOAD_LENGTH = crypto.SHA256_HASH_LEN
 
     def __init__(self, block_hash=None, buf=None):

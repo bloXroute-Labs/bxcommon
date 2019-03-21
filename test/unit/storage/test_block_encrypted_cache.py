@@ -8,7 +8,7 @@ class BlockEncryptedCacheTest(AbstractTestCase):
     ALARM_QUEUE = AlarmQueue()
 
     def setUp(self):
-        payload = bytearray(i for i in xrange(100))
+        payload = bytearray(i for i in range(100))
         self.sut = BlockEncryptedCache(self.ALARM_QUEUE)
         _, self.block_hash = self.sut.encrypt_and_add_payload(payload)
 
