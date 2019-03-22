@@ -144,7 +144,7 @@ def parse_blockchain_opts(opts, node_type):
 
     for key, value in opts_dict.items():
         if value is None and network_info.default_attributes is not None and key in network_info.default_attributes:
-                opts_dict[key] = network_info.default_attributes[key.encode(constants.DEFAULT_TEXT_ENCODING)]
+                opts_dict[key] = network_info.default_attributes[key]
 
     opts_dict["blockchain_network_num"] = network_info.network_num
     opts_dict["blockchain_block_interval"] = network_info.block_interval
