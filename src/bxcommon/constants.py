@@ -95,7 +95,7 @@ BLOXROUTE_HELLO_MESSAGES = [b"hello", b"ack"]
 # <editor-fold desc="SDN Constants">
 SDN_ROOT_URL = "http://127.0.0.1:8080"
 SDN_CONTACT_RETRY_SECONDS = 5
-
+MAX_COUNTRY_LENGTH = 30
 
 class SdnRoutes(object):
     nodes = "/nodes"

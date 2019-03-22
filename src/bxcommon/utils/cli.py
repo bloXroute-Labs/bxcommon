@@ -26,6 +26,9 @@ arg_parser = argparse.ArgumentParser()
 
 arg_parser.add_argument("--external-ip", help="External network ip of this node", required=True)
 arg_parser.add_argument("--external-port", help="External network port to listen on", type=int, required=True)
+arg_parser.add_argument("--continent", help="The continent of this node", type=str,
+                        choices=["NA", "SA", "EU", "AS", "AF", "OC", "AN"])
+arg_parser.add_argument("--country", help="The country of this node.", type=str)
 arg_parser.add_argument("--hostname", help="Hostname the node is running on", type=str, default=constants.HOSTNAME)
 arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", default=constants.SDN_ROOT_URL, type=str)
 arg_parser.add_argument("--log-path", help="Path to store logfiles in")
@@ -36,12 +39,12 @@ arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__get
 arg_parser.add_argument("--log-flush-immediately", help="Enables immediate flush for logs",
                         type=convert.str_to_bool, default=False)
 arg_parser.add_argument("--transaction-pool-memory-limit",
-                            help="Maximum size of transactions to keep in memory pool (MB)",
-                            type=int)
+                        help="Maximum size of transactions to keep in memory pool (MB)",
+                        type=int)
 arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
-                            help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
-                            type=int,
-                            default=(2 * 1024))
+                        help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
+                        type=int,
+                        default=(2 * 1024))
 
 _args = None
 
