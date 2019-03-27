@@ -46,7 +46,10 @@ class ThroughputStatistics(StatisticsService):
         peer_stats.address = peer_desc
 
         if measure_type is MeasurementType.PING:
-            peer_stats.ping_max = max(peer_stats.ping_max, measure_value)
+            if peer_stats.ping_max is None:
+                peer_stats.ping_max = measure_value
+            else:
+                peer_stats.ping_max = max(peer_stats.ping_max, measure_value)
         else:
             logger.error("{} {}".format(measure_type, measure_value))
 

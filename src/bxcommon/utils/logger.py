@@ -2,12 +2,17 @@ import os
 import sys
 import threading
 import time
+import json
+import traceback
+from enum import Enum
 from collections import deque
 from datetime import datetime
 from threading import Condition, Lock, Thread
 
-from bxcommon.constants import ENABLE_LOGGING, FLUSH_LOG, DEFAULT_LOG_LEVEL
+from bxcommon.constants import ENABLE_LOGGING, FLUSH_LOG, DEFAULT_LOG_LEVEL, DEFAULT_LOG_FORMAT
 from bxcommon.utils.log_level import LogLevel
+from bxcommon.utils.log_format import LogFormat
+from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 
 ##
 # The Logging Interface
@@ -20,10 +25,11 @@ MAX_ERR_QUEUE_SIZE = 30
 error_msgs = deque()
 _hostname = '[Unassigned]'
 _log_level = DEFAULT_LOG_LEVEL
+_log_format = DEFAULT_LOG_FORMAT
 _default_log = None
 # The time (in seconds) to cycle through to another log.
 LOG_ROTATION_INTERVAL = 24 * 3600
-
+LOG_MSG_ITEMS = {"instance", "level", "timestamp", "msg"}
 
 # Log class that you can write to which asynchronously dumps the log to the background
 class Log(object):
@@ -151,7 +157,7 @@ def log_close():
 def set_log_name(name):
     global _hostname
 
-    _hostname = '[' + name + ']'
+    _hostname = name
 
 
 def set_log_level(loglevel):
@@ -161,6 +167,15 @@ def set_log_level(loglevel):
         _log_level = loglevel
     else:
         raise TypeError("Expects LogLevel Enum or int")
+
+
+def set_log_format(logformat):
+    global _log_format
+
+    if isinstance(logformat, Enum):
+        _log_format = logformat
+    else:
+        raise TypeError("Expects LogFormat Enum")
 
 
 def should_log_level(log_level):
@@ -181,36 +196,48 @@ def set_immediate_flush(flush_immediately):
         _log.needs_flush.notify()
 
 
-def log(level, msg):
+def log(level, msg, exc_info=None):
     global _hostname
     if level < _log_level:
         return  # No logging if it's not a high enough priority message.
-
-    log_time = datetime.utcnow()
-    logtype = "{}  ".format(level.name)
-
-    # loc is kept for debugging purposes. Uncomment the following line if you need to see the execution path.
-    #    msg = loc + ": " + msg
+    log_msg = {
+        "level": level.name,
+        "timestamp": datetime.utcnow(),
+    }
     if _hostname == "[Unassigned]":
         # Print threadname for testing in multithreaded integration testing environments
-        logmsg = "[{0}]: {1} [{2}]: {3}\n".format(
-            threading.current_thread().name, logtype, log_time.strftime("%Y-%m-%d-%H:%M:%S+%f"), msg)
+        log_msg["instance"] = threading.current_thread().name
     else:
-        logmsg = "{0}: {1} [{2}]: {3}\n".format(
-            _hostname, logtype, log_time.strftime("%Y-%m-%d-%H:%M:%S+%f"), msg)
+        log_msg["instance"] = _hostname
+    if exc_info is not None:
+        log_msg["exc_info"] = traceback.format_exception(*exc_info)
+
+    if _log_format == LogFormat.JSON:
+        log_msg["msg"] = msg
+        log_msg_str = json.dumps(log_msg, cls=ClassJsonEncoder) + "\n"
+    elif _log_format == LogFormat.PLAIN:
+        if isinstance(msg, (list, dict)):
+            log_msg["msg"] = json.dumps(msg, cls=ClassJsonEncoder)
+        else:
+            log_msg["msg"] = msg
+        log_msg["extra"] = ",".join([" {}={}".format(k, v) for (k, v) in log_msg.items()
+                                     if k not in LOG_MSG_ITEMS])
+        log_msg_str = "{instance}: {level} [{timestamp:%Y-%m-%d-%H:%M:%S+%f}]: {msg}{extra}\n".format(**log_msg)
+    else:
+        raise NotImplementedError("{} log format option is not available".format(_log_format))
 
     # Store all error messages to be sent to the frontend
     if level > LogLevel.WARN:
-        error_msgs.append(logmsg)
+        error_msgs.append(log_msg_str)
 
     if len(error_msgs) > MAX_ERR_QUEUE_SIZE:
         error_msgs.popleft()
 
-    _log.write(logmsg)
+    _log.write(log_msg_str)
 
     # Print out crash logs to the console for easy debugging.
     if DUMP_LOG or level == LogLevel.FATAL:
-        sys.stdout.write(logmsg)
+        sys.stdout.write(log_msg_str)
 
 
 def debug(msg):
@@ -226,7 +253,7 @@ def error(msg):
 
 
 def fatal(msg):
-    log(LogLevel.FATAL, msg)
+    log(LogLevel.FATAL, msg, exc_info=sys.exc_info())
 
 
 def info(msg):

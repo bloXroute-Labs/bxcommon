@@ -1,6 +1,11 @@
 import json
+from datetime import date, datetime, time
+from enum import Enum
+from types import GeneratorType
 import typing
 from datetime import datetime
+from inspect import istraceback
+import traceback
 
 
 def is_iterable_no_collection(o):
@@ -14,24 +19,27 @@ class ClassJsonEncoder(json.JSONEncoder):
             o = list(o)
         elif isinstance(o, (bytearray, memoryview)):
             o = bytes(o)
+        if isinstance(o, Enum):
+            return o.name
         if hasattr(o, '__dict__'):
             if isinstance(o.__dict__, dict):
                 return o.__dict__
             else:
                 return str(o)
-        if isinstance(o, datetime):
-            return o.__str__()
+        if isinstance(o, (date, datetime, time)):
+            return o.isoformat()
         if isinstance(o, bytes):
             try:
                 return o.decode("utf-8")
             except UnicodeDecodeError:
                 return str(o)
+        if istraceback(o):
+            return ''.join(traceback.format_tb(o)).strip()
 
         return o
 
     def _encode(self, obj):
-        if hasattr(obj, "__dict__") and isinstance(obj.__dict__, dict):
-            obj = obj.__dict__
+        obj = self.default(obj)
         if isinstance(obj, dict):
             return {self.default(self._encode(k)): self._encode(v) for k, v in obj.items()}
         elif isinstance(obj, list) or isinstance(obj, set):

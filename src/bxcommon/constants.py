@@ -3,6 +3,7 @@ import socket
 import ctypes
 
 from bxcommon.utils.log_level import LogLevel
+from bxcommon.utils.log_format import LogFormat
 
 PLATFORM_LINUX = "linux"
 PLATFORM_MAC = "darwin"
@@ -57,6 +58,7 @@ ENABLE_LOGGING = True
 # LogLevel.FATAL
 # or their corresponding numbers
 DEFAULT_LOG_LEVEL = LogLevel.INFO
+DEFAULT_LOG_FORMAT = LogFormat.PLAIN
 
 # set to True to always flush logs to stdout
 FLUSH_LOG = True

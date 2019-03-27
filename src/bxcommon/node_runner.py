@@ -1,11 +1,8 @@
-import json
-
 from bxcommon.models.node_model import NodeModel
 from bxcommon.network import network_event_loop_factory
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import cli, model_loader
 from bxcommon.utils import config, logger
-from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 
 
 def run_node(process_id_file_path, opts, node_class):
@@ -39,10 +36,12 @@ def run_node(process_id_file_path, opts, node_class):
     logger.set_log_name(opts.node_id)
     if cli.get_args().log_level is not None:
         logger.set_log_level(cli.get_args().log_level)
+    if cli.get_args().log_format is not None:
+        logger.set_log_format(cli.get_args().log_format)
 
     logger.set_immediate_flush(cli.get_args().log_flush_immediately)
 
-    logger.info("Config loaded:\n {}".format(json.dumps(opts, indent=2, sort_keys=True, cls=ClassJsonEncoder)))
+    logger.info({"type": "node_init", "Data": opts})
 
     # Start main loop
     try:

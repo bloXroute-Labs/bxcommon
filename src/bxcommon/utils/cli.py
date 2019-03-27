@@ -13,6 +13,7 @@ from bxcommon.services import sdn_http_service
 from bxcommon.utils import config
 from bxcommon.utils import convert, logger
 from bxcommon.utils.log_level import LogLevel
+from bxcommon.utils.log_format import LogFormat
 
 # Keep here instead of constants to avoid circular import.
 
@@ -36,6 +37,7 @@ arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate log
                         type=convert.str_to_bool, default=True)
 arg_parser.add_argument("--node-id", help="(TEST ONLY) Set the node_id for using in testing.")
 arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__getattr__, choices=list(LogLevel))
+arg_parser.add_argument("--log-format", help="set log format", type=LogFormat.__getattr__, choices=list(LogFormat))
 arg_parser.add_argument("--log-flush-immediately", help="Enables immediate flush for logs",
                         type=convert.str_to_bool, default=False)
 arg_parser.add_argument("--transaction-pool-memory-limit",
