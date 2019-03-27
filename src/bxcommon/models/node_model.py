@@ -29,6 +29,8 @@ class NodeModel(object):
         self.continent = continent
         if country is not None:
             self.country = country[:MAX_COUNTRY_LENGTH]
+        else:
+            self.country = None
 
         # Ethereum remote blockchain attribute
         self.node_public_key = node_public_key
