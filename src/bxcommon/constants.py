@@ -110,8 +110,6 @@ class SdnRoutes(object):
     blockchain_network = "/blockchain-networks/{0}/{1}"
     blockchain_networks = "/blockchain-networks"
     gateway_inbound_connection = "/nodes/{0}/gateway-inbound-connection"
-    # TODO next sprint
-    # sort_geo_location_traffic = "/geo_location_traffic/{0}"
 
 
 # </editor-fold>
