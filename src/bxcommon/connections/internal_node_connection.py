@@ -137,10 +137,7 @@ class InternalNodeConnection(AbstractConnection):
             request_response_time = (datetime.utcnow() - request_msg_timestamp).total_seconds()
             logger.debug("Ping-pong for nonce {} response time: {} on connection: {}"
                          .format(msg.nonce(), request_response_time, self))
-            try:
-                hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
-            except Exception as e:
-                logger.error("{} {} {}".format(repr(e), self.peer_desc, request_response_time))
+            hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
         elif nonce is not None:
             logger.warn("Received pong message from {} {} with nonce {}, ping request was not found in cache"
                         .format(self.peer_desc, self.CONNECTION_TYPE, nonce))
