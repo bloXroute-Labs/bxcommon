@@ -1,3 +1,6 @@
+from bxcommon import constants
+
+
 class BlockchainNetworkModel(object):
 
     def __init__(self, protocol=None, network=None, network_num=None, type=None, environment=None,
@@ -13,4 +16,4 @@ class BlockchainNetworkModel(object):
         self.block_interval = block_interval
         self.ignore_block_interval_count = ignore_block_interval_count
         self.final_tx_confirmations_count = 6
-        self.tx_contents_memory_limit_bytes = 200 * 1024 * 1024
+        self.tx_contents_memory_limit_bytes = constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES

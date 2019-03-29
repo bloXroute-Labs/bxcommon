@@ -1,5 +1,6 @@
-import heapq
 import time
+
+from collections import OrderedDict
 
 
 class ExpirationQueue(object):
@@ -13,14 +14,22 @@ class ExpirationQueue(object):
             raise ValueError("Time to live cannot be negative.")
 
         self.time_to_live_sec = time_to_live_sec
-        self.queue = []
+        self.queue = OrderedDict()
 
     def add(self, item):
         """
         Adds item to the queue
         :param item: item
         """
-        heapq.heappush(self.queue, (time.time(), item))
+        self.queue[item] = time.time()
+
+    def remove(self, item):
+        """
+        Removes item from expiration queue
+        :param item: item to remove
+        """
+        if item in self.queue:
+            del self.queue[item]
 
     def remove_expired(self, current_time=None, remove_callback=None):
         """
@@ -31,9 +40,9 @@ class ExpirationQueue(object):
         if current_time is None:
             current_time = time.time()
 
-        while self.queue and \
-                current_time - self.queue[0][0] > self.time_to_live_sec:
-            _, item = heapq.heappop(self.queue)
+        while len(self.queue) > 0 and \
+                current_time - self.get_oldest_item_timestamp() > self.time_to_live_sec:
+            item, timestamp = self.queue.popitem(last=False)
 
             if remove_callback is not None:
                 remove_callback(item)
@@ -46,15 +55,26 @@ class ExpirationQueue(object):
         if not self.queue:
             return None
 
-        return self.queue[0][1]
+        return next(iter(self.queue.keys()))
+
+    def get_oldest_item_timestamp(self):
+        """
+        Returns timestamp of the oldest item
+        :return: timestamp of the oldest item
+        """
+        if len(self.queue) == 0:
+            return None
+
+        oldest_item = self.get_oldest()
+        return self.queue[oldest_item]
 
     def remove_oldest(self, remove_callback=None):
         """
         Remove one oldest item from the queue
         :param remove_callback: reference to a callback function that is being called when item is removed
         """
-        if self.queue:
-            _, item = heapq.heappop(self.queue)
+        if len(self.queue) > 0:
+            item, timestamp = self.queue.popitem(last=False)
 
             if remove_callback is not None:
                 remove_callback(item)

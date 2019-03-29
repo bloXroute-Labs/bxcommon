@@ -55,7 +55,7 @@ class InternalNodeConnection(AbstractConnection):
             logger.error("Protocol version of remote node '{}' is not supported. Closing connection."
                          .format(protocol_version))
             self.mark_for_close()
-            return
+            return False
 
         self.protocol_version = protocol_version
         self.message_factory = self.version_manager.get_message_factory_for_version(protocol_version)

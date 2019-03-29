@@ -1,9 +1,10 @@
 from collections import defaultdict, deque
 
 from bxcommon import constants
-from bxcommon.utils import logger, memory_utils
+from bxcommon.utils import logger, memory_utils, convert
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
+from bxcommon.utils.object_hash import ObjectHash
 from bxcommon.utils.stats import hooks
 
 
@@ -32,7 +33,10 @@ class TransactionService(object):
     MAX_ID = 2 ** 32
     SHORT_ID_SIZE = 4
     DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT = 24
-    DEFAULT_TX_MEMORY_LIMIT = 200 * 1024 * 1024
+
+    ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE = 376
+    ESTIMATED_TX_HASH_ITEM_SIZE = 312
+    ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE = 88
 
     def __init__(self, node, network_num):
         """
@@ -59,6 +63,8 @@ class TransactionService(object):
 
         self._final_tx_confirmations_count = self._get_final_tx_confirmations_count()
         self._tx_content_memory_limit = self._get_tx_contents_memory_limit()
+        logger.info("Memory limit for transaction service by network number {} is {} bytes.".format(self.network_num,
+                                                                                                    self._tx_content_memory_limit))
 
         # deque of short ids in blocks in the order they are received
         self._short_ids_seen_in_block = deque()
@@ -73,13 +79,13 @@ class TransactionService(object):
         :param transaction_hash: transaction hash
         :param transaction_contents: transaction contents bytes
         """
-
         previous_size = 0
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
 
-        if transaction_hash in self._tx_hash_to_contents:
-            previous_size = len(self._tx_hash_to_contents[transaction_hash])
+        if transaction_cache_key in self._tx_hash_to_contents:
+            previous_size = len(self._tx_hash_to_contents[transaction_cache_key])
 
-        self._tx_hash_to_contents[transaction_hash] = transaction_contents
+        self._tx_hash_to_contents[transaction_cache_key] = transaction_contents
         self._total_tx_contents_size += len(transaction_contents) - previous_size
 
         self._memory_limit_clean_up()
@@ -91,8 +97,7 @@ class TransactionService(object):
         :param transaction_hash: transaction hash
         :return: Boolean indicating if transaction contents exists
         """
-
-        return transaction_hash in self._tx_hash_to_contents
+        return self._tx_hash_to_cache_key(transaction_hash) in self._tx_hash_to_contents
 
     def has_transaction_short_id(self, transaction_hash):
         """
@@ -101,8 +106,7 @@ class TransactionService(object):
         :param transaction_hash: transaction hash
         :return: Boolean indicating if transaction short id exists
         """
-
-        return transaction_hash in self._tx_hash_to_short_ids
+        return self._tx_hash_to_cache_key(transaction_hash) in self._tx_hash_to_short_ids
 
     def has_short_id(self, short_id):
         """
@@ -110,7 +114,6 @@ class TransactionService(object):
         :param short_id: transaction short id
         :return: Boolean indicating if short id is found in cache
         """
-
         return short_id in self._short_id_to_tx_hash
 
     def assign_short_id(self, transaction_hash, short_id):
@@ -123,8 +126,10 @@ class TransactionService(object):
             logger.warn("Attempt to assign null SID to transaction hash {}. Ignoring.".format(transaction_hash))
             return
         logger.debug("Assigning sid {} to transaction {}".format(short_id, transaction_hash))
-        self._tx_hash_to_short_ids[transaction_hash].add(short_id)
-        self._short_id_to_tx_hash[short_id] = transaction_hash
+
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        self._tx_hash_to_short_ids[transaction_cache_key].add(short_id)
+        self._short_id_to_tx_hash[short_id] = transaction_cache_key
         self._tx_assignment_expire_queue.add(short_id)
 
         if not self.tx_assign_alarm_scheduled:
@@ -146,8 +151,10 @@ class TransactionService(object):
         :param transaction_hash: transaction long hash
         :return: set of short ids
         """
-        if transaction_hash in self._tx_hash_to_short_ids:
-            return self._tx_hash_to_short_ids[transaction_hash]
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+
+        if transaction_cache_key in self._tx_hash_to_short_ids:
+            return self._tx_hash_to_short_ids[transaction_cache_key]
         else:
             return {constants.NULL_TX_SID}
 
@@ -160,10 +167,12 @@ class TransactionService(object):
         """
         if short_id in self._short_id_to_tx_hash:
             transaction_hash = self._short_id_to_tx_hash[short_id]
-            if transaction_hash in self._tx_hash_to_contents:
-                return transaction_hash, self._tx_hash_to_contents[transaction_hash]
+            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+            if transaction_cache_key in self._tx_hash_to_contents:
+                return self._tx_cache_key_to_hash(transaction_cache_key), self._tx_hash_to_contents[
+                    transaction_cache_key]
             else:
-                return transaction_hash, None
+                return self._tx_cache_key_to_hash(transaction_cache_key), None
         else:
             return None, None
 
@@ -174,9 +183,9 @@ class TransactionService(object):
         :param transaction_hash: transaction hash
         :return: transaction contents.
         """
-
-        if transaction_hash in self._tx_hash_to_contents:
-            return self._tx_hash_to_contents[transaction_hash]
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        if transaction_cache_key in self._tx_hash_to_contents:
+            return self._tx_hash_to_contents[transaction_cache_key]
 
         return None
 
@@ -190,10 +199,10 @@ class TransactionService(object):
         transactions = []
         for short_id in short_ids:
             if short_id in self._short_id_to_tx_hash:
-                transaction_hash = self._short_id_to_tx_hash[short_id]
-                if transaction_hash in self._tx_hash_to_contents:
-                    tx = self._tx_hash_to_contents[transaction_hash]
-                    transactions.append((short_id, transaction_hash, tx))
+                transaction_cache_key = self._short_id_to_tx_hash[short_id]
+                if transaction_cache_key in self._tx_hash_to_contents:
+                    tx = self._tx_hash_to_contents[transaction_cache_key]
+                    transactions.append((short_id, self._tx_cache_key_to_hash(transaction_cache_key), tx))
                 else:
                     logger.debug("Short id {} was requested but is unknown.".format(short_id))
             else:
@@ -247,28 +256,42 @@ class TransactionService(object):
             self.network_num,
             self._tx_hash_to_short_ids,
             "tx_hash_to_short_ids",
-            self.get_collection_mem_stats(self._tx_hash_to_short_ids))
+            self.get_collection_mem_stats(self._tx_hash_to_short_ids,
+                                          self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(
+                                              self._tx_hash_to_short_ids)))
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self._tx_hash_to_contents,
             "tx_hash_to_contents",
-            self.get_collection_mem_stats(self._tx_hash_to_contents))
+            self.get_collection_mem_stats(self._tx_hash_to_contents, self.ESTIMATED_TX_HASH_ITEM_SIZE * len(
+                self._tx_hash_to_contents) + self._total_tx_contents_size))
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self._short_id_to_tx_hash,
             "short_id_to_tx_hash",
-            self.get_collection_mem_stats(self._short_id_to_tx_hash))
+            self.get_collection_mem_stats(self._short_id_to_tx_hash,
+                                          self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(
+                                              self._short_id_to_tx_hash)))
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self._short_ids_seen_in_block,
             "short_ids_seen_in_block",
-            self.get_collection_mem_stats(self._short_ids_seen_in_block))
+            self.get_collection_mem_stats(self._short_ids_seen_in_block, 0))
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            self.network_num,
+            self._tx_assignment_expire_queue,
+            "tx_assignment_expire_queue",
+            self.get_collection_mem_stats(self._tx_assignment_expire_queue,
+                                          self.ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE * len(
+                                              self._tx_assignment_expire_queue)))
 
     def get_tx_service_aggregate_stats(self):
         """
@@ -278,21 +301,22 @@ class TransactionService(object):
         """
 
         if len(self._tx_assignment_expire_queue.queue) > 0:
-            oldest_transaction_date = self._tx_assignment_expire_queue.queue[0][0]
+            oldest_transaction_date = self._tx_assignment_expire_queue.get_oldest_item_timestamp()
         else:
             oldest_transaction_date = 0
         return dict(
             short_id_mapping_count_gauge=len(self._short_id_to_tx_hash),
             unique_transaction_content_gauge=len(self._tx_hash_to_contents),
             oldest_transaction_date=oldest_transaction_date,
-            transactions_removed_by_memory_limit=self._total_tx_removed_by_memory_limit
+            transactions_removed_by_memory_limit=self._total_tx_removed_by_memory_limit,
+            total_tx_contents_size=self._total_tx_contents_size
         )
 
-    def get_collection_mem_stats(self, collection_obj, ):
+    def get_collection_mem_stats(self, collection_obj, estimated_size=0):
         if self.node.opts.stats_calculate_actual_size:
             return memory_utils.get_object_size(collection_obj)
         else:
-            return ObjectSize(size=0, flat_size=0, is_actual_size=False)
+            return ObjectSize(size=estimated_size, flat_size=0, is_actual_size=False)
 
     def _remove_transaction_by_short_id(self, short_id):
         """
@@ -300,24 +324,29 @@ class TransactionService(object):
         :param short_id: short id to clean up
         """
         if short_id in self._short_id_to_tx_hash:
-            transaction_hash = self._short_id_to_tx_hash.pop(short_id)
-            if transaction_hash in self._tx_hash_to_short_ids:
-                short_ids = self._tx_hash_to_short_ids[transaction_hash]
+            transaction_cache_key = self._short_id_to_tx_hash.pop(short_id)
+            if transaction_cache_key in self._tx_hash_to_short_ids:
+                short_ids = self._tx_hash_to_short_ids[transaction_cache_key]
 
                 # Only clear mapping and txhash_to_contents if last SID assignment
                 if len(short_ids) == 1:
-                    del self._tx_hash_to_short_ids[transaction_hash]
+                    del self._tx_hash_to_short_ids[transaction_cache_key]
 
-                    if transaction_hash in self._tx_hash_to_contents:
-                        self._total_tx_contents_size -= len(self._tx_hash_to_contents[transaction_hash])
-                        del self._tx_hash_to_contents[transaction_hash]
+                    if transaction_cache_key in self._tx_hash_to_contents:
+                        self._total_tx_contents_size -= len(self._tx_hash_to_contents[transaction_cache_key])
+                        del self._tx_hash_to_contents[transaction_cache_key]
                 else:
                     short_ids.remove(short_id)
+
+        self._tx_assignment_expire_queue.remove(short_id)
 
     def _memory_limit_clean_up(self):
         """
         Removes oldest transactions if total bytes consumed by transaction contents exceed memory limit
         """
+        if self._total_tx_contents_size <= self._tx_content_memory_limit:
+            return
+
         logger.debug("Transaction service exceeds memory limit for transaction contents. Limit: {}. Current size: {}."
                      .format(self._tx_content_memory_limit, self._total_tx_contents_size))
         removed_tx_count = 0
@@ -353,8 +382,33 @@ class TransactionService(object):
 
         for blockchain_network in self.node.opts.blockchain_networks:
             if blockchain_network.network_num == self.network_num:
-                return blockchain_network.tx_contents_memory_limit_bytes
+                if blockchain_network.tx_contents_memory_limit_bytes is None:
+                    logger.warn(
+                        "Blockchain network by number {} does not have tx cache size limit configured. Using default {}."
+                            .format(self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES))
+                    return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
+                else:
+                    return blockchain_network.tx_contents_memory_limit_bytes
 
         logger.warn("Tx service could not determine transactions memory limit for network number {}. Using default {}."
-                    .format(self.network_num, self.DEFAULT_TX_MEMORY_LIMIT))
-        return self.DEFAULT_TX_MEMORY_LIMIT
+                    .format(self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES))
+        return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
+
+    def _tx_hash_to_cache_key(self, transaction_hash):
+
+        if isinstance(transaction_hash, ObjectHash):
+            return convert.bytes_to_hex(transaction_hash.binary)
+
+        if isinstance(transaction_hash, (bytes, bytearray, memoryview)):
+            return convert.bytes_to_hex(transaction_hash)
+
+        return transaction_hash
+
+    def _tx_cache_key_to_hash(self, transaction_cache_key):
+        if isinstance(transaction_cache_key, ObjectHash):
+            return transaction_cache_key
+
+        if isinstance(transaction_cache_key, (bytes, bytearray, memoryview)):
+            return ObjectHash(transaction_cache_key)
+
+        return ObjectHash(convert.hex_to_bytes(transaction_cache_key))

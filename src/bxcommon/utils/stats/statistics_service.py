@@ -102,7 +102,7 @@ class ThreadedStatisticsService(StatisticsService):
 
         with self._lock:
             alive = self._alive
-        while sleeptime > 30 and alive:
+        while sleeptime > 0 and alive:
             time.sleep(30)
             sleeptime -= 30
             with self._lock:

@@ -7,7 +7,7 @@ from pympler.asizeof import Asized
 # Default to 50 kB
 from bxcommon import constants
 
-DEFAULT_DETAILED_MEMORY_BREAKDOWN_LIMIT = 50 * 1024
+DEFAULT_DETAILED_MEMORY_BREAKDOWN_LIMIT = 100
 
 
 class ObjectSize(object):

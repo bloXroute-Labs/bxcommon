@@ -152,6 +152,13 @@ WARN_ALARM_EXECUTION_DURATION = 5
 WARN_ALARM_EXECUTION_OFFSET = 5
 # </editor-fold>
 
+# <editor-fold desc="Default Values">
+
+# Default transactions contents cache maximum size per network number
+DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES = 72 * 1024 * 1024
+
+# </editor-fold>
+
 # keep constants_local.py file to override settings in the constants file
 # this part should be at the bottom of the file
 try:
