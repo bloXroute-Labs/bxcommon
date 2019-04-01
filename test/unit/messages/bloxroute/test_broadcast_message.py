@@ -3,7 +3,7 @@ from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.crypto import SHA256_HASH_LEN
-from bxcommon.utils.object_hash import Sha256ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 
 
 class BroadcastMessageTest(AbstractTestCase):
@@ -11,7 +11,7 @@ class BroadcastMessageTest(AbstractTestCase):
     def test_peek_network_num(self):
         network_num = 12345
         hash_bytes = helpers.generate_bytearray(SHA256_HASH_LEN)
-        msg_hash = Sha256ObjectHash(hash_bytes)
+        msg_hash = Sha256Hash(hash_bytes)
         block_bytes = helpers.generate_bytearray(1234)
 
         broadcast_msg = BroadcastMessage(msg_hash=msg_hash, network_num=network_num, blob=block_bytes)

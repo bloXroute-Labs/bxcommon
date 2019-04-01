@@ -1,4 +1,5 @@
 import struct
+from abc import abstractmethod, ABCMeta
 
 from bxcommon.utils import convert
 from bxcommon.utils.crypto import SHA256_HASH_LEN
@@ -7,9 +8,14 @@ from bxcommon.utils.crypto import SHA256_HASH_LEN
 # This is done because using the last characters of the SHA256 function provides major speed boosts.
 PARTIAL_HASH_LENGTH = 4
 
-class ObjectHash(object):
-    # binary is a memoryview or a bytearray
-    # we do not intend for the binary to mutate
+class AbstractObjectHash(object):
+    """
+    Base class for representing hash as an object
+    binary is a memoryview or a bytearray
+    Assumes that binary does not mutate
+    """
+    __meta__ = ABCMeta
+
     def __init__(self, binary):
         self.binary = bytearray(binary) if isinstance(binary, memoryview) else binary
 
@@ -24,25 +30,25 @@ class ObjectHash(object):
     def __lt__(self, other):
         return other is None or self.binary < other.binary
 
-    def __repr__(self):
-        return "ObjectHash<binary: {}>".format(convert.bytes_to_hex(self.binary))
-
     def __getitem__(self, arg):
         return self.binary.__getitem__(arg)
 
-class Sha256ObjectHash(ObjectHash):
-    # binary is a memoryview or a bytearray
-    # we do not intend for the binary to mutate
+class Sha256Hash(AbstractObjectHash):
+    """
+    Represents SHA256 hash as an object
+    binary is a memoryview or a bytearray
+    Assumes that binary does not mutate
+    """
     def __init__(self, binary):
         if len(binary) != SHA256_HASH_LEN:
             raise ValueError("Binary has the wrong length.")
 
-        super(Sha256ObjectHash, self).__init__(binary)
+        super(Sha256Hash, self).__init__(binary)
 
     def __repr__(self):
         return "Sha256ObjectHash<binary: {}>".format(convert.bytes_to_hex(self.binary))
 
-class ConcatHash(ObjectHash):
+class ConcatHash(AbstractObjectHash):
     """
     Hash value that is concatenated with additional data.
     binary is a memoryview or a bytearray that is not mutable

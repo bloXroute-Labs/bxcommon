@@ -21,13 +21,13 @@ from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.crypto import SHA256_HASH_LEN, KEY_SIZE
-from bxcommon.utils.object_hash import Sha256ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 
 
 def _get_random_hash():
     random_hash_bytes = helpers.generate_bytearray(SHA256_HASH_LEN)
 
-    return Sha256ObjectHash(random_hash_bytes)
+    return Sha256Hash(random_hash_bytes)
 
 
 class BloxrouteVersionManagerV1Test(AbstractTestCase):
@@ -158,7 +158,7 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
 
     def test_convert_message_from_older_version__broadcast_message_v1(self):
         random_hash_bytes = helpers.generate_bytearray(SHA256_HASH_LEN)
-        random_hash = Sha256ObjectHash(random_hash_bytes)
+        random_hash = Sha256Hash(random_hash_bytes)
         random_blob_bytes = helpers.generate_bytearray(12345)
         broadcast_msg_v1 = BroadcastMessageV1(msg_hash=random_hash, blob=random_blob_bytes)
 
@@ -194,7 +194,7 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
 
     def test_convert_first_bytes_from_older_version__broadcast_message_v1(self):
         random_hash_bytes = helpers.generate_bytearray(SHA256_HASH_LEN)
-        random_hash = Sha256ObjectHash(random_hash_bytes)
+        random_hash = Sha256Hash(random_hash_bytes)
         random_blob_bytes = helpers.generate_bytearray(12345)
         broadcast_msg_v1 = BroadcastMessageV1(msg_hash=random_hash, blob=random_blob_bytes)
         broadcast_msg_v1_bytes = broadcast_msg_v1.rawbytes()

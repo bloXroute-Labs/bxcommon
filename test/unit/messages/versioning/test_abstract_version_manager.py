@@ -7,7 +7,7 @@ from bxcommon.messages.versioning.abstract_version_manager import AbstractVersio
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils import crypto
 from bxcommon.utils.buffers.input_buffer import InputBuffer
-from bxcommon.utils.object_hash import Sha256ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 
 
 class MessageFactory(AbstractMessageFactory):
@@ -57,7 +57,7 @@ class AbstractVersionManagerTest(AbstractTestCase):
 
     def test_get_connection_protocol_version__wrong_message(self):
         wrong_message = BroadcastMessage(
-            msg_hash=Sha256ObjectHash(crypto.double_sha256(b"hello")),
+            msg_hash=Sha256Hash(crypto.double_sha256(b"hello")),
             network_num=1,
             blob=bytearray(1))
         input_buffer = InputBuffer()

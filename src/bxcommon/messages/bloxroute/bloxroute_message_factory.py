@@ -15,7 +15,7 @@ from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.utils import crypto
-from bxcommon.utils.object_hash import Sha256ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 
 
 class _BloxrouteMessageFactory(AbstractMessageFactory):
@@ -59,7 +59,7 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
             offset += crypto.SHA256_HASH_LEN
 
             network_num, = struct.unpack_from("<L", hash_header[offset:offset + constants.NETWORK_NUM_LEN])
-            return is_full_header, Sha256ObjectHash(message_hash), network_num, payload_length
+            return is_full_header, Sha256Hash(message_hash), network_num, payload_length
 
 
 bloxroute_message_factory = _BloxrouteMessageFactory()

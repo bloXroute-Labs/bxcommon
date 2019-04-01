@@ -1,7 +1,7 @@
 from bxcommon.storage.block_encrypted_cache import BlockEncryptedCache
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.alarm_queue import AlarmQueue
-from bxcommon.utils.object_hash import Sha256ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 
 
 class BlockEncryptedCacheTest(AbstractTestCase):
@@ -19,7 +19,7 @@ class BlockEncryptedCacheTest(AbstractTestCase):
 
     def test_remove_item__object_hash(self):
         self.assertTrue(self.sut.has_ciphertext_for_hash(self.block_hash))
-        object_hash = Sha256ObjectHash(self.block_hash)
+        object_hash = Sha256Hash(self.block_hash)
         self.sut.remove_item(object_hash)
         self.assertFalse(self.sut.has_ciphertext_for_hash(self.block_hash))
 

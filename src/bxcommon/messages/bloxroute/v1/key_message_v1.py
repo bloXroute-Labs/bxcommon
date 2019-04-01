@@ -2,7 +2,7 @@ from bxcommon.constants import HDR_COMMON_OFF
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils.crypto import KEY_SIZE, SHA256_HASH_LEN
-from bxcommon.utils.object_hash import Sha256ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 
 
 class KeyMessageV1(Message):
@@ -30,7 +30,7 @@ class KeyMessageV1(Message):
 
     def block_hash(self):
         if self._block_hash is None:
-            self._block_hash = Sha256ObjectHash(self._memoryview[HDR_COMMON_OFF:HDR_COMMON_OFF + SHA256_HASH_LEN])
+            self._block_hash = Sha256Hash(self._memoryview[HDR_COMMON_OFF:HDR_COMMON_OFF + SHA256_HASH_LEN])
         return self._block_hash
 
     def key(self):

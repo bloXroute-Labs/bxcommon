@@ -4,7 +4,7 @@ from bxcommon import constants
 from bxcommon.utils import logger, memory_utils, convert
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 
 
@@ -299,15 +299,20 @@ class TransactionService(object):
 
         :return: dictionary with aggregated statistics
         """
+        oldest_transaction_date = 0
+        oldest_transaction_hash = ""
 
         if len(self._tx_assignment_expire_queue.queue) > 0:
             oldest_transaction_date = self._tx_assignment_expire_queue.get_oldest_item_timestamp()
-        else:
-            oldest_transaction_date = 0
+            oldest_transaction_sid = self._tx_assignment_expire_queue.get_oldest()
+            if oldest_transaction_sid in self._short_id_to_tx_hash:
+                oldest_transaction_hash = self._short_id_to_tx_hash[oldest_transaction_sid]
+
         return dict(
             short_id_mapping_count_gauge=len(self._short_id_to_tx_hash),
             unique_transaction_content_gauge=len(self._tx_hash_to_contents),
             oldest_transaction_date=oldest_transaction_date,
+            oldest_transaction_hash=oldest_transaction_hash,
             transactions_removed_by_memory_limit=self._total_tx_removed_by_memory_limit,
             total_tx_contents_size=self._total_tx_contents_size
         )
@@ -396,7 +401,7 @@ class TransactionService(object):
 
     def _tx_hash_to_cache_key(self, transaction_hash):
 
-        if isinstance(transaction_hash, ObjectHash):
+        if isinstance(transaction_hash, Sha256Hash):
             return convert.bytes_to_hex(transaction_hash.binary)
 
         if isinstance(transaction_hash, (bytes, bytearray, memoryview)):
@@ -405,10 +410,10 @@ class TransactionService(object):
         return transaction_hash
 
     def _tx_cache_key_to_hash(self, transaction_cache_key):
-        if isinstance(transaction_cache_key, ObjectHash):
+        if isinstance(transaction_cache_key, Sha256Hash):
             return transaction_cache_key
 
         if isinstance(transaction_cache_key, (bytes, bytearray, memoryview)):
-            return ObjectHash(transaction_cache_key)
+            return Sha256Hash(transaction_cache_key)
 
-        return ObjectHash(convert.hex_to_bytes(transaction_cache_key))
+        return Sha256Hash(convert.hex_to_bytes(transaction_cache_key))

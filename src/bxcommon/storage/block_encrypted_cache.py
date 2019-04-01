@@ -7,11 +7,11 @@
 # of the payload, which is probably the mort significant part.
 from bxcommon import constants
 from bxcommon.storage.encrypted_cache import EncryptedCache
-from bxcommon.utils.object_hash import Sha256ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 
 
 def message_hash_to_hash_key(msg_hash):
-    if isinstance(msg_hash, Sha256ObjectHash):
+    if isinstance(msg_hash, Sha256Hash):
         return bytes(msg_hash.binary)
 
     if isinstance(msg_hash, memoryview):

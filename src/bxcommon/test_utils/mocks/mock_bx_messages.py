@@ -7,7 +7,7 @@ from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
 from bxcommon.test_utils import helpers
 from bxcommon.utils import crypto
-from bxcommon.utils.object_hash import Sha256ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon import constants
 
 
@@ -19,7 +19,7 @@ def hello_message():
 def broadcast_key_pair(short_ids=None, network_num=0):
     if short_ids is None:
         short_ids = [1, 10, 99, 187]
-    broadcast_message_hash = Sha256ObjectHash(helpers.generate_bytearray(crypto.SHA256_HASH_LEN))
+    broadcast_message_hash = Sha256Hash(helpers.generate_bytearray(crypto.SHA256_HASH_LEN))
     broadcast_message_bytes = bytearray(constants.C_SIZE_T_SIZE_IN_BYTES)
     broadcast_message_bytes.extend(helpers.generate_bytearray(500))
     struct.pack_into("@Q", broadcast_message_bytes, 0, len(broadcast_message_bytes))

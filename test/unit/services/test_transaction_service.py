@@ -8,7 +8,7 @@ from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils import crypto
-from bxcommon.utils.object_hash import Sha256ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 
 
 class TransactionServiceTest(AbstractTestCase):
@@ -218,7 +218,7 @@ class TransactionServiceTest(AbstractTestCase):
         transactions = []
 
         for i in range(int(tx_count)):
-            tx_hash = Sha256ObjectHash(binary=helpers.generate_bytearray(crypto.SHA256_HASH_LEN))
+            tx_hash = Sha256Hash(binary=helpers.generate_bytearray(crypto.SHA256_HASH_LEN))
             tx_content = helpers.generate_bytearray(tx_size)
             short_id = short_id_offset + i + 1
 

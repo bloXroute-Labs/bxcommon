@@ -1,16 +1,16 @@
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-from bxcommon.utils.object_hash import Sha256ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 
 
 class TxsMessageTests(AbstractTestCase):
 
     def test_txs_with_short_ids_message(self):
         txs_info = [
-            (111, Sha256ObjectHash(helpers.generate_bytearray(32)), helpers.generate_bytearray(200)),
-            (222, Sha256ObjectHash(helpers.generate_bytearray(32)), helpers.generate_bytearray(300)),
-            (333, Sha256ObjectHash(helpers.generate_bytearray(32)), helpers.generate_bytearray(400))
+            (111, Sha256Hash(helpers.generate_bytearray(32)), helpers.generate_bytearray(200)),
+            (222, Sha256Hash(helpers.generate_bytearray(32)), helpers.generate_bytearray(300)),
+            (333, Sha256Hash(helpers.generate_bytearray(32)), helpers.generate_bytearray(400))
         ]
 
         msg = TxsMessage(txs=txs_info)

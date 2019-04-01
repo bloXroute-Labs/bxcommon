@@ -5,7 +5,7 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils.crypto import KEY_SIZE, SHA256_HASH_LEN
 from bxcommon.utils.log_level import LogLevel
-from bxcommon.utils.object_hash import Sha256ObjectHash, ConcatHash
+from bxcommon.utils.object_hash import Sha256Hash, ConcatHash
 
 
 
@@ -45,7 +45,7 @@ class KeyMessage(Message):
         """
         if self._block_hash is None:
             off = HDR_COMMON_OFF
-            self._block_hash = Sha256ObjectHash(self._memoryview[off:off + SHA256_HASH_LEN])
+            self._block_hash = Sha256Hash(self._memoryview[off:off + SHA256_HASH_LEN])
         return self._block_hash
 
     def block_id(self):

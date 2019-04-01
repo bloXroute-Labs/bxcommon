@@ -5,7 +5,7 @@ from bxcommon.constants import HDR_COMMON_OFF, NETWORK_NUM_LEN
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils.crypto import SHA256_HASH_LEN
-from bxcommon.utils.object_hash import Sha256ObjectHash
+from bxcommon.utils.object_hash import Sha256Hash
 
 _SID_LEN = constants.UL_INT_SIZE_IN_BYTES
 _NULL_SID = constants.NULL_TX_SID
@@ -47,7 +47,7 @@ class TxMessage(Message):
     def tx_hash(self):
         if self._tx_hash is None:
             off = HDR_COMMON_OFF
-            self._tx_hash = Sha256ObjectHash(self._memoryview[off:off + SHA256_HASH_LEN])
+            self._tx_hash = Sha256Hash(self._memoryview[off:off + SHA256_HASH_LEN])
         return self._tx_hash
 
     def network_num(self):
