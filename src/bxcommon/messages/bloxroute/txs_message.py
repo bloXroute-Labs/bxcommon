@@ -5,7 +5,7 @@ from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils import logger
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash
 
 
 class TxsMessage(Message):
@@ -90,7 +90,7 @@ class TxsMessage(Message):
             tx_sid, = struct.unpack_from('<L', self.buf, off)
             off += constants.UL_INT_SIZE_IN_BYTES
 
-            tx_hash = ObjectHash(self._memoryview[off:off + bxcommon.utils.crypto.SHA256_HASH_LEN])
+            tx_hash = Sha256ObjectHash(self._memoryview[off:off + bxcommon.utils.crypto.SHA256_HASH_LEN])
             off += bxcommon.utils.crypto.SHA256_HASH_LEN
 
             tx_size, = struct.unpack_from('<L', self.buf, off)

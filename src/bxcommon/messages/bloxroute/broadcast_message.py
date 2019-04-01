@@ -6,7 +6,7 @@ from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.log_level import LogLevel
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash, ConcatHash
 
 
 class BroadcastMessage(Message):
@@ -33,7 +33,8 @@ class BroadcastMessage(Message):
             self.buf = buf
             self._memoryview = memoryview(self.buf)
 
-        self._msg_hash = None
+        self._block_id = None
+        self._block_hash = None
         self._network_num = None
         self._is_encrypted = None
         self._blob = None
@@ -42,11 +43,21 @@ class BroadcastMessage(Message):
     def log_level(self):
         return LogLevel.INFO
 
-    def msg_hash(self):
-        if self._msg_hash is None:
+    def block_hash(self):
+        """
+        The hash of the data block that is being returned.
+        """
+        if self._block_hash is None:
             off = HDR_COMMON_OFF
-            self._msg_hash = ObjectHash(self._memoryview[off:off + SHA256_HASH_LEN])
-        return self._msg_hash
+            self._block_hash = Sha256ObjectHash(self._memoryview[off:off + SHA256_HASH_LEN])
+        return self._block_hash
+
+    def block_id(self):
+        if self._block_id is None:
+            off = HDR_COMMON_OFF
+            # Hash over the SHA256 hash and the network number.
+            self._block_id = ConcatHash(self._memoryview[off:off + SHA256_HASH_LEN + NETWORK_NUM_LEN], 0)
+        return self._block_id
 
     def network_num(self):
         if self._network_num is None:
@@ -85,5 +96,5 @@ class BroadcastMessage(Message):
         return network_num
 
     def __repr__(self):
-        return "BroadcastMessage<network_num: {}, msg_hash: {}, blob_length: {}, is_encrypted: {}>"\
-            .format(self.network_num(), self.msg_hash(), len(self.blob()), self.is_encrypted())
+        return "BroadcastMessage<network_num: {}, block_id: {}, blob_length: {}, is_encrypted: {}>"\
+            .format(self.network_num(), self.block_id(), len(self.blob()), self.is_encrypted())

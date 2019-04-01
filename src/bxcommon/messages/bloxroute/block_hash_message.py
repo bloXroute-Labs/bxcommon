@@ -3,7 +3,7 @@ from abc import ABCMeta
 from bxcommon import constants
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils import crypto
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash
 
 
 class BlockHashMessage(Message):
@@ -27,5 +27,5 @@ class BlockHashMessage(Message):
     def block_hash(self):
         if self._block_hash is None:
             off = constants.HDR_COMMON_OFF
-            self._block_hash = ObjectHash(self._memoryview[off:off + crypto.SHA256_HASH_LEN])
+            self._block_hash = Sha256ObjectHash(self._memoryview[off:off + crypto.SHA256_HASH_LEN])
         return self._block_hash

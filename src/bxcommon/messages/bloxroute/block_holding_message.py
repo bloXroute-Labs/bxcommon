@@ -4,6 +4,7 @@ from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.utils import crypto
 from bxcommon.messages.bloxroute.block_hash_message import BlockHashMessage
+from bxcommon.utils.object_hash import ConcatHash
 
 
 class BlockHoldingMessage(BlockHashMessage):
@@ -26,6 +27,7 @@ class BlockHoldingMessage(BlockHashMessage):
 
         self.buf = buf
         self._block_hash = None
+        self._block_id = None
         self._network_num = None
         super(BlockHashMessage, self).__init__(self.MESSAGE_TYPE, self.PAYLOAD_LENGTH, buf)
 
@@ -34,6 +36,14 @@ class BlockHoldingMessage(BlockHashMessage):
             off = constants.HDR_COMMON_OFF + crypto.SHA256_HASH_LEN
             self._network_num, = struct.unpack_from("<L", self._memoryview, off)
         return self._network_num
+
+    def block_id(self):
+        if self._block_id is None:
+            off = constants.HDR_COMMON_OFF
+            # Hash over the SHA256 hash and the network number.
+            self._block_id = ConcatHash(self._memoryview[off:off + crypto.SHA256_HASH_LEN + constants.NETWORK_NUM_LEN], 0)
+        return self._block_id
+
 
     def __repr__(self):
         return "BlockHoldingMessage<block_hash: {}>".format(self.block_hash())

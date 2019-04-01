@@ -14,13 +14,13 @@ from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.crypto import SHA256_HASH_LEN
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash
 
 
 def _get_random_hash():
     random_hash_bytes = helpers.generate_bytearray(SHA256_HASH_LEN)
 
-    return ObjectHash(random_hash_bytes)
+    return Sha256ObjectHash(random_hash_bytes)
 
 
 class BloxrouteVersionManagerV1Test(AbstractTestCase):

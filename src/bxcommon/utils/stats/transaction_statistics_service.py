@@ -2,7 +2,7 @@ import struct
 
 from bxcommon import constants
 from bxcommon.utils import convert, logger
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash
 from bxcommon.utils.stats.statistics_event_service import StatisticsEventService
 
 
@@ -18,7 +18,7 @@ class _TransactionStatisticsService(StatisticsEventService):
         if not tx_event_name:
             raise ValueError("tx_event_name is required")
 
-        if isinstance(tx_hash, ObjectHash):
+        if isinstance(tx_hash, Sha256ObjectHash):
             tx_hash = tx_hash.binary
 
         if self._should_log_event_for_tx(tx_hash):

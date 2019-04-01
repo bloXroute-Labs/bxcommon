@@ -2,7 +2,7 @@ from bxcommon.constants import HDR_COMMON_OFF
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils.crypto import SHA256_HASH_LEN
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash
 
 
 class BroadcastMessageV1(Message):
@@ -24,13 +24,13 @@ class BroadcastMessageV1(Message):
             self.buf = buf
             self._memoryview = memoryview(self.buf)
 
-        self._blob = self._msg_hash = None
+        self._blob = self._block_hash = None
 
-    def msg_hash(self):
-        if self._msg_hash is None:
+    def block_hash(self):
+        if self._block_hash is None:
             off = HDR_COMMON_OFF
-            self._msg_hash = ObjectHash(self._memoryview[off:off + SHA256_HASH_LEN])
-        return self._msg_hash
+            self._block_hash = Sha256ObjectHash(self._memoryview[off:off + SHA256_HASH_LEN])
+        return self._block_hash
 
     def blob(self):
         if self._blob is None:

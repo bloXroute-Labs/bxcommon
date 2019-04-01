@@ -2,16 +2,16 @@
 # them out here for now for easier tests to convert these to different
 # formats for symmetric encryption / hashing.
 # We can probably implement some sort of EncryptionCacheProtocol that
-# converts hash/payload types to avoid the copies on msg_hash (and so we
+# converts hash/payload types to avoid the copies on block_id (and so we
 # can make ObjectHash the storage key), but that doesn't solve the copy
 # of the payload, which is probably the mort significant part.
 from bxcommon import constants
 from bxcommon.storage.encrypted_cache import EncryptedCache
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash
 
 
 def message_hash_to_hash_key(msg_hash):
-    if isinstance(msg_hash, ObjectHash):
+    if isinstance(msg_hash, Sha256ObjectHash):
         return bytes(msg_hash.binary)
 
     if isinstance(msg_hash, memoryview):
@@ -31,7 +31,7 @@ class BlockEncryptedCache(EncryptedCache):
     def decrypt_ciphertext(self, hash_key, ciphertext):
         """
         Attempts to decrypt from hash and blob from a BroadcastMessage
-        :param hash_key: BroadcastMessage.msg_hash()
+        :param hash_key: BroadcastMessage.block_id()
         :param ciphertext: BroadcastMessage.blob()
         :return decrypted block
         """

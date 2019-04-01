@@ -21,6 +21,9 @@ class ExpiringSet(object):
         self._expiration_queue.add(item)
         self._alarm_queue.register_approx_alarm(self._expiration_time * 2, self._expiration_time, self.cleanup)
 
+    def __contains__(self, item):
+        return item in self.contents
+
     def cleanup(self):
         self._expiration_queue.remove_expired(remove_callback=self._safe_remove_item)
         return 0

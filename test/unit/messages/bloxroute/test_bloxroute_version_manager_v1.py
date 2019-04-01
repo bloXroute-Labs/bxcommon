@@ -21,13 +21,13 @@ from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.crypto import SHA256_HASH_LEN, KEY_SIZE
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash
 
 
 def _get_random_hash():
     random_hash_bytes = helpers.generate_bytearray(SHA256_HASH_LEN)
 
-    return ObjectHash(random_hash_bytes)
+    return Sha256ObjectHash(random_hash_bytes)
 
 
 class BloxrouteVersionManagerV1Test(AbstractTestCase):
@@ -119,7 +119,7 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
         self.assertIsInstance(key_msg_v1, KeyMessageV1)
 
         self.assertNotEqual(len(key_msg_v1.rawbytes()), len(key_msg.rawbytes()))
-        self.assertEqual(key_msg_v1.msg_hash(), key_msg.msg_hash())
+        self.assertEqual(key_msg_v1.block_hash(), key_msg.block_hash())
         self.assertEqual(key_msg_v1.key(), key_msg.key())
 
         key_msg_not_convertable = KeyMessage(msg_hash=msg_hash, network_num=12345, key=key_bytes)
@@ -137,7 +137,7 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
         self.assertIsInstance(key_msg, KeyMessage)
 
         self.assertNotEqual(len(key_msg_v1.rawbytes()), len(key_msg.rawbytes()))
-        self.assertEqual(key_msg_v1.msg_hash(), key_msg.msg_hash())
+        self.assertEqual(key_msg_v1.block_hash(), key_msg.block_hash())
         self.assertEqual(key_msg_v1.key(), key_msg.key())
         self.assertEqual(DEFAULT_NETWORK_NUM, key_msg.network_num())
 
@@ -149,26 +149,26 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
         broadcast_msg_v1 = bloxroute_version_manager.convert_message_to_older_version(1, broadcast_msg)
         self.assertIsInstance(broadcast_msg_v1, BroadcastMessageV1)
 
-        self.assertEqual(broadcast_msg_v1.msg_hash(), broadcast_msg.msg_hash())
+        self.assertEqual(broadcast_msg_v1.block_hash(), broadcast_msg.block_hash())
         self.assertEqual(broadcast_msg_v1.blob(), broadcast_msg.blob())
         self.assertNotEqual(len(broadcast_msg_v1.rawbytes()), len(broadcast_msg.rawbytes()))
 
-        self.assertEqual(random_hash, broadcast_msg_v1.msg_hash())
+        self.assertEqual(random_hash, broadcast_msg_v1.block_hash())
         self.assertEqual(random_blob_bytes, broadcast_msg_v1.blob())
 
     def test_convert_message_from_older_version__broadcast_message_v1(self):
         random_hash_bytes = helpers.generate_bytearray(SHA256_HASH_LEN)
-        random_hash = ObjectHash(random_hash_bytes)
+        random_hash = Sha256ObjectHash(random_hash_bytes)
         random_blob_bytes = helpers.generate_bytearray(12345)
         broadcast_msg_v1 = BroadcastMessageV1(msg_hash=random_hash, blob=random_blob_bytes)
 
         broadcast_msg = bloxroute_version_manager.convert_message_from_older_version(1, broadcast_msg_v1)
         self.assertIsInstance(broadcast_msg, BroadcastMessage)
 
-        self.assertEqual(broadcast_msg.msg_hash(), broadcast_msg_v1.msg_hash())
+        self.assertEqual(broadcast_msg.block_hash(), broadcast_msg_v1.block_hash())
         self.assertEqual(broadcast_msg.blob(), broadcast_msg_v1.blob())
 
-        self.assertEqual(random_hash, broadcast_msg.msg_hash())
+        self.assertEqual(random_hash, broadcast_msg.block_hash())
         self.assertEqual(random_blob_bytes, broadcast_msg.blob())
         self.assertEqual(DEFAULT_NETWORK_NUM, broadcast_msg.network_num())
 
@@ -185,16 +185,16 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
         broadcast_msg_v1 = bloxroute_message_factory_v1.create_message_from_buffer(broadcast_msg_v1_bytes)
         self.assertIsInstance(broadcast_msg_v1, BroadcastMessageV1)
 
-        self.assertEqual(broadcast_msg_v1.msg_hash(), broadcast_msg.msg_hash())
+        self.assertEqual(broadcast_msg_v1.block_hash(), broadcast_msg.block_hash())
         self.assertEqual(broadcast_msg_v1.blob(), broadcast_msg.blob())
         self.assertNotEqual(len(broadcast_msg_v1.rawbytes()), len(broadcast_msg.rawbytes()))
 
-        self.assertEqual(random_hash, broadcast_msg_v1.msg_hash())
+        self.assertEqual(random_hash, broadcast_msg_v1.block_hash())
         self.assertEqual(random_blob_bytes, broadcast_msg_v1.blob())
 
     def test_convert_first_bytes_from_older_version__broadcast_message_v1(self):
         random_hash_bytes = helpers.generate_bytearray(SHA256_HASH_LEN)
-        random_hash = ObjectHash(random_hash_bytes)
+        random_hash = Sha256ObjectHash(random_hash_bytes)
         random_blob_bytes = helpers.generate_bytearray(12345)
         broadcast_msg_v1 = BroadcastMessageV1(msg_hash=random_hash, blob=random_blob_bytes)
         broadcast_msg_v1_bytes = broadcast_msg_v1.rawbytes()
@@ -206,10 +206,10 @@ class BloxrouteVersionManagerV1Test(AbstractTestCase):
         broadcast_msg = bloxroute_message_factory.create_message_from_buffer(broadcast_msg_bytes)
         self.assertIsInstance(broadcast_msg, BroadcastMessage)
 
-        self.assertEqual(broadcast_msg.msg_hash(), broadcast_msg_v1.msg_hash())
+        self.assertEqual(broadcast_msg.block_hash(), broadcast_msg_v1.block_hash())
         self.assertEqual(broadcast_msg.blob(), broadcast_msg_v1.blob())
 
-        self.assertEqual(random_hash, broadcast_msg.msg_hash())
+        self.assertEqual(random_hash, broadcast_msg.block_hash())
         self.assertEqual(random_blob_bytes, broadcast_msg.blob())
         self.assertEqual(DEFAULT_NETWORK_NUM, broadcast_msg.network_num())
 

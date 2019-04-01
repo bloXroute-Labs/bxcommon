@@ -5,7 +5,8 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils.crypto import KEY_SIZE, SHA256_HASH_LEN
 from bxcommon.utils.log_level import LogLevel
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash, ConcatHash
+
 
 
 class KeyMessage(Message):
@@ -31,16 +32,28 @@ class KeyMessage(Message):
             self._memoryview = memoryview(self.buf)
 
         self._key = None
-        self._msg_hash = None
+        self._block_id = None
         self._network_num = None
+        self._block_hash = None
 
     def log_level(self):
         return LogLevel.INFO
 
-    def msg_hash(self):
-        if self._msg_hash is None:
-            self._msg_hash = ObjectHash(self._memoryview[HDR_COMMON_OFF:HDR_COMMON_OFF + SHA256_HASH_LEN])
-        return self._msg_hash
+    def block_hash(self):
+        """
+        The hash of the data block that is being returned.
+        """
+        if self._block_hash is None:
+            off = HDR_COMMON_OFF
+            self._block_hash = Sha256ObjectHash(self._memoryview[off:off + SHA256_HASH_LEN])
+        return self._block_hash
+
+    def block_id(self):
+        if self._block_id is None:
+            off = HDR_COMMON_OFF
+            # Hash over the SHA256 hash and the network number.
+            self._block_id = ConcatHash(self._memoryview[off:off + SHA256_HASH_LEN + NETWORK_NUM_LEN], 0)
+        return self._block_id
 
     def network_num(self):
         if self._network_num is None:
@@ -56,5 +69,5 @@ class KeyMessage(Message):
         return self._key
 
     def __repr__(self):
-        return "KeyMessage<network_num: {}, msg_hash: {}".format(self.network_num(),
-                                                                 self.msg_hash())
+        return "KeyMessage<network_num: {}, block_id: {}".format(self.network_num(),
+                                                                 self.block_id())

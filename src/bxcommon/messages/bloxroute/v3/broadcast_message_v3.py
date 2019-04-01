@@ -6,7 +6,7 @@ from bxcommon.messages.bloxroute.message import Message
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.log_level import LogLevel
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash
 
 
 class BroadcastMessageV3(Message):
@@ -30,7 +30,7 @@ class BroadcastMessageV3(Message):
             self.buf = buf
             self._memoryview = memoryview(self.buf)
 
-        self._msg_hash = None
+        self._block_hash = None
         self._network_num = None
         self._blob = None
         self._payload_len = None
@@ -38,11 +38,11 @@ class BroadcastMessageV3(Message):
     def log_level(self):
         return LogLevel.INFO
 
-    def msg_hash(self):
-        if self._msg_hash is None:
+    def block_hash(self):
+        if self._block_hash is None:
             off = HDR_COMMON_OFF
-            self._msg_hash = ObjectHash(self._memoryview[off:off + SHA256_HASH_LEN])
-        return self._msg_hash
+            self._block_hash = Sha256ObjectHash(self._memoryview[off:off + SHA256_HASH_LEN])
+        return self._block_hash
 
     def network_num(self):
         if self._network_num is None:
@@ -75,6 +75,6 @@ class BroadcastMessageV3(Message):
         return network_num
 
     def __repr__(self):
-        return "BroadcastMessage<network_num: {}, msg_hash: {}, blob_length: {}>".format(self.network_num(),
-                                                                                         self.msg_hash(),
+        return "BroadcastMessage<network_num: {}, block_id: {}, blob_length: {}>".format(self.network_num(),
+                                                                                         self.block_hash(),
                                                                                          len(self.blob()))

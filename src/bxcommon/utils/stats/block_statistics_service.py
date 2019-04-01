@@ -1,7 +1,7 @@
 from bxcommon.constants import HDR_COMMON_OFF
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.utils import crypto, convert
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash
 from bxcommon.utils.stats.statistics_event_service import StatisticsEventService
 
 
@@ -15,7 +15,7 @@ class _BlockStatisticsService(StatisticsEventService):
             return
 
         if isinstance(block_msg, BroadcastMessage):
-            block_hash = block_msg.msg_hash().binary
+            block_hash = block_msg.block_hash().binary
         elif isinstance(block_msg, memoryview):
             block_hash = block_msg[HDR_COMMON_OFF:HDR_COMMON_OFF + crypto.SHA256_HASH_LEN].tobytes()
         else:
@@ -29,7 +29,7 @@ class _BlockStatisticsService(StatisticsEventService):
         if not self._should_log_stat_event(block_event_settings):
             return
 
-        if isinstance(block_hash, ObjectHash):
+        if isinstance(block_hash, Sha256ObjectHash):
             block_hash_str = block_hash.binary
         elif isinstance(block_hash, memoryview):
             block_hash_str = block_hash.tobytes()

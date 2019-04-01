@@ -17,11 +17,11 @@ from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import create_input_buffer_with_message, create_input_buffer_with_bytes
 from bxcommon.utils import crypto
 from bxcommon.utils.crypto import SHA256_HASH_LEN, KEY_SIZE
-from bxcommon.utils.object_hash import ObjectHash
+from bxcommon.utils.object_hash import Sha256ObjectHash
 
 
 class BloxrouteMessageFactory(AbstractTestCase):
-    HASH = ObjectHash(crypto.double_sha256(b"123"))
+    HASH = Sha256ObjectHash(crypto.double_sha256(b"123"))
     NETWORK_NUM = 12345
 
     def get_message_preview_successfully(self, message, expected_command, expected_payload_length):
@@ -135,7 +135,7 @@ class BloxrouteMessageFactory(AbstractTestCase):
                                                                               is_encrypted=True,
                                                                               blob=blob),
                                                              BroadcastMessage)
-        self.assertEqual(self.HASH, broadcast_message.msg_hash())
+        self.assertEqual(self.HASH, broadcast_message.block_hash())
         self.assertEqual(test_network_num, broadcast_message.network_num())
         self.assertTrue(broadcast_message.is_encrypted())
         self.assertEqual(blob, broadcast_message.blob())
@@ -158,7 +158,7 @@ class BloxrouteMessageFactory(AbstractTestCase):
             KeyMessage)
         self.assertEqual(key, key_message.key())
         self.assertEqual(test_network_num, key_message.network_num())
-        self.assertEqual(self.HASH, key_message.msg_hash())
+        self.assertEqual(self.HASH, key_message.block_hash())
 
         get_txs = [1, 2, 3]
         get_txs_message = self.create_message_successfully(GetTxsMessage(get_txs), GetTxsMessage)
@@ -166,8 +166,8 @@ class BloxrouteMessageFactory(AbstractTestCase):
 
         txs = [(1, crypto.double_sha256(b"123"), bytearray(4)), (2, crypto.double_sha256(b"234"), bytearray(8))]
         txs_message = self.create_message_successfully(TxsMessage(txs), TxsMessage)
-        result_txs = [(1, ObjectHash(crypto.double_sha256(b"123")), bytearray(4)),
-                      (2, ObjectHash(crypto.double_sha256(b"234")), bytearray(8))]
+        result_txs = [(1, Sha256ObjectHash(crypto.double_sha256(b"123")), bytearray(4)),
+                      (2, Sha256ObjectHash(crypto.double_sha256(b"234")), bytearray(8))]
         self.assertEqual(result_txs, txs_message.get_txs())
 
     def test_create_message_failure(self):
