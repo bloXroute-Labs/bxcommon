@@ -1,18 +1,18 @@
+import json
 import os
 import sys
 import threading
 import time
-import json
 import traceback
-from enum import Enum
 from collections import deque
 from datetime import datetime
+from enum import Enum
 from threading import Condition, Lock, Thread
 
 from bxcommon.constants import ENABLE_LOGGING, FLUSH_LOG, DEFAULT_LOG_LEVEL, DEFAULT_LOG_FORMAT
-from bxcommon.utils.log_level import LogLevel
-from bxcommon.utils.log_format import LogFormat
 from bxcommon.utils.class_json_encoder import ClassJsonEncoder
+from bxcommon.utils.log_format import LogFormat
+from bxcommon.utils.log_level import LogLevel
 
 ##
 # The Logging Interface
@@ -196,10 +196,14 @@ def set_immediate_flush(flush_immediately):
         _log.needs_flush.notify()
 
 
-def log(level, msg, exc_info=None):
+def log(level, msg, *args, **kwargs):
     global _hostname
     if level < _log_level:
         return  # No logging if it's not a high enough priority message.
+
+    if args:
+        msg = msg.format(*args)
+
     log_msg = {
         "level": level.name,
         "timestamp": datetime.utcnow(),
@@ -209,8 +213,8 @@ def log(level, msg, exc_info=None):
         log_msg["instance"] = threading.current_thread().name
     else:
         log_msg["instance"] = _hostname
-    if exc_info is not None:
-        log_msg["exc_info"] = traceback.format_exception(*exc_info)
+    if "exc_info" in kwargs:
+        log_msg["exc_info"] = traceback.format_exception(*kwargs.get("exc_info"))
 
     if _log_format == LogFormat.JSON:
         log_msg["msg"] = msg
@@ -240,29 +244,29 @@ def log(level, msg, exc_info=None):
         sys.stdout.write(log_msg_str)
 
 
-def debug(msg):
-    log(LogLevel.DEBUG, msg)
+def debug(msg, *args):
+    log(LogLevel.DEBUG, msg, *args)
 
 
-def trace(msg):
-    log(LogLevel.TRACE, msg)
+def trace(msg, *args):
+    log(LogLevel.TRACE, msg, *args)
 
 
-def error(msg):
-    log(LogLevel.ERROR, msg)
+def info(msg, *args):
+    log(LogLevel.INFO, msg, *args)
 
 
-def fatal(msg):
-    log(LogLevel.FATAL, msg, exc_info=sys.exc_info())
+def warn(msg, *args):
+    log(LogLevel.WARN, msg, *args)
 
 
-def info(msg):
-    log(LogLevel.INFO, msg)
+def error(msg, *args):
+    log(LogLevel.ERROR, msg, *args)
 
 
-def warn(msg):
-    log(LogLevel.WARN, msg)
+def fatal(msg, *args):
+    log(LogLevel.FATAL, msg, *args, exc_info=sys.exc_info())
 
 
-def statistics(msg):
-    log(LogLevel.STATS, msg)
+def statistics(msg, *args):
+    log(LogLevel.STATS, msg, *args)

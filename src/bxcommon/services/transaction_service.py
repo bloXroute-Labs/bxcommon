@@ -123,9 +123,9 @@ class TransactionService(object):
         :param short_id: short id to be mapped to transaction
         """
         if short_id == constants.NULL_TX_SID:
-            logger.warn("Attempt to assign null SID to transaction hash {}. Ignoring.".format(transaction_hash))
+            logger.warn("Attempt to assign null SID to transaction hash {}. Ignoring.", transaction_hash)
             return
-        logger.debug("Assigning sid {} to transaction {}".format(short_id, transaction_hash))
+        logger.debug("Assigning sid {} to transaction {}", short_id, transaction_hash)
 
         transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
         self._tx_hash_to_short_ids[transaction_cache_key].add(short_id)

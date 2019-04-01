@@ -26,7 +26,7 @@ class AbstractNode(object):
     NODE_TYPE = None
 
     def __init__(self, opts):
-        logger.info("Initializing node of type: {}".format(self.NODE_TYPE))
+        logger.info("Initializing node of type: {}", self.NODE_TYPE)
 
         self.set_node_config_opts_from_sdn(opts)
         self.opts = opts
@@ -99,7 +99,7 @@ class AbstractNode(object):
 
         # If we're already connected to the remote peer, log the event and request disconnect.
         if self.connection_exists(ip, port):
-            logger.warn("Duplicate connection attempted to: {0}:{1}.".format(ip, port))
+            logger.warn("Duplicate connection attempted to: {0}:{1}.", ip, port)
 
             # Schedule dropping the added connection and keep the old one.
             self.enqueue_disconnect(fileno)
@@ -110,20 +110,20 @@ class AbstractNode(object):
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Initialized connection not in pool. Fileno: {0}".format(fileno))
+            logger.warn("Initialized connection not in pool. Fileno: {0}", fileno)
             return
 
-        logger.info("Connection state initialized: {}".format(conn))
+        logger.info("Connection state initialized: {}", conn)
         conn.state |= ConnectionState.INITIALIZED
 
     def on_connection_closed(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Connection not in pool. Fileno: {0}".format(fileno))
+            logger.warn("Connection not in pool. Fileno: {0}", fileno)
             return
 
-        logger.info("Destroying connection: {}".format(conn))
+        logger.info("Destroying connection: {}", conn)
         self.destroy_conn(conn, retry_connection=True)
 
     @abstractmethod
@@ -135,7 +135,7 @@ class AbstractNode(object):
             logger.warn("Got peer update with no peers.")
             return
 
-        logger.trace("Processing updated outbound peers: {}.".format(outbound_peer_models))
+        logger.trace("Processing updated outbound peers: {}.", outbound_peer_models)
 
         # Remove peers not in updated list or from command-line args.
         remove_peers = []
@@ -174,7 +174,7 @@ class AbstractNode(object):
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Received bytes for connection not in pool. Fileno {0}".format(fileno))
+            logger.warn("Received bytes for connection not in pool. Fileno {0}", fileno)
             return
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
@@ -189,7 +189,7 @@ class AbstractNode(object):
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Received bytes for connection not in pool. Fileno {0}".format(fileno))
+            logger.warn("Received bytes for connection not in pool. Fileno {0}", fileno)
             return
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
@@ -201,7 +201,7 @@ class AbstractNode(object):
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Request to get bytes for connection not in pool. Fileno {0}".format(fileno))
+            logger.warn("Request to get bytes for connection not in pool. Fileno {0}", fileno)
             return
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
@@ -213,7 +213,7 @@ class AbstractNode(object):
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Bytes sent call for connection not in pool. Fileno {0}".format(fileno))
+            logger.warn("Bytes sent call for connection not in pool. Fileno {0}", fileno)
             return
 
         conn.advance_sent_bytes(bytes_sent)
@@ -264,10 +264,10 @@ class AbstractNode(object):
             connection_types = [ConnectionType.RELAY]
 
         if broadcasting_conn is not None:
-            logger.log(msg.log_level(), "Broadcasting {} to [{}] connections from {}."
-                       .format(msg, ",".join(connection_types), broadcasting_conn))
+            logger.log(msg.log_level(), "Broadcasting {} to [{}] connections from {}.",
+                       msg, ",".join(connection_types), broadcasting_conn)
         else:
-            logger.log(msg.log_level(), "Broadcasting {} to [{}] connections.".format(msg, ",".join(connection_types)))
+            logger.log(msg.log_level(), "Broadcasting {} to [{}] connections.", msg, ",".join(connection_types))
 
         if network_num is None:
             broadcast_net_num = self.network_num
@@ -296,14 +296,14 @@ class AbstractNode(object):
         """
         Add address to the queue of outbound connections
         """
-        logger.debug("Enqueuing connection to {}:{}".format(ip, port))
+        logger.debug("Enqueuing connection to {}:{}", ip, port)
         self.connection_queue.append((ip, port))
 
     def enqueue_disconnect(self, fileno):
         """
         Add address to the queue of connections to disconnect
         """
-        logger.debug("Enqueuing disconnect from {}".format(fileno))
+        logger.debug("Enqueuing disconnect from {}", fileno)
         self.disconnect_queue.append(fileno)
 
     def pop_next_connection_address(self):
@@ -333,8 +333,7 @@ class AbstractNode(object):
     def _init_conn_object(self, socket_connection, ip, port, from_me):
         conn_cls = self.get_connection_class(ip, port, from_me)
         if conn_cls is None:
-            logger.warn("Could not find connection class for {}:{}, from_me={}. Ignoring."
-                        .format(ip, port, from_me))
+            logger.warn("Could not find connection class for {}:{}, from_me={}. Ignoring.", ip, port, from_me)
             return
 
         conn_obj = conn_cls(socket_connection, (ip, port), self, from_me)
@@ -347,7 +346,7 @@ class AbstractNode(object):
         if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
             self.sdn_connection = conn_obj
 
-        logger.info("Adding connection: {}.".format(conn_obj))
+        logger.info("Adding connection: {}.", conn_obj)
 
     def _connection_timeout(self, conn):
         """
@@ -355,10 +354,10 @@ class AbstractNode(object):
         If it is not established, we give up for untrusted connections and try again for trusted connections.
         """
 
-        logger.debug("Checking connection status: {}".format(conn))
+        logger.debug("Checking connection status: {}", conn)
 
         if conn.state & ConnectionState.ESTABLISHED:
-            logger.debug("Connection is still established: {}".format(conn))
+            logger.debug("Connection is still established: {}", conn)
 
             if self.schedule_pings_on_timeout:
                 self.alarm_queue.register_alarm(constants.PING_INTERVAL_S, conn.send_ping)
@@ -366,11 +365,11 @@ class AbstractNode(object):
             return constants.CANCEL_ALARMS
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            logger.debug("Connection has already been marked for closure: {}".format(conn))
+            logger.debug("Connection has already been marked for closure: {}", conn)
             return constants.CANCEL_ALARMS
 
         # Clean up the old connection and retry it if it is trusted
-        logger.debug("Connection has timed out: {}".format(conn))
+        logger.debug("Connection has timed out: {}", conn)
         self.destroy_conn(conn, retry_connection=True)
 
         # It is connect_to_address's job to schedule this function.
@@ -388,7 +387,7 @@ class AbstractNode(object):
         We also retry trusted connections since they can never be destroyed.
         """
 
-        logger.info("Breaking connection to {}. Attempting retry: {}".format(conn, retry_connection))
+        logger.info("Breaking connection to {}. Attempting retry: {}", conn, retry_connection)
 
         self.connection_pool.delete(conn)
         conn.mark_for_close()
@@ -412,13 +411,12 @@ class AbstractNode(object):
         self.num_retries_by_ip[ip] += 1
 
         if self.should_retry_connection(ip, port, connection_type):
-            logger.info("Retrying {} connection to {}:{}. Attempt #{}."
-                        .format(connection_type, ip, port, self.num_retries_by_ip[ip]))
+            logger.info("Retrying {} connection to {}:{}. Attempt #{}.", connection_type, ip, port,
+                        self.num_retries_by_ip[ip])
             self.enqueue_connection(ip, port)
         else:
             del self.num_retries_by_ip[ip]
-            logger.warn("Maximum retry attempts exceeded. Dropping {} connection to {}:{}."
-                        .format(connection_type, ip, port))
+            logger.warn("Maximum retry attempts exceeded. Dropping {} connection to {}:{}.", connection_type, ip, port)
             self.on_failed_connection_retry(ip, port, connection_type)
 
         return 0
@@ -484,6 +482,6 @@ class AbstractNode(object):
         if total_mem_usage >= report_mem_usage_bytes:
             node_size = memory_utils.get_detailed_object_size(self)
             logger.statistics(
-                "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}"
-                    .format(total_mem_usage, report_mem_usage_bytes, json.dumps(node_size, cls=ClassJsonEncoder)))
+                "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}",
+                total_mem_usage, report_mem_usage_bytes, json.dumps(node_size, cls=ClassJsonEncoder))
             self.memory_dumped_once = True

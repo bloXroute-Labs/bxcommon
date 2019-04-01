@@ -64,7 +64,7 @@ class AbstractConnection(object):
         self.network_num = node.network_num
 
         self._trace_message_tracker = defaultdict(int)
-        logger.info("Initialized new connection: {}".format(self))
+        logger.info("Initialized new connection: {}", self)
 
     def __repr__(self):
         return "Connection<type: {}, fileno: {}, address: {}, network_num: {}>".format(self.CONNECTION_TYPE,
@@ -113,7 +113,7 @@ class AbstractConnection(object):
         if self.state & ConnectionState.MARK_FOR_CLOSE:
             return
 
-        logger.log(msg.log_level(), "Enqueued message: {} on connection: {}".format(msg, self))
+        logger.log(msg.log_level(), "Enqueued message: {} on connection: {}", msg, self)
 
         self.enqueue_msg_bytes(msg.rawbytes(), prepend)
 
@@ -131,7 +131,7 @@ class AbstractConnection(object):
 
         size = len(msg_bytes)
 
-        logger.debug("Enqueueing {} bytes on connection: {}".format(size, self))
+        logger.debug("Enqueueing {} bytes on connection: {}", size, self)
 
         if prepend:
             self.outputbuf.prepend_msgbytes(msg_bytes)
@@ -165,8 +165,8 @@ class AbstractConnection(object):
 
                 if not (self.is_active()) \
                         and msg_type not in self.hello_messages:
-                    logger.error("Connection to {0} not established and got {1} message!  Closing."
-                                 .format(self.peer_desc, msg_type))
+                    logger.error("Connection to {0} not established and got {1} message!  Closing.", self.peer_desc,
+                                 msg_type)
                     self.mark_for_close()
                     return
 
@@ -176,25 +176,25 @@ class AbstractConnection(object):
                 if not logger.should_log_level(msg.log_level()) and logger.should_log_level(LogLevel.INFO):
                     self._trace_message_tracker[msg_type] += 1
                 elif len(self._trace_message_tracker) > 0:
-                    logger.info("Processed the following message types: {}".format(self._trace_message_tracker))
+                    logger.info("Processed the following message types: {}", self._trace_message_tracker)
                     self._trace_message_tracker.clear()
 
-                logger.log(msg.log_level(), "Processing message: {} on connection: {}".format(msg, self))
+                logger.log(msg.log_level(), "Processing message: {} on connection: {}", msg, self)
 
                 if msg_type in self.message_handlers:
                     msg_handler = self.message_handlers[msg_type]
                     msg_handler(msg)
 
             except Exception as e:
-                logger.error("Processing message failed. Last message: {}, Error: {}, Stacktrace: {}"
-                             .format(convert.bytes_to_hex(msg.rawbytes()), e, traceback.format_exc()))
+                logger.error("Processing message failed. Last message: {}, Error: {}",
+                             convert.bytes_to_hex(msg.rawbytes()), e, traceback.format_exc())
                 if self._report_bad_message():
                     return
 
             else:
                 self.num_bad_messages = 0
 
-        logger.debug("Finished processing messages on connection: {}".format(self.peer_desc))
+        logger.debug("Finished processing messages on connection: {}", self.peer_desc)
 
     def _report_bad_message(self):
         """
@@ -202,7 +202,7 @@ class AbstractConnection(object):
         :return: if connection should be closed
         """
         if self.num_bad_messages == constants.MAX_BAD_MESSAGES:
-            logger.warn("Received too many bad message. Closing connection: {}".format(self))
+            logger.warn("Received too many bad message. Closing connection: {}", self)
             self.mark_for_close()
             return True
         else:
@@ -223,11 +223,10 @@ class AbstractConnection(object):
             msg_contents = self.inputbuf.remove_bytes(msg_len)
             return self.message_factory.create_message_from_buffer(msg_contents)
         except UnrecognizedCommandError as e:
-            logger.error("Unrecognized command on connection: {}. Error: {}. Raw data: {}"
-                         .format(self, e.msg, e.raw_data))
+            logger.error("Unrecognized command on connection: {}. Error: {}. Raw data: {}", self, e.msg, e.raw_data)
             return None
         except PayloadLenError as e:
-            logger.error("ParseError on connection {}. Error: {}.".format(self, e.msg))
+            logger.error("ParseError on connection {}. Error: {}.", self, e.msg)
             self.mark_for_close()
             return None
 
