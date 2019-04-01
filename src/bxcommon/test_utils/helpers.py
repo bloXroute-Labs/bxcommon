@@ -179,10 +179,10 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
         "test_mode": "",
         "blockchain_network_num": blockchain_network_num,
         "blockchain_networks": [
-            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0),
-            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1),
-            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2),
-            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3)
+            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0, final_tx_confirmations_count=2),
+            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1, final_tx_confirmations_count=2),
+            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2, final_tx_confirmations_count=2),
+            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3, final_tx_confirmations_count=2)
         ],
         "transaction_pool_memory_limit": 200000000
     }
