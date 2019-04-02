@@ -32,12 +32,13 @@ class TransactionServiceTest(AbstractTestCase):
             self.assertEqual(short_ids[i], self.transaction_service.get_short_id(transaction_hash))
 
         for i, short_id in enumerate(short_ids):
-            transaction_hash, transaction_content = self.transaction_service.get_transaction(short_id)
+            transaction_hash, transaction_content, assigned_short_id = self.transaction_service.get_transaction(short_id)
             self.assertEqual(transaction_hashes[i], transaction_hash.binary)
             self.assertEqual(transaction_contents[i], transaction_content)
+            self.assertEqual(short_id, assigned_short_id)
 
         self.assertTrue(self.transaction_service.tx_assign_alarm_scheduled)
-        self.assertEquals(len(short_ids), len(self.transaction_service._tx_assignment_expire_queue))
+        self.assertEqual(len(short_ids), len(self.transaction_service._tx_assignment_expire_queue))
 
     def test_sid_assignment_multiple_sids(self):
         short_ids = [1, 2, 3, 4, 5]
@@ -55,8 +56,8 @@ class TransactionServiceTest(AbstractTestCase):
             self.assertTrue(short_id == short_ids[i] or short_id == short_ids_2[i])
 
         for i in range(len(short_ids)):
-            transaction_hash1, transaction_content1 = self.transaction_service.get_transaction(short_ids[i])
-            transaction_hash2, transaction_content2 = self.transaction_service.get_transaction(short_ids_2[i])
+            transaction_hash1, transaction_content1, _ = self.transaction_service.get_transaction(short_ids[i])
+            transaction_hash2, transaction_content2, _ = self.transaction_service.get_transaction(short_ids_2[i])
             self.assertEqual(transaction_hashes[i], transaction_hash1.binary)
             self.assertEqual(transaction_contents[i], transaction_content1)
             self.assertEqual(transaction_hashes[i], transaction_hash2.binary)
@@ -78,7 +79,7 @@ class TransactionServiceTest(AbstractTestCase):
         self.assertEqual(0, len(self.transaction_service._tx_assignment_expire_queue))
 
         for short_id in short_ids:
-            transaction_hash, transaction_content = self.transaction_service.get_transaction(short_id)
+            transaction_hash, transaction_content, _ = self.transaction_service.get_transaction(short_id)
             self.assertIsNone(transaction_hash)
             self.assertIsNone(transaction_content)
 
@@ -108,12 +109,12 @@ class TransactionServiceTest(AbstractTestCase):
         self.assertEqual(len(short_ids_2), len(self.transaction_service._tx_assignment_expire_queue))
 
         for short_id in short_ids:
-            transaction_hash, transaction_content = self.transaction_service.get_transaction(short_id)
+            transaction_hash, transaction_content, _ = self.transaction_service.get_transaction(short_id)
             self.assertIsNone(transaction_hash)
             self.assertIsNone(transaction_content)
 
         for i, short_id in enumerate(short_ids_2):
-            transaction_hash, transaction_content = self.transaction_service.get_transaction(short_id)
+            transaction_hash, transaction_content, _ = self.transaction_service.get_transaction(short_id)
             self.assertEqual(transaction_hashes[i], transaction_hash.binary)
             self.assertEqual(transaction_contents[i], transaction_content)
 
@@ -196,7 +197,7 @@ class TransactionServiceTest(AbstractTestCase):
                 self.assertTrue(self.transaction_service.has_transaction_contents(tx_hash))
                 self.assertTrue(self.transaction_service.has_transaction_short_id(tx_hash))
                 self.assertTrue(self.transaction_service.has_short_id(short_id))
-                self.assertEqual((tx_hash, tx_contents), self.transaction_service.get_transaction(short_id))
+                self.assertEqual((tx_hash, tx_contents, short_id), self.transaction_service.get_transaction(short_id))
                 self.assertEqual(tx_contents, self.transaction_service.get_transaction_by_hash(tx_hash))
 
         # verify that all transactions from the second set are in cache
@@ -205,7 +206,7 @@ class TransactionServiceTest(AbstractTestCase):
             self.assertTrue(self.transaction_service.has_transaction_contents(tx_hash))
             self.assertTrue(self.transaction_service.has_transaction_short_id(tx_hash))
             self.assertTrue(self.transaction_service.has_short_id(short_id))
-            self.assertEqual((tx_hash, tx_contents), self.transaction_service.get_transaction(short_id))
+            self.assertEqual((tx_hash, tx_contents, short_id), self.transaction_service.get_transaction(short_id))
             self.assertEqual(tx_contents, self.transaction_service.get_transaction_by_hash(tx_hash))
 
         # add transaction that is twice longer

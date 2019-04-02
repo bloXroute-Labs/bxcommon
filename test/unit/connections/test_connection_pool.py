@@ -101,7 +101,7 @@ class ConnectionPoolTest(AbstractTestCase):
     def test_iter(self):
         self.add_conn()
         pool_connections = list(iter(self.conn_pool1))
-        self.assertEquals(3, len(pool_connections))
+        self.assertEqual(3, len(pool_connections))
         self.assertTrue(self.conn1 in pool_connections)
         self.assertTrue(self.conn2 in pool_connections)
         self.assertTrue(self.conn3 in pool_connections)

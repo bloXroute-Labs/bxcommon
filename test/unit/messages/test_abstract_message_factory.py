@@ -69,8 +69,8 @@ class AbstractMessageFactoryTest(AbstractTestCase):
 
         is_full_message, command, payload_length = self.sut.get_message_header_preview_from_input_buffer(input_buffer)
         self.assertTrue(is_full_message)
-        self.assertEquals(b"test", command)
-        self.assertEquals(self.PAYLOAD_LENGTH, payload_length)
+        self.assertEqual(b"test", command)
+        self.assertEqual(self.PAYLOAD_LENGTH, payload_length)
 
     def test_create_message_too_short(self):
         with self.assertRaises(ParseError):
