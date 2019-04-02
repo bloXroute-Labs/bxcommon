@@ -4,10 +4,10 @@ executors:
     docker:
       - image: circleci/python:3.7.0
     environment:
-      PYTHONPATH: /home/circleci/ws/bxcommon/src
+      PYTHONPATH: /home/circleci/ws/bxcommon/src:/home/circleci/ws/bxextensions
     working_directory: ~/ws
 jobs:
-  test:
+  initialize:
     executor: bloxroute-executor
     working_directory: ~/ws
     steps:
@@ -16,21 +16,47 @@ jobs:
       - checkout:
           path:
             "bxcommon"
-      - restore_cache: # restores saved dependency cache if the Branch key template or requirements.txt files have not changed since the previous run
-          key: deps1-{{ .Branch }}-{{ checksum "bxcommon/requirements.txt" }}
+      - run:
+          command: |
+            sudo apt install build-essential automake autogen autoconf libtool libtool-bin libssl-dev cmake
       - run: # install and activate virtual environment with pip
           command: |
+            cd ~/ws
             python -m virtualenv venv
             . venv/bin/activate
             pip install -r bxcommon/requirements.txt
+      - restore_cache: # restores saved dependency cache if the Branch key template or requirements.txt files have not changed since the previous run
+          key: deps1-{{ .Branch }}-{{ checksum "bxcommon/requirements.txt" }}
       - save_cache: # special step to save dependency cache
           key: deps1-{{ .Branch }}-{{ checksum "bxcommon/requirements.txt" }}
           paths:
             - "venv"
+      - run:
+          name: Install bxextensions dependency
+          command: |
+            . venv/bin/activate
+            { # try
+                echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxextensions."
+                git clone -b $CIRCLE_BRANCH --single-branch --depth=1 --recursive git@github.com:bloXroute-Labs/bxextensions.git
+            } || { # catch
+                echo "Trying bxextensions develop branch, could not find identical branch name '$CIRCLE_BRANCH'."
+                git clone -b develop --single-branch --depth=1 --recursive git@github.com:bloXroute-Labs/bxextensions.git
+            }
+            cd bxextensions
+            python build_extensions.py
       - persist_to_workspace:
           root: .
           paths:
             - venv
+            - bxextensions
+            - bxcommon
+
+  test:
+    executor: bloxroute-executor
+    working_directory: ~/ws
+    steps:
+      - attach_workspace:
+          at: ~/ws
       - run:
           name: Unit Tests
           command: |
@@ -73,32 +99,30 @@ jobs:
           command: |
             cd ~/ws
             { # try
-                echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxcommon."
+                echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxe2e."
                 git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxe2e.git
             } || { # catch
-                echo "Trying bxe2e develop branch, could not find identical branch name '$CIRCLE_BRANCH' in bxrelay."
+                echo "Trying bxe2e develop branch, could not find identical branch name '$CIRCLE_BRANCH'."
                 git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxe2e.git
             }
             { # try
-                echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxcommon."
+                echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxrelay."
                 git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxrelay.git
             } || { # catch
-                echo "Trying bxrelay develop branch, could not find identical branch name '$CIRCLE_BRANCH  in bxrelay."
+                echo "Trying bxrelay develop branch, could not find identical branch name '$CIRCLE_BRANCH."
                 git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxrelay.git
             }
             { # try
-                echo "Trying to clone identical branch name '$CIRCLE_BRANCH  from bxcommon."
+                echo "Trying to clone identical branch name '$CIRCLE_BRANCH  from bxgateway."
                 git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway.git
             } || { # catch
-                echo "Trying bxgateway develop branch, could not find identical branch name '$CIRCLE_BRANCH  in bxrelay."
+                echo "Trying bxgateway develop branch, could not find identical branch name '$CIRCLE_BRANCH."
                 git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway.git
             }
       - run:
           name: Initialize virtualenv
           command: |
-            python -m virtualenv venv
             . venv/bin/activate
-            pip install -r bxcommon/requirements.txt
             pip install -r bxrelay/requirements.txt
             pip install -r bxgateway/requirements.txt
       - run:
@@ -110,7 +134,7 @@ jobs:
             python -m unittest discover --verbose
   build:
     docker:
-      - image: circleci/python:2.7
+      - image: circleci/python:3.7
     working_directory: ~/ws
 
     steps:
@@ -123,7 +147,7 @@ jobs:
 
   deploy:
     docker:
-      - image: circleci/python:2.7
+      - image: circleci/python:3.7
     working_directory: ~/ws
 
     steps:
@@ -139,15 +163,19 @@ workflows:
 
   test-build:
     jobs:
-      - test
-      - e2e
+      - initialize
+      - test:
+          requires:
+            - initialize
+      - e2e:
+          requires:
+            - initialize
       - build:
           requires:
-            - test
+            - initialize
           filters:
             branches:
               only: develop
-
       - deploy:
           filters:
             branches:

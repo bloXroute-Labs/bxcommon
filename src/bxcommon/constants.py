@@ -99,6 +99,10 @@ SDN_ROOT_URL = "http://127.0.0.1:8080"
 SDN_CONTACT_RETRY_SECONDS = 5
 MAX_COUNTRY_LENGTH = 30
 
+# Should use extension modules
+USE_EXTENSION_MODULES = False
+
+
 class SdnRoutes(object):
     nodes = "/nodes"
     node = "/nodes/{0}"

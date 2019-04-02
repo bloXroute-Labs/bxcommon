@@ -22,7 +22,7 @@ def broadcast_key_pair(short_ids=None, network_num=0):
     broadcast_message_hash = Sha256Hash(helpers.generate_bytearray(crypto.SHA256_HASH_LEN))
     broadcast_message_bytes = bytearray(constants.C_SIZE_T_SIZE_IN_BYTES)
     broadcast_message_bytes.extend(helpers.generate_bytearray(500))
-    struct.pack_into("@Q", broadcast_message_bytes, 0, len(broadcast_message_bytes))
+    struct.pack_into("@N", broadcast_message_bytes, 0, len(broadcast_message_bytes))
     broadcast_message_bytes.extend(compact_block_short_ids_serializer.serialize_short_ids_into_bytes(short_ids))
     key_bytes, enc_broadcast_message_bytes = crypto.symmetric_encrypt(bytes(broadcast_message_bytes))
 

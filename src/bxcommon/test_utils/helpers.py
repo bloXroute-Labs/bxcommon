@@ -7,7 +7,7 @@ from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.node_type import NodeType
-from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, ALL_NETWORK_NUM
+from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, ALL_NETWORK_NUM, USE_EXTENSION_MODULES
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
@@ -129,7 +129,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
             BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3, block_interval=15)
         ],
         "transaction_pool_memory_limit": 200000000,
-        "encrypt_blocks": True
+        "encrypt_blocks": True,
+        "use_extensions": USE_EXTENSION_MODULES
     }
 
     if include_default_btc_args:

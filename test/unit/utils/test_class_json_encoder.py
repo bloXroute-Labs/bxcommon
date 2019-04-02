@@ -77,10 +77,9 @@ class ClassJsonEncoderTest(unittest.TestCase):
         self.assertEqual(json.dumps(items), json.dumps(gen, cls=ClassJsonEncoder))
 
     def test_encode_class_object(self):
-
         self.assertEqual(
-            json.dumps(EncodedTestClass().__dict__),
-            json.dumps(EncodedTestClass(), cls=ClassJsonEncoder)
+            json.dumps(str(EncodedTestClass)),
+            json.dumps(EncodedTestClass, cls=ClassJsonEncoder)
         )
 
     def test_encode_byte_array(self):
@@ -91,3 +90,10 @@ class ClassJsonEncoderTest(unittest.TestCase):
         b = b"hello world"
         mv = memoryview(b)
         self.assertEqual(json.dumps(b.decode("utf-8")), json.dumps(mv, cls=ClassJsonEncoder))
+
+    def test_special_types(self):
+        d = {"a": 1, "b": 2, "c": 3}
+        values = d.values()
+        keys = d.keys()
+        self.assertEqual(json.dumps(list(values)), json.dumps(values, cls=ClassJsonEncoder))
+        self.assertEqual(json.dumps(list(keys)), json.dumps(keys, cls=ClassJsonEncoder))
