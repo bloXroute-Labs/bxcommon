@@ -123,10 +123,10 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "is_internal_gateway": is_internal_gateway,
         "is_gateway_miner": is_gateway_miner,
         "blockchain_networks": [
-            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0, block_interval=600),
-            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1, block_interval=600),
-            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2, block_interval=15),
-            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3, block_interval=15)
+            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0, block_interval=600, final_tx_confirmations_count=2),
+            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1, block_interval=600, final_tx_confirmations_count=2),
+            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2, block_interval=15, final_tx_confirmations_count=2),
+            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3, block_interval=15, final_tx_confirmations_count=2)
         ],
         "transaction_pool_memory_limit": 200000000,
         "encrypt_blocks": True,
