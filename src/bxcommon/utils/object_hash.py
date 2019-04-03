@@ -8,6 +8,7 @@ from bxcommon.utils.crypto import SHA256_HASH_LEN
 # This is done because using the last characters of the SHA256 function provides major speed boosts.
 PARTIAL_HASH_LENGTH = 4
 
+
 class AbstractObjectHash(object):
     """
     Base class for representing hash as an object
@@ -33,12 +34,14 @@ class AbstractObjectHash(object):
     def __getitem__(self, arg):
         return self.binary.__getitem__(arg)
 
+
 class Sha256Hash(AbstractObjectHash):
     """
     Represents SHA256 hash as an object
     binary is a memoryview or a bytearray
     Assumes that binary does not mutate
     """
+
     def __init__(self, binary):
         if len(binary) != SHA256_HASH_LEN:
             raise ValueError("Binary has the wrong length.")
@@ -46,7 +49,8 @@ class Sha256Hash(AbstractObjectHash):
         super(Sha256Hash, self).__init__(binary)
 
     def __repr__(self):
-        return "Sha256ObjectHash<binary: {}>".format(convert.bytes_to_hex(self.binary))
+        return "Sha256Hash<binary: {}>".format(convert.bytes_to_hex(self.binary))
+
 
 class ConcatHash(AbstractObjectHash):
     """
@@ -54,6 +58,7 @@ class ConcatHash(AbstractObjectHash):
     binary is a memoryview or a bytearray that is not mutable
     hashstart is the start of the random bytes that we take a hash with.
     """
+
     def __init__(self, binary, hashstart):
         super(ConcatHash, self).__init__(binary)
 
@@ -61,5 +66,3 @@ class ConcatHash(AbstractObjectHash):
 
     def __repr__(self):
         return "ConcatHash<binary: {}>".format(convert.bytes_to_hex(self.binary))
-
-

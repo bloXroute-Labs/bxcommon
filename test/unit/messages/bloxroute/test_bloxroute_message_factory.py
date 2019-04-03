@@ -1,3 +1,5 @@
+from collections import deque
+
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, NODE_ID_SIZE_IN_BYTES, \
     HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN
 from bxcommon.exceptions import PayloadLenError
@@ -13,6 +15,7 @@ from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.version_message import VersionMessage
+from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import create_input_buffer_with_message, create_input_buffer_with_bytes
 from bxcommon.utils import crypto
@@ -74,10 +77,11 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.get_message_preview_successfully(GetTxsMessage(get_txs), GetTxsMessage.MESSAGE_TYPE,
                                               UL_INT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES * len(get_txs))
 
-        txs = [(1, crypto.double_sha256(b"123"), bytearray(4)), (2, crypto.double_sha256(b"234"), bytearray(8))]
+        txs = deque([TransactionInfo(crypto.double_sha256(b"123"), bytearray(4), 1),
+                     TransactionInfo(crypto.double_sha256(b"234"), bytearray(8), 2)])
         expected_length = (UL_INT_SIZE_IN_BYTES +
                            sum(UL_INT_SIZE_IN_BYTES + SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES +
-                               len(tx[2]) for tx in txs))
+                               len(tx.contents) for tx in txs))
         self.get_message_preview_successfully(TxsMessage(txs), TxsMessage.MESSAGE_TYPE, expected_length)
 
     def test_message_preview_incomplete(self):
@@ -86,8 +90,8 @@ class BloxrouteMessageFactory(AbstractTestCase):
             create_input_buffer_with_bytes(message.rawbytes()[:-1])
         )
         self.assertFalse(is_full_message)
-        self.assertEquals(b"hello", command)
-        self.assertEquals(VersionMessage.VERSION_MESSAGE_LENGTH + UL_INT_SIZE_IN_BYTES + NODE_ID_SIZE_IN_BYTES -
+        self.assertEqual(b"hello", command)
+        self.assertEqual(VersionMessage.VERSION_MESSAGE_LENGTH + UL_INT_SIZE_IN_BYTES + NODE_ID_SIZE_IN_BYTES -
                           UL_INT_SIZE_IN_BYTES, payload_length)
 
         is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview_from_input_buffer(
@@ -164,11 +168,14 @@ class BloxrouteMessageFactory(AbstractTestCase):
         get_txs_message = self.create_message_successfully(GetTxsMessage(get_txs), GetTxsMessage)
         self.assertEqual(get_txs, get_txs_message.get_short_ids())
 
-        txs = [(1, crypto.double_sha256(b"123"), bytearray(4)), (2, crypto.double_sha256(b"234"), bytearray(8))]
+        txs = [TransactionInfo(Sha256Hash(crypto.double_sha256(b"123")), bytearray(4), 1),
+               TransactionInfo(Sha256Hash(crypto.double_sha256(b"234")), bytearray(8), 2)]
         txs_message = self.create_message_successfully(TxsMessage(txs), TxsMessage)
-        result_txs = [(1, Sha256Hash(crypto.double_sha256(b"123")), bytearray(4)),
-                      (2, Sha256Hash(crypto.double_sha256(b"234")), bytearray(8))]
-        self.assertEqual(result_txs, txs_message.get_txs())
+        result_txs = txs_message.get_txs()
+        for i, result_tx in enumerate(result_txs):
+            self.assertEqual(txs[i].hash, result_tx.hash)
+            self.assertEqual(txs[i].contents, result_tx.contents)
+            self.assertEqual(txs[i].short_id, result_tx.short_id)
 
     def test_create_message_failure(self):
         message = HelloMessage(protocol_version=1, network_num=2)

@@ -36,7 +36,7 @@ class _TransactionStatisticsService(StatisticsEventService):
             raise ValueError("tx_event_name is required")
 
         if constants.TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR >= 0:
-             self.log_event(tx_event_name, short_ids, start_date_time, end_date_time, **kwargs)
+            self.log_event(tx_event_name, short_ids, start_date_time, end_date_time, **kwargs)
 
     def _should_log_event_for_tx(self, tx_hash_bytes):
         if constants.TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR <= 0:

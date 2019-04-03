@@ -1,6 +1,8 @@
 from collections import defaultdict, deque
+from typing import List
 
 from bxcommon import constants
+from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import logger, memory_utils, convert
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
@@ -158,7 +160,7 @@ class TransactionService(object):
         else:
             return {constants.NULL_TX_SID}
 
-    def get_transaction(self, short_id):
+    def get_transaction(self, short_id: int) -> TransactionInfo:
         """
         Fetches transaction info for a given short id.
         Results might be None.
@@ -169,12 +171,13 @@ class TransactionService(object):
             transaction_hash = self._short_id_to_tx_hash[short_id]
             transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
             if transaction_cache_key in self._tx_hash_to_contents:
-                return self._tx_cache_key_to_hash(transaction_cache_key), self._tx_hash_to_contents[
-                    transaction_cache_key]
+                return TransactionInfo(self._tx_cache_key_to_hash(transaction_cache_key),
+                                       self._tx_hash_to_contents[transaction_cache_key],
+                                       short_id)
             else:
-                return self._tx_cache_key_to_hash(transaction_cache_key), None
+                return TransactionInfo(self._tx_cache_key_to_hash(transaction_cache_key), None, short_id)
         else:
-            return None, None
+            return TransactionInfo(None, None, short_id)
 
     def get_transaction_by_hash(self, transaction_hash):
         """
@@ -189,26 +192,30 @@ class TransactionService(object):
 
         return None
 
-    def get_transactions(self, short_ids):
+    def get_transactions(self, short_ids: List[int]) -> TransactionSearchResult:
         """
         Fetches all transaction info for a set of short ids.
         Short ids without a transaction entry will be omitted.
         :param short_ids: list of short ids
-        :return: list of (transaction hash, transaction contents)
+        :return: list of found and missing short ids
         """
         transactions = []
+        found = deque()
+        missing = deque()
         for short_id in short_ids:
             if short_id in self._short_id_to_tx_hash:
                 transaction_cache_key = self._short_id_to_tx_hash[short_id]
                 if transaction_cache_key in self._tx_hash_to_contents:
-                    tx = self._tx_hash_to_contents[transaction_cache_key]
-                    transactions.append((short_id, self._tx_cache_key_to_hash(transaction_cache_key), tx))
+                    found.append(TransactionInfo(self._tx_cache_key_to_hash(transaction_cache_key),
+                                                 self._tx_hash_to_contents[transaction_cache_key],
+                                                 short_id))
                 else:
-                    logger.debug("Short id {} was requested but is unknown.".format(short_id))
+                    missing.append(TransactionInfo(None, None, short_id))
+                    logger.debug("Short id {} was requested but is unknown.", short_id)
             else:
-                logger.debug("Short id {} was requested but is unknown.".format(short_id))
+                logger.debug("Short id {} was requested but is unknown.", short_id)
 
-        return transactions
+        return TransactionSearchResult(found, missing)
 
     def expire_old_assignments(self):
         """

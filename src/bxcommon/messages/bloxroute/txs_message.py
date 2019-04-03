@@ -1,9 +1,11 @@
 import struct
+from typing import List, Optional, Deque
 
 import bxcommon.utils.crypto
 from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.message import Message
+from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.utils import logger
 from bxcommon.utils.object_hash import Sha256Hash
 
@@ -14,7 +16,7 @@ class TxsMessage(Message):
     Message with tx details. Reply to GetTxsMessage.
     """
 
-    def __init__(self, txs=None, buf=None):
+    def __init__(self, txs: Optional[List[TransactionInfo]] = None, buf: bytearray = None):
 
         """
         Constructor. Expects list of transaction details or message bytes.
@@ -35,13 +37,13 @@ class TxsMessage(Message):
             
         self._txs = None
 
-    def get_txs(self):
+    def get_txs(self) -> List[TransactionInfo]:
         if self._txs is None:
             self._parse()
 
         return self._txs
 
-    def _txs_to_bytes(self, txs_details):
+    def _txs_to_bytes(self, txs_details: List[TransactionInfo]):
 
         tx_count = len(txs_details)
 
@@ -53,7 +55,7 @@ class TxsMessage(Message):
 
         # msg_size += size of each tx
         for tx_info in txs_details:
-            msg_size += len(tx_info[2])
+            msg_size += len(tx_info.contents)
 
         buf = bytearray(msg_size)
         off = constants.HDR_COMMON_OFF
@@ -62,17 +64,17 @@ class TxsMessage(Message):
         off += constants.UL_INT_SIZE_IN_BYTES
 
         for tx_info in txs_details:
-            struct.pack_into('<L', buf, off, tx_info[0])
+            struct.pack_into('<L', buf, off, tx_info.short_id)
             off += constants.UL_INT_SIZE_IN_BYTES
 
-            buf[off:off + bxcommon.utils.crypto.SHA256_HASH_LEN] = tx_info[1]
+            buf[off:off + bxcommon.utils.crypto.SHA256_HASH_LEN] = tx_info.hash
             off += bxcommon.utils.crypto.SHA256_HASH_LEN
 
-            struct.pack_into('<L', buf, off, len(tx_info[2]))
+            struct.pack_into('<L', buf, off, len(tx_info.contents))
             off += constants.UL_INT_SIZE_IN_BYTES
 
-            buf[off:off + len(tx_info[2])] = tx_info[2]
-            off += len(tx_info[2])
+            buf[off:off + len(tx_info.contents)] = tx_info.contents
+            off += len(tx_info.contents)
 
         return buf
 
@@ -99,6 +101,6 @@ class TxsMessage(Message):
             tx = self._memoryview[off:off + tx_size]
             off += tx_size
 
-            txs.append((tx_sid, tx_hash, tx))
+            txs.append(TransactionInfo(tx_hash, tx, tx_sid))
 
         self._txs = txs

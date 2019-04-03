@@ -17,11 +17,11 @@ class EncryptedCacheTest(AbstractTestCase):
         sut = EncryptedCache(10, self.ALARM_QUEUE)
         ciphertext, block_hash = sut.encrypt_and_add_payload(payload)
 
-        self.assertEquals(1, len(sut))
+        self.assertEqual(1, len(sut))
         cache_item = sut._cache.get(block_hash)
 
         self.assertEqual(ciphertext, cache_item.ciphertext)
-        self.assertEquals(payload, symmetric_decrypt(cache_item.key, cache_item.ciphertext))
+        self.assertEqual(payload, symmetric_decrypt(cache_item.key, cache_item.ciphertext))
 
     def test_decrypt_and_get(self):
         payload = bytearray(i for i in range(100))
