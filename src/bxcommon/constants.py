@@ -12,6 +12,12 @@ LISTEN_ON_IP_ADDRESS = "0.0.0.0"
 LOCALHOST = "127.0.0.1"
 MAX_BYTE_VALUE = 255
 
+PUBLIC_IP_ADDR_REGEX = r"[0-9]+(?:\.[0-9]+){3}"
+PUBLIC_IP_ADDR_RESOLVER = "http://checkip.dyndns.org/"
+
+NODE_CONFIG_PATH = "config.cfg"
+BLXR_ENV_VAR = "BLXR_ENV"
+
 HOSTNAME = socket.gethostname()
 OS_VERSION = platform.platform()
 

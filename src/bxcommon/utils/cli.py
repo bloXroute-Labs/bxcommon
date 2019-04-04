@@ -12,6 +12,7 @@ from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_vers
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import config
 from bxcommon.utils import convert, logger
+from bxcommon.utils.node_start_args import NodeStartArgs
 from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.log_format import LogFormat
 
@@ -25,13 +26,16 @@ VERSION_TYPE_LIST = ["dev", "v", "ci"]
 
 arg_parser = argparse.ArgumentParser()
 
-arg_parser.add_argument("--external-ip", help="External network ip of this node", required=True)
-arg_parser.add_argument("--external-port", help="External network port to listen on", type=int, required=True)
+arg_parser.add_argument("--external-ip", help="External network ip of this node", type=config.blocking_resolve_ip,
+                        default=config.get_node_public_ip())
+arg_parser.add_argument("--external-port", help="External network port to listen on", type=int,
+                        default=config.get_env_default(NodeStartArgs.EXTERNAL_PORT))
 arg_parser.add_argument("--continent", help="The continent of this node", type=str,
                         choices=["NA", "SA", "EU", "AS", "AF", "OC", "AN"])
 arg_parser.add_argument("--country", help="The country of this node.", type=str)
 arg_parser.add_argument("--hostname", help="Hostname the node is running on", type=str, default=constants.HOSTNAME)
-arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", default=constants.SDN_ROOT_URL, type=str)
+arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", type=str,
+                        default=config.get_env_default(NodeStartArgs.SDN_ROOT_URL))
 arg_parser.add_argument("--log-path", help="Path to store logfiles in")
 arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode",
                         type=convert.str_to_bool, default=True)
@@ -146,7 +150,7 @@ def parse_blockchain_opts(opts, node_type):
 
     for key, value in opts_dict.items():
         if value is None and network_info.default_attributes is not None and key in network_info.default_attributes:
-                opts_dict[key] = network_info.default_attributes[key]
+            opts_dict[key] = network_info.default_attributes[key]
 
     opts_dict["blockchain_network_num"] = network_info.network_num
     opts_dict["blockchain_block_interval"] = network_info.block_interval
