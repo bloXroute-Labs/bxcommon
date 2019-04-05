@@ -1,0 +1,10 @@
+{
+  "binary": ".venv/bin/pyre.bin",
+  "search_path": [
+    ".venv/lib/python3.7/site-packages"
+  ],
+  "source_directories": [
+    "src"
+  ],
+  "typeshed": ".venv/lib/pyre_check/typeshed/"
+}

@@ -40,8 +40,8 @@ arg_parser.add_argument("--log-path", help="Path to store logfiles in")
 arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode",
                         type=convert.str_to_bool, default=True)
 arg_parser.add_argument("--node-id", help="(TEST ONLY) Set the node_id for using in testing.")
-arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__getattr__, choices=list(LogLevel))
-arg_parser.add_argument("--log-format", help="set log format", type=LogFormat.__getattr__, choices=list(LogFormat))
+arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__getattr__, choices=list(LogLevel))  # pyre-ignore
+arg_parser.add_argument("--log-format", help="set log format", type=LogFormat.__getattr__, choices=list(LogFormat))  # pyre-ignore
 arg_parser.add_argument("--log-flush-immediately", help="Enables immediate flush for logs",
                         type=convert.str_to_bool, default=False)
 arg_parser.add_argument("--transaction-pool-memory-limit",

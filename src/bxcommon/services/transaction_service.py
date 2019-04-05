@@ -199,9 +199,8 @@ class TransactionService(object):
         :param short_ids: list of short ids
         :return: list of found and missing short ids
         """
-        transactions = []
-        found = deque()
-        missing = deque()
+        found = []
+        missing = []
         for short_id in short_ids:
             if short_id in self._short_id_to_tx_hash:
                 transaction_cache_key = self._short_id_to_tx_hash[short_id]

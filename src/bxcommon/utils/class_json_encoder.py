@@ -17,14 +17,14 @@ def is_iterable_no_collection(o):
 
 class ClassJsonEncoder(json.JSONEncoder):
 
-    def default(self, o):
+    def default(self, o: typing.Any) -> typing.Any:
         if is_iterable_no_collection(o):
             o = list(o)
         elif isinstance(o, (bytearray, memoryview)):
             o = bytes(o)
         if isinstance(o, Enum):
             return o.name
-        if hasattr(o, '__dict__'):
+        if hasattr(o, "__dict__"):
             if isinstance(o.__dict__, dict):
                 return o.__dict__
             else:
@@ -37,7 +37,7 @@ class ClassJsonEncoder(json.JSONEncoder):
             except UnicodeDecodeError:
                 return str(o)
         if istraceback(o):
-            return ''.join(traceback.format_tb(o)).strip()
+            return "".join(traceback.format_tb(o)).strip()  # pyre-ignore
 
         return o
 
@@ -50,5 +50,5 @@ class ClassJsonEncoder(json.JSONEncoder):
         else:
             return obj
 
-    def encode(self, obj):
-        return super(ClassJsonEncoder, self).encode(self._encode(obj))
+    def encode(self, o) -> str:
+        return super(ClassJsonEncoder, self).encode(self._encode(o))

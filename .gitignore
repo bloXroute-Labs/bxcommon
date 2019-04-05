@@ -102,6 +102,9 @@ ENV/
 # mypy
 .mypy_cache/
 
+# pyre-check
+.pyre
+
 .idea
 
 .DS_Store

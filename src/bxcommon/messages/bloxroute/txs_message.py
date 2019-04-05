@@ -41,6 +41,7 @@ class TxsMessage(Message):
         if self._txs is None:
             self._parse()
 
+        assert self._txs is not None
         return self._txs
 
     def _txs_to_bytes(self, txs_details: List[TransactionInfo]):

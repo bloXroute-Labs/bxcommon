@@ -172,6 +172,7 @@ DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES = 72 * 1024 * 1024
 # keep constants_local.py file to override settings in the constants file
 # this part should be at the bottom of the file
 try:
+    # pyre-ignore Leave this for CircleCI, as it lacks a constants_local.py
     from bxcommon.constants_local import *
 except ImportError as e:
     pass
