@@ -24,34 +24,6 @@ PROTOCOL_VERSION = "protocol_version"
 REQUIRED_PARAMS_IN_MANIFEST = [MANIFEST_SOURCE_VERSION]
 VERSION_TYPE_LIST = ["dev", "v", "ci"]
 
-arg_parser = argparse.ArgumentParser()
-
-arg_parser.add_argument("--external-ip", help="External network ip of this node", type=config.blocking_resolve_ip,
-                        default=config.get_node_public_ip())
-arg_parser.add_argument("--external-port", help="External network port to listen on", type=int,
-                        default=config.get_env_default(NodeStartArgs.EXTERNAL_PORT))
-arg_parser.add_argument("--continent", help="The continent of this node", type=str,
-                        choices=["NA", "SA", "EU", "AS", "AF", "OC", "AN"])
-arg_parser.add_argument("--country", help="The country of this node.", type=str)
-arg_parser.add_argument("--hostname", help="Hostname the node is running on", type=str, default=constants.HOSTNAME)
-arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", type=str,
-                        default=config.get_env_default(NodeStartArgs.SDN_ROOT_URL))
-arg_parser.add_argument("--log-path", help="Path to store logfiles in")
-arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode",
-                        type=convert.str_to_bool, default=True)
-arg_parser.add_argument("--node-id", help="(TEST ONLY) Set the node_id for using in testing.")
-arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__getattr__, choices=list(LogLevel))  # pyre-ignore
-arg_parser.add_argument("--log-format", help="set log format", type=LogFormat.__getattr__, choices=list(LogFormat))  # pyre-ignore
-arg_parser.add_argument("--log-flush-immediately", help="Enables immediate flush for logs",
-                        type=convert.str_to_bool, default=False)
-arg_parser.add_argument("--transaction-pool-memory-limit",
-                        help="Maximum size of transactions to keep in memory pool (MB)",
-                        type=int)
-arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
-                        help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
-                        type=int,
-                        default=(2 * 1024))
-
 _args = None
 
 
@@ -61,13 +33,10 @@ def is_valid_version(full_version):
     :param full_version: {version_type}{version_number}
     :return:
     """
-    try:
-        version_number = full_version[re.search("\d", full_version).start():]
-        version_type = full_version[:re.search("\d", full_version).start()]
-        return (version_number.count(".") == 3 and all(str(x).isdigit() for x in version_number.split("."))) and \
-               (version_type in VERSION_TYPE_LIST)
-    except Exception:
-        raise
+    version_number = full_version[re.search("\d", full_version).start():]
+    version_type = full_version[:re.search("\d", full_version).start()]
+    return (version_number.count(".") == 3 and all(str(x).isdigit() for x in version_number.split("."))) and \
+           (version_type in VERSION_TYPE_LIST)
 
 
 def read_manifest(manifest_path):
@@ -118,6 +87,33 @@ def get_args():
     global _args
 
     if not _args:
+        arg_parser = argparse.ArgumentParser()
+
+        arg_parser.add_argument("--external-ip", help="External network ip of this node", type=config.blocking_resolve_ip,
+                                default=config.get_node_public_ip())
+        arg_parser.add_argument("--external-port", help="External network port to listen on", type=int,
+                                default=config.get_env_default(NodeStartArgs.EXTERNAL_PORT))
+        arg_parser.add_argument("--continent", help="The continent of this node", type=str,
+                                choices=["NA", "SA", "EU", "AS", "AF", "OC", "AN"])
+        arg_parser.add_argument("--country", help="The country of this node.", type=str)
+        arg_parser.add_argument("--hostname", help="Hostname the node is running on", type=str, default=constants.HOSTNAME)
+        arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", type=str,
+                                default=config.get_env_default(NodeStartArgs.SDN_ROOT_URL))
+        arg_parser.add_argument("--log-path", help="Path to store logfiles in")
+        arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode",
+                                type=convert.str_to_bool, default=True)
+        arg_parser.add_argument("--node-id", help="(TEST ONLY) Set the node_id for using in testing.")
+        arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__getattr__, choices=list(LogLevel))
+        arg_parser.add_argument("--log-format", help="set log format", type=LogFormat.__getattr__, choices=list(LogFormat))
+        arg_parser.add_argument("--log-flush-immediately", help="Enables immediate flush for logs",
+                                type=convert.str_to_bool, default=False)
+        arg_parser.add_argument("--transaction-pool-memory-limit",
+                                help="Maximum size of transactions to keep in memory pool (MB)",
+                                type=int)
+        arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
+                                help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
+                                type=int,
+                                default=(2 * 1024))
         _args, unknown = arg_parser.parse_known_args()
         _args.external_ip = config.blocking_resolve_ip(_args.external_ip)
     return _args
