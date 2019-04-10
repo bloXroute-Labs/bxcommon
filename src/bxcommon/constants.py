@@ -69,6 +69,8 @@ DEFAULT_LOG_FORMAT = LogFormat.PLAIN
 # set to True to always flush logs to stdout
 FLUSH_LOG = True
 
+MAX_LOGGED_BYTES_LEN = 500 * 1024
+
 # </editor-fold>
 
 # <editor-fold desc="Message Packing Constants">

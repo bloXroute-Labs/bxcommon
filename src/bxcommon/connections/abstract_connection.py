@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
+from bxcommon.exceptions import PayloadLenError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger, convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -97,11 +97,6 @@ class AbstractConnection(object):
     def advance_sent_bytes(self, bytes_sent):
         self.advance_bytes_on_buffer(self.outputbuf, bytes_sent)
 
-    def pre_process_msg(self):
-        is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview_from_input_buffer(
-            self.inputbuf)
-        return is_full_msg, msg_type, payload_len
-
     def enqueue_msg(self, msg, prepend=False):
         """
         Enqueues the contents of a Message instance, msg, to our outputbuf and attempts to send it if the underlying
@@ -140,6 +135,24 @@ class AbstractConnection(object):
 
         self.socket_connection.send()
 
+    def pre_process_msg(self):
+        is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview_from_input_buffer(
+            self.inputbuf)
+        return is_full_msg, msg_type, payload_len
+
+    def process_msg_type(self, message_type, is_full_msg, payload_len):
+        """
+        Processes messages that require changes to the regular message handling flow
+        (pop off single message, process it, continue on with the stream)
+
+        :param message_type: message type
+        :param is_full_msg: flag indicating if full message is available on input buffer
+        :param payload_len: length of payload
+        :return:
+        """
+
+        pass
+
     def process_message(self):
         """
         Processes the next bytes on the socket's inputbuffer.
@@ -149,20 +162,28 @@ class AbstractConnection(object):
             if self.state & ConnectionState.MARK_FOR_CLOSE:
                 return
 
-            is_full_msg, msg_type, payload_len = self.pre_process_msg()
+            input_buffer_len_before = self.inputbuf.length
+            is_full_msg = False
+            payload_len = 0
+            msg = None
 
-            if not is_full_msg:
-                break
-
-            # Full messages must be a version or verack if the connection isn't established yet.
-            msg = self.pop_next_message(payload_len)
             try:
+                is_full_msg, msg_type, payload_len = self.pre_process_msg()
+
+                self.process_msg_type(msg_type, is_full_msg, payload_len)
+
+                if not is_full_msg:
+                    break
+
+                msg = self.pop_next_message(payload_len)
+
                 # If there was some error in parsing this message, then continue the loop.
                 if msg is None:
                     if self._report_bad_message():
                         return
                     continue
 
+                # Full messages must be one of the handshake messages if the connection isn't established yet.
                 if not (self.is_active()) \
                         and msg_type not in self.hello_messages:
                     logger.error("Connection to {0} not established and got {1} message!  Closing.", self.peer_desc,
@@ -185,29 +206,46 @@ class AbstractConnection(object):
                     msg_handler = self.message_handlers[msg_type]
                     msg_handler(msg)
 
+            # TODO: Investigate possible solutions to recover from PayloadLenError errors
+            except PayloadLenError as e:
+                logger.error("ParseError on connection {}. Error: {}.", self, e.msg)
+                self.mark_for_close()
+                return
+
+            except MemoryError as e:
+                logger.error(
+                    "Out of memory error occurred during message processing. Error: {}. Message bytes: {}. Trace: {}",
+                    e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
+                    traceback.format_exc())
+                raise
+
+            # TODO: Throw custom exception for any errors that come from input that has not been validated and only catch that subclass of exceptions
             except Exception as e:
-                logger.error("Processing message failed. Last message: {}, Error: {}",
-                             convert.bytes_to_hex(msg.rawbytes()), e, traceback.format_exc())
-                if self._report_bad_message():
+
+                # Attempt to recover connection by removing bad full message
+                if is_full_msg:
+                    logger.error(
+                        "Message processing error. Trying to recover. Error: {}. Message bytes: {}. Trace: {}",
+                        e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
+                        traceback.format_exc())
+
+                    # give connection a chance to restore its state and get ready to process next message
+                    self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
+
+                # Connection is unable to recover from message processing error if incomplete message is received
+                else:
+                    logger.error("Message processing error. Unable to recover. Error: {}. Message bytes: {}. Trace: {}",
+                                 e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
+                                 traceback.format_exc())
+                    self.mark_for_close(force_destroy_now=True)
                     return
 
+                if self._report_bad_message():
+                    return
             else:
                 self.num_bad_messages = 0
 
         logger.debug("Finished processing messages on connection: {}", self.peer_desc)
-
-    def _report_bad_message(self):
-        """
-        Increments counter for bad messages. Returns True if connection should be closed.
-        :return: if connection should be closed
-        """
-        if self.num_bad_messages == constants.MAX_BAD_MESSAGES:
-            logger.warn("Received too many bad message. Closing connection: {}", self)
-            self.mark_for_close()
-            return True
-        else:
-            self.num_bad_messages += 1
-            return False
 
     def pop_next_message(self, payload_len):
         """
@@ -218,17 +256,9 @@ class AbstractConnection(object):
         :return: message object
         """
 
-        try:
-            msg_len = self.header_size + payload_len
-            msg_contents = self.inputbuf.remove_bytes(msg_len)
-            return self.message_factory.create_message_from_buffer(msg_contents)
-        except UnrecognizedCommandError as e:
-            logger.error("Unrecognized command on connection: {}. Error: {}. Raw data: {}", self, e.msg, e.raw_data)
-            return None
-        except PayloadLenError as e:
-            logger.error("ParseError on connection {}. Error: {}.", self, e.msg)
-            self.mark_for_close()
-            return None
+        msg_len = self.header_size + payload_len
+        msg_contents = self.inputbuf.remove_bytes(msg_len)
+        return self.message_factory.create_message_from_buffer(msg_contents)
 
     def advance_bytes_on_buffer(self, buf, bytes_written):
         hooks.add_throughput_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc)
@@ -263,3 +293,41 @@ class AbstractConnection(object):
 
         if force_destroy_now:
             self.node.destroy_conn(self, retry_connection=True)
+
+    def clean_up_current_msg(self, payload_len: int, msg_is_in_input_buffer: bool) -> None:
+        """
+        Removes current message from the input buffer and resets connection to a state ready to process next message.
+        Called during the handling of message processing exceptions.
+
+        :param payload_len: length of the payload of the currently processing message
+        :param msg_is_in_input_buffer: flag indicating if message bytes are still in the input buffer
+        :return:
+        """
+
+        if msg_is_in_input_buffer:
+            self.inputbuf.remove_bytes(self.header_size + payload_len)
+
+    def _report_bad_message(self):
+        """
+        Increments counter for bad messages. Returns True if connection should be closed.
+        :return: if connection should be closed
+        """
+        if self.num_bad_messages == constants.MAX_BAD_MESSAGES:
+            logger.warn("Received too many bad message. Closing connection: {}", self)
+            self.mark_for_close()
+            return True
+        else:
+            self.num_bad_messages += 1
+            return False
+
+    def _get_last_msg_bytes(self, msg, input_buffer_len_before, payload_len):
+
+        if msg is not None:
+            return convert.bytes_to_hex(msg.rawbytes()[:constants.MAX_LOGGED_BYTES_LEN])
+
+        # bytes still available on input buffer
+        if input_buffer_len_before == self.inputbuf.length:
+            return convert.bytes_to_hex(
+                self.inputbuf.peek_message(min(self.header_size + payload_len, constants.MAX_LOGGED_BYTES_LEN)))
+
+        return "<not available>"

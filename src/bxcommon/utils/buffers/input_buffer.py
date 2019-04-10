@@ -54,6 +54,9 @@ class InputBuffer(object):
         Thus, we combine pieces if we cannot just return the first message.
         """
         if bytes_to_peek > self.length:
+            bytes_to_peek = self.length
+
+        if bytes_to_peek == 0:
             return bytearray(0)
 
         while bytes_to_peek > len(self.input_list[0]):
