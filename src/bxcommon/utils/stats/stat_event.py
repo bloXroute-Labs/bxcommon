@@ -1,25 +1,15 @@
 import datetime
 import json
+from typing import Optional
+
+from bxcommon.utils.stats.stat_event_type_settings import StatEventTypeSettings
 
 
 class StatEvent:
-    def __init__(self, event_name, event_subject_id, node_id, start_date_time, end_date_time=None, **kwargs):
-        if not event_name:
-            raise ValueError("event_name is required")
-
-        if not event_name:
-            raise ValueError("event_category is required")
-
-        if not event_subject_id:
-            raise ValueError("event_subject_id is required")
-
-        if not node_id:
-            raise ValueError("node_id is required")
-
-        if not start_date_time:
-            raise TypeError("start_date_time is required")
-
-        self.event_name = event_name
+    def __init__(self, event_settings: StatEventTypeSettings, event_subject_id: str, node_id: str,
+                 start_date_time: datetime.datetime, end_date_time=Optional[datetime.datetime], **kwargs):
+        self.event_name = event_settings.name
+        self.event_logic = event_settings.event_logic
         self.event_subject_id = event_subject_id
         self.node_id = node_id
         self.start_date_time = start_date_time
@@ -27,5 +17,5 @@ class StatEvent:
 
         self.extra_data = kwargs
 
-    def to_json(self):
+    def to_json(self) -> str:
         return json.dumps(self.__dict__)

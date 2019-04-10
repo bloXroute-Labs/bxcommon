@@ -1,11 +1,9 @@
 import json
-from datetime import date, time
-from enum import Enum
-import typing
-from datetime import datetime
-from inspect import istraceback
 import traceback
-
+import typing
+from datetime import date, time, datetime
+from enum import Enum
+from inspect import istraceback
 
 SPECIAL_ITERABLE_TYPES = (type(dict().values()), type(dict().keys()),)
 
@@ -23,7 +21,7 @@ class ClassJsonEncoder(json.JSONEncoder):
         elif isinstance(o, (bytearray, memoryview)):
             o = bytes(o)
         if isinstance(o, Enum):
-            return o.name
+            return o.value
         if hasattr(o, "__dict__"):
             if isinstance(o.__dict__, dict):
                 return o.__dict__

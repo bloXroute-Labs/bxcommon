@@ -1,4 +1,3 @@
-import json
 import signal
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict, deque
@@ -10,9 +9,8 @@ from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import TerminationError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_http_service
-from bxcommon.utils import logger, memory_utils
+from bxcommon.utils import logger, memory_utils, json_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
-from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
@@ -483,5 +481,5 @@ class AbstractNode(object):
             node_size = memory_utils.get_detailed_object_size(self)
             logger.statistics(
                 "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}",
-                total_mem_usage, report_mem_usage_bytes, json.dumps(node_size, cls=ClassJsonEncoder))
+                total_mem_usage, report_mem_usage_bytes, json_utils.serialize(node_size))
             self.memory_dumped_once = True

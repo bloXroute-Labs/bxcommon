@@ -21,7 +21,7 @@ class _BlockStatisticsService(StatisticsEventService):
         else:
             block_hash = block_msg[HDR_COMMON_OFF:HDR_COMMON_OFF + crypto.SHA256_HASH_LEN]
 
-        self.log_event(block_event_settings.name, convert.bytes_to_hex(block_hash), start_date_time, end_date_time,
+        self.log_event(block_event_settings, convert.bytes_to_hex(block_hash), start_date_time, end_date_time,
                        **kwargs)
 
     def add_block_event_by_block_hash(self, block_hash, block_event_settings, start_date_time=None, end_date_time=None,
@@ -36,7 +36,7 @@ class _BlockStatisticsService(StatisticsEventService):
         else:
             block_hash_str = block_hash
 
-        self.log_event(block_event_settings.name, convert.bytes_to_hex(block_hash_str), start_date_time, end_date_time,
+        self.log_event(block_event_settings, convert.bytes_to_hex(block_hash_str), start_date_time, end_date_time,
                        **kwargs)
 
     def _should_log_stat_event(self, event_type_settings):
