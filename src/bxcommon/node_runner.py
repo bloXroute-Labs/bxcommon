@@ -8,7 +8,14 @@ from bxcommon.utils import config, logger
 def run_node(process_id_file_path, opts, node_class):
     config.log_pid(process_id_file_path)
     config.init_logging(opts.log_path, opts.to_stdout)
+    try:
+        _run_node(opts, node_class)
+    finally:
+        logger.fatal("Node run method returned. Closing log and exiting.")
+        logger.log_close()
 
+
+def _run_node(opts, node_class):
     # update constants from cli
     cli.set_sdn_url()
 
@@ -44,13 +51,11 @@ def run_node(process_id_file_path, opts, node_class):
     logger.info({"type": "node_init", "Data": opts})
 
     # Start main loop
-    try:
-        node = node_class(opts)
-        event_loop = network_event_loop_factory.create_event_loop(node)
+    node = node_class(opts)
+    event_loop = network_event_loop_factory.create_event_loop(node)
 
-        logger.debug("Running node")
-        event_loop.run()
-    finally:
-        logger.fatal("Node run method returned. Closing log and exiting.")
-        logger.log_close()
+    logger.debug("Running node")
+    event_loop.run()
+    logger.fatal("Node run method returned. Closing log and exiting.")
+    logger.log_close()
 
