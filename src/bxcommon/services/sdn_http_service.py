@@ -12,7 +12,7 @@ from bxcommon.utils import config, logger, model_loader, json_utils
 # TODO port this to sockets soon and remove json serialization perf hit on the node.
 
 
-def fetch_config(node_id):
+def fetch_node_attributes(node_id):
     # Should only be used for test networks.
     node_url = SdnRoutes.node.format(node_id)
     opts = http_service.get_json(node_url)
@@ -130,7 +130,6 @@ def register_node(node_model):
         raise EnvironmentError("Unable to reach SDN and register this node. Please check connection.")
 
     return model_loader.load(NodeModel, node_config)
-
 
 # TODO: Remove this function once we had decided on a way to mark a gateway as a bloxroute controller gateway
 # Long term, we don't want to allow the gateway itself to specify whether it is an internal gateway - this should

@@ -22,7 +22,7 @@ def _run_node(opts, node_class):
     node_model = None
     if opts.node_id:
         # Test network, get pre-configured peers from the SDN.
-        node_model = sdn_http_service.fetch_config(opts.node_id)
+        node_model = sdn_http_service.fetch_node_attributes(opts.node_id)
 
     cli.set_blockchain_networks_info(opts)
     cli.parse_blockchain_opts(opts, node_class.NODE_TYPE)
@@ -30,7 +30,7 @@ def _run_node(opts, node_class):
 
     if not node_model:
         opts.node_type = node_class.NODE_TYPE
-        node_model = sdn_http_service.register_node(model_loader.load(NodeModel, opts.__dict__))
+        node_model = sdn_http_service.register_node(model_loader.load_model(NodeModel, opts.__dict__))
 
     # Add opts from SDN, but don't overwrite CLI args
     for key, val in node_model.__dict__.items():

@@ -196,3 +196,4 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
         "transaction_pool_memory_limit": 200000000
     }
     return opts
+
