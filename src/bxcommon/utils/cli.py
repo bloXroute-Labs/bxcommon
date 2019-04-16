@@ -113,7 +113,7 @@ def get_args():
         arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
                                 help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
                                 type=int,
-                                default=(2 * 1024))
+                                default=(1 * 1024))
         _args, unknown = arg_parser.parse_known_args()
         _args.external_ip = config.blocking_resolve_ip(_args.external_ip)
     return _args
