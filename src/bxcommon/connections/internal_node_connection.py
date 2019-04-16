@@ -123,7 +123,7 @@ class InternalNodeConnection(AbstractConnection):
             nonce = nonce_generator.get_nonce()
             msg = PingMessage(nonce=nonce)
             self.enqueue_msg(msg)
-            self.sent_response_messages_timestamps.contents[nonce] = msg.timestamp
+            self.sent_response_messages_timestamps.add(nonce, msg.timestamp)
             return PING_INTERVAL_S
 
     def msg_ping(self, msg):

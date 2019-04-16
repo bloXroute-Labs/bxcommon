@@ -50,7 +50,7 @@ arg_parser.add_argument("--transaction-pool-memory-limit",
 arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
                         help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
                         type=int,
-                        default=(2 * 1024))
+                        default=(1 * 1024))
 
 _args = None
 

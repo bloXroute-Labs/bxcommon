@@ -18,6 +18,7 @@ jobs:
             "bxcommon"
       - run:
           command: |
+            sudo apt update &&
             sudo apt install build-essential automake autogen autoconf libtool libtool-bin libssl-dev cmake
       - run: # install and activate virtual environment with pip
           command: |
