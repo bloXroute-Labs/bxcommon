@@ -134,7 +134,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         ],
         "transaction_pool_memory_limit": 200000000,
         "encrypt_blocks": True,
-        "use_extensions": USE_EXTENSION_MODULES
+        "use_extensions": USE_EXTENSION_MODULES,
+        "import_extensions": USE_EXTENSION_MODULES
     }
 
     if include_default_btc_args:
