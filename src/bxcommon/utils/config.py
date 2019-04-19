@@ -71,12 +71,18 @@ def get_node_public_ip() -> str:
 
     :return: the resolved IP address
     """
-    public_ip_addr = re.findall(constants.PUBLIC_IP_ADDR_REGEX, get(constants.PUBLIC_IP_ADDR_RESOLVER).text)
-    if not public_ip_addr:
-        raise AttributeError(
-            "Unable to determine public IP address, please specify one manually via the command line arguments")
+    try:
+        get_response = get(constants.PUBLIC_IP_ADDR_RESOLVER).text
+        public_ip_addr = re.findall(constants.PUBLIC_IP_ADDR_REGEX, get_response)
+        if public_ip_addr:
+            return public_ip_addr[0]
 
-    return public_ip_addr[0]
+        raise ConnectionError("Unable to parse IP from response - response was [{}]".format(get_response))
+    except ConnectionError as conn_err:
+        # logger might not yet be initialized
+        print("Unable to determine public IP address, please specify one manually via the command line arguments.\n\n"
+              "Detailed error message:\n\t{}".format(conn_err))
+        exit(1)
 
 
 def get_env_default(key: str) -> str:
