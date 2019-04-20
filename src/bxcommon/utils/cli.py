@@ -89,8 +89,7 @@ def get_args():
     if not _args:
         arg_parser = argparse.ArgumentParser()
 
-        arg_parser.add_argument("--external-ip", help="External network ip of this node", type=config.blocking_resolve_ip,
-                                default=config.get_node_public_ip())
+        arg_parser.add_argument("--external-ip", help="External network ip of this node", type=config.blocking_resolve_ip)
         arg_parser.add_argument("--external-port", help="External network port to listen on", type=int,
                                 default=config.get_env_default(NodeStartArgs.EXTERNAL_PORT))
         arg_parser.add_argument("--continent", help="The continent of this node", type=str,
@@ -115,6 +114,9 @@ def get_args():
                                 type=int,
                                 default=(1 * 1024))
         _args, unknown = arg_parser.parse_known_args()
+        if not _args.external_ip:
+            _args.external_ip = config.get_node_public_ip()
+
         _args.external_ip = config.blocking_resolve_ip(_args.external_ip)
     return _args
 
