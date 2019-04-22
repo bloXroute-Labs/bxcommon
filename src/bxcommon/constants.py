@@ -64,7 +64,7 @@ ENABLE_LOGGING = True
 # LogLevel.FATAL
 # or their corresponding numbers
 DEFAULT_LOG_LEVEL = LogLevel.INFO
-DEFAULT_LOG_FORMAT = LogFormat.PLAIN
+DEFAULT_LOG_FORMAT = LogFormat.JSON
 
 # set to True to always flush logs to stdout
 FLUSH_LOG = True
