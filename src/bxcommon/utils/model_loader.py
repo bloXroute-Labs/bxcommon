@@ -42,10 +42,13 @@ def load_model(model_class: Type[T], model_params: Dict[str, Any]) -> T:
     :return: instance of model class
     """
     attributes = {}
-    for attribute_name, attribute_type in model_class.__annotations__.items():
-        if attribute_name in model_params:
-            attributes[attribute_name] = _load_attribute(attribute_type, model_params[attribute_name])
-    return model_class(**attributes)
+    if hasattr(model_class, "__annotations__"):
+        for attribute_name, attribute_type in model_class.__annotations__.items():
+            if attribute_name in model_params:
+                attributes[attribute_name] = _load_attribute(attribute_type, model_params[attribute_name])
+        return model_class(**attributes)
+    else:
+        return load(model_class, model_params)
 
 
 def _load_attribute(attribute_type: Type[T], attribute_value: Any, cast_basic_values: bool = True) -> Optional[T]:
