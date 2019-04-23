@@ -85,9 +85,11 @@ class AbstractConnection(object):
 
         :param bytes_received: new bytes received from socket connection
         """
-
         assert not self.state & ConnectionState.MARK_FOR_CLOSE
+
         self.inputbuf.add_bytes(bytes_received)
+
+        return True
 
     def get_bytes_to_send(self):
         assert not self.state & ConnectionState.MARK_FOR_CLOSE

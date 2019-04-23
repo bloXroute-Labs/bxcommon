@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass()
 class NodeEventModel(object):
 
     def __init__(self, node_id, event_type, peer_ip=None, peer_port=None, timestamp=None):

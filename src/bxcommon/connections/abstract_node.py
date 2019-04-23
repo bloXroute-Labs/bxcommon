@@ -32,6 +32,8 @@ class AbstractNode(object):
         self.disconnect_queue = deque()
         self.outbound_peers = opts.outbound_peers[:]
 
+        self.receivable_connections = []
+
         self.connection_pool = ConnectionPool()
 
         self.schedule_pings_on_timeout = False
@@ -168,20 +170,30 @@ class AbstractNode(object):
 
         return
 
-    def on_bytes_received(self, fileno, bytes_received):
+    def on_bytes_received(self, fileno: int, bytes_received: int) -> bool:
+        """
+        :param fileno:
+        :param bytes_received:
+        :return: True if the node should continue receiving bytes from the remote peer. False otherwise.
+        """
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
             logger.warn("Received bytes for connection not in pool. Fileno {0}", fileno)
-            return
+            return False
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            return
+            return False
 
-        conn.add_received_bytes(bytes_received)
+        continue_receiving = conn.add_received_bytes(bytes_received)
+
+        if not continue_receiving:
+            self.receivable_connections.append(conn.socket_connection)
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
             self.destroy_conn(conn)
+
+        return continue_receiving
 
     def on_finished_receiving(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)
@@ -289,6 +301,14 @@ class AbstractNode(object):
     @abstractmethod
     def get_connection_class(self, ip=None, port=None, from_me=False):
         pass
+
+    def get_and_clear_receivable_connections(self):
+        """
+        :return: returns connections that have some bytes in the socket layer that we can still receive.
+        """
+        receivable_connections = self.receivable_connections
+        self.receivable_connections = []
+        return receivable_connections
 
     def enqueue_connection(self, ip, port):
         """

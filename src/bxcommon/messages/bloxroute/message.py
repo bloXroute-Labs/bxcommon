@@ -34,6 +34,7 @@ class Message(AbstractMessage):
         self._msg_type = msg_type
         self._payload_len = payload_len
         self._payload = None
+        self._priority = False
 
     # TODO: pull this out in to a message protocol
     @classmethod
@@ -86,6 +87,16 @@ class Message(AbstractMessage):
         if self._payload is None:
             self._payload = self.buf[self.HEADER_LENGTH:self.payload_len() + self.HEADER_LENGTH]
         return self._payload
+
+    def set_priority(self, high: bool) -> None:
+        """
+        Sets the priority of this message (to be high or low)
+        :param high: True if this is high priority. False otherwise.
+        """
+        self._priority = high
+
+    def get_priority(self) -> bool:
+        return self._priority
 
     def __eq__(self, other):
         """

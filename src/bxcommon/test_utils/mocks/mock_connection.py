@@ -45,6 +45,7 @@ class MockConnection(object):
     def add_received_bytes(self, bytes_received):
         self.inputbuf.add_bytes(bytes_received)
         self.mark_for_close()
+        return True
 
     def get_bytes_to_send(self):
         return self.outputbuf.output_msgs[0]

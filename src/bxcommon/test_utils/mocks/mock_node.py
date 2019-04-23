@@ -5,6 +5,7 @@ from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.connections.abstract_node import AbstractNode
+from argparse import Namespace
 
 
 class MockNode(AbstractNode):
@@ -36,7 +37,7 @@ class MockNode(AbstractNode):
         return self._tx_service
 
 
-class MockOpts(object):
+class MockOpts(Namespace):
 
     def __init__(self, node_id="foo", external_ip="127.0.0.1", external_port=8000, bloxroute_version="v1.5",
                  log_path="./", to_stdout=True, index=1, sid_start=1, sid_end=100000, sid_expire_time=99999,

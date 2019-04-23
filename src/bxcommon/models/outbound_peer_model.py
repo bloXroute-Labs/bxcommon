@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class OutboundPeerModel(object):
     def __init__(self, ip=None, port=None, node_id=None, is_internal_gateway=False, attributes=None):
         if attributes is None:

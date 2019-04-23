@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+
+@dataclass
 class BlockchainNetworkModel(object):
 
     def __init__(self, protocol=None, network=None, network_num=None, type=None, environment=None,
