@@ -128,7 +128,7 @@ class SdnRoutes(object):
 
 # <editor-fold desc="Stats Recording">
 
-THROUGHPUT_STATS_INTERVAL = 30
+THROUGHPUT_STATS_INTERVAL = 300
 THROUGHPUT_STATS_LOOK_BACK = 5
 
 INFO_STATS_INTERVAL = 3600
