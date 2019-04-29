@@ -84,10 +84,11 @@ class TestNode(AbstractNode):
         if len(self.send_bytes) == self.bytes_sent:
             self.ready_to_close = True
 
-    def on_bytes_received(self, fileno, bytes_received):
+    def on_bytes_received(self, fileno: int, bytes_received: bytearray):
         print("Node {0}: on_bytes_received call. {1} bytes received from connection {2}"
               .format(self.port, len(bytes_received), fileno))
         self.receive_buffers[fileno] += bytes_received
+        return True
 
     def get_sleep_timeout(self, triggered_by_timeout, first_call=False):
         print("Node {0}: get_sleep_timeout called.".format(self.port))

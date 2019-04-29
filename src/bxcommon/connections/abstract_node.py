@@ -170,7 +170,7 @@ class AbstractNode(object):
 
         return
 
-    def on_bytes_received(self, fileno: int, bytes_received: int) -> bool:
+    def on_bytes_received(self, fileno: int, bytes_received: bytearray) -> bool:
         """
         :param fileno:
         :param bytes_received:
