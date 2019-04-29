@@ -105,7 +105,7 @@ class InternalNodeConnection(AbstractConnection):
             return
 
         self.network_num = network_num
-
+        self.node.alarm_queue.register_alarm(PING_INTERVAL_S, self.send_ping)
         logger.debug("Received Hello message from peer with network number '{}'.".format(network_num))
 
     def peek_broadcast_msg_network_num(self, input_buffer):
