@@ -106,7 +106,7 @@ SDN_CONTACT_RETRY_SECONDS = 5
 MAX_COUNTRY_LENGTH = 30
 
 # Should use extension modules
-USE_EXTENSION_MODULES = False
+USE_EXTENSION_MODULES = True
 
 
 class SdnRoutes(object):
