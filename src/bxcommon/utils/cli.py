@@ -1,9 +1,8 @@
+import argparse
 import json
 import os
 import re
 import sys
-
-import argparse
 
 from bxcommon import constants
 from bxcommon.connections.node_type import NodeType
@@ -12,9 +11,9 @@ from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_vers
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import config
 from bxcommon.utils import convert, logger
-from bxcommon.utils.node_start_args import NodeStartArgs
-from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.log_format import LogFormat
+from bxcommon.utils.log_level import LogLevel
+from bxcommon.utils.node_start_args import NodeStartArgs
 
 # Keep here instead of constants to avoid circular import.
 
@@ -42,6 +41,9 @@ arg_parser.add_argument("--node-id", help="(TEST ONLY) Set the node_id for using
 arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__getattr__, choices=list(LogLevel))
 arg_parser.add_argument("--log-format", help="set log format", type=LogFormat.__getattr__, choices=list(LogFormat))
 arg_parser.add_argument("--log-flush-immediately", help="Enables immediate flush for logs",
+                        type=convert.str_to_bool, default=False)
+arg_parser.add_argument("--throughput-debugging",
+                        help="Logs additional information that is helpful for debugging of throughput issues",
                         type=convert.str_to_bool, default=False)
 arg_parser.add_argument("--transaction-pool-memory-limit",
                         help="Maximum size of transactions to keep in memory pool (MB)",

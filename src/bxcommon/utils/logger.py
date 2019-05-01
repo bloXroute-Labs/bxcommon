@@ -196,10 +196,13 @@ def set_immediate_flush(flush_immediately):
         _log.needs_flush.notify()
 
 
-def log(level, msg, *args, **kwargs):
+def log(level, msg, *args, condition=True, **kwargs):
     global _hostname
     if level < _log_level:
         return  # No logging if it's not a high enough priority message.
+
+    if not condition:
+        return
 
     if args:
         msg = msg.format(*args)
@@ -244,29 +247,29 @@ def log(level, msg, *args, **kwargs):
         sys.stdout.write(log_msg_str)
 
 
-def debug(msg, *args):
-    log(LogLevel.DEBUG, msg, *args)
+def debug(msg, *args, condition=True):
+    log(LogLevel.DEBUG, msg, *args, condition=condition)
 
 
-def trace(msg, *args):
-    log(LogLevel.TRACE, msg, *args)
+def trace(msg, *args, condition=True):
+    log(LogLevel.TRACE, msg, *args, condition=condition)
 
 
-def info(msg, *args):
-    log(LogLevel.INFO, msg, *args)
+def info(msg, *args, condition=True):
+    log(LogLevel.INFO, msg, *args, condition=condition)
 
 
-def warn(msg, *args):
-    log(LogLevel.WARN, msg, *args)
+def warn(msg, *args, condition=True):
+    log(LogLevel.WARN, msg, *args, condition=condition)
 
 
-def error(msg, *args):
-    log(LogLevel.ERROR, msg, *args)
+def error(msg, *args, condition=True):
+    log(LogLevel.ERROR, msg, *args, condition=condition)
 
 
-def fatal(msg, *args):
-    log(LogLevel.FATAL, msg, *args, exc_info=sys.exc_info())
+def fatal(msg, *args, condition=True):
+    log(LogLevel.FATAL, msg, *args, condition=condition, exc_info=sys.exc_info())
 
 
-def statistics(msg, *args):
-    log(LogLevel.STATS, msg, *args)
+def statistics(msg, *args, condition=True):
+    log(LogLevel.STATS, msg, *args, condition=condition)

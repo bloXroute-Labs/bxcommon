@@ -1,3 +1,4 @@
 class Direction(object):
     INBOUND = "INBOUND"
     OUTBOUND = "OUTBOUND"
+    INBOUND_MESSAGE = "INBOUND_MESSAGE"

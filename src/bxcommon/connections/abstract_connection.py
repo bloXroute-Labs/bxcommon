@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger, convert
@@ -87,6 +88,10 @@ class AbstractConnection(object):
         """
 
         assert not self.state & ConnectionState.MARK_FOR_CLOSE
+        hooks.add_throughput_event(Direction.INBOUND, None, len(bytes_received), self.peer_desc)
+        logger.info("Received {} bytes from {}", len(bytes_received), self.peer_desc,
+                    condition=self.node.opts.throughput_debugging and self.CONNECTION_TYPE in (
+                        ConnectionType.RELAY, ConnectionType.GATEWAY))
         self.inputbuf.add_bytes(bytes_received)
 
     def get_bytes_to_send(self):
@@ -152,6 +157,10 @@ class AbstractConnection(object):
             is_full_msg, msg_type, payload_len = self.pre_process_msg()
 
             if not is_full_msg:
+                logger.info("Partial message '{}' is received. Payload len - {} bytes. Input buffer len - {} bytes.",
+                            msg_type, payload_len, self.inputbuf.length,
+                            condition=self.inputbuf.length > 0 and self.node.opts.throughput_debugging and self.CONNECTION_TYPE in (
+                            ConnectionType.RELAY, ConnectionType.GATEWAY))
                 break
 
             # Full messages must be a version or verack if the connection isn't established yet.
@@ -171,7 +180,7 @@ class AbstractConnection(object):
                     return
 
                 if self.log_throughput:
-                    hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
+                    hooks.add_throughput_event(Direction.INBOUND_MESSAGE, msg_type, len(msg.rawbytes()), self.peer_desc)
 
                 if not logger.should_log_level(msg.log_level()) and logger.should_log_level(LogLevel.INFO):
                     self._trace_message_tracker[msg_type] += 1
@@ -232,6 +241,9 @@ class AbstractConnection(object):
 
     def advance_bytes_on_buffer(self, buf, bytes_written):
         hooks.add_throughput_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc)
+        logger.info("Sent {} bytes to {}", bytes_written, self.peer_desc,
+                    condition=self.node.opts.throughput_debugging and self.CONNECTION_TYPE in (
+                        ConnectionType.RELAY, ConnectionType.GATEWAY))
         buf.advance_buffer(bytes_written)
 
     def send_ping(self):
