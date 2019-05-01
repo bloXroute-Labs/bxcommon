@@ -44,6 +44,7 @@ class AbstractNode(object):
         # Handle termination gracefully
         signal.signal(signal.SIGTERM, self._kill_node)
         signal.signal(signal.SIGINT, self._kill_node)
+        signal.signal(signal.SIGSEGV, self._kill_node)
 
         # Event handling queue for delayed events
         self.alarm_queue = AlarmQueue()
