@@ -14,7 +14,5 @@ class TransactionStatEventType(object):
     TX_UNKNOWN_SHORT_IDS_REQUESTED_BY_GATEWAY_FROM_RELAY = "TxUnknownShortIdsRequestedByGatewayFromRelay"
     TX_UNKNOWN_SHORT_IDS_REPLY_RECEIVED_BY_GATEWAY_FROM_RELAY = "TxUnknownShortIdsReplyReceivedByGatewayFromRelay"
     TX_UNKNOWN_SHORT_IDS_REPLY_SENT_BY_RELAY_TO_GATEWAY = "TxUnknownShortIdsReplySentByRelayToGateway"
-
-
-
-
+    TX_UNKNOWN_TRANSACTION_FOUND_BY_RELAY = "TxUnknownTransactionFoundByRelay"
+    TX_UNKNOWN_TRANSACTION_RECEIVED_BY_GATEWAY_FROM_RELAY = "TxUnknownTransactionReceivedByGatewayFromRelay"
