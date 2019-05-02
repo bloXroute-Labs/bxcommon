@@ -20,3 +20,5 @@ class TransactionStatEventType(object):
         "TxUnknownShortIdsReplyReceivedByGatewayFromRelay")
     TX_UNKNOWN_SHORT_IDS_REPLY_SENT_BY_RELAY_TO_GATEWAY = StatEventTypeSettings(
         "TxUnknownShortIdsReplySentByRelayToGateway")
+    TX_UNKNOWN_TRANSACTION_FOUND_BY_RELAY = StatEventTypeSettings("TxUnknownTransactionFoundByRelay")
+    TX_UNKNOWN_TRANSACTION_RECEIVED_BY_GATEWAY_FROM_RELAY = StatEventTypeSettings("TxUnknownTransactionReceivedByGatewayFromRelay")
