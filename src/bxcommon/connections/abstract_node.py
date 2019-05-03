@@ -398,6 +398,7 @@ class AbstractNode(object):
         """
         Kills the node immediately
         """
+        logger.fatal("Node has been killed")
         raise TerminationError("Node killed.")
 
     def destroy_conn(self, conn, retry_connection=False):
