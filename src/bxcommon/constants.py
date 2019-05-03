@@ -162,7 +162,7 @@ WARN_ALARM_EXECUTION_DURATION = 5
 WARN_ALARM_EXECUTION_OFFSET = 5
 
 # Expiration time for cache of relayed blocks hashes
-RELAYED_BLOCKS_EXPIRE_TIME_S = 6 * 60
+RELAYED_BLOCKS_EXPIRE_TIME_S = 6 * 60 * 60
 # </editor-fold>
 
 # <editor-fold desc="Default Values">
