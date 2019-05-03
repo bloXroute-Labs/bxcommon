@@ -170,7 +170,7 @@ RELAYED_BLOCKS_EXPIRE_TIME_S = 6 * 60
 # <editor-fold desc="Default Values">
 
 # Default transactions contents cache maximum size per network number
-DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES = 72 * 1024 * 1024
+DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES = 250 * 1024 * 1024
 
 # </editor-fold>
 
