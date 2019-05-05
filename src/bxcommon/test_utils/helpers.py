@@ -136,7 +136,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "encrypt_blocks": True,
         "use_extensions": USE_EXTENSION_MODULES,
         "import_extensions": USE_EXTENSION_MODULES,
-        "throughput_debugging": False
+        "throughput_debugging": False,
+        "enable_buffered_send": False
     }
 
     if include_default_btc_args:
@@ -192,6 +193,7 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
             BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3, final_tx_confirmations_count=2)
         ],
         "transaction_pool_memory_limit": 200000000,
-        "throughput_debugging": False
+        "throughput_debugging": False,
+        "enable_buffered_send": False
     }
     return opts
