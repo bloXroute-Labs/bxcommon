@@ -64,3 +64,4 @@ class MockOpts(Namespace):
             BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3, final_tx_confirmations_count=2)
         ]
         self.transaction_pool_memory_limit = 200000000
+        self.enable_buffered_send = False

@@ -113,6 +113,8 @@ def get_args():
                                 help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
                                 type=int,
                                 default=(1 * 1024))
+        arg_parser.add_argument("--enable-buffered-send", help="Enables buffering of sent byte to improve performance",
+                                type=convert.str_to_bool, default=False)
         _args, unknown = arg_parser.parse_known_args()
         if not _args.external_ip:
             _args.external_ip = config.get_node_public_ip()
