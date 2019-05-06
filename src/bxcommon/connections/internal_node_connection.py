@@ -12,6 +12,7 @@ from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.utils import nonce_generator
 from bxcommon.utils import logger
+from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.stats.measurement_type import MeasurementType
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.expiring_dict import ExpiringDict
@@ -21,6 +22,9 @@ class InternalNodeConnection(AbstractConnection):
 
     def __init__(self, sock, address, node, from_me=False):
         super(InternalNodeConnection, self).__init__(sock, address, node, from_me)
+
+        # Enable buffering only on internal connections
+        self.outputbuf = OutputBuffer(enable_buffering=node.opts.enable_buffered_send)
 
         self.network_num = node.network_num
         self.version_manager = bloxroute_version_manager

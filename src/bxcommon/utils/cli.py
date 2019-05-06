@@ -53,7 +53,7 @@ arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
                         type=int,
                         default=(1 * 1024))
 arg_parser.add_argument("--enable-buffered-send", help="Enables buffering of sent byte to improve performance",
-                                type=convert.str_to_bool, default=False)
+                                type=convert.str_to_bool, default=True)
 
 _args = None
 

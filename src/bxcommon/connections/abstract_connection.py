@@ -38,7 +38,7 @@ class AbstractConnection(object):
 
         self.from_me = from_me  # Whether or not I initiated the connection
 
-        self.outputbuf = OutputBuffer(enable_buffering=node.opts.enable_buffered_send)
+        self.outputbuf = OutputBuffer()
         self.inputbuf = InputBuffer()
         self.node = node
 
