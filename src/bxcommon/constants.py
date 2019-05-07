@@ -26,7 +26,7 @@ ALL_NETWORK_NUM = 0
 DEFAULT_NETWORK_NUM = 1
 
 OUTPUT_BUFFER_MIN_SIZE = 65535
-OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME = 0.2
+OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME = 0.05
 
 # The unsigned integer transaction SID representing null.
 # If changing, also change in bxapi/constants.py
