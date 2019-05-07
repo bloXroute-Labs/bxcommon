@@ -111,7 +111,7 @@ class TestOutputBuffer(unittest.TestCase):
         self.out_buf.enqueue_msgbytes(data1)
         self.assertEqual(OutputBuffer.EMPTY, self.out_buf.get_buffer())
 
-        time.time = MagicMock(return_value=time.time() + OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME)
+        time.time = MagicMock(return_value=time.time() + OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME + 0.001)
         self.assertEqual(data1, self.out_buf.get_buffer())
 
     def test_flush_get_buffer_on_size(self):
