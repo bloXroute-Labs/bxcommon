@@ -17,5 +17,3 @@ class StatEvent:
 
         self.extra_data = kwargs
 
-    def to_json(self) -> str:
-        return json.dumps(self.__dict__)
