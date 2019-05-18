@@ -217,6 +217,9 @@ class TransactionService(object):
 
         return TransactionSearchResult(found, missing)
 
+    def get_all_transaction_hashes(self):
+        return self._tx_hash_to_contents.keys()
+
     def expire_old_assignments(self):
         """
         Clean up expired short ids.
