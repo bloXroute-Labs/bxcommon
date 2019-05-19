@@ -13,7 +13,8 @@ class NetworkThread(object):
     def __init__(self, node, name=None):
         self.node = node
         self.event_loop = network_event_loop_factory.create_event_loop(self.node)
-        self._thread = Thread(target=self.event_loop.run, name=name)
+        self._thread = Thread(target=self._run, name=name)
+        self.error = None
 
     def start(self):
         self._thread.start()
@@ -29,4 +30,10 @@ class NetworkThread(object):
 
         if self._thread.is_alive():
             self._thread.join()
+
+    def _run(self):
+        try:
+            self.event_loop.run()
+        except Exception as e:
+            self.error = e
 

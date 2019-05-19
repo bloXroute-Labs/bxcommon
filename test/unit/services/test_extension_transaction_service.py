@@ -1,8 +1,9 @@
+from bxcommon.services.extension_transaction_service import ExtensionTransactionService
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils.abstract_transaction_service_test_case import AbstractTransactionServiceTestCase
 
 
-class TransactionServiceTest(AbstractTransactionServiceTestCase):
+class ExtensionTransactionServiceTest(AbstractTransactionServiceTestCase):
 
     def test_get_missing_transactions(self):
         self._test_get_missing_transactions()
@@ -26,4 +27,4 @@ class TransactionServiceTest(AbstractTransactionServiceTestCase):
         self._test_transactions_contents_memory_limit()
 
     def _get_transaction_service(self) -> TransactionService:
-        return TransactionService(self.mock_node, 0)
+        return ExtensionTransactionService(self.mock_node, 0)

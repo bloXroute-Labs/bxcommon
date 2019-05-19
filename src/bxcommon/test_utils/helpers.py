@@ -196,7 +196,9 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
                                    final_tx_confirmations_count=2)
         ],
         "transaction_pool_memory_limit": 200000000,
-        "enable_buffered_send": False
+        "enable_buffered_send": False,
+        "use_extensions": USE_EXTENSION_MODULES,
+        "import_extensions": USE_EXTENSION_MODULES
     }
     return opts
 

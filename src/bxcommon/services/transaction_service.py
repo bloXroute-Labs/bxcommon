@@ -1,5 +1,5 @@
 from collections import defaultdict, deque
-from typing import List
+from typing import List, Tuple
 
 from bxcommon import constants
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
@@ -171,13 +171,30 @@ class TransactionService(object):
             transaction_hash = self._short_id_to_tx_hash[short_id]
             transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
             if transaction_cache_key in self._tx_hash_to_contents:
+                transaction_contents = self._tx_hash_to_contents[transaction_cache_key]
                 return TransactionInfo(self._tx_cache_key_to_hash(transaction_cache_key),
-                                       self._tx_hash_to_contents[transaction_cache_key],
+                                       transaction_contents,
                                        short_id)
             else:
                 return TransactionInfo(self._tx_cache_key_to_hash(transaction_cache_key), None, short_id)
         else:
             return TransactionInfo(None, None, short_id)
+
+    def get_missing_transactions(
+            self, short_ids: List[int]
+    ) -> Tuple[bool, List[int], List[Sha256Hash]]:
+        unknown_tx_sids = []
+        unknown_tx_hashes = []
+        has_missing = False
+        for short_id in short_ids:
+            transaction_hash = self._short_id_to_tx_hash.get(short_id, None)
+            if transaction_hash is None:
+                unknown_tx_sids.append(short_id)
+                has_missing = True
+            elif not self.has_transaction_contents(transaction_hash):
+                unknown_tx_hashes.append(self._tx_cache_key_to_hash(transaction_hash))
+                has_missing = True
+        return has_missing, unknown_tx_sids, unknown_tx_hashes
 
     def get_transaction_by_hash(self, transaction_hash):
         """
