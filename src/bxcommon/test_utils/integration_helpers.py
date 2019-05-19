@@ -14,7 +14,7 @@ See bxgateway/test/integration/test_gateway_connection_peering.py for an example
 """
 
 # Timeout for polling on connections in integration tests
-INTEGRATION_TEST_WAIT_INTERVAL_S = 0.3
+INTEGRATION_TEST_WAIT_INTERVAL_S = 1
 INTEGRATION_TEST_WAIT_TIMEOUT_S = 5
 
 
