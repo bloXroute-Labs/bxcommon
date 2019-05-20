@@ -5,6 +5,7 @@ from datetime import date, time, datetime
 from enum import Enum
 from inspect import istraceback
 
+
 SPECIAL_ITERABLE_TYPES = (type(dict().values()), type(dict().keys()),)
 
 
@@ -34,9 +35,12 @@ class ClassJsonEncoder(json.JSONEncoder):
                 return o.decode("utf-8")
             except UnicodeDecodeError:
                 return str(o)
+        if hasattr(o, "hexdigest"):
+            return o.hexdigest() # pyre-ignore
+        if hasattr(o, "hex_string"):
+            return o.hex_string() # pyre-ignore
         if istraceback(o):
             return "".join(traceback.format_tb(o)).strip()  # pyre-ignore
-
         return o
 
     def _encode(self, obj):

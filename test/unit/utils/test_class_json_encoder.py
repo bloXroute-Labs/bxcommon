@@ -1,7 +1,10 @@
 import unittest
 from bxcommon.utils.class_json_encoder import ClassJsonEncoder
+from bxcommon.utils import convert
 import json
 import random
+from hashlib import sha256
+import task_pool_executor as tpe
 from collections import defaultdict
 
 
@@ -15,6 +18,18 @@ class EncodedTestClass(object):
 
 
 class ClassJsonEncoderTest(unittest.TestCase):
+
+    def test_encode_sha256(self):
+        hash_ = "96e900d13d89eb12219e18ddc7aae8ec173a3cff196f09556b5d730df4a10732"
+        items = [sha256(hash_.encode())]
+        js = json.dumps(items, cls=ClassJsonEncoder)
+        self.assertEqual(json.loads(js), [sha256(hash_.encode()).hexdigest()])
+
+    def test_encode_sha256_tpe(self):
+        hash_ = "96e900d13d89eb12219e18ddc7aae8ec173a3cff196f09556b5d730df4a10732"
+        items = [tpe.Sha256(tpe.InputBytes(convert.hex_to_bytes(hash_)))]
+        js = json.dumps(items, cls=ClassJsonEncoder)
+        self.assertEqual(json.loads(js), [hash_])
 
     def test_encode_list(self):
         items = list(random.getrandbits(10) for _ in range(100))
