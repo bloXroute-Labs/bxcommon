@@ -10,3 +10,4 @@ class BloxrouteMessageType(object):
     TRANSACTIONS = b"txs"
     KEY = b"key"
     BLOCK_HOLDING = b"blockhold"
+    DISCONNECT_RELAY_PEER = b"droprelay"

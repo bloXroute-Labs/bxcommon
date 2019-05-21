@@ -125,7 +125,8 @@ class AbstractNode(object):
             return
 
         logger.info("Destroying connection: {}", conn)
-        self.destroy_conn(conn, retry_connection=True)
+        # Only retry for connections that are from me
+        self.destroy_conn(conn, retry_connection=conn.from_me)
 
     @abstractmethod
     def send_request_for_relay_peers(self):

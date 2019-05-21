@@ -12,6 +12,7 @@ from bxcommon.messages.bloxroute.key_message import KeyMessage
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
+from bxcommon.messages.bloxroute.disconnect_relay_peer_message import DisconnectRelayPeerMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.utils import crypto
@@ -29,7 +30,8 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         BloxrouteMessageType.GET_TRANSACTIONS: GetTxsMessage,
         BloxrouteMessageType.TRANSACTIONS: TxsMessage,
         BloxrouteMessageType.KEY: KeyMessage,
-        BloxrouteMessageType.BLOCK_HOLDING: BlockHoldingMessage
+        BloxrouteMessageType.BLOCK_HOLDING: BlockHoldingMessage,
+        BloxrouteMessageType.DISCONNECT_RELAY_PEER: DisconnectRelayPeerMessage
     }
 
     def __init__(self):
