@@ -14,3 +14,4 @@ class PeerStats(object):
 class PeerStatsMessage(object):
     def __init__(self):
         self.bytes = 0
+        self.count = 0
