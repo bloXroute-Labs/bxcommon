@@ -136,7 +136,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "encrypt_blocks": True,
         "use_extensions": USE_EXTENSION_MODULES,
         "import_extensions": USE_EXTENSION_MODULES,
-        "enable_buffered_send": False
+        "enable_buffered_send": False,
+		"compact_block": True
     }
 
     if include_default_btc_args:
@@ -201,6 +202,4 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
         "import_extensions": USE_EXTENSION_MODULES
     }
     return opts
-
-
 

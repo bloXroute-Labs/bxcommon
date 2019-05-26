@@ -233,8 +233,9 @@ class TransactionService(object):
 
         return TransactionSearchResult(found, missing)
 
-    def get_all_transaction_hashes(self):
-        return self._tx_hash_to_contents.keys()
+    def iter_transaction_hashes(self):
+        for tx_cache_key in self._tx_hash_to_contents:
+            yield self._tx_cache_key_to_hash(tx_cache_key)
 
     def expire_old_assignments(self):
         """
