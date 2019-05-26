@@ -110,6 +110,9 @@ MAX_COUNTRY_LENGTH = 30
 # Should use extension modules
 USE_EXTENSION_MODULES = True
 
+# Should support compact block message
+ACCEPT_COMPACT_BLOCK = True
+
 
 class SdnRoutes(object):
     nodes = "/nodes"
