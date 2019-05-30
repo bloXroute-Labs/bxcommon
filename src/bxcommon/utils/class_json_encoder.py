@@ -1,10 +1,9 @@
 import json
-from datetime import date, time
-from enum import Enum
-import typing
-from datetime import datetime
-from inspect import istraceback
 import traceback
+import typing
+from datetime import date, time, datetime
+from enum import Enum
+from inspect import istraceback
 
 
 SPECIAL_ITERABLE_TYPES = (type(dict().values()), type(dict().keys()),)
@@ -17,14 +16,14 @@ def is_iterable_no_collection(o):
 
 class ClassJsonEncoder(json.JSONEncoder):
 
-    def default(self, o):
+    def default(self, o: typing.Any) -> typing.Any:
         if is_iterable_no_collection(o):
             o = list(o)
         elif isinstance(o, (bytearray, memoryview)):
             o = bytes(o)
         if isinstance(o, Enum):
-            return o.name
-        if hasattr(o, '__dict__'):
+            return o.value
+        if hasattr(o, "__dict__"):
             if isinstance(o.__dict__, dict):
                 return o.__dict__
             else:
@@ -36,9 +35,12 @@ class ClassJsonEncoder(json.JSONEncoder):
                 return o.decode("utf-8")
             except UnicodeDecodeError:
                 return str(o)
+        if hasattr(o, "hexdigest"):
+            return o.hexdigest() # pyre-ignore
+        if hasattr(o, "hex_string"):
+            return o.hex_string() # pyre-ignore
         if istraceback(o):
-            return ''.join(traceback.format_tb(o)).strip()
-
+            return "".join(traceback.format_tb(o)).strip()  # pyre-ignore
         return o
 
     def _encode(self, obj):
@@ -50,5 +52,5 @@ class ClassJsonEncoder(json.JSONEncoder):
         else:
             return obj
 
-    def encode(self, obj):
-        return super(ClassJsonEncoder, self).encode(self._encode(obj))
+    def encode(self, o) -> str:
+        return super(ClassJsonEncoder, self).encode(self._encode(o))

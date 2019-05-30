@@ -8,6 +8,12 @@ class BlockStatEventType(object):
     BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE = BlockStatEventTypeSettings("BlockReceivedFromBlockchainNode")
     BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = BlockStatEventTypeSettings(
         "BlockReceivedFromBlockchainNodeIgnoreSeen")
+    COMPACT_BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE = BlockStatEventTypeSettings("CompactBlockReceivedFromBlockchainNode")
+    COMPACT_BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = BlockStatEventTypeSettings(
+        "CompactBlockReceivedFromBlockchainNodeIgnoreSeen")
+    COMPACT_BLOCK_DECOMPRESSED = BlockStatEventTypeSettings(
+        "CompactBlockDecompressed")
+    COMPACT_BLOCK_REQUEST_FULL = BlockStatEventTypeSettings("CompactBlockRequestFull")
     BLOCK_COMPRESSED = BlockStatEventTypeSettings("BlockCompressed")
     BLOCK_ENCRYPTED = BlockStatEventTypeSettings("BlockEncrypted")
     BLOCK_HOLD_REQUESTED = BlockStatEventTypeSettings("BlockHoldRequested", detailed_stat_event=True)

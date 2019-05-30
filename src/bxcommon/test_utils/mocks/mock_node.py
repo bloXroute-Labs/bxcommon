@@ -1,4 +1,3 @@
-from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import DEFAULT_NETWORK_NUM
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel

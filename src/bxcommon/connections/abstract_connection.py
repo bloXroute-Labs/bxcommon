@@ -195,7 +195,7 @@ class AbstractConnection(object):
                     msg_handler(msg)
 
             except Exception as e:
-                logger.error("Processing message failed. Last message: {}, Error: {}",
+                logger.error("Processing message failed. Last message: {}, Error: {}\n{}",
                              convert.bytes_to_hex(msg.rawbytes()), e, traceback.format_exc())
                 if self._report_bad_message():
                     return

@@ -1,5 +1,5 @@
 import struct
-from typing import List, Optional, Deque
+from typing import List, Optional
 
 import bxcommon.utils.crypto
 from bxcommon import constants

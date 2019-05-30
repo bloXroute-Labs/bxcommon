@@ -1,5 +1,5 @@
-from collections import defaultdict, deque
-from typing import List
+from collections import defaultdict, deque, OrderedDict
+from typing import List, Tuple, Any
 
 from bxcommon import constants
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
@@ -74,6 +74,8 @@ class TransactionService(object):
         self._total_tx_contents_size = 0
         self._total_tx_removed_by_memory_limit = 0
 
+        self._tx_hash_not_seen_in_block = OrderedDict()
+
     def set_transaction_contents(self, transaction_hash, transaction_contents):
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
@@ -88,6 +90,7 @@ class TransactionService(object):
             previous_size = len(self._tx_hash_to_contents[transaction_cache_key])
 
         self._tx_hash_to_contents[transaction_cache_key] = transaction_contents
+        self._tx_hash_not_seen_in_block[transaction_cache_key] = False
         self._total_tx_contents_size += len(transaction_contents) - previous_size
 
         self._memory_limit_clean_up()
@@ -171,13 +174,30 @@ class TransactionService(object):
             transaction_hash = self._short_id_to_tx_hash[short_id]
             transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
             if transaction_cache_key in self._tx_hash_to_contents:
+                transaction_contents = self._tx_hash_to_contents[transaction_cache_key]
                 return TransactionInfo(self._tx_cache_key_to_hash(transaction_cache_key),
-                                       self._tx_hash_to_contents[transaction_cache_key],
+                                       transaction_contents,
                                        short_id)
             else:
                 return TransactionInfo(self._tx_cache_key_to_hash(transaction_cache_key), None, short_id)
         else:
             return TransactionInfo(None, None, short_id)
+
+    def get_missing_transactions(
+            self, short_ids: List[int]
+    ) -> Tuple[bool, List[int], List[Sha256Hash]]:
+        unknown_tx_sids = []
+        unknown_tx_hashes = []
+        has_missing = False
+        for short_id in short_ids:
+            transaction_hash = self._short_id_to_tx_hash.get(short_id, None)
+            if transaction_hash is None:
+                unknown_tx_sids.append(short_id)
+                has_missing = True
+            elif not self.has_transaction_contents(transaction_hash):
+                unknown_tx_hashes.append(self._tx_cache_key_to_hash(transaction_hash))
+                has_missing = True
+        return has_missing, unknown_tx_sids, unknown_tx_hashes
 
     def get_transaction_by_hash(self, transaction_hash):
         """
@@ -199,9 +219,8 @@ class TransactionService(object):
         :param short_ids: list of short ids
         :return: list of found and missing short ids
         """
-        transactions = []
-        found = deque()
-        missing = deque()
+        found = []
+        missing = []
         for short_id in short_ids:
             if short_id in self._short_id_to_tx_hash:
                 transaction_cache_key = self._short_id_to_tx_hash[short_id]
@@ -217,8 +236,23 @@ class TransactionService(object):
 
         return TransactionSearchResult(found, missing)
 
-    def get_all_transaction_hashes(self):
-        return self._tx_hash_to_contents.keys()
+    def iter_transaction_hashes(self):
+        for tx_cache_key in self._tx_hash_to_contents:
+            yield self._tx_cache_key_to_hash(tx_cache_key)
+
+    def iter_transaction_hashes_not_seen_in_block(self):
+        for tx_cache_key in self._tx_hash_not_seen_in_block:
+            yield self._tx_cache_key_to_hash(tx_cache_key)
+
+    def clean_transaction_hashes_not_seen_in_block(self):
+        hashes_to_remove = []
+
+        for tx_cache_key in self._tx_hash_not_seen_in_block:
+            if self._tx_hash_not_seen_in_block[tx_cache_key]:
+                hashes_to_remove.append(tx_cache_key)
+
+        for tx_cache_key in hashes_to_remove:
+            del self._tx_hash_not_seen_in_block[tx_cache_key]
 
     def expire_old_assignments(self):
         """
@@ -254,6 +288,21 @@ class TransactionService(object):
 
             for short_id in final_short_ids:
                 self._remove_transaction_by_short_id(short_id)
+
+    def track_transactions_seen_in_block(self, block_message: Any):
+        """
+        Removes transaction hashes that were seen a block from value returned by iter_transaction_hashes_not_seen_in_block
+        Requires specific implementation per blockchain if functionality is needed
+        :param block_message: block message specific to a blockchain
+        """
+        pass
+
+    def track_seen_transaction_hash(self, transaction_hash: Sha256Hash) -> None:
+
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+
+        if transaction_cache_key in self._tx_hash_not_seen_in_block:
+            self._tx_hash_not_seen_in_block[transaction_cache_key] = True
 
     def log_tx_service_mem_stats(self):
         """
@@ -352,6 +401,9 @@ class TransactionService(object):
                         del self._tx_hash_to_contents[transaction_cache_key]
                 else:
                     short_ids.remove(short_id)
+
+            if transaction_cache_key in self._tx_hash_not_seen_in_block:
+                del self._tx_hash_not_seen_in_block[transaction_cache_key]
 
         self._tx_assignment_expire_queue.remove(short_id)
 
