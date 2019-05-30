@@ -76,6 +76,7 @@ FLUSH_LOG = True
 UL_SHORT_SIZE_IN_BYTES = 2
 UL_INT_SIZE_IN_BYTES = 4
 UL_ULL_SIZE_IN_BYTES = 8
+C_SIZE_T_SIZE_IN_BYTES = ctypes.sizeof(ctypes.c_size_t)
 IP_V4_PREFIX = bytearray(b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff")
 IP_V4_PREFIX_LENGTH = 12
 IP_ADDR_SIZE_IN_BYTES = 16

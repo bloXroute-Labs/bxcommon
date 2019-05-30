@@ -27,19 +27,34 @@ class MessageTrackerEntry:
         else:
             return LogLevel.INFO
 
+    def __repr__(self):
+        return "MessageTrackerEntry<message: {}, sent_bytes: {}, length: {}>".format(self.message, self.sent_bytes,
+                                                                                     self.length)
+
 
 class MessageTracker:
     messages: Deque[MessageTrackerEntry] = deque()
     connection: "AbstractConnection"
+    is_working: bool = True
 
     def __init__(self, connection: "AbstractConnection"):
         self.connection = connection
 
+    def __repr__(self):
+        return "MessageTracker<connection: {}, messages: {}>".format(self.connection, repr(self.messages))
+
     def advance_bytes(self, num_bytes: int):
+        if not self.is_working:
+            return
+
         bytes_left = num_bytes
         while bytes_left > 0:
 
-            assert len(self.messages) > 0
+            if not self.messages:
+                logger.error("Message tracker somehow got out of sync on connection: {}. Attempted to send {} bytes"
+                             "when none left in tracker.".format(self.connection, bytes_left))
+                self.is_working = False
+
             if bytes_left >= (self.messages[0].length - self.messages[0].sent_bytes):
                 sent_message = self.messages.popleft()
                 logger.log(sent_message.message_log_level(), "Sent {} to socket on connection: {}. Took {:.2f}ms.",
@@ -55,12 +70,18 @@ class MessageTracker:
                 bytes_left = 0
 
     def append_message(self, num_bytes: int, message: Optional[AbstractMessage]):
+        if not self.is_working:
+            return
+
         if message is not None and num_bytes != len(message.rawbytes()):
             raise ValueError("Message does not match byte length.")
 
         self.messages.append(MessageTrackerEntry(message, num_bytes))
 
     def prepend_message(self, num_bytes: int, message: Optional[AbstractMessage]):
+        if not self.is_working:
+            return
+
         if message is not None and num_bytes != len(message.rawbytes()):
             raise ValueError("Message does not match byte length.")
 
@@ -68,3 +89,5 @@ class MessageTracker:
             in_progress_message = self.messages.popleft()
             self.messages.appendleft(MessageTrackerEntry(message, num_bytes))
             self.messages.appendleft(in_progress_message)
+        else:
+            self.messages.append(MessageTrackerEntry(message, num_bytes))
