@@ -9,6 +9,7 @@ from bxcommon.exceptions import PayloadLenError, UnrecognizedCommandError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger, convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
+from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.stats import hooks
@@ -38,6 +39,8 @@ class AbstractConnection(object):
 
         self.from_me = from_me  # Whether or not I initiated the connection
 
+        if node.opts.track_detailed_sent_messages:
+            self.message_tracker = MessageTracker(self)
         self.outputbuf = OutputBuffer()
         self.inputbuf = InputBuffer()
         self.node = node
@@ -101,6 +104,8 @@ class AbstractConnection(object):
 
     def advance_sent_bytes(self, bytes_sent):
         self.advance_bytes_on_buffer(self.outputbuf, bytes_sent)
+        if self.message_tracker:
+            self.message_tracker.advance_bytes(bytes_sent)
 
     def pre_process_msg(self):
         is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview_from_input_buffer(
@@ -120,15 +125,16 @@ class AbstractConnection(object):
 
         logger.log(msg.log_level(), "Enqueued message: {} on connection: {}", msg, self)
 
-        self.enqueue_msg_bytes(msg.rawbytes(), prepend)
+        self.enqueue_msg_bytes(msg.rawbytes(), prepend, full_message=msg)
 
-    def enqueue_msg_bytes(self, msg_bytes, prepend=False):
+    def enqueue_msg_bytes(self, msg_bytes, prepend=False, full_message=None):
         """
         Enqueues the raw bytes of a message, msg_bytes, to our outputbuf and attempts to send it if the
         underlying socket has room in the send buffer.
 
         :param msg_bytes: message bytes
         :param prepend: if the message should be bumped to the front of the outputbuf
+        :param full_message: full message for detailed logging
         """
 
         if self.state & ConnectionState.MARK_FOR_CLOSE:
@@ -136,12 +142,16 @@ class AbstractConnection(object):
 
         size = len(msg_bytes)
 
-        logger.debug("Enqueueing {} bytes on connection: {}", size, self)
+        logger.debug("Enqueuing {} bytes on connection: {}", size, self)
 
         if prepend:
             self.outputbuf.prepend_msgbytes(msg_bytes)
+            if self.message_tracker:
+                self.message_tracker.prepend_message(len(msg_bytes), full_message)
         else:
             self.outputbuf.enqueue_msgbytes(msg_bytes)
+            if self.message_tracker:
+                self.message_tracker.append_message(len(msg_bytes), full_message)
 
         self.socket_connection.send()
 

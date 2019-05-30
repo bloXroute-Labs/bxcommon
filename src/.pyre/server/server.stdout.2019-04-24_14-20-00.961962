@@ -1,0 +1,1196 @@
+2019-04-24 14:20:00 INFO Running as pid: 94730
+2019-04-24 14:20:00 INFO Version: 8427cc0f7919a6ed3bc5525ab781c99317c2054f
+2019-04-24 14:20:00 INFO Build info: Darwin x86_64 @ Thu Mar 21 2019 (development build)
+2019-04-24 14:20:00 INFO LSP message sent:
+{
+  "jsonrpc": "2.0",
+  "method": "handshake/server",
+  "params": { "version": "unversioned" }
+}
+
+2019-04-24 14:20:00 INFO LSP message received:
+{ "jsonrpc": "2.0", "method": "handshake/client" }
+
+2019-04-24 14:20:01 INFO Finding type stubs in `/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src`...
+2019-04-24 14:20:01 INFO Finding type stubs in `/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/.venv/lib/python3.7/site-packages`...
+2019-04-24 14:20:01 INFO Finding type stubs in `/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/.venv/lib/pyre_check/typeshed/stdlib`...
+2019-04-24 14:20:01 INFO Finding type stubs in `/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/.venv/lib/pyre_check/typeshed/third_party`...
+2019-04-24 14:20:01 INFO Finding external sources in `/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/.venv/lib/python3.7/site-packages`...
+2019-04-24 14:20:01 INFO Parsing 2216 stubs and external sources...
+2019-04-24 14:20:02 WARNING Could not parse 11 external files due to syntax errors! Run `pyre --show-parse-errors restart` for more details.
+2019-04-24 14:20:02 PERFORMANCE Stubs parsed: 1.841319s
+2019-04-24 14:20:03 INFO Parsing 147 sources in `/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src`...
+2019-04-24 14:20:03 PERFORMANCE Sources parsed: 0.110902s
+2019-04-24 14:20:03 PERFORMANCE Registered ignores: 0.026897s
+2019-04-24 14:20:03 INFO Building type environment...
+2019-04-24 14:20:06 PERFORMANCE Full environment built: 2.972861s
+2019-04-24 14:20:06 INFO Inferring protocol implementations...
+2019-04-24 14:20:06 PERFORMANCE Inferred protocol implementations: 0.349913s
+2019-04-24 14:20:06 INFO Adding environment information to shared memory...
+2019-04-24 14:20:07 PERFORMANCE Added environment to shared memory: 0.448568s
+2019-04-24 14:20:07 MEMORY Shared memory size (size: 44)
+2019-04-24 14:20:07 PERFORMANCE Filtered directories: 0.029379s
+2019-04-24 14:20:07 INFO Checking 147 sources...
+2019-04-24 14:20:07 INFO Running check `TypeCheck`...
+2019-04-24 14:20:07 PROGRESS Processed 14 of 147 sources
+2019-04-24 14:20:07 PROGRESS Processed 33 of 147 sources
+2019-04-24 14:20:07 PROGRESS Processed 52 of 147 sources
+2019-04-24 14:20:07 PROGRESS Processed 71 of 147 sources
+2019-04-24 14:20:07 PROGRESS Processed 90 of 147 sources
+2019-04-24 14:20:07 PROGRESS Processed 109 of 147 sources
+2019-04-24 14:20:07 PROGRESS Processed 128 of 147 sources
+2019-04-24 14:20:08 PROGRESS Processed 147 of 147 sources
+2019-04-24 14:20:08 PERFORMANCE Check_TypeCheck: 0.937079s
+2019-04-24 14:20:08 PERFORMANCE Analyzed sources: 0.937141s
+2019-04-24 14:20:08 PERFORMANCE Postprocessed: 0.025511s
+2019-04-24 14:20:08 PERFORMANCE Initialization: 6.988670s
+2019-04-24 14:20:08 PERFORMANCE Server request: 0.000003s
+2019-04-24 14:22:22 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:22:22 PERFORMANCE Computed dependencies: 0.006497s
+2019-04-24 14:22:22 INFO Parsing 0 updated stubs...
+2019-04-24 14:22:22 INFO Parsing 1 updated sources...
+2019-04-24 14:22:22 INFO Inferring protocol implementations...
+2019-04-24 14:22:22 PERFORMANCE Inferred protocol implementations: 0.001393s
+2019-04-24 14:22:22 MEMORY Shared memory size (size: 44)
+2019-04-24 14:22:22 PERFORMANCE Registered ignores: 0.000185s
+2019-04-24 14:22:22 PERFORMANCE Filtered directories: 0.000107s
+2019-04-24 14:22:22 INFO Checking 1 sources...
+2019-04-24 14:22:22 INFO Running check `TypeCheck`...
+2019-04-24 14:22:23 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:22:23 PERFORMANCE Check_TypeCheck: 0.524300s
+2019-04-24 14:22:23 PERFORMANCE Analyzed sources: 0.524380s
+2019-04-24 14:22:23 PERFORMANCE Postprocessed: 0.000005s
+2019-04-24 14:22:23 PERFORMANCE Server request: 0.546638s
+2019-04-24 14:22:23 PERFORMANCE Server request: 0.546741s
+2019-04-24 14:22:23 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:22:23 INFO Parsing 0 updated stubs...
+2019-04-24 14:22:23 INFO Parsing 8 updated sources...
+2019-04-24 14:22:23 INFO Inferring protocol implementations...
+2019-04-24 14:22:23 PERFORMANCE Inferred protocol implementations: 0.006022s
+2019-04-24 14:22:23 MEMORY Shared memory size (size: 45)
+2019-04-24 14:22:23 PERFORMANCE Registered ignores: 0.024914s
+2019-04-24 14:22:23 PERFORMANCE Filtered directories: 0.023012s
+2019-04-24 14:22:23 INFO Checking 8 sources...
+2019-04-24 14:22:23 INFO Running check `TypeCheck`...
+2019-04-24 14:22:23 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:22:23 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:22:23 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:22:23 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:22:23 PERFORMANCE Check_TypeCheck: 0.286411s
+2019-04-24 14:22:23 PERFORMANCE Analyzed sources: 0.286468s
+2019-04-24 14:22:23 PERFORMANCE Postprocessed: 0.023386s
+2019-04-24 14:22:23 INFO Processing 2 deferred requests.
+2019-04-24 14:22:23 INFO Parsing 0 updated stubs...
+2019-04-24 14:22:23 INFO Parsing 2 updated sources...
+2019-04-24 14:22:23 INFO Inferring protocol implementations...
+2019-04-24 14:22:23 PERFORMANCE Inferred protocol implementations: 0.000910s
+2019-04-24 14:22:23 MEMORY Shared memory size (size: 45)
+2019-04-24 14:22:23 PERFORMANCE Registered ignores: 0.000108s
+2019-04-24 14:22:23 PERFORMANCE Filtered directories: 0.000181s
+2019-04-24 14:22:23 INFO Checking 2 sources...
+2019-04-24 14:22:23 INFO Running check `TypeCheck`...
+2019-04-24 14:22:23 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:22:23 PERFORMANCE Check_TypeCheck: 0.090050s
+2019-04-24 14:22:23 PERFORMANCE Analyzed sources: 0.090132s
+2019-04-24 14:22:23 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:22:24 PERFORMANCE Server request: 0.000012s
+2019-04-24 14:22:30 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:22:30 PERFORMANCE Computed dependencies: 0.022374s
+2019-04-24 14:22:30 INFO Parsing 0 updated stubs...
+2019-04-24 14:22:30 INFO Parsing 1 updated sources...
+2019-04-24 14:22:30 INFO Inferring protocol implementations...
+2019-04-24 14:22:30 PERFORMANCE Inferred protocol implementations: 0.001518s
+2019-04-24 14:22:30 MEMORY Shared memory size (size: 45)
+2019-04-24 14:22:30 PERFORMANCE Registered ignores: 0.000221s
+2019-04-24 14:22:30 PERFORMANCE Filtered directories: 0.000207s
+2019-04-24 14:22:30 INFO Checking 1 sources...
+2019-04-24 14:22:30 INFO Running check `TypeCheck`...
+2019-04-24 14:22:30 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:22:30 PERFORMANCE Check_TypeCheck: 0.214144s
+2019-04-24 14:22:30 PERFORMANCE Analyzed sources: 0.214216s
+2019-04-24 14:22:30 PERFORMANCE Postprocessed: 0.000008s
+2019-04-24 14:22:30 PERFORMANCE Server request: 0.263134s
+2019-04-24 14:22:30 PERFORMANCE Server request: 0.263172s
+2019-04-24 14:22:30 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:22:30 INFO Parsing 0 updated stubs...
+2019-04-24 14:22:30 INFO Parsing 8 updated sources...
+2019-04-24 14:22:30 INFO Inferring protocol implementations...
+2019-04-24 14:22:30 PERFORMANCE Inferred protocol implementations: 0.004965s
+2019-04-24 14:22:30 MEMORY Shared memory size (size: 46)
+2019-04-24 14:22:30 PERFORMANCE Registered ignores: 0.023364s
+2019-04-24 14:22:30 PERFORMANCE Filtered directories: 0.021941s
+2019-04-24 14:22:30 INFO Checking 8 sources...
+2019-04-24 14:22:30 INFO Running check `TypeCheck`...
+2019-04-24 14:22:30 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:22:30 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:22:31 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:22:31 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:22:31 PERFORMANCE Check_TypeCheck: 0.472530s
+2019-04-24 14:22:31 PERFORMANCE Analyzed sources: 0.472610s
+2019-04-24 14:22:31 PERFORMANCE Postprocessed: 0.026528s
+2019-04-24 14:22:31 INFO Processing 2 deferred requests.
+2019-04-24 14:22:31 INFO Parsing 0 updated stubs...
+2019-04-24 14:22:31 INFO Parsing 2 updated sources...
+2019-04-24 14:22:31 INFO Inferring protocol implementations...
+2019-04-24 14:22:31 PERFORMANCE Inferred protocol implementations: 0.003620s
+2019-04-24 14:22:31 MEMORY Shared memory size (size: 46)
+2019-04-24 14:22:31 PERFORMANCE Registered ignores: 0.000099s
+2019-04-24 14:22:31 PERFORMANCE Filtered directories: 0.000313s
+2019-04-24 14:22:31 INFO Checking 2 sources...
+2019-04-24 14:22:31 INFO Running check `TypeCheck`...
+2019-04-24 14:22:31 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:22:31 PERFORMANCE Check_TypeCheck: 0.085851s
+2019-04-24 14:22:31 PERFORMANCE Analyzed sources: 0.085900s
+2019-04-24 14:22:31 PERFORMANCE Postprocessed: 0.000003s
+2019-04-24 14:22:31 PERFORMANCE Server request: 0.000012s
+2019-04-24 14:23:16 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:23:16 PERFORMANCE Computed dependencies: 0.007141s
+2019-04-24 14:23:16 INFO Parsing 0 updated stubs...
+2019-04-24 14:23:16 INFO Parsing 1 updated sources...
+2019-04-24 14:23:16 INFO Inferring protocol implementations...
+2019-04-24 14:23:16 PERFORMANCE Inferred protocol implementations: 0.005416s
+2019-04-24 14:23:16 MEMORY Shared memory size (size: 46)
+2019-04-24 14:23:16 PERFORMANCE Registered ignores: 0.000192s
+2019-04-24 14:23:16 PERFORMANCE Filtered directories: 0.000129s
+2019-04-24 14:23:16 INFO Checking 1 sources...
+2019-04-24 14:23:16 INFO Running check `TypeCheck`...
+2019-04-24 14:23:16 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:23:16 PERFORMANCE Check_TypeCheck: 0.172033s
+2019-04-24 14:23:16 PERFORMANCE Analyzed sources: 0.172093s
+2019-04-24 14:23:16 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:23:16 PERFORMANCE Server request: 0.195765s
+2019-04-24 14:23:16 PERFORMANCE Server request: 0.195805s
+2019-04-24 14:23:16 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:23:16 INFO Parsing 0 updated stubs...
+2019-04-24 14:23:16 INFO Parsing 8 updated sources...
+2019-04-24 14:23:16 INFO Inferring protocol implementations...
+2019-04-24 14:23:16 PERFORMANCE Inferred protocol implementations: 0.005882s
+2019-04-24 14:23:16 MEMORY Shared memory size (size: 47)
+2019-04-24 14:23:16 PERFORMANCE Registered ignores: 0.023918s
+2019-04-24 14:23:16 PERFORMANCE Filtered directories: 0.022274s
+2019-04-24 14:23:16 INFO Checking 8 sources...
+2019-04-24 14:23:16 INFO Running check `TypeCheck`...
+2019-04-24 14:23:17 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:23:17 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:23:17 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:23:17 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:23:17 PERFORMANCE Check_TypeCheck: 0.297948s
+2019-04-24 14:23:17 PERFORMANCE Analyzed sources: 0.298011s
+2019-04-24 14:23:17 PERFORMANCE Postprocessed: 0.024864s
+2019-04-24 14:23:17 INFO Processing 2 deferred requests.
+2019-04-24 14:23:17 INFO Parsing 0 updated stubs...
+2019-04-24 14:23:17 INFO Parsing 2 updated sources...
+2019-04-24 14:23:17 INFO Inferring protocol implementations...
+2019-04-24 14:23:17 PERFORMANCE Inferred protocol implementations: 0.000929s
+2019-04-24 14:23:17 MEMORY Shared memory size (size: 47)
+2019-04-24 14:23:17 PERFORMANCE Registered ignores: 0.000087s
+2019-04-24 14:23:17 PERFORMANCE Filtered directories: 0.000178s
+2019-04-24 14:23:17 INFO Checking 2 sources...
+2019-04-24 14:23:17 INFO Running check `TypeCheck`...
+2019-04-24 14:23:17 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:23:17 PERFORMANCE Check_TypeCheck: 0.086482s
+2019-04-24 14:23:17 PERFORMANCE Analyzed sources: 0.086536s
+2019-04-24 14:23:17 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:23:18 PERFORMANCE Server request: 0.000008s
+2019-04-24 14:23:21 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:23:21 PERFORMANCE Computed dependencies: 0.006509s
+2019-04-24 14:23:21 INFO Parsing 0 updated stubs...
+2019-04-24 14:23:21 INFO Parsing 1 updated sources...
+2019-04-24 14:23:21 INFO Inferring protocol implementations...
+2019-04-24 14:23:21 PERFORMANCE Inferred protocol implementations: 0.001036s
+2019-04-24 14:23:21 MEMORY Shared memory size (size: 47)
+2019-04-24 14:23:21 PERFORMANCE Registered ignores: 0.000175s
+2019-04-24 14:23:21 PERFORMANCE Filtered directories: 0.000115s
+2019-04-24 14:23:21 INFO Checking 1 sources...
+2019-04-24 14:23:21 INFO Running check `TypeCheck`...
+2019-04-24 14:23:21 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:23:21 PERFORMANCE Check_TypeCheck: 0.167757s
+2019-04-24 14:23:21 PERFORMANCE Analyzed sources: 0.167849s
+2019-04-24 14:23:21 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:23:21 PERFORMANCE Server request: 0.189122s
+2019-04-24 14:23:21 PERFORMANCE Server request: 0.189174s
+2019-04-24 14:23:21 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:23:21 INFO Parsing 0 updated stubs...
+2019-04-24 14:23:21 INFO Parsing 8 updated sources...
+2019-04-24 14:23:21 INFO Inferring protocol implementations...
+2019-04-24 14:23:21 PERFORMANCE Inferred protocol implementations: 0.006522s
+2019-04-24 14:23:21 MEMORY Shared memory size (size: 48)
+2019-04-24 14:23:22 PERFORMANCE Registered ignores: 0.051468s
+2019-04-24 14:23:22 PERFORMANCE Filtered directories: 0.051173s
+2019-04-24 14:23:22 INFO Checking 8 sources...
+2019-04-24 14:23:22 INFO Running check `TypeCheck`...
+2019-04-24 14:23:22 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:23:22 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:23:22 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:23:22 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:23:22 PERFORMANCE Check_TypeCheck: 0.366068s
+2019-04-24 14:23:22 PERFORMANCE Analyzed sources: 0.366143s
+2019-04-24 14:23:22 PERFORMANCE Postprocessed: 0.024115s
+2019-04-24 14:23:22 INFO Processing 2 deferred requests.
+2019-04-24 14:23:22 INFO Parsing 0 updated stubs...
+2019-04-24 14:23:22 INFO Parsing 2 updated sources...
+2019-04-24 14:23:22 INFO Inferring protocol implementations...
+2019-04-24 14:23:22 PERFORMANCE Inferred protocol implementations: 0.001036s
+2019-04-24 14:23:22 MEMORY Shared memory size (size: 48)
+2019-04-24 14:23:22 PERFORMANCE Registered ignores: 0.000097s
+2019-04-24 14:23:22 PERFORMANCE Filtered directories: 0.000188s
+2019-04-24 14:23:22 INFO Checking 2 sources...
+2019-04-24 14:23:22 INFO Running check `TypeCheck`...
+2019-04-24 14:23:22 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:23:22 PERFORMANCE Check_TypeCheck: 0.096873s
+2019-04-24 14:23:22 PERFORMANCE Analyzed sources: 0.096921s
+2019-04-24 14:23:22 PERFORMANCE Postprocessed: 0.000003s
+2019-04-24 14:23:22 PERFORMANCE Server request: 0.000008s
+2019-04-24 14:24:49 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:24:49 PERFORMANCE Computed dependencies: 0.007397s
+2019-04-24 14:24:49 INFO Parsing 0 updated stubs...
+2019-04-24 14:24:49 INFO Parsing 1 updated sources...
+2019-04-24 14:24:49 INFO Inferring protocol implementations...
+2019-04-24 14:24:49 PERFORMANCE Inferred protocol implementations: 0.000977s
+2019-04-24 14:24:49 MEMORY Shared memory size (size: 48)
+2019-04-24 14:24:49 PERFORMANCE Registered ignores: 0.000174s
+2019-04-24 14:24:49 PERFORMANCE Filtered directories: 0.000101s
+2019-04-24 14:24:49 INFO Checking 1 sources...
+2019-04-24 14:24:49 INFO Running check `TypeCheck`...
+2019-04-24 14:24:50 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:24:50 PERFORMANCE Check_TypeCheck: 0.193663s
+2019-04-24 14:24:50 PERFORMANCE Analyzed sources: 0.193724s
+2019-04-24 14:24:50 PERFORMANCE Postprocessed: 0.000003s
+2019-04-24 14:24:50 PERFORMANCE Server request: 0.214950s
+2019-04-24 14:24:50 PERFORMANCE Server request: 0.214983s
+2019-04-24 14:24:50 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:24:50 INFO Parsing 0 updated stubs...
+2019-04-24 14:24:50 INFO Parsing 8 updated sources...
+2019-04-24 14:24:50 INFO Inferring protocol implementations...
+2019-04-24 14:24:50 PERFORMANCE Inferred protocol implementations: 0.005719s
+2019-04-24 14:24:50 MEMORY Shared memory size (size: 49)
+2019-04-24 14:24:50 PERFORMANCE Registered ignores: 0.032185s
+2019-04-24 14:24:50 PERFORMANCE Filtered directories: 0.025060s
+2019-04-24 14:24:50 INFO Checking 8 sources...
+2019-04-24 14:24:50 INFO Running check `TypeCheck`...
+2019-04-24 14:24:50 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:24:50 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:24:50 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:24:50 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:24:50 PERFORMANCE Check_TypeCheck: 0.406015s
+2019-04-24 14:24:50 PERFORMANCE Analyzed sources: 0.406101s
+2019-04-24 14:24:50 PERFORMANCE Postprocessed: 0.026875s
+2019-04-24 14:24:50 INFO Processing 2 deferred requests.
+2019-04-24 14:24:50 INFO Parsing 0 updated stubs...
+2019-04-24 14:24:50 INFO Parsing 2 updated sources...
+2019-04-24 14:24:50 INFO Inferring protocol implementations...
+2019-04-24 14:24:50 PERFORMANCE Inferred protocol implementations: 0.001013s
+2019-04-24 14:24:50 MEMORY Shared memory size (size: 49)
+2019-04-24 14:24:50 PERFORMANCE Registered ignores: 0.000089s
+2019-04-24 14:24:50 PERFORMANCE Filtered directories: 0.000183s
+2019-04-24 14:24:50 INFO Checking 2 sources...
+2019-04-24 14:24:50 INFO Running check `TypeCheck`...
+2019-04-24 14:24:50 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:24:50 PERFORMANCE Check_TypeCheck: 0.084412s
+2019-04-24 14:24:50 PERFORMANCE Analyzed sources: 0.084464s
+2019-04-24 14:24:50 PERFORMANCE Postprocessed: 0.000003s
+2019-04-24 14:24:51 PERFORMANCE Server request: 0.000008s
+2019-04-24 14:25:01 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:25:01 PERFORMANCE Computed dependencies: 0.009223s
+2019-04-24 14:25:01 INFO Parsing 0 updated stubs...
+2019-04-24 14:25:01 INFO Parsing 1 updated sources...
+2019-04-24 14:25:01 INFO Inferring protocol implementations...
+2019-04-24 14:25:01 PERFORMANCE Inferred protocol implementations: 0.003557s
+2019-04-24 14:25:01 MEMORY Shared memory size (size: 49)
+2019-04-24 14:25:01 PERFORMANCE Registered ignores: 0.000707s
+2019-04-24 14:25:01 PERFORMANCE Filtered directories: 0.000166s
+2019-04-24 14:25:01 INFO Checking 1 sources...
+2019-04-24 14:25:01 INFO Running check `TypeCheck`...
+2019-04-24 14:25:01 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:25:01 PERFORMANCE Check_TypeCheck: 0.280908s
+2019-04-24 14:25:01 PERFORMANCE Analyzed sources: 0.280969s
+2019-04-24 14:25:01 PERFORMANCE Postprocessed: 0.000003s
+2019-04-24 14:25:01 PERFORMANCE Server request: 0.322663s
+2019-04-24 14:25:01 PERFORMANCE Server request: 0.322703s
+2019-04-24 14:25:01 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:25:01 INFO Parsing 0 updated stubs...
+2019-04-24 14:25:01 INFO Parsing 8 updated sources...
+2019-04-24 14:25:01 INFO Inferring protocol implementations...
+2019-04-24 14:25:01 PERFORMANCE Inferred protocol implementations: 0.005119s
+2019-04-24 14:25:01 MEMORY Shared memory size (size: 50)
+2019-04-24 14:25:01 PERFORMANCE Registered ignores: 0.023720s
+2019-04-24 14:25:01 PERFORMANCE Filtered directories: 0.022539s
+2019-04-24 14:25:01 INFO Checking 8 sources...
+2019-04-24 14:25:01 INFO Running check `TypeCheck`...
+2019-04-24 14:25:01 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:25:01 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:25:01 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:25:01 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:25:01 PERFORMANCE Check_TypeCheck: 0.306619s
+2019-04-24 14:25:01 PERFORMANCE Analyzed sources: 0.306684s
+2019-04-24 14:25:01 PERFORMANCE Postprocessed: 0.024652s
+2019-04-24 14:25:01 INFO Processing 2 deferred requests.
+2019-04-24 14:25:01 INFO Parsing 0 updated stubs...
+2019-04-24 14:25:01 INFO Parsing 2 updated sources...
+2019-04-24 14:25:01 INFO Inferring protocol implementations...
+2019-04-24 14:25:01 PERFORMANCE Inferred protocol implementations: 0.001130s
+2019-04-24 14:25:01 MEMORY Shared memory size (size: 50)
+2019-04-24 14:25:01 PERFORMANCE Registered ignores: 0.000097s
+2019-04-24 14:25:01 PERFORMANCE Filtered directories: 0.000204s
+2019-04-24 14:25:01 INFO Checking 2 sources...
+2019-04-24 14:25:01 INFO Running check `TypeCheck`...
+2019-04-24 14:25:01 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:25:01 PERFORMANCE Check_TypeCheck: 0.082350s
+2019-04-24 14:25:01 PERFORMANCE Analyzed sources: 0.082397s
+2019-04-24 14:25:01 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:25:02 PERFORMANCE Server request: 0.000009s
+2019-04-24 14:25:47 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:25:47 PERFORMANCE Computed dependencies: 0.006927s
+2019-04-24 14:25:47 INFO Parsing 0 updated stubs...
+2019-04-24 14:25:47 INFO Parsing 1 updated sources...
+2019-04-24 14:25:47 INFO Inferring protocol implementations...
+2019-04-24 14:25:47 PERFORMANCE Inferred protocol implementations: 0.001125s
+2019-04-24 14:25:47 MEMORY Shared memory size (size: 50)
+2019-04-24 14:25:47 PERFORMANCE Registered ignores: 0.000198s
+2019-04-24 14:25:47 PERFORMANCE Filtered directories: 0.000125s
+2019-04-24 14:25:47 INFO Checking 1 sources...
+2019-04-24 14:25:47 INFO Running check `TypeCheck`...
+2019-04-24 14:25:47 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:25:47 PERFORMANCE Check_TypeCheck: 0.204617s
+2019-04-24 14:25:47 PERFORMANCE Analyzed sources: 0.204704s
+2019-04-24 14:25:47 PERFORMANCE Postprocessed: 0.000008s
+2019-04-24 14:25:47 PERFORMANCE Server request: 0.225985s
+2019-04-24 14:25:47 PERFORMANCE Server request: 0.226040s
+2019-04-24 14:25:47 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:25:47 INFO Parsing 0 updated stubs...
+2019-04-24 14:25:47 INFO Parsing 8 updated sources...
+2019-04-24 14:25:47 INFO Inferring protocol implementations...
+2019-04-24 14:25:47 PERFORMANCE Inferred protocol implementations: 0.005490s
+2019-04-24 14:25:47 MEMORY Shared memory size (size: 51)
+2019-04-24 14:25:47 PERFORMANCE Registered ignores: 0.023636s
+2019-04-24 14:25:47 PERFORMANCE Filtered directories: 0.022846s
+2019-04-24 14:25:47 INFO Checking 8 sources...
+2019-04-24 14:25:47 INFO Running check `TypeCheck`...
+2019-04-24 14:25:47 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:25:47 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:25:47 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:25:47 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:25:47 PERFORMANCE Check_TypeCheck: 0.349377s
+2019-04-24 14:25:47 PERFORMANCE Analyzed sources: 0.349548s
+2019-04-24 14:25:47 PERFORMANCE Postprocessed: 0.024963s
+2019-04-24 14:25:47 INFO Processing 2 deferred requests.
+2019-04-24 14:25:47 INFO Parsing 0 updated stubs...
+2019-04-24 14:25:47 INFO Parsing 2 updated sources...
+2019-04-24 14:25:47 INFO Inferring protocol implementations...
+2019-04-24 14:25:47 PERFORMANCE Inferred protocol implementations: 0.001009s
+2019-04-24 14:25:47 MEMORY Shared memory size (size: 51)
+2019-04-24 14:25:47 PERFORMANCE Registered ignores: 0.000090s
+2019-04-24 14:25:47 PERFORMANCE Filtered directories: 0.000183s
+2019-04-24 14:25:47 INFO Checking 2 sources...
+2019-04-24 14:25:47 INFO Running check `TypeCheck`...
+2019-04-24 14:25:48 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:25:48 PERFORMANCE Check_TypeCheck: 0.093635s
+2019-04-24 14:25:48 PERFORMANCE Analyzed sources: 0.093740s
+2019-04-24 14:25:48 PERFORMANCE Postprocessed: 0.000016s
+2019-04-24 14:26:09 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:26:09 PERFORMANCE Computed dependencies: 0.007744s
+2019-04-24 14:26:09 INFO Parsing 0 updated stubs...
+2019-04-24 14:26:09 INFO Parsing 1 updated sources...
+2019-04-24 14:26:09 INFO Inferring protocol implementations...
+2019-04-24 14:26:09 PERFORMANCE Inferred protocol implementations: 0.001094s
+2019-04-24 14:26:09 MEMORY Shared memory size (size: 52)
+2019-04-24 14:26:09 PERFORMANCE Registered ignores: 0.000181s
+2019-04-24 14:26:09 PERFORMANCE Filtered directories: 0.000105s
+2019-04-24 14:26:09 INFO Checking 1 sources...
+2019-04-24 14:26:09 INFO Running check `TypeCheck`...
+2019-04-24 14:26:09 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:26:09 PERFORMANCE Check_TypeCheck: 0.173943s
+2019-04-24 14:26:09 PERFORMANCE Analyzed sources: 0.173992s
+2019-04-24 14:26:09 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:26:09 PERFORMANCE Server request: 0.195346s
+2019-04-24 14:26:09 PERFORMANCE Server request: 0.195384s
+2019-04-24 14:26:09 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:26:09 INFO Parsing 0 updated stubs...
+2019-04-24 14:26:09 INFO Parsing 8 updated sources...
+2019-04-24 14:26:09 INFO Inferring protocol implementations...
+2019-04-24 14:26:09 PERFORMANCE Inferred protocol implementations: 0.006327s
+2019-04-24 14:26:09 MEMORY Shared memory size (size: 52)
+2019-04-24 14:26:09 PERFORMANCE Registered ignores: 0.023623s
+2019-04-24 14:26:09 PERFORMANCE Filtered directories: 0.021703s
+2019-04-24 14:26:09 INFO Checking 8 sources...
+2019-04-24 14:26:09 INFO Running check `TypeCheck`...
+2019-04-24 14:26:09 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:26:09 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:26:09 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:26:09 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:26:09 PERFORMANCE Check_TypeCheck: 0.287937s
+2019-04-24 14:26:09 PERFORMANCE Analyzed sources: 0.288010s
+2019-04-24 14:26:09 PERFORMANCE Postprocessed: 0.028218s
+2019-04-24 14:26:09 INFO Processing 2 deferred requests.
+2019-04-24 14:26:09 INFO Parsing 0 updated stubs...
+2019-04-24 14:26:09 INFO Parsing 2 updated sources...
+2019-04-24 14:26:09 INFO Inferring protocol implementations...
+2019-04-24 14:26:09 PERFORMANCE Inferred protocol implementations: 0.001628s
+2019-04-24 14:26:09 MEMORY Shared memory size (size: 43)
+2019-04-24 14:26:09 PERFORMANCE Registered ignores: 0.000107s
+2019-04-24 14:26:09 PERFORMANCE Filtered directories: 0.000226s
+2019-04-24 14:26:09 INFO Checking 2 sources...
+2019-04-24 14:26:09 INFO Running check `TypeCheck`...
+2019-04-24 14:26:09 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:26:09 PERFORMANCE Check_TypeCheck: 0.088000s
+2019-04-24 14:26:09 PERFORMANCE Analyzed sources: 0.088050s
+2019-04-24 14:26:09 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:26:10 PERFORMANCE Server request: 0.000007s
+2019-04-24 14:26:29 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:26:29 PERFORMANCE Computed dependencies: 0.008068s
+2019-04-24 14:26:29 INFO Parsing 0 updated stubs...
+2019-04-24 14:26:29 INFO Parsing 1 updated sources...
+2019-04-24 14:26:29 INFO Inferring protocol implementations...
+2019-04-24 14:26:29 PERFORMANCE Inferred protocol implementations: 0.001377s
+2019-04-24 14:26:29 MEMORY Shared memory size (size: 44)
+2019-04-24 14:26:29 PERFORMANCE Registered ignores: 0.000190s
+2019-04-24 14:26:29 PERFORMANCE Filtered directories: 0.000114s
+2019-04-24 14:26:29 INFO Checking 1 sources...
+2019-04-24 14:26:29 INFO Running check `TypeCheck`...
+2019-04-24 14:26:29 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:26:29 PERFORMANCE Check_TypeCheck: 0.173925s
+2019-04-24 14:26:29 PERFORMANCE Analyzed sources: 0.173974s
+2019-04-24 14:26:29 PERFORMANCE Postprocessed: 0.000008s
+2019-04-24 14:26:29 PERFORMANCE Server request: 0.195804s
+2019-04-24 14:26:29 PERFORMANCE Server request: 0.195867s
+2019-04-24 14:26:29 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:26:29 INFO Parsing 0 updated stubs...
+2019-04-24 14:26:29 INFO Parsing 8 updated sources...
+2019-04-24 14:26:29 INFO Inferring protocol implementations...
+2019-04-24 14:26:29 PERFORMANCE Inferred protocol implementations: 0.005711s
+2019-04-24 14:26:29 MEMORY Shared memory size (size: 44)
+2019-04-24 14:26:29 PERFORMANCE Registered ignores: 0.023131s
+2019-04-24 14:26:29 PERFORMANCE Filtered directories: 0.021668s
+2019-04-24 14:26:29 INFO Checking 8 sources...
+2019-04-24 14:26:29 INFO Running check `TypeCheck`...
+2019-04-24 14:26:29 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:26:29 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:26:29 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:26:29 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:26:29 PERFORMANCE Check_TypeCheck: 0.277872s
+2019-04-24 14:26:29 PERFORMANCE Analyzed sources: 0.277946s
+2019-04-24 14:26:29 PERFORMANCE Postprocessed: 0.027273s
+2019-04-24 14:26:29 INFO Processing 2 deferred requests.
+2019-04-24 14:26:29 INFO Parsing 0 updated stubs...
+2019-04-24 14:26:29 INFO Parsing 2 updated sources...
+2019-04-24 14:26:29 INFO Inferring protocol implementations...
+2019-04-24 14:26:29 PERFORMANCE Inferred protocol implementations: 0.001128s
+2019-04-24 14:26:29 MEMORY Shared memory size (size: 44)
+2019-04-24 14:26:29 PERFORMANCE Registered ignores: 0.000106s
+2019-04-24 14:26:29 PERFORMANCE Filtered directories: 0.000214s
+2019-04-24 14:26:29 INFO Checking 2 sources...
+2019-04-24 14:26:29 INFO Running check `TypeCheck`...
+2019-04-24 14:26:29 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:26:29 PERFORMANCE Check_TypeCheck: 0.090831s
+2019-04-24 14:26:29 PERFORMANCE Analyzed sources: 0.090881s
+2019-04-24 14:26:29 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:26:33 PERFORMANCE Server request: 0.000010s
+2019-04-24 14:26:47 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:26:47 PERFORMANCE Computed dependencies: 0.006451s
+2019-04-24 14:26:47 INFO Parsing 0 updated stubs...
+2019-04-24 14:26:47 INFO Parsing 1 updated sources...
+2019-04-24 14:26:47 INFO Inferring protocol implementations...
+2019-04-24 14:26:47 PERFORMANCE Inferred protocol implementations: 0.001018s
+2019-04-24 14:26:47 MEMORY Shared memory size (size: 45)
+2019-04-24 14:26:47 PERFORMANCE Registered ignores: 0.000183s
+2019-04-24 14:26:47 PERFORMANCE Filtered directories: 0.000161s
+2019-04-24 14:26:47 INFO Checking 1 sources...
+2019-04-24 14:26:47 INFO Running check `TypeCheck`...
+2019-04-24 14:26:47 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:26:47 PERFORMANCE Check_TypeCheck: 0.172461s
+2019-04-24 14:26:47 PERFORMANCE Analyzed sources: 0.172520s
+2019-04-24 14:26:47 PERFORMANCE Postprocessed: 0.000009s
+2019-04-24 14:26:47 PERFORMANCE Server request: 0.196242s
+2019-04-24 14:26:47 PERFORMANCE Server request: 0.196284s
+2019-04-24 14:26:47 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:26:47 INFO Parsing 0 updated stubs...
+2019-04-24 14:26:47 INFO Parsing 8 updated sources...
+2019-04-24 14:26:47 INFO Inferring protocol implementations...
+2019-04-24 14:26:47 PERFORMANCE Inferred protocol implementations: 0.006326s
+2019-04-24 14:26:47 MEMORY Shared memory size (size: 45)
+2019-04-24 14:26:47 PERFORMANCE Registered ignores: 0.023553s
+2019-04-24 14:26:47 PERFORMANCE Filtered directories: 0.021575s
+2019-04-24 14:26:47 INFO Checking 8 sources...
+2019-04-24 14:26:47 INFO Running check `TypeCheck`...
+2019-04-24 14:26:47 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:26:47 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:26:48 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:26:48 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:26:48 PERFORMANCE Check_TypeCheck: 0.274489s
+2019-04-24 14:26:48 PERFORMANCE Analyzed sources: 0.274596s
+2019-04-24 14:26:48 PERFORMANCE Postprocessed: 0.026631s
+2019-04-24 14:26:48 INFO Processing 2 deferred requests.
+2019-04-24 14:26:48 INFO Parsing 0 updated stubs...
+2019-04-24 14:26:48 INFO Parsing 2 updated sources...
+2019-04-24 14:26:48 INFO Inferring protocol implementations...
+2019-04-24 14:26:48 PERFORMANCE Inferred protocol implementations: 0.001140s
+2019-04-24 14:26:48 MEMORY Shared memory size (size: 46)
+2019-04-24 14:26:48 PERFORMANCE Registered ignores: 0.000099s
+2019-04-24 14:26:48 PERFORMANCE Filtered directories: 0.000203s
+2019-04-24 14:26:48 INFO Checking 2 sources...
+2019-04-24 14:26:48 INFO Running check `TypeCheck`...
+2019-04-24 14:26:48 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:26:48 PERFORMANCE Check_TypeCheck: 0.088263s
+2019-04-24 14:26:48 PERFORMANCE Analyzed sources: 0.088311s
+2019-04-24 14:26:48 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:27:41 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:27:41 PERFORMANCE Computed dependencies: 0.006884s
+2019-04-24 14:27:41 INFO Parsing 0 updated stubs...
+2019-04-24 14:27:41 INFO Parsing 1 updated sources...
+2019-04-24 14:27:41 INFO Inferring protocol implementations...
+2019-04-24 14:27:41 PERFORMANCE Inferred protocol implementations: 0.001046s
+2019-04-24 14:27:41 MEMORY Shared memory size (size: 46)
+2019-04-24 14:27:41 PERFORMANCE Registered ignores: 0.000184s
+2019-04-24 14:27:41 PERFORMANCE Filtered directories: 0.000101s
+2019-04-24 14:27:41 INFO Checking 1 sources...
+2019-04-24 14:27:41 INFO Running check `TypeCheck`...
+2019-04-24 14:27:41 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:27:41 PERFORMANCE Check_TypeCheck: 0.322564s
+2019-04-24 14:27:41 PERFORMANCE Analyzed sources: 0.322624s
+2019-04-24 14:27:41 PERFORMANCE Postprocessed: 0.000003s
+2019-04-24 14:27:41 PERFORMANCE Server request: 0.347624s
+2019-04-24 14:27:41 PERFORMANCE Server request: 0.347662s
+2019-04-24 14:27:41 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:27:41 INFO Parsing 0 updated stubs...
+2019-04-24 14:27:41 INFO Parsing 8 updated sources...
+2019-04-24 14:27:42 INFO Inferring protocol implementations...
+2019-04-24 14:27:42 PERFORMANCE Inferred protocol implementations: 0.004894s
+2019-04-24 14:27:42 MEMORY Shared memory size (size: 46)
+2019-04-24 14:27:42 PERFORMANCE Registered ignores: 0.023937s
+2019-04-24 14:27:42 PERFORMANCE Filtered directories: 0.025535s
+2019-04-24 14:27:42 INFO Checking 8 sources...
+2019-04-24 14:27:42 INFO Running check `TypeCheck`...
+2019-04-24 14:27:42 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:27:42 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:27:42 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:27:42 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:27:42 PERFORMANCE Check_TypeCheck: 0.354254s
+2019-04-24 14:27:42 PERFORMANCE Analyzed sources: 0.354363s
+2019-04-24 14:27:42 PERFORMANCE Postprocessed: 0.027279s
+2019-04-24 14:27:42 INFO Processing 2 deferred requests.
+2019-04-24 14:27:42 INFO Parsing 0 updated stubs...
+2019-04-24 14:27:42 INFO Parsing 2 updated sources...
+2019-04-24 14:27:42 INFO Inferring protocol implementations...
+2019-04-24 14:27:42 PERFORMANCE Inferred protocol implementations: 0.001165s
+2019-04-24 14:27:42 MEMORY Shared memory size (size: 47)
+2019-04-24 14:27:42 PERFORMANCE Registered ignores: 0.000170s
+2019-04-24 14:27:42 PERFORMANCE Filtered directories: 0.000302s
+2019-04-24 14:27:42 INFO Checking 2 sources...
+2019-04-24 14:27:42 INFO Running check `TypeCheck`...
+2019-04-24 14:27:42 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:27:42 PERFORMANCE Check_TypeCheck: 0.088483s
+2019-04-24 14:27:42 PERFORMANCE Analyzed sources: 0.088545s
+2019-04-24 14:27:42 PERFORMANCE Postprocessed: 0.000003s
+2019-04-24 14:27:42 PERFORMANCE Server request: 0.000008s
+2019-04-24 14:27:53 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:27:53 PERFORMANCE Computed dependencies: 0.009350s
+2019-04-24 14:27:53 INFO Parsing 0 updated stubs...
+2019-04-24 14:27:53 INFO Parsing 1 updated sources...
+2019-04-24 14:27:53 INFO Inferring protocol implementations...
+2019-04-24 14:27:53 PERFORMANCE Inferred protocol implementations: 0.001065s
+2019-04-24 14:27:53 MEMORY Shared memory size (size: 47)
+2019-04-24 14:27:53 PERFORMANCE Registered ignores: 0.000342s
+2019-04-24 14:27:53 PERFORMANCE Filtered directories: 0.000121s
+2019-04-24 14:27:53 INFO Checking 1 sources...
+2019-04-24 14:27:53 INFO Running check `TypeCheck`...
+2019-04-24 14:27:54 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:27:54 PERFORMANCE Check_TypeCheck: 0.235137s
+2019-04-24 14:27:54 PERFORMANCE Analyzed sources: 0.235198s
+2019-04-24 14:27:54 PERFORMANCE Postprocessed: 0.000011s
+2019-04-24 14:27:54 PERFORMANCE Server request: 0.260187s
+2019-04-24 14:27:54 PERFORMANCE Server request: 0.260240s
+2019-04-24 14:27:54 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:27:54 INFO Parsing 0 updated stubs...
+2019-04-24 14:27:54 INFO Parsing 8 updated sources...
+2019-04-24 14:27:54 INFO Inferring protocol implementations...
+2019-04-24 14:27:54 PERFORMANCE Inferred protocol implementations: 0.004661s
+2019-04-24 14:27:54 MEMORY Shared memory size (size: 47)
+2019-04-24 14:27:54 PERFORMANCE Registered ignores: 0.024867s
+2019-04-24 14:27:54 PERFORMANCE Filtered directories: 0.024719s
+2019-04-24 14:27:54 INFO Checking 8 sources...
+2019-04-24 14:27:54 INFO Running check `TypeCheck`...
+2019-04-24 14:27:54 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:27:54 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:27:54 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:27:54 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:27:54 PERFORMANCE Check_TypeCheck: 0.373339s
+2019-04-24 14:27:54 PERFORMANCE Analyzed sources: 0.373431s
+2019-04-24 14:27:54 PERFORMANCE Postprocessed: 0.024570s
+2019-04-24 14:27:54 INFO Processing 2 deferred requests.
+2019-04-24 14:27:54 INFO Parsing 0 updated stubs...
+2019-04-24 14:27:54 INFO Parsing 2 updated sources...
+2019-04-24 14:27:54 INFO Inferring protocol implementations...
+2019-04-24 14:27:54 PERFORMANCE Inferred protocol implementations: 0.001060s
+2019-04-24 14:27:54 MEMORY Shared memory size (size: 48)
+2019-04-24 14:27:54 PERFORMANCE Registered ignores: 0.000133s
+2019-04-24 14:27:54 PERFORMANCE Filtered directories: 0.000190s
+2019-04-24 14:27:54 INFO Checking 2 sources...
+2019-04-24 14:27:54 INFO Running check `TypeCheck`...
+2019-04-24 14:27:54 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:27:54 PERFORMANCE Check_TypeCheck: 0.086906s
+2019-04-24 14:27:54 PERFORMANCE Analyzed sources: 0.086956s
+2019-04-24 14:27:54 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:27:55 PERFORMANCE Server request: 0.000013s
+2019-04-24 14:28:23 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:28:23 PERFORMANCE Computed dependencies: 0.007440s
+2019-04-24 14:28:23 INFO Parsing 0 updated stubs...
+2019-04-24 14:28:23 INFO Parsing 1 updated sources...
+2019-04-24 14:28:23 INFO Inferring protocol implementations...
+2019-04-24 14:28:23 PERFORMANCE Inferred protocol implementations: 0.001217s
+2019-04-24 14:28:23 MEMORY Shared memory size (size: 48)
+2019-04-24 14:28:23 PERFORMANCE Registered ignores: 0.000358s
+2019-04-24 14:28:23 PERFORMANCE Filtered directories: 0.000118s
+2019-04-24 14:28:23 INFO Checking 1 sources...
+2019-04-24 14:28:23 INFO Running check `TypeCheck`...
+2019-04-24 14:28:23 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:28:23 PERFORMANCE Check_TypeCheck: 0.179372s
+2019-04-24 14:28:23 PERFORMANCE Analyzed sources: 0.179434s
+2019-04-24 14:28:23 PERFORMANCE Postprocessed: 0.000008s
+2019-04-24 14:28:23 PERFORMANCE Server request: 0.203749s
+2019-04-24 14:28:23 PERFORMANCE Server request: 0.203791s
+2019-04-24 14:28:23 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:28:23 INFO Parsing 0 updated stubs...
+2019-04-24 14:28:23 INFO Parsing 8 updated sources...
+2019-04-24 14:28:23 INFO Inferring protocol implementations...
+2019-04-24 14:28:23 PERFORMANCE Inferred protocol implementations: 0.004708s
+2019-04-24 14:28:23 MEMORY Shared memory size (size: 48)
+2019-04-24 14:28:23 PERFORMANCE Registered ignores: 0.024100s
+2019-04-24 14:28:23 PERFORMANCE Filtered directories: 0.022694s
+2019-04-24 14:28:23 INFO Checking 8 sources...
+2019-04-24 14:28:23 INFO Running check `TypeCheck`...
+2019-04-24 14:28:23 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:28:23 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:28:24 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:28:24 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:28:24 PERFORMANCE Check_TypeCheck: 0.317924s
+2019-04-24 14:28:24 PERFORMANCE Analyzed sources: 0.318055s
+2019-04-24 14:28:24 PERFORMANCE Postprocessed: 0.026038s
+2019-04-24 14:28:24 INFO Processing 2 deferred requests.
+2019-04-24 14:28:24 INFO Parsing 0 updated stubs...
+2019-04-24 14:28:24 INFO Parsing 2 updated sources...
+2019-04-24 14:28:24 INFO Inferring protocol implementations...
+2019-04-24 14:28:24 PERFORMANCE Inferred protocol implementations: 0.000945s
+2019-04-24 14:28:24 MEMORY Shared memory size (size: 49)
+2019-04-24 14:28:24 PERFORMANCE Registered ignores: 0.000151s
+2019-04-24 14:28:24 PERFORMANCE Filtered directories: 0.000174s
+2019-04-24 14:28:24 INFO Checking 2 sources...
+2019-04-24 14:28:24 INFO Running check `TypeCheck`...
+2019-04-24 14:28:24 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:28:24 PERFORMANCE Check_TypeCheck: 0.094426s
+2019-04-24 14:28:24 PERFORMANCE Analyzed sources: 0.094477s
+2019-04-24 14:28:24 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:28:42 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/internal_node_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:28:43 PERFORMANCE Computed dependencies: 0.002808s
+2019-04-24 14:28:43 INFO Parsing 0 updated stubs...
+2019-04-24 14:28:43 INFO Parsing 1 updated sources...
+2019-04-24 14:28:43 INFO Inferring protocol implementations...
+2019-04-24 14:28:43 PERFORMANCE Inferred protocol implementations: 0.001084s
+2019-04-24 14:28:43 MEMORY Shared memory size (size: 49)
+2019-04-24 14:28:43 PERFORMANCE Registered ignores: 0.000113s
+2019-04-24 14:28:43 PERFORMANCE Filtered directories: 0.000115s
+2019-04-24 14:28:43 INFO Checking 1 sources...
+2019-04-24 14:28:43 INFO Running check `TypeCheck`...
+2019-04-24 14:28:43 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:28:43 PERFORMANCE Check_TypeCheck: 0.115340s
+2019-04-24 14:28:43 PERFORMANCE Analyzed sources: 0.115406s
+2019-04-24 14:28:43 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:28:43 PERFORMANCE Server request: 0.125604s
+2019-04-24 14:28:43 PERFORMANCE Server request: 0.125666s
+2019-04-24 14:31:38 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:31:38 PERFORMANCE Computed dependencies: 0.011759s
+2019-04-24 14:31:38 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:38 INFO Parsing 1 updated sources...
+2019-04-24 14:31:38 INFO Inferring protocol implementations...
+2019-04-24 14:31:38 PERFORMANCE Inferred protocol implementations: 0.009611s
+2019-04-24 14:31:38 MEMORY Shared memory size (size: 49)
+2019-04-24 14:31:38 PERFORMANCE Registered ignores: 0.000602s
+2019-04-24 14:31:38 PERFORMANCE Filtered directories: 0.000181s
+2019-04-24 14:31:38 INFO Checking 1 sources...
+2019-04-24 14:31:38 INFO Running check `TypeCheck`...
+2019-04-24 14:31:38 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:31:38 PERFORMANCE Check_TypeCheck: 0.213838s
+2019-04-24 14:31:38 PERFORMANCE Analyzed sources: 0.213934s
+2019-04-24 14:31:38 PERFORMANCE Postprocessed: 0.000009s
+2019-04-24 14:31:38 PERFORMANCE Server request: 0.256830s
+2019-04-24 14:31:38 PERFORMANCE Server request: 0.256878s
+2019-04-24 14:31:38 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:31:38 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:38 INFO Parsing 8 updated sources...
+2019-04-24 14:31:38 INFO Inferring protocol implementations...
+2019-04-24 14:31:38 PERFORMANCE Inferred protocol implementations: 0.004975s
+2019-04-24 14:31:38 MEMORY Shared memory size (size: 50)
+2019-04-24 14:31:38 PERFORMANCE Registered ignores: 0.024040s
+2019-04-24 14:31:38 PERFORMANCE Filtered directories: 0.022608s
+2019-04-24 14:31:38 INFO Checking 8 sources...
+2019-04-24 14:31:38 INFO Running check `TypeCheck`...
+2019-04-24 14:31:39 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:31:39 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:31:39 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:31:39 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:31:39 PERFORMANCE Check_TypeCheck: 0.397970s
+2019-04-24 14:31:39 PERFORMANCE Analyzed sources: 0.398067s
+2019-04-24 14:31:39 PERFORMANCE Postprocessed: 0.025399s
+2019-04-24 14:31:39 INFO Processing 2 deferred requests.
+2019-04-24 14:31:39 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:39 INFO Parsing 2 updated sources...
+2019-04-24 14:31:39 INFO Inferring protocol implementations...
+2019-04-24 14:31:39 PERFORMANCE Inferred protocol implementations: 0.000969s
+2019-04-24 14:31:39 MEMORY Shared memory size (size: 50)
+2019-04-24 14:31:39 PERFORMANCE Registered ignores: 0.000094s
+2019-04-24 14:31:39 PERFORMANCE Filtered directories: 0.000188s
+2019-04-24 14:31:39 INFO Checking 2 sources...
+2019-04-24 14:31:39 INFO Running check `TypeCheck`...
+2019-04-24 14:31:39 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:31:39 PERFORMANCE Check_TypeCheck: 0.090924s
+2019-04-24 14:31:39 PERFORMANCE Analyzed sources: 0.090974s
+2019-04-24 14:31:39 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:31:39 PERFORMANCE Server request: 0.000011s
+2019-04-24 14:31:44 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:31:44 PERFORMANCE Computed dependencies: 0.016334s
+2019-04-24 14:31:44 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:44 INFO Parsing 1 updated sources...
+2019-04-24 14:31:44 INFO Inferring protocol implementations...
+2019-04-24 14:31:44 PERFORMANCE Inferred protocol implementations: 0.002246s
+2019-04-24 14:31:44 MEMORY Shared memory size (size: 50)
+2019-04-24 14:31:44 PERFORMANCE Registered ignores: 0.000411s
+2019-04-24 14:31:44 PERFORMANCE Filtered directories: 0.000148s
+2019-04-24 14:31:44 INFO Checking 1 sources...
+2019-04-24 14:31:44 INFO Running check `TypeCheck`...
+2019-04-24 14:31:44 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:31:44 PERFORMANCE Check_TypeCheck: 0.380260s
+2019-04-24 14:31:44 PERFORMANCE Analyzed sources: 0.380324s
+2019-04-24 14:31:44 PERFORMANCE Postprocessed: 0.000009s
+2019-04-24 14:31:44 PERFORMANCE Server request: 0.432655s
+2019-04-24 14:31:44 PERFORMANCE Server request: 0.432699s
+2019-04-24 14:31:44 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:31:44 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:44 INFO Parsing 8 updated sources...
+2019-04-24 14:31:45 INFO Inferring protocol implementations...
+2019-04-24 14:31:45 PERFORMANCE Inferred protocol implementations: 0.007175s
+2019-04-24 14:31:45 MEMORY Shared memory size (size: 51)
+2019-04-24 14:31:45 PERFORMANCE Registered ignores: 0.025726s
+2019-04-24 14:31:45 PERFORMANCE Filtered directories: 0.023021s
+2019-04-24 14:31:45 INFO Checking 8 sources...
+2019-04-24 14:31:45 INFO Running check `TypeCheck`...
+2019-04-24 14:31:45 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:31:45 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:31:45 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:31:45 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:31:45 PERFORMANCE Check_TypeCheck: 0.293421s
+2019-04-24 14:31:45 PERFORMANCE Analyzed sources: 0.293513s
+2019-04-24 14:31:45 PERFORMANCE Postprocessed: 0.024063s
+2019-04-24 14:31:45 INFO Processing 2 deferred requests.
+2019-04-24 14:31:45 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:45 INFO Parsing 2 updated sources...
+2019-04-24 14:31:45 INFO Inferring protocol implementations...
+2019-04-24 14:31:45 PERFORMANCE Inferred protocol implementations: 0.000908s
+2019-04-24 14:31:45 MEMORY Shared memory size (size: 51)
+2019-04-24 14:31:45 PERFORMANCE Registered ignores: 0.000083s
+2019-04-24 14:31:45 PERFORMANCE Filtered directories: 0.000165s
+2019-04-24 14:31:45 INFO Checking 2 sources...
+2019-04-24 14:31:45 INFO Running check `TypeCheck`...
+2019-04-24 14:31:45 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:31:45 PERFORMANCE Check_TypeCheck: 0.079727s
+2019-04-24 14:31:45 PERFORMANCE Analyzed sources: 0.079776s
+2019-04-24 14:31:45 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:31:48 PERFORMANCE Server request: 0.000009s
+2019-04-24 14:31:51 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:31:51 PERFORMANCE Computed dependencies: 0.007289s
+2019-04-24 14:31:51 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:51 INFO Parsing 1 updated sources...
+2019-04-24 14:31:51 INFO Inferring protocol implementations...
+2019-04-24 14:31:51 PERFORMANCE Inferred protocol implementations: 0.002261s
+2019-04-24 14:31:51 MEMORY Shared memory size (size: 51)
+2019-04-24 14:31:51 PERFORMANCE Registered ignores: 0.000282s
+2019-04-24 14:31:51 PERFORMANCE Filtered directories: 0.000112s
+2019-04-24 14:31:51 INFO Checking 1 sources...
+2019-04-24 14:31:51 INFO Running check `TypeCheck`...
+2019-04-24 14:31:51 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:31:51 PERFORMANCE Check_TypeCheck: 0.189028s
+2019-04-24 14:31:51 PERFORMANCE Analyzed sources: 0.189086s
+2019-04-24 14:31:51 PERFORMANCE Postprocessed: 0.000013s
+2019-04-24 14:31:51 PERFORMANCE Server request: 0.212127s
+2019-04-24 14:31:51 PERFORMANCE Server request: 0.212199s
+2019-04-24 14:31:51 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:31:51 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:51 INFO Parsing 8 updated sources...
+2019-04-24 14:31:51 INFO Inferring protocol implementations...
+2019-04-24 14:31:51 PERFORMANCE Inferred protocol implementations: 0.012579s
+2019-04-24 14:31:51 MEMORY Shared memory size (size: 52)
+2019-04-24 14:31:51 PERFORMANCE Registered ignores: 0.043959s
+2019-04-24 14:31:51 PERFORMANCE Filtered directories: 0.028922s
+2019-04-24 14:31:51 INFO Checking 8 sources...
+2019-04-24 14:31:51 INFO Running check `TypeCheck`...
+2019-04-24 14:31:51 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:31:51 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:31:51 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:31:51 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:31:51 PERFORMANCE Check_TypeCheck: 0.439972s
+2019-04-24 14:31:51 PERFORMANCE Analyzed sources: 0.440089s
+2019-04-24 14:31:51 PERFORMANCE Postprocessed: 0.025019s
+2019-04-24 14:31:51 INFO Processing 2 deferred requests.
+2019-04-24 14:31:51 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:51 INFO Parsing 2 updated sources...
+2019-04-24 14:31:51 INFO Inferring protocol implementations...
+2019-04-24 14:31:51 PERFORMANCE Inferred protocol implementations: 0.000986s
+2019-04-24 14:31:51 MEMORY Shared memory size (size: 52)
+2019-04-24 14:31:51 PERFORMANCE Registered ignores: 0.000158s
+2019-04-24 14:31:51 PERFORMANCE Filtered directories: 0.000189s
+2019-04-24 14:31:51 INFO Checking 2 sources...
+2019-04-24 14:31:51 INFO Running check `TypeCheck`...
+2019-04-24 14:31:52 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:31:52 PERFORMANCE Check_TypeCheck: 0.100038s
+2019-04-24 14:31:52 PERFORMANCE Analyzed sources: 0.100097s
+2019-04-24 14:31:52 PERFORMANCE Postprocessed: 0.000004s
+2019-04-24 14:31:52 PERFORMANCE Server request: 0.000017s
+2019-04-24 14:31:56 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:31:56 PERFORMANCE Computed dependencies: 0.007760s
+2019-04-24 14:31:56 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:56 INFO Parsing 1 updated sources...
+2019-04-24 14:31:56 INFO Inferring protocol implementations...
+2019-04-24 14:31:56 PERFORMANCE Inferred protocol implementations: 0.001285s
+2019-04-24 14:31:56 MEMORY Shared memory size (size: 52)
+2019-04-24 14:31:56 PERFORMANCE Registered ignores: 0.000376s
+2019-04-24 14:31:56 PERFORMANCE Filtered directories: 0.000132s
+2019-04-24 14:31:56 INFO Checking 1 sources...
+2019-04-24 14:31:56 INFO Running check `TypeCheck`...
+2019-04-24 14:31:57 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:31:57 PERFORMANCE Check_TypeCheck: 0.181166s
+2019-04-24 14:31:57 PERFORMANCE Analyzed sources: 0.181263s
+2019-04-24 14:31:57 PERFORMANCE Postprocessed: 0.000005s
+2019-04-24 14:31:57 PERFORMANCE Server request: 0.208395s
+2019-04-24 14:31:57 PERFORMANCE Server request: 0.208447s
+2019-04-24 14:31:57 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:31:57 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:57 INFO Parsing 8 updated sources...
+2019-04-24 14:31:57 INFO Inferring protocol implementations...
+2019-04-24 14:31:57 PERFORMANCE Inferred protocol implementations: 0.012124s
+2019-04-24 14:31:57 MEMORY Shared memory size (size: 44)
+2019-04-24 14:31:57 PERFORMANCE Registered ignores: 0.024742s
+2019-04-24 14:31:57 PERFORMANCE Filtered directories: 0.024510s
+2019-04-24 14:31:57 INFO Checking 8 sources...
+2019-04-24 14:31:57 INFO Running check `TypeCheck`...
+2019-04-24 14:31:57 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:31:57 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:31:57 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:31:57 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:31:57 PERFORMANCE Check_TypeCheck: 0.398413s
+2019-04-24 14:31:57 PERFORMANCE Analyzed sources: 0.398521s
+2019-04-24 14:31:57 PERFORMANCE Postprocessed: 0.025360s
+2019-04-24 14:31:57 INFO Processing 2 deferred requests.
+2019-04-24 14:31:57 INFO Parsing 0 updated stubs...
+2019-04-24 14:31:57 INFO Parsing 2 updated sources...
+2019-04-24 14:31:57 INFO Inferring protocol implementations...
+2019-04-24 14:31:57 PERFORMANCE Inferred protocol implementations: 0.001161s
+2019-04-24 14:31:57 MEMORY Shared memory size (size: 44)
+2019-04-24 14:31:57 PERFORMANCE Registered ignores: 0.000182s
+2019-04-24 14:31:57 PERFORMANCE Filtered directories: 0.000212s
+2019-04-24 14:31:57 INFO Checking 2 sources...
+2019-04-24 14:31:57 INFO Running check `TypeCheck`...
+2019-04-24 14:31:57 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:31:57 PERFORMANCE Check_TypeCheck: 0.093116s
+2019-04-24 14:31:57 PERFORMANCE Analyzed sources: 0.093212s
+2019-04-24 14:31:57 PERFORMANCE Postprocessed: 0.000005s
+2019-04-24 14:31:57 PERFORMANCE Server request: 0.000008s
+2019-04-24 14:32:01 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:32:01 PERFORMANCE Computed dependencies: 0.008065s
+2019-04-24 14:32:01 INFO Parsing 0 updated stubs...
+2019-04-24 14:32:01 INFO Parsing 1 updated sources...
+2019-04-24 14:32:01 INFO Inferring protocol implementations...
+2019-04-24 14:32:01 PERFORMANCE Inferred protocol implementations: 0.001125s
+2019-04-24 14:32:01 MEMORY Shared memory size (size: 44)
+2019-04-24 14:32:01 PERFORMANCE Registered ignores: 0.000365s
+2019-04-24 14:32:01 PERFORMANCE Filtered directories: 0.000110s
+2019-04-24 14:32:01 INFO Checking 1 sources...
+2019-04-24 14:32:01 INFO Running check `TypeCheck`...
+2019-04-24 14:32:01 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:32:01 PERFORMANCE Check_TypeCheck: 0.175829s
+2019-04-24 14:32:01 PERFORMANCE Analyzed sources: 0.175872s
+2019-04-24 14:32:01 PERFORMANCE Postprocessed: 0.000008s
+2019-04-24 14:32:01 PERFORMANCE Server request: 0.198259s
+2019-04-24 14:32:01 PERFORMANCE Server request: 0.198296s
+2019-04-24 14:32:01 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:32:01 INFO Parsing 0 updated stubs...
+2019-04-24 14:32:01 INFO Parsing 8 updated sources...
+2019-04-24 14:32:01 INFO Inferring protocol implementations...
+2019-04-24 14:32:01 PERFORMANCE Inferred protocol implementations: 0.006953s
+2019-04-24 14:32:01 MEMORY Shared memory size (size: 45)
+2019-04-24 14:32:01 PERFORMANCE Registered ignores: 0.026045s
+2019-04-24 14:32:01 PERFORMANCE Filtered directories: 0.023414s
+2019-04-24 14:32:01 INFO Checking 8 sources...
+2019-04-24 14:32:01 INFO Running check `TypeCheck`...
+2019-04-24 14:32:01 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:32:01 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:32:02 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:32:02 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:32:02 PERFORMANCE Check_TypeCheck: 0.300143s
+2019-04-24 14:32:02 PERFORMANCE Analyzed sources: 0.300206s
+2019-04-24 14:32:02 PERFORMANCE Postprocessed: 0.027468s
+2019-04-24 14:32:02 INFO Processing 2 deferred requests.
+2019-04-24 14:32:02 INFO Parsing 0 updated stubs...
+2019-04-24 14:32:02 INFO Parsing 2 updated sources...
+2019-04-24 14:32:02 INFO Inferring protocol implementations...
+2019-04-24 14:32:02 PERFORMANCE Inferred protocol implementations: 0.000960s
+2019-04-24 14:32:02 MEMORY Shared memory size (size: 45)
+2019-04-24 14:32:02 PERFORMANCE Registered ignores: 0.000091s
+2019-04-24 14:32:02 PERFORMANCE Filtered directories: 0.000186s
+2019-04-24 14:32:02 INFO Checking 2 sources...
+2019-04-24 14:32:02 INFO Running check `TypeCheck`...
+2019-04-24 14:32:02 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:32:02 PERFORMANCE Check_TypeCheck: 0.094138s
+2019-04-24 14:32:02 PERFORMANCE Analyzed sources: 0.094181s
+2019-04-24 14:32:02 PERFORMANCE Postprocessed: 0.000003s
+2019-04-24 14:32:11 PERFORMANCE Server request: 0.000010s
+2019-04-24 14:57:16 INFO LSP message received:
+{
+  "jsonrpc": "2.0",
+  "method": "updateFiles",
+  "params": {
+    "files": [
+      "/Users/kevin.chen/workspace/bloxroute/bloxroute-dev/bxcommon/src/bxcommon/connections/abstract_connection.py"
+    ]
+  }
+}
+
+2019-04-24 14:57:16 PERFORMANCE Computed dependencies: 0.019638s
+2019-04-24 14:57:16 INFO Parsing 0 updated stubs...
+2019-04-24 14:57:16 INFO Parsing 1 updated sources...
+2019-04-24 14:57:16 INFO Inferring protocol implementations...
+2019-04-24 14:57:16 PERFORMANCE Inferred protocol implementations: 0.001223s
+2019-04-24 14:57:16 MEMORY Shared memory size (size: 45)
+2019-04-24 14:57:16 PERFORMANCE Registered ignores: 0.000321s
+2019-04-24 14:57:16 PERFORMANCE Filtered directories: 0.000112s
+2019-04-24 14:57:16 INFO Checking 1 sources...
+2019-04-24 14:57:16 INFO Running check `TypeCheck`...
+2019-04-24 14:57:16 PROGRESS Processed 1 of 1 sources
+2019-04-24 14:57:16 PERFORMANCE Check_TypeCheck: 0.148703s
+2019-04-24 14:57:16 PERFORMANCE Analyzed sources: 0.148760s
+2019-04-24 14:57:16 PERFORMANCE Postprocessed: 0.000003s
+2019-04-24 14:57:16 PERFORMANCE Server request: 0.179788s
+2019-04-24 14:57:16 PERFORMANCE Server request: 0.179828s
+2019-04-24 14:57:16 INFO Processing 8 deferred requests, 2 remaining.
+2019-04-24 14:57:16 INFO Parsing 0 updated stubs...
+2019-04-24 14:57:16 INFO Parsing 8 updated sources...
+2019-04-24 14:57:16 INFO Inferring protocol implementations...
+2019-04-24 14:57:16 PERFORMANCE Inferred protocol implementations: 0.005413s
+2019-04-24 14:57:16 MEMORY Shared memory size (size: 46)
+2019-04-24 14:57:16 PERFORMANCE Registered ignores: 0.023606s
+2019-04-24 14:57:16 PERFORMANCE Filtered directories: 0.022197s
+2019-04-24 14:57:16 INFO Checking 8 sources...
+2019-04-24 14:57:16 INFO Running check `TypeCheck`...
+2019-04-24 14:57:16 PROGRESS Processed 2 of 8 sources
+2019-04-24 14:57:16 PROGRESS Processed 4 of 8 sources
+2019-04-24 14:57:16 PROGRESS Processed 6 of 8 sources
+2019-04-24 14:57:16 PROGRESS Processed 8 of 8 sources
+2019-04-24 14:57:16 PERFORMANCE Check_TypeCheck: 0.267816s
+2019-04-24 14:57:16 PERFORMANCE Analyzed sources: 0.267873s
+2019-04-24 14:57:16 PERFORMANCE Postprocessed: 0.022438s
+2019-04-24 14:57:16 INFO Processing 2 deferred requests.
+2019-04-24 14:57:16 INFO Parsing 0 updated stubs...
+2019-04-24 14:57:16 INFO Parsing 2 updated sources...
+2019-04-24 14:57:16 INFO Inferring protocol implementations...
+2019-04-24 14:57:16 PERFORMANCE Inferred protocol implementations: 0.001430s
+2019-04-24 14:57:16 MEMORY Shared memory size (size: 46)
+2019-04-24 14:57:16 PERFORMANCE Registered ignores: 0.000172s
+2019-04-24 14:57:16 PERFORMANCE Filtered directories: 0.000173s
+2019-04-24 14:57:16 INFO Checking 2 sources...
+2019-04-24 14:57:16 INFO Running check `TypeCheck`...
+2019-04-24 14:57:16 PROGRESS Processed 2 of 2 sources
+2019-04-24 14:57:16 PERFORMANCE Check_TypeCheck: 0.080624s
+2019-04-24 14:57:16 PERFORMANCE Analyzed sources: 0.080665s
+2019-04-24 14:57:16 PERFORMANCE Postprocessed: 0.000004s
+2019-04-25 14:57:17 ERROR Uncaught exception (exception: (Unix.Unix_error "Bad file descriptor" select
+  "((read (4 5)) (write ()) (except ()) (timeout (After 5s)))"), exception backtrace: Raised at file "src/core_unix.ml", line 50, characters 4-43
+Called from file "command/startCommand.ml", line 389, characters 6-295
+Called from file "command/startCommand.ml", line 463, characters 4-11
+, exception origin: server, fatal: true)

@@ -64,3 +64,4 @@ class MockOpts(object):
         self.transaction_pool_memory_limit = 200000000
         self.throughput_debugging = False
         self.enable_buffered_send = False
+        self.track_detailed_sent_messages = True

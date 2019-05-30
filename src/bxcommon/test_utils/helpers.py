@@ -138,6 +138,7 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "import_extensions": USE_EXTENSION_MODULES,
         "throughput_debugging": False,
         "enable_buffered_send": False,
+        "track_detailed_sent_messages": True,
         "compact_block": True
     }
 
@@ -197,6 +198,7 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
         "enable_buffered_send": False,
         "use_extensions": USE_EXTENSION_MODULES,
         "import_extensions": USE_EXTENSION_MODULES,
-        "throughput_debugging": False
+        "throughput_debugging": False,
+        "track_detailed_sent_messages": True
     }
     return opts

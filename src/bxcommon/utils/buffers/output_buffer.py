@@ -122,7 +122,6 @@ class OutputBuffer(object):
     def has_more_bytes(self):
         return self.length != 0
 
-
     # TODO: @soumya this is called every 200ms. This needs some future cleanup; possibly in the alarm data structure.
     # Consult Nagle algorithm before implementing improvements.
     def _flush_to_buffer(self):

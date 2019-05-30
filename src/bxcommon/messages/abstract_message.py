@@ -35,3 +35,7 @@ class AbstractMessage(object):
     def log_level(self):
         return LogLevel.TRACE
 
+    @abstractmethod
+    def rawbytes(self) -> memoryview:
+        pass
+
