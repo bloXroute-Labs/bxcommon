@@ -1,3 +1,4 @@
+import time
 import traceback
 from abc import ABCMeta
 from collections import defaultdict
@@ -160,6 +161,9 @@ class AbstractConnection(object):
         Processes the next bytes on the socket's inputbuffer.
         Returns 0 in order to avoid being rescheduled if this was an alarm.
         """
+
+        start_time = time.time()
+        messages_processed = defaultdict(int)
         while True:
             if self.state & ConnectionState.MARK_FOR_CLOSE:
                 return
@@ -208,6 +212,8 @@ class AbstractConnection(object):
                     msg_handler = self.message_handlers[msg_type]
                     msg_handler(msg)
 
+                messages_processed[msg_type] += 1
+
             # TODO: Investigate possible solutions to recover from PayloadLenError errors
             except PayloadLenError as e:
                 logger.error("ParseError on connection {}. Error: {}.", self, e.msg)
@@ -247,7 +253,13 @@ class AbstractConnection(object):
             else:
                 self.num_bad_messages = 0
 
-        logger.debug("Finished processing messages on connection: {}", self.peer_desc)
+        time_elapsed = time.time() - start_time
+        if time_elapsed > constants.WARN_MESSAGE_PROCESSING_S:
+            logger.info("Took {:.2f} seconds to process the following messages: {}. Connection: {}", time_elapsed,
+                        messages_processed, self)
+
+        logger.debug("Processed {} messages in {:.2f} seconds on connection: {}.", messages_processed, time_elapsed,
+                     self)
 
     def pop_next_message(self, payload_len):
         """

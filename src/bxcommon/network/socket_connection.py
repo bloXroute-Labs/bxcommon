@@ -125,13 +125,12 @@ class SocketConnection(object):
                 elif e.errno in [errno.EDESTADDRREQ, errno.EFAULT, errno.EINVAL,
                                  errno.EISCONN, errno.EMSGSIZE, errno.ENOTCONN, errno.ENOTSOCK]:
                     # Should never happen errors
-                    logger.debug("Got {0}, send to {1} failed. Should not have happened..."
-                                 .format(e.strerror, fileno))
+                    logger.fatal("Unexpected fatal error {} on fileno {}: {}. Shutting down node.", e.errno, fileno,
+                                 e.strerror)
                     exit(1)
                 elif e.errno in [errno.ENOMEM]:
                     # Fatal errors for the node
-                    logger.debug("Got {0}, send to {1} failed. Fatal error! Shutting down node."
-                                 .format(e.strerror, fileno))
+                    logger.fatal("Fatal error ENOMEM on fileno {}: {}. Shutting down node.", fileno, e.strerror)
                     exit(1)
                 else:
                     raise e

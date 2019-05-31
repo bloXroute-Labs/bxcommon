@@ -166,6 +166,9 @@ WARN_ALARM_EXECUTION_DURATION = 5
 # Timeout to warn on if alarm executed later than expected
 WARN_ALARM_EXECUTION_OFFSET = 5
 
+# Duration to warn on if message processing takes longer than
+WARN_MESSAGE_PROCESSING_S = 0.1
+
 # Expiration time for cache of relayed blocks hashes
 RELAYED_BLOCKS_EXPIRE_TIME_S = 6 * 60
 # </editor-fold>
