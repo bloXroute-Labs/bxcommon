@@ -5,7 +5,7 @@ import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (
 
 
 class TaskQueueProxy:
-    QUEUE_GROW_SIZE = 100
+    QUEUE_GROW_SIZE = 10
 
     def __init__(
             self, task_creator: typing.Callable[[], tpe.MainTaskBase],
@@ -21,7 +21,7 @@ class TaskQueueProxy:
 
     def borrow_task(self) -> TaskProxy:
         try:
-            tsk = self._queue.pop()
+            tsk = self._queue.popleft()
         except IndexError:
             tsk = self._extend_queue()
         return tsk

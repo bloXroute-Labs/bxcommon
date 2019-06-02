@@ -7,11 +7,14 @@ from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.node_type import NodeType
-from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, ALL_NETWORK_NUM, USE_EXTENSION_MODULES
+from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, ALL_NETWORK_NUM, \
+    USE_EXTENSION_MODULES
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils.buffers.input_buffer import InputBuffer
+
+BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT = 10
 
 
 def generate_bytes(size):
@@ -139,7 +142,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "throughput_debugging": False,
         "enable_buffered_send": False,
         "track_detailed_sent_messages": True,
-        "compact_block": True
+        "compact_block": True,
+        "compact_block_min_tx_count": BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT
     }
 
     if include_default_btc_args:
