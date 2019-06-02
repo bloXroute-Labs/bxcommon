@@ -5,7 +5,7 @@ class ConnectionPool(object):
     """
     A group of connections with active sockets.
     """
-    INITIAL_FILENO = 5000
+    INITIAL_FILENO = 100
 
     def __init__(self):
         self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO

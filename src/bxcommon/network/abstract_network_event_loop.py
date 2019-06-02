@@ -140,7 +140,7 @@ class AbstractNetworkEventLoop(object):
                 socket_connection.close()
 
                 # TODO this line should be removed as well. The network layer should not be telling
-                # the node when a connection is closed.
+                #   the node when a connection is closed.
                 self._node.on_connection_closed(fileno)
 
                 # TODO: This if statement should be removed (i.e. MARK_FOR_CLOSE should be set more carefully)

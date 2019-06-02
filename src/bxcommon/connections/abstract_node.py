@@ -85,7 +85,7 @@ class AbstractNode(object):
 
     # TODO: This needs a better name... "notify_connection"
     # TODO: we cannot call this a "socket_connection" It is very unclear what the term "connection" means in our
-    # codebase.
+    #   codebase.
     def on_connection_added(self, socket_connection, ip, port, from_me):
         """
         Notifies the node that a connection is coming in.
