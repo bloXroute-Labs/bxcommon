@@ -1,5 +1,3 @@
-import socket
-
 from mock import patch, MagicMock
 
 from bxcommon.connections.abstract_node import AbstractNode
@@ -9,18 +7,18 @@ from bxcommon.constants import DEFAULT_SLEEP_TIMEOUT, PING_INTERVAL_S, \
     CONNECTION_RETRY_SECONDS, MAX_CONNECT_RETRIES, THROUGHPUT_STATS_INTERVAL
 from bxcommon.exceptions import TerminationError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
-from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-from bxcommon.test_utils.mocks.mock_connection import MockConnection
+from bxcommon.test_utils.mocks.mock_connection import MockConnection, MockConnectionType
 from bxcommon.test_utils.mocks.mock_message import MockMessage
-from bxcommon.test_utils.mocks.mock_node import MockOpts, MockNode
+from bxcommon.test_utils.mocks.mock_node import _MockOpts, MockNode
+from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils import memory_utils
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 
 
 def create_connection(fileno, ip, port):
     node = MockNode(ip, port)
-    connection = MockConnection(fileno, (ip, port), node)
+    connection = MockConnection(MockSocketConnection(fileno), (ip, port), node)
     return connection
 
 
@@ -30,11 +28,11 @@ class AbstractNodeTest(AbstractTestCase):
         self.remote_ip = "111.222.111.222"
         self.remote_port = 1234
         self.remote_fileno = 5
-        self.connection = MockConnection(self.remote_fileno, (self.remote_ip, self.remote_port), self.remote_node)
-        self.params = MockOpts()
+        self.connection = MockConnection(MockSocketConnection(self.remote_fileno), (self.remote_ip, self.remote_port),
+                                         self.remote_node)
+        self.params = _MockOpts()
         self.local_node = TestNode(self.params)
-        self.test_socket = MagicMock(spec=socket.socket)
-        self.socket_connection = SocketConnection(self.test_socket, self.remote_node)
+        self.socket_connection = MockSocketConnection(node=self.remote_node)
         self.to_31 = bytearray([i for i in range(32)])
 
     def test_connection_exists(self):
@@ -42,10 +40,10 @@ class AbstractNodeTest(AbstractTestCase):
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         self.assertTrue(self.local_node.connection_exists(self.remote_ip, self.remote_port))
 
-    @patch("bxcommon.connections.abstract_node.AbstractNode._init_conn_object")
-    def test_on_connection_added_new_connection(self, mocked_init_conn_object):
+    @patch("bxcommon.connections.abstract_node.AbstractNode._initialize_connection")
+    def test_on_connection_added_new_connection(self, mocked_initialize_connection):
         self.local_node.on_connection_added(self.socket_connection, self.remote_ip, self.remote_port, True)
-        mocked_init_conn_object.assert_called_once_with(self.socket_connection, self.remote_ip, self.remote_port, True)
+        mocked_initialize_connection.assert_called_once_with(self.socket_connection, self.remote_ip, self.remote_port, True)
 
     @patch("bxcommon.connections.abstract_node.AbstractNode.enqueue_disconnect")
     @patch("bxcommon.connections.abstract_node.AbstractNode.connection_exists", return_value=True)
@@ -146,7 +144,7 @@ class AbstractNodeTest(AbstractTestCase):
         connection3 = create_connection(fileno3, ip3, port3)
         connection3.state = ConnectionState.ESTABLISHED
         connection3.enqueue_msg = MagicMock()
-        connection3.CONNECTION_TYPE = "notmock"
+        connection3.CONNECTION_TYPE = MockConnectionType.NOT_MOCK
 
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         self.local_node.connection_pool.add(fileno2, ip2, port2, connection2)
@@ -181,15 +179,14 @@ class AbstractNodeTest(AbstractTestCase):
         self.assertIsNone(self.local_node.pop_next_disconnect_connection())
 
     @patch("bxcommon.connections.abstract_node.SocketConnection.fileno", return_value=5)
-    def test_init_conn_object(self, mock_fileno):
-        test_socket = MagicMock(spec=socket.socket)
-        socket_connection = SocketConnection(test_socket, self.remote_node)
+    def test_initialize_connection(self, mock_fileno):
+        socket_connection = MockSocketConnection(self.remote_fileno, self.remote_node)
         self.assertEqual(3, self.local_node.alarm_queue.uniq_count)
         self.assertIsNone(self.local_node.connection_pool.by_fileno[self.remote_fileno])
-        self.local_node._init_conn_object(socket_connection, self.remote_ip, self.remote_port, True)
+        self.local_node._initialize_connection(socket_connection, self.remote_ip, self.remote_port, True)
         self.assertEqual(4, self.local_node.alarm_queue.uniq_count)
         self.assertEqual(self.connection.fileno,
-                         self.local_node.connection_pool.by_fileno[self.remote_fileno].fileno.fileno())
+                         self.local_node.connection_pool.by_fileno[self.remote_fileno].fileno)
 
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
     def test_connection_timeout_established(self, mocked_register_alarm):
@@ -236,11 +233,11 @@ class AbstractNodeTest(AbstractTestCase):
     @patch("bxcommon.connections.abstract_node.sdn_http_service.submit_peer_connection_error_event")
     def test_retry_init_client_socket(self, mocked_submit_peer):
         self.assertEqual(0, self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port,
-                                                                      ConnectionType.RELAY))
+                                                                      ConnectionType.RELAY_ALL))
         self.assertIn((self.remote_ip, self.remote_port), self.local_node.connection_queue)
-        self.local_node.num_retries_by_ip[self.remote_ip] = MAX_CONNECT_RETRIES
-        self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port, ConnectionType.RELAY)
-        self.assertEqual(0, self.local_node.num_retries_by_ip[self.remote_ip])
+        self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)] = MAX_CONNECT_RETRIES
+        self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port, ConnectionType.RELAY_ALL)
+        self.assertEqual(0, self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)])
         mocked_submit_peer.assert_called_with(self.local_node.opts.node_id, self.remote_ip, self.remote_port)
 
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
@@ -290,5 +287,5 @@ class TestNode(AbstractNode):
     def send_request_for_peers(self):
         pass
 
-    def get_connection_class(self, ip=None, port=None, from_me=False):
-        return MockConnection
+    def build_connection(self, socket_connection, ip, port, from_me=False):
+        return MockConnection(socket_connection, (ip, port), self, from_me)

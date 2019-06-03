@@ -2,9 +2,11 @@ import time
 import traceback
 from abc import ABCMeta
 from collections import defaultdict
+from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING
 
 from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger, convert
@@ -14,13 +16,21 @@ from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.direction import Direction
 
+if TYPE_CHECKING:
+    # noinspection PyUnresolvedReferences
+    from bxcommon.connections.abstract_node import AbstractNode
 
-class AbstractConnection(object):
+Node = TypeVar("Node", bound="AbstractNode")
+
+
+class AbstractConnection(Generic[Node]):
     __metaclass__ = ABCMeta
 
-    CONNECTION_TYPE = None
+    CONNECTION_TYPE: ClassVar[ConnectionType] = ConnectionType.NONE
 
-    def __init__(self, socket_connection, address, node, from_me=False):
+    node: Node
+
+    def __init__(self, socket_connection, address, node: Node, from_me=False):
         if not isinstance(socket_connection, SocketConnection):
             raise ValueError("SocketConnection type is expected for socket_connection arg but was {0}."
                              .format(type(socket_connection)))
@@ -108,9 +118,6 @@ class AbstractConnection(object):
         :param msg: message
         :param prepend: if the message should be bumped to the front of the outputbuf
         """
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
-            return
-
         logger.log(msg.log_level(), "Enqueued message: {} on connection: {}", msg, self)
 
         self.enqueue_msg_bytes(msg.rawbytes(), prepend)
@@ -233,9 +240,9 @@ class AbstractConnection(object):
                 # Attempt to recover connection by removing bad full message
                 if is_full_msg:
                     logger.error(
-                        "Message processing error. Trying to recover. Error: {}. Message bytes: {}. Trace: {}",
+                        "Message processing error. Trying to recover. Error: {}. Message bytes: {}. Trace: {}, Connection: {}",
                         e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
-                        traceback.format_exc())
+                        traceback.format_exc(), self)
 
                     # give connection a chance to restore its state and get ready to process next message
                     self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
@@ -327,7 +334,7 @@ class AbstractConnection(object):
         :return: if connection should be closed
         """
         if self.num_bad_messages == constants.MAX_BAD_MESSAGES:
-            logger.warn("Received too many bad message. Closing connection: {}", self)
+            logger.warn("Received too many bad messages. Closing connection: {}", self)
             self.mark_for_close()
             return True
         else:

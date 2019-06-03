@@ -17,12 +17,12 @@ class TestOutputBuffer(unittest.TestCase):
 
         data1 = bytearray([i for i in range(20)])
         self.out_buf.enqueue_msgbytes(data1)
-        self.out_buf._flush_to_buffer()
+        self.out_buf.flush()
         self.assertEqual(data1, self.out_buf.get_buffer())
 
         data2 = bytearray([i for i in range(20, 40)])
         self.out_buf.enqueue_msgbytes(data2)
-        self.out_buf._flush_to_buffer()
+        self.out_buf.flush()
         self.assertEqual(data1, self.out_buf.get_buffer())
 
         new_index = 10
@@ -35,10 +35,10 @@ class TestOutputBuffer(unittest.TestCase):
 
         data1 = bytearray([i for i in range(20)])
         self.out_buf.enqueue_msgbytes(data1)
-        self.out_buf._flush_to_buffer()
+        self.out_buf.flush()
         data2 = bytearray([i for i in range(20, 40)])
         self.out_buf.enqueue_msgbytes(data2)
-        self.out_buf._flush_to_buffer()
+        self.out_buf.flush()
 
         self.out_buf.advance_buffer(10)
         self.assertEqual(10, self.out_buf.index)
@@ -59,12 +59,12 @@ class TestOutputBuffer(unittest.TestCase):
 
         data1 = bytearray([i for i in range(20)])
         self.out_buf.enqueue_msgbytes(data1)
-        self.out_buf._flush_to_buffer()
+        self.out_buf.flush()
         self.assertEqual(data1, self.out_buf.get_buffer())
 
         data2 = bytearray([i for i in range(20, 40)])
         self.out_buf.enqueue_msgbytes(data2)
-        self.out_buf._flush_to_buffer()
+        self.out_buf.flush()
         self.assertEqual(data1, self.out_buf.get_buffer())
 
         new_index = 10

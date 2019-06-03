@@ -1,8 +1,67 @@
 import time
 from heapq import heappop, heappush
+from typing import NamedTuple, List, Union, ClassVar
 
 from bxcommon import constants
 from bxcommon.utils import logger
+
+
+class Alarm:
+    """
+    Alarm object. Encapsulates function and arguments.
+    """
+
+    def __init__(self, fn, fire_time, *args, **kwargs):
+        if fn is None:
+            raise ValueError("Alarm callback cannot be none.")
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self.fire_time = fire_time
+
+    def fire(self):
+        time_from_expected = time.time() - self.fire_time
+        if time_from_expected > constants.WARN_ALARM_EXECUTION_OFFSET:
+            logger.warn("{} executed {} seconds later than expected.".format(self, time_from_expected))
+        return self.fn(*self.args, **self.kwargs)
+
+    def get_function_name(self):
+        if hasattr(self.fn, "im_class"):
+            return "{}#{}".format(self.fn.im_class.__name__, self.fn.__name__)
+
+        else:
+            return self.fn.__name__
+
+    def __repr__(self):
+        return "Alarm<function: {}, fire_time: {}".format(self.get_function_name(),
+                                                          self.fire_time)
+
+
+class AlarmId:
+    fire_time: float
+    count: int
+    alarm: Alarm
+    is_active: bool
+
+    def __init__(self, fire_time, count, alarm):
+        self.fire_time = fire_time
+        self.count = count
+        self.alarm = alarm
+        self.is_active = True
+
+    def __lt__(self, other):
+        if not isinstance(other, AlarmId):
+            raise TypeError("< not supported between instances of 'AlarmId' and {}".format(other))
+
+        return self.fire_time < other.fire_time or (self.fire_time == other.fire_time and self.count < other.count)
+
+    def __eq__(self, other):
+        if not isinstance(other, AlarmId):
+            return False
+        return self.fire_time == other.fire_time and self.count == other.count and self.alarm == other.alarm \
+               and self.is_active == other.is_active
+
+
 
 
 class AlarmQueue(object):
@@ -20,10 +79,8 @@ class AlarmQueue(object):
     approx_alarms_scheduled: function => min-heap of scheduled alarms. used to ensure multiple alarms
                              with the same function handle are not executed repeatedly
     """
-    REMOVED = -1
-
     def __init__(self):
-        self.alarms = []
+        self.alarms: List[AlarmId] = []
         self.uniq_count = 0
         self.approx_alarms_scheduled = {}
 
@@ -42,7 +99,7 @@ class AlarmQueue(object):
             raise ValueError("Function cannot be None.")
 
         alarm = Alarm(fn, time.time() + fire_delay, *args)
-        alarm_id = [time.time() + fire_delay, self.uniq_count, alarm]
+        alarm_id = AlarmId(time.time() + fire_delay, self.uniq_count, alarm)
         heappush(self.alarms, alarm_id)
         self.uniq_count += 1
         return alarm_id
@@ -71,12 +128,12 @@ class AlarmQueue(object):
             now = time.time()
             late_time, early_time = fire_delay + now + slop, fire_delay + now - slop
             for alarm_id in self.approx_alarms_scheduled[fn]:
-                if early_time <= alarm_id[0] <= late_time:
+                if early_time <= alarm_id.fire_time <= late_time:
                     return
 
             heappush(self.approx_alarms_scheduled[fn], self.register_alarm(fire_delay, fn, *args))
 
-    def unregister_alarm(self, alarm_id):
+    def unregister_alarm(self, alarm_id: AlarmId):
         """
         Cancels alarm and cleans up the head of the heap.
         :param alarm_id: alarm to cancel
@@ -84,8 +141,8 @@ class AlarmQueue(object):
         if alarm_id is None:
             raise ValueError("Alarm id cannot be none.")
 
-        alarm_id[-1] = AlarmQueue.REMOVED
-        while self.alarms and self.alarms[0][-1] == AlarmQueue.REMOVED:
+        alarm_id.is_active = False
+        while self.alarms and not self.alarms[0].is_active:
             heappop(self.alarms)
 
     def fire_alarms(self):
@@ -97,11 +154,11 @@ class AlarmQueue(object):
             return
 
         curr_time = time.time()
-        while self.alarms and self.alarms[0][0] <= curr_time:
-            alarm_id = heappop(self.alarms)
-            alarm = alarm_id[-1]
+        while self.alarms and self.alarms[0].fire_time <= curr_time:
+            alarm_id: AlarmId = heappop(self.alarms)
+            alarm = alarm_id.alarm
 
-            if alarm != AlarmQueue.REMOVED:
+            if alarm_id.is_active:
 
                 start_time = time.time()
                 next_delay = alarm.fire()
@@ -111,15 +168,15 @@ class AlarmQueue(object):
 
                 if next_delay is not None and next_delay > 0:
                     next_time = time.time() + next_delay
-                    alarm_id[0] = next_time
-                    alarm_id[-1].fire_time = next_time
+                    alarm_id.fire_time = next_time
+                    alarm_id.alarm.fire_time = next_time
                     heappush(self.alarms, alarm_id)
                 # Delete alarm from approx_alarms_scheduled if applicable
                 elif alarm.fn in self.approx_alarms_scheduled:
                     alarm_heap = self.approx_alarms_scheduled[alarm.fn]
 
                     # alarm that was just fired must be the first one in the list
-                    assert alarm_heap[0][1] == alarm_id[1]
+                    assert alarm_heap[0].count == alarm_id.count
                     heappop(alarm_heap)
 
                     if not alarm_heap:
@@ -148,35 +205,5 @@ class AlarmQueue(object):
         if not self.alarms:
             return True, None
 
-        time_to_alarm = self.alarms[0][0] - time.time()
+        time_to_alarm = self.alarms[0].fire_time - time.time()
         return False, time_to_alarm
-
-
-class Alarm(object):
-    """
-    Alarm object. Encapsulates function and arguments.
-    """
-
-    def __init__(self, fn, fire_time, *args):
-        if fn is None:
-            raise ValueError("Alarm callback cannot be none.")
-        self.fn = fn
-        self.args = args
-        self.fire_time = fire_time
-
-    def fire(self):
-        time_from_expected = time.time() - self.fire_time
-        if time_from_expected > constants.WARN_ALARM_EXECUTION_OFFSET:
-            logger.warn("{} executed {} seconds later than expected.".format(self, time_from_expected))
-        return self.fn(*self.args)
-
-    def get_function_name(self):
-        if hasattr(self.fn, "im_class"):
-            return "{}#{}".format(self.fn.im_class.__name__, self.fn.__name__)
-
-        else:
-            return self.fn.__name__
-
-    def __repr__(self):
-        return "Alarm<function: {}, fire_time: {}".format(self.get_function_name(),
-                                                          self.fire_time)

@@ -6,11 +6,14 @@ from bxcommon.utils import config, logger
 from bxcommon.exceptions import TerminationError
 
 
-def run_node(process_id_file_path, opts, node_class):
+def run_node(process_id_file_path, opts, node_class, node_type=None):
+    if node_type is None:
+        node_type = node_class.NODE_TYPE
+
     config.log_pid(process_id_file_path)
     config.init_logging(opts.log_path, opts.to_stdout)
     try:
-        _run_node(opts, node_class)
+        _run_node(opts, node_class, node_type)
     except TerminationError:
         logger.fatal("Node terminated")
     except Exception as e:
@@ -19,7 +22,7 @@ def run_node(process_id_file_path, opts, node_class):
         logger.log_close()
 
 
-def _run_node(opts, node_class):
+def _run_node(opts, node_class, node_type):
     # update constants from cli
     cli.set_sdn_url()
 
@@ -29,11 +32,11 @@ def _run_node(opts, node_class):
         node_model = sdn_http_service.fetch_node_attributes(opts.node_id)
 
     cli.set_blockchain_networks_info(opts)
-    cli.parse_blockchain_opts(opts, node_class.NODE_TYPE)
+    cli.parse_blockchain_opts(opts, node_type)
     cli.set_os_version(opts)
 
     if not node_model:
-        opts.node_type = node_class.NODE_TYPE
+        opts.node_type = node_type
         node_model = sdn_http_service.register_node(model_loader.load_model(NodeModel, opts.__dict__))
 
     # Add opts from SDN, but don't overwrite CLI args
@@ -60,4 +63,3 @@ def _run_node(opts, node_class):
 
     logger.debug("Running node")
     event_loop.run()
-    logger.info("Node run method returned. Closing log and exiting.")

@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 from bxcommon.utils.log_level import LogLevel
 
 
-class AbstractMessage(object):
+class AbstractMessage:
     __metaclass__ = ABCMeta
 
     HEADER_LENGTH = 0

@@ -9,7 +9,7 @@ from bxcommon.utils.crypto import SHA256_HASH_LEN
 PARTIAL_HASH_LENGTH = 4
 
 
-class AbstractObjectHash(object):
+class AbstractObjectHash:
     """
     Base class for representing hash as an object
     binary is a memoryview or a bytearray

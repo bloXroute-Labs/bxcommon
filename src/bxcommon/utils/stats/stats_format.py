@@ -3,26 +3,27 @@ from typing import List, Optional
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_type import ConnectionType
+from bxcommon.test_utils.mocks.mock_connection import MockConnectionType
 
 
-def connections(connections: List[AbstractConnection]) -> str:
+def connections(conns: List[AbstractConnection]) -> str:
     """
     Formats list of connections to a string logged in stats
-    :param connections: list of connections
+    :param conns: list of connections
     :return: formatted string
     """
 
-    return ", ".join(connection(conn) for conn in connections)
+    return ", ".join(connection(conn) for conn in conns)
 
 
-def connection(connection: AbstractConnection) -> str:
+def connection(conn: AbstractConnection) -> str:
     """
     Formats connection to a string logged in stats
-    :param connection: Connection
+    :param conn: Connection
     :return: formatted string
     """
 
-    return "{} - {}".format(connection.peer_desc, _format_connection_type(connection))
+    return "{} - {}".format(conn.peer_desc, _format_connection_type(conn))
 
 
 def duration(duration_ms: float) -> str:
@@ -49,15 +50,15 @@ def timespan(start_timestamp_s: float, end_timestamp_s: float) -> str:
     return duration(duration_ms)
 
 
-def percentage(percentage: float) -> str:
+def percentage(percent: float) -> str:
     """
     Formats percentage into a string logged in stats
 
-    :param duration_ms: Percentage
+    :param percent: Percentage
     :return: formatted duration
     """
 
-    return "{:.2f}%".format(percentage)
+    return "{:.2f}%".format(percent)
 
 
 def ratio(first_value: float, second_value: float) -> str:
@@ -68,16 +69,19 @@ def ratio(first_value: float, second_value: float) -> str:
     :return: formatted ratio
     """
 
-    ratio = 100 - float(first_value) / second_value * 100
-    return percentage(ratio)
+    r = 100 - float(first_value) / second_value * 100
+    return percentage(r)
 
 
-def _format_connection_type(connection: AbstractConnection) -> Optional[str]:
-    if connection.CONNECTION_TYPE == ConnectionType.GATEWAY or \
-            connection.network_num == constants.ALL_NETWORK_NUM:
+def _format_connection_type(conn: AbstractConnection) -> str:
+    # hack for tests
+    if isinstance(conn.CONNECTION_TYPE, MockConnectionType):
+        return "M"
+
+    if conn.CONNECTION_TYPE & ConnectionType.GATEWAY or conn.network_num != constants.ALL_NETWORK_NUM:
         return "G"
 
-    if connection.CONNECTION_TYPE == ConnectionType.RELAY:
+    if conn.CONNECTION_TYPE & ConnectionType.RELAY_ALL:
         return "R"
 
-    return connection.CONNECTION_TYPE
+    return conn.CONNECTION_TYPE.name

@@ -8,14 +8,13 @@ from bxcommon.network.network_event_loop_factory import create_event_loop
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import generate_bytearray
-from bxcommon.test_utils.mocks.mock_node import MockOpts
+from bxcommon.test_utils.mocks.mock_node import _MockOpts
 from bxcommon.utils import logger
 
 
 class TestNode(AbstractNode):
     def __init__(self, port, peers_ports, timeout=None, send_bytes=None):
-        opts = MockOpts()
-        opts.internal_port = port
+        opts = _MockOpts()
         opts.external_port = port
         super(TestNode, self).__init__(opts)
 
@@ -52,7 +51,7 @@ class TestNode(AbstractNode):
 
         return peer_addresses
 
-    def get_connection_class(self, ip=None, port=None, from_me=False):
+    def build_connection(self, socket_connection, ip, port, from_me=False):
         return None
 
     def on_connection_added(self, socket_connection, port, ip, from_me):

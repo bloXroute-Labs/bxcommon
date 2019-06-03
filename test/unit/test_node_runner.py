@@ -3,13 +3,14 @@ from unittest import mock
 from argparse import Namespace
 
 from bxcommon import node_runner
+from bxcommon.connections.node_type import NodeType
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.utils import logger, log_level, log_format
 from bxcommon.models.node_model import NodeModel
 
 
 class NodeMock(object):
-    NODE_TYPE = "Test"
+    NODE_TYPE = NodeType.GATEWAY
 
     def __init__(self, opts: Namespace):
         self.opts: Namespace = opts

@@ -74,7 +74,7 @@ class AbstractConnectionTest(AbstractTestCase):
     def test_msg_ping(self):
         self.connection.msg_ping(PingMessage())
         self.assertTrue(self.connection.outputbuf.length > 0)
-        self.connection.outputbuf._flush_to_buffer()
+        self.connection.outputbuf.flush()
 
         output_buf_msg = self.connection.outputbuf.get_buffer()
         pong_reply_msg = bloxroute_message_factory.create_message_from_buffer(output_buf_msg)

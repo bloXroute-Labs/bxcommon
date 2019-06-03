@@ -7,7 +7,7 @@ from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.node_type import NodeType
-from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, ALL_NETWORK_NUM, USE_EXTENSION_MODULES
+from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, USE_EXTENSION_MODULES
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
@@ -73,9 +73,10 @@ def create_input_buffer_with_bytes(message_bytes):
     return input_buffer
 
 
-def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0.0.0", blockchain_address=None,
-                     test_mode=None, peer_gateways=None, peer_relays=None, protocol_version=1, sid_expire_time=30,
-                     bloxroute_version="bloxroute 1.5", include_default_btc_args=False, include_default_eth_args=False,
+def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, blockchain_address=None,
+                     test_mode=None, peer_gateways=None, peer_relays=None, peer_transaction_relays=None,
+                     split_relays=False, protocol_version=1, sid_expire_time=30, bloxroute_version="bloxroute 1.5",
+                     include_default_btc_args=False, include_default_eth_args=False,
                      blockchain_network_num=DEFAULT_NETWORK_NUM, min_peer_gateways=0, remote_blockchain_ip=None,
                      remote_blockchain_port=None, connect_to_remote_blockchain=False, is_internal_gateway=False,
                      is_gateway_miner=False, **kwargs):
@@ -85,6 +86,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         peer_gateways = []
     if peer_relays is None:
         peer_relays = []
+    if peer_transaction_relays is None:
+        peer_transaction_relays = []
     if blockchain_address is None:
         blockchain_address = ("127.0.0.1", 7000)  # not real, just a placeholder
     if test_mode is None:
@@ -101,8 +104,6 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "bloxroute_version": bloxroute_version,
         "external_ip": external_ip,
         "external_port": port,
-        "internal_ip": internal_ip,
-        "internal_port": port,
         "blockchain_ip": blockchain_address[0],
         "blockchain_port": blockchain_address[1],
         "blockchain_protocol": "Bitcoin",
@@ -110,6 +111,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "test_mode": test_mode,
         "peer_gateways": peer_gateways,
         "peer_relays": peer_relays,
+        "peer_transaction_relays": peer_transaction_relays,
+        "split_relays": split_relays,
         "outbound_peers": peer_gateways + peer_relays,
         "protocol_version": protocol_version,
         "blockchain_network_num": blockchain_network_num,
@@ -137,7 +140,7 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "use_extensions": USE_EXTENSION_MODULES,
         "import_extensions": USE_EXTENSION_MODULES,
         "enable_buffered_send": False,
-		"compact_block": True
+        "compact_block": True
     }
 
     if include_default_btc_args:
@@ -160,46 +163,3 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
     for key, val in kwargs.items():
         opts.__dict__[key] = val
     return opts
-
-
-SID_SIZE = 100 * 1000 * 1000
-
-
-def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, sdn_socket_port=8888,
-                   relay_addresses=None, blockchain_network_num=ALL_NETWORK_NUM, sid_size=SID_SIZE,
-                   sid_expire_time=1000):
-    if relay_addresses is None:
-        relay_addresses = []
-    opts = Namespace()
-    opts.__dict__ = {
-        "node_id": "Relay {0}".format(index),
-        "node_type": NodeType.RELAY,
-        "external_ip": external_ip,
-        "external_port": port,
-        "internal_ip": "0.0.0.0",
-        "internal_port": port,
-        "sdn_socket_ip": sdn_socket_ip,
-        "sdn_socket_port": sdn_socket_port,
-        "sid_start": index * sid_size + 1,
-        "sid_end": (index + 1) * sid_size,  # tx_service is inclusive
-        "sid_expire_time": sid_expire_time,
-        "outbound_peers": relay_addresses,
-        "test_mode": "",
-        "blockchain_network_num": blockchain_network_num,
-        "blockchain_networks": [
-            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0,
-                                   final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1,
-                                   final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2,
-                                   final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3,
-                                   final_tx_confirmations_count=2)
-        ],
-        "transaction_pool_memory_limit": 200000000,
-        "enable_buffered_send": False,
-        "use_extensions": USE_EXTENSION_MODULES,
-        "import_extensions": USE_EXTENSION_MODULES
-    }
-    return opts
-

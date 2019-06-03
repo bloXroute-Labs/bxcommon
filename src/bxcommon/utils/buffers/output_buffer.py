@@ -51,7 +51,7 @@ class OutputBuffer(object):
         if self.enable_buffering and \
                 self.last_bytearray is not None and \
                 now - self.last_bytearray_create_time >= self.max_hold_time:
-            self._flush_to_buffer()
+            self.flush()
 
         if not self.output_msgs:
             return OutputBuffer.EMPTY
@@ -85,7 +85,7 @@ class OutputBuffer(object):
             self.output_msgs.append(msg_bytes)
         elif length + self.valid_len > self.min_size:
             if self.last_bytearray is not None:
-                self._flush_to_buffer()
+                self.flush()
             self.output_msgs.append(msg_bytes)
         else:
             now = time.time()
@@ -102,7 +102,7 @@ class OutputBuffer(object):
                 self.valid_len += length
 
                 if now - self.last_bytearray_create_time > self.max_hold_time:
-                    self._flush_to_buffer()
+                    self.flush()
 
         self.length += len(msg_bytes)
 
@@ -122,10 +122,9 @@ class OutputBuffer(object):
     def has_more_bytes(self):
         return self.length != 0
 
-
     # TODO: @soumya this is called every 200ms. This needs some future cleanup; possibly in the alarm data structure.
     # Consult Nagle algorithm before implementing improvements.
-    def _flush_to_buffer(self):
+    def flush(self):
         if self.last_bytearray is None:
             return
 

@@ -10,7 +10,7 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 
 
-class TransactionService(object):
+class TransactionService:
     """
     Service for managing transaction mappings.
     In this class, we assume that no more than MAX_ID unassigned transactions exist at a time.

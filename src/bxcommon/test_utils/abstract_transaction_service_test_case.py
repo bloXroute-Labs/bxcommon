@@ -1,5 +1,5 @@
 import time
-from abc import abstractmethod
+from abc import abstractmethod, ABCMeta
 
 from mock import MagicMock
 
@@ -17,14 +17,16 @@ def get_sha(data: bytes) -> Sha256Hash:
 
 
 class AbstractTransactionServiceTestCase(AbstractTestCase):
+    __metaclass__ = ABCMeta
+
     TEST_MEMORY_LIMIT_MB = 0.01
 
     def setUp(self) -> None:
         self.mock_node = MockNode(LOCALHOST, 8000)
         self.mock_node.opts.transaction_pool_memory_limit = self.TEST_MEMORY_LIMIT_MB
-        self.transaction_service = self._get_transaction_service()
+        self.transaction_service = self.get_transaction_service()
 
-    def _test_sid_assignment_basic(self):
+    def test_sid_assignment_basic(self):
         short_ids = [1, 2, 3, 4, 5]
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
@@ -45,7 +47,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.assertTrue(self.transaction_service.tx_assign_alarm_scheduled)
         self.assertEqual(len(short_ids), len(self.transaction_service._tx_assignment_expire_queue))
 
-    def _test_sid_assignment_multiple_sids(self):
+    def test_sid_assignment_multiple_sids(self):
         short_ids = [1, 2, 3, 4, 5]
         short_ids_2 = [6, 7, 8, 9, 10]
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
@@ -68,7 +70,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.assertEqual(transaction_hashes[i], transaction_hash2.binary)
             self.assertEqual(transaction_contents[i], transaction_content2)
 
-    def _test_sid_expiration(self):
+    def test_sid_expiration(self):
         short_ids = [1, 2, 3, 4, 5]
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
@@ -92,7 +94,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         for transaction_hash in transaction_hashes:
             self.assertEqual(NULL_TX_SID, self.transaction_service.get_short_id(transaction_hash))
 
-    def _test_sid_expiration_multiple_sids(self):
+    def test_sid_expiration_multiple_sids(self):
         short_ids = [0, 1, 2, 3, 4]
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
@@ -127,7 +129,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         for i, transaction_hash in enumerate(transaction_hashes):
             self.assertEqual(short_ids_2[i], self.transaction_service.get_short_id(transaction_hash))
 
-    def _test_track_short_ids_seen_in_block(self):
+    def test_track_short_ids_seen_in_block(self):
         short_ids = [0, 1, 2, 3, 4]
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
@@ -173,7 +175,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.transaction_service.track_seen_short_ids([])
         self._verify_txs_in_tx_service([], [0, 1, 2, 3, 4])
 
-    def _test_transactions_contents_memory_limit(self):
+    def test_transactions_contents_memory_limit(self):
         tx_size = 500
         memory_limit_bytes = int(self.TEST_MEMORY_LIMIT_MB * 1000000)
         tx_count_set_1 = memory_limit_bytes / tx_size
@@ -222,7 +224,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.assertEqual(tx_count_set_2 + 2, stats["transactions_removed_by_memory_limit"])
         self.assertEqual(tx_count_set_1 - 1, len(self.transaction_service._tx_hash_to_contents))
 
-    def _test_get_missing_transactions(self):
+    def test_get_missing_transactions(self):
         existing_short_ids = list(range(1, 51))
         missing_short_ids = list(range(51, 101))
         missing_transaction_hashes = list(map(get_sha, map(bytes, missing_short_ids[:25])))
@@ -266,5 +268,6 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.assertIsNone(self.transaction_service.get_transaction(short_id)[1])
 
     @abstractmethod
-    def _get_transaction_service(self) -> TransactionService:
-        pass
+    def get_transaction_service(self) -> TransactionService:
+        self.skipTest("abstract test case")
+        raise NotImplementedError()

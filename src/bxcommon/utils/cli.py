@@ -142,7 +142,7 @@ def parse_blockchain_opts(opts, node_type):
     """
     opts_dict = opts.__dict__
 
-    if node_type == NodeType.RELAY:
+    if node_type & NodeType.RELAY:
         opts_dict["blockchain_network_num"] = ALL_NETWORK_NUM
         return
 

@@ -1,18 +1,20 @@
-from bxcommon.connections.connection_type import ConnectionType
+from argparse import Namespace
+from typing import List
+
+from bxcommon.connections.abstract_connection import AbstractConnection
+from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import DEFAULT_NETWORK_NUM
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils.alarm_queue import AlarmQueue
-from bxcommon.connections.abstract_node import AbstractNode
-from argparse import Namespace
 
 
 class MockNode(AbstractNode):
     NODE_TYPE = NodeType.RELAY
 
     def __init__(self, external_ip, external_port):
-        mock_opts = MockOpts()
+        mock_opts = _MockOpts()
         mock_opts.external_port = external_port
         mock_opts.external_ip = external_ip
         self.opts = mock_opts
@@ -22,14 +24,14 @@ class MockNode(AbstractNode):
         self.idx = 1
 
         self.broadcast_messages = []
-        mock_opts = MockOpts()
+        mock_opts = _MockOpts()
         super(MockNode, self).__init__(mock_opts)
 
         self._tx_service = TransactionService(self, self.network_num)
         self._tx_services = {}
 
     def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, network_num=None,
-                  connection_types=None, exclude_relays=False):
+                  connection_types=None, exclude_relays=False) -> List[AbstractConnection]:
         self.broadcast_messages.append(msg)
         return []
 
@@ -37,7 +39,7 @@ class MockNode(AbstractNode):
         return self._tx_service
 
 
-class MockOpts(Namespace):
+class _MockOpts(Namespace):
 
     def __init__(self, node_id="foo", external_ip="127.0.0.1", external_port=8000, bloxroute_version="v1.5",
                  log_path="./", to_stdout=True, index=1, sid_start=1, sid_end=100000, sid_expire_time=99999,
@@ -58,10 +60,14 @@ class MockOpts(Namespace):
         self.blockchain_network_num = blockchain_network_num
         self.node_type = node_type
         self.blockchain_networks = [
-            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0, final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1, final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2, final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3, final_tx_confirmations_count=2)
+            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0,
+                                   final_tx_confirmations_count=2),
+            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1,
+                                   final_tx_confirmations_count=2),
+            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2,
+                                   final_tx_confirmations_count=2),
+            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3,
+                                   final_tx_confirmations_count=2)
         ]
         self.transaction_pool_memory_limit = 200000000
         self.enable_buffered_send = False

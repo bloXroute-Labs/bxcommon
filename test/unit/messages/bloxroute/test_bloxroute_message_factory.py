@@ -16,24 +16,19 @@ from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.version_message import VersionMessage
 from bxcommon.models.transaction_info import TransactionInfo
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-from bxcommon.test_utils.helpers import create_input_buffer_with_message, create_input_buffer_with_bytes
+from bxcommon.test_utils.helpers import create_input_buffer_with_bytes
+from bxcommon.test_utils.message_factory_test_case import MessageFactoryTestCase
 from bxcommon.utils import crypto
 from bxcommon.utils.crypto import SHA256_HASH_LEN, KEY_SIZE
 from bxcommon.utils.object_hash import Sha256Hash
 
 
-class BloxrouteMessageFactory(AbstractTestCase):
+class BloxrouteMessageFactory(MessageFactoryTestCase):
     HASH = Sha256Hash(crypto.double_sha256(b"123"))
     NETWORK_NUM = 12345
 
-    def get_message_preview_successfully(self, message, expected_command, expected_payload_length):
-        is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview_from_input_buffer(
-            create_input_buffer_with_message(message)
-        )
-        self.assertTrue(is_full_message)
-        self.assertEqual(expected_command, command)
-        self.assertEqual(expected_payload_length, payload_length)
+    def get_message_factory(self):
+        return bloxroute_message_factory
 
     def get_hashed_message_preview_successfully(self, message, expected_hash):
         is_full_message, msg_hash, network_num, _payload_length = \
@@ -43,11 +38,6 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.assertTrue(is_full_message)
         self.assertEqual(expected_hash, msg_hash)
         self.assertEqual(self.NETWORK_NUM, network_num)
-
-    def create_message_successfully(self, message, message_type):
-        result = bloxroute_message_factory.create_message_from_buffer(message.rawbytes())
-        self.assertIsInstance(result, message_type)
-        return result
 
     def test_message_hello(self):
         hello_msg = HelloMessage(protocol_version=bloxroute_version_manager.CURRENT_PROTOCOL_VERSION,
@@ -92,7 +82,7 @@ class BloxrouteMessageFactory(AbstractTestCase):
         self.assertFalse(is_full_message)
         self.assertEqual(b"hello", command)
         self.assertEqual(VersionMessage.VERSION_MESSAGE_LENGTH + UL_INT_SIZE_IN_BYTES + NODE_ID_SIZE_IN_BYTES -
-                          UL_INT_SIZE_IN_BYTES, payload_length)
+                         UL_INT_SIZE_IN_BYTES, payload_length)
 
         is_full_message, command, payload_length = bloxroute_message_factory.get_message_header_preview_from_input_buffer(
             create_input_buffer_with_bytes(message.rawbytes()[:1])
@@ -103,7 +93,8 @@ class BloxrouteMessageFactory(AbstractTestCase):
 
     def test_message_hash_preview(self):
         blob = bytearray(1 for _ in range(4))
-        self.get_hashed_message_preview_successfully(BroadcastMessage(self.HASH, self.NETWORK_NUM, True, blob), self.HASH)
+        self.get_hashed_message_preview_successfully(BroadcastMessage(self.HASH, self.NETWORK_NUM, True, blob),
+                                                     self.HASH)
 
     def test_message_hash_preview_incomplete(self):
         blob = bytearray(1 for _ in range(4))
