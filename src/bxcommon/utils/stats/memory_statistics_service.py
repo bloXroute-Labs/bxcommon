@@ -21,15 +21,12 @@ class MemoryStatsService(ThreadedStatisticsService):
     def __init__(self, interval=0):
         super(MemoryStatsService, self).__init__("MemoryStats", interval=interval, look_back=5, reset=False)
 
-    def add_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info):
+    def add_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info, object_item_count=0):
         mem_stats = self.interval_data.class_mem_stats[class_name]
         mem_stats.timestamp = datetime.utcnow()
 
         # If the object being analyzed doesn't have a length property
-        if hasattr(obj, "__len__"):
-            object_item_count = len(obj)
-        else:
-            object_item_count = 0
+        object_item_count = len(obj) if hasattr(obj, "__len__") else object_item_count
 
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_item_count = object_item_count
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_size = obj_mem_info.size
@@ -43,7 +40,9 @@ class MemoryStatsService(ThreadedStatisticsService):
             node_type=self.interval_data.node.opts.node_type,
             node_network_num=self.interval_data.node.opts.blockchain_network_num,
             node_address="%s:%d" % (
-                self.interval_data.node.opts.external_ip, self.interval_data.node.opts.external_port),
+                self.interval_data.node.opts.external_ip,
+                self.interval_data.node.opts.external_port
+            ),
             total_mem_usage=memory_utils.get_app_memory_usage(),
             classes=self.interval_data.class_mem_stats
         )
@@ -53,5 +52,6 @@ class MemoryStatsService(ThreadedStatisticsService):
     def flush_info(self):
         self.node.dump_memory_usage()
         return super(MemoryStatsService, self).flush_info()
+
 
 memory_statistics = MemoryStatsService(constants.MEMORY_STATS_INTERVAL)

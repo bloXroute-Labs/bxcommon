@@ -315,42 +315,56 @@ class TransactionService(object):
             self.network_num,
             self._tx_hash_to_short_ids,
             "tx_hash_to_short_ids",
-            self.get_collection_mem_stats(self._tx_hash_to_short_ids,
-                                          self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(
-                                              self._tx_hash_to_short_ids)))
+            self.get_collection_mem_stats(
+                self._tx_hash_to_short_ids,
+                self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._tx_hash_to_short_ids)
+            ),
+            len(self._tx_hash_to_short_ids)
+        )
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self._tx_hash_to_contents,
             "tx_hash_to_contents",
-            self.get_collection_mem_stats(self._tx_hash_to_contents, self.ESTIMATED_TX_HASH_ITEM_SIZE * len(
-                self._tx_hash_to_contents) + self._total_tx_contents_size))
+            self.get_collection_mem_stats(
+                self._tx_hash_to_contents,
+                self.ESTIMATED_TX_HASH_ITEM_SIZE * len(self._tx_hash_to_contents) + self._total_tx_contents_size
+            ),
+            len(self._tx_hash_to_contents)
+        )
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self._short_id_to_tx_hash,
             "short_id_to_tx_hash",
-            self.get_collection_mem_stats(self._short_id_to_tx_hash,
-                                          self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(
-                                              self._short_id_to_tx_hash)))
+            self.get_collection_mem_stats(
+                self._short_id_to_tx_hash,
+                self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._short_id_to_tx_hash)
+            ),
+            len(self._short_id_to_tx_hash)
+        )
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self._short_ids_seen_in_block,
             "short_ids_seen_in_block",
-            self.get_collection_mem_stats(self._short_ids_seen_in_block, 0))
+            self.get_collection_mem_stats(self._short_ids_seen_in_block, 0)
+        )
 
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self._tx_assignment_expire_queue,
             "tx_assignment_expire_queue",
-            self.get_collection_mem_stats(self._tx_assignment_expire_queue,
-                                          self.ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE * len(
-                                              self._tx_assignment_expire_queue)))
+            self.get_collection_mem_stats(
+                self._tx_assignment_expire_queue,
+                self.ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE * len(self._tx_assignment_expire_queue)
+            ),
+            len(self._tx_assignment_expire_queue)
+        )
 
     def get_tx_service_aggregate_stats(self):
         """

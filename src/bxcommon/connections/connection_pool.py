@@ -1,4 +1,6 @@
 from collections import defaultdict
+from bxcommon.utils.stats import hooks
+from bxcommon.utils import memory_utils
 
 
 class ConnectionPool(object):
@@ -123,3 +125,45 @@ class ConnectionPool(object):
         Returns number of connections in pool.
         """
         return len(self.by_ipport)
+
+    def log_connection_pool_mem_stats(self):
+        """
+        Logs Connection Pool memory statistics
+        """
+
+        class_name = self.__class__.__name__
+        hooks.add_obj_mem_stats(
+            class_name,
+            0,
+            self.by_fileno,
+            "connection_pool_by_fileno",
+            memory_utils.get_object_size(self.by_fileno),
+            len(self.by_fileno)
+        )
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            0,
+            self.by_ipport,
+            "connection_pool_by_ipport",
+            memory_utils.get_object_size(self.by_ipport),
+            len(self.by_ipport)
+        )
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            0,
+            self.by_connection_type,
+            "connection_pool_by_connection_type",
+            memory_utils.get_object_size(self.by_connection_type),
+            len(self.by_connection_type)
+        )
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            0,
+            self.count_conn_by_ip,
+            "connection_pool_count_conn_by_ip",
+            memory_utils.get_object_size(self.count_conn_by_ip),
+            len(self.count_conn_by_ip)
+        )
