@@ -152,4 +152,4 @@ class SocketConnection(object):
         # is called on it.
         self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
         self.socket_instance.close()
-
+        self._receive_buf = None
