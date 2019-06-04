@@ -10,5 +10,5 @@ def add_measurement(peer_desc, measure_type, measure_value):
     return throughput_statistics.add_measurement(peer_desc, measure_type, measure_value)
 
 
-def add_obj_mem_stats(class_name, network_num, obj, obj_name, obj_mem_info):
-    return memory_statistics.add_mem_stats(class_name, network_num, obj, obj_name, obj_mem_info)
+def add_obj_mem_stats(class_name, network_num, obj, obj_name, obj_mem_info, object_item_count=None):
+    return memory_statistics.add_mem_stats(class_name, network_num, obj, obj_name, obj_mem_info, object_item_count)
