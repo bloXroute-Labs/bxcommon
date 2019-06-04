@@ -3,6 +3,7 @@ import struct
 from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.message import Message
+from bxcommon.utils.log_level import LogLevel
 
 
 class GetTxsMessage(Message):
@@ -32,6 +33,9 @@ class GetTxsMessage(Message):
 
             self.buf = buf
             self._memoryview = memoryview(self.buf)
+
+    def log_level(self):
+        return LogLevel.INFO
 
     def get_short_ids(self):
         if self._short_ids is None:

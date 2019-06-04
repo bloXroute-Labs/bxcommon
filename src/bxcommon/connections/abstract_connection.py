@@ -1,3 +1,4 @@
+import time
 import traceback
 from abc import ABCMeta
 from collections import defaultdict
@@ -68,6 +69,7 @@ class AbstractConnection(object):
         self.network_num = node.network_num
 
         self._trace_message_tracker = defaultdict(int)
+        self._last_trace_message_log_time = time.time()
         logger.info("Initialized new connection: {}", self)
 
     def __repr__(self):
@@ -195,8 +197,10 @@ class AbstractConnection(object):
                 if not logger.should_log_level(msg.log_level()) and logger.should_log_level(LogLevel.INFO):
                     self._trace_message_tracker[msg_type] += 1
                 elif len(self._trace_message_tracker) > 0:
-                    logger.info("Processed the following message types: {}", self._trace_message_tracker)
+                    logger.info("Processed the following message types: {} on connection {} over {:.2f} seconds.",
+                                self._trace_message_tracker, self, time.time() - self._last_trace_message_log_time)
                     self._trace_message_tracker.clear()
+                    self._last_trace_message_log_time = time.time()
 
                 logger.log(msg.log_level(), "Processing message: {} on connection: {}", msg, self)
 
