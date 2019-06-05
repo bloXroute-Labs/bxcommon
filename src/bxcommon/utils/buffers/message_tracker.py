@@ -33,12 +33,13 @@ class MessageTrackerEntry:
 
 
 class MessageTracker:
-    messages: Deque[MessageTrackerEntry] = deque()
+    messages: Deque[MessageTrackerEntry]
     connection: "AbstractConnection"
     is_working: bool = True
 
     def __init__(self, connection: "AbstractConnection"):
         self.connection = connection
+        self.messages = deque()
 
     def __repr__(self):
         return "MessageTracker<connection: {}, messages: {}>".format(self.connection, repr(self.messages))
