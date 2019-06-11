@@ -63,7 +63,8 @@ class AbstractNode(object):
 
         self.network_num = opts.blockchain_network_num
 
-        self.memory_dumped_once = False
+        # converting setting in MB to bytes
+        self.next_report_mem_usage_bytes = self.opts.dump_detailed_report_at_memory_usage * 1024 * 1024
 
     def get_sdn_address(self):
         """
@@ -472,17 +473,11 @@ class AbstractNode(object):
         opts.log_detailed_block_stats = False
 
     def dump_memory_usage(self):
-        # Dump memory only once
-        if self.memory_dumped_once:
-            return
-
-        # converting setting in MB to bytes
-        report_mem_usage_bytes = self.opts.dump_detailed_report_at_memory_usage * 1024 * 1024
         total_mem_usage = memory_utils.get_app_memory_usage()
 
-        if total_mem_usage >= report_mem_usage_bytes:
+        if total_mem_usage >= self.next_report_mem_usage_bytes:
             node_size = memory_utils.get_detailed_object_size(self)
             logger.statistics(
                 "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}",
-                total_mem_usage, report_mem_usage_bytes, json.dumps(node_size, cls=ClassJsonEncoder))
-            self.memory_dumped_once = True
+                total_mem_usage, self.next_report_mem_usage_bytes, json.dumps(node_size, cls=ClassJsonEncoder))
+            self.next_report_mem_usage_bytes = total_mem_usage + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES

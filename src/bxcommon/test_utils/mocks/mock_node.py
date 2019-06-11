@@ -65,3 +65,4 @@ class MockOpts(object):
         self.throughput_debugging = False
         self.enable_buffered_send = False
         self.track_detailed_sent_messages = True
+        self.dump_detailed_report_at_memory_usage = 100

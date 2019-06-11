@@ -143,7 +143,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "enable_buffered_send": False,
         "track_detailed_sent_messages": True,
         "compact_block": True,
-        "compact_block_min_tx_count": BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT
+        "compact_block_min_tx_count": BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT,
+        "dump_detailed_report_at_memory_usage": 100
     }
 
     if include_default_btc_args:
@@ -203,6 +204,7 @@ def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, 
         "use_extensions": USE_EXTENSION_MODULES,
         "import_extensions": USE_EXTENSION_MODULES,
         "throughput_debugging": False,
-        "track_detailed_sent_messages": True
+        "track_detailed_sent_messages": True,
+        "dump_detailed_report_at_memory_usage": 100
     }
     return opts
