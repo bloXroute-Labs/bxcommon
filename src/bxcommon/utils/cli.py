@@ -115,6 +115,25 @@ def get_args():
                                 default=(1 * 1024))
         arg_parser.add_argument("--enable-buffered-send", help="Enables buffering of sent byte to improve performance",
                                 type=convert.str_to_bool, default=True)
+        arg_parser.add_argument("--track-detailed-sent-messages", help="Enables tracking of messages written on socket",
+                                type=convert.str_to_bool, default=True)
+        arg_parser.add_argument(
+            "--use-extensions",
+            help="If true than the node will use the extension module for "
+                 "some tasks like block compression (default: {0})".format(
+                constants.USE_EXTENSION_MODULES
+            ),
+            default=constants.USE_EXTENSION_MODULES,
+            type=convert.str_to_bool
+        )
+
+        arg_parser.add_argument(
+            "--import-extensions",
+            help="If true than the node will import all C++ extensions dependencies on start up",
+            default=False,
+            type=convert.str_to_bool
+        )
+
         _args, unknown = arg_parser.parse_known_args()
         if not _args.external_ip:
             _args.external_ip = config.get_node_public_ip()

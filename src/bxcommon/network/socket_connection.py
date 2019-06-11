@@ -8,7 +8,7 @@ from bxcommon.utils import logger, convert
 
 # TODO: This needs to be renamed to "SocketWrapper". This just wraps the socket object- does not contain any connection
 # logic.
-class SocketConnection(object):
+class SocketConnection:
     def __init__(self, socket_instance, node, is_server=False):
         if not isinstance(socket_instance, socket.socket):
             raise ValueError("socket_instance is expected to be of type socket but was {0}"

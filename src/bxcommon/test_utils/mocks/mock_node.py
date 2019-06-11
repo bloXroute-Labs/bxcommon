@@ -71,3 +71,4 @@ class _MockOpts(Namespace):
         ]
         self.transaction_pool_memory_limit = 200000000
         self.enable_buffered_send = False
+        self.track_detailed_sent_messages = True

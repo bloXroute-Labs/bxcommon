@@ -48,7 +48,7 @@ class AbstractNetworkEventLoop(object):
                 self._process_disconnect_requests()
 
                 if self._node.force_exit():
-                    logger.info("Ending event loop. Shutdown has been requested.")
+                    logger.info("Ending event loop. Shutdown has been requested manually.")
                     break
 
                 self._node.flush_all_send_buffers()

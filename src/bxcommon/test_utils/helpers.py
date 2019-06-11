@@ -140,7 +140,9 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, blockchain_addre
         "use_extensions": USE_EXTENSION_MODULES,
         "import_extensions": USE_EXTENSION_MODULES,
         "enable_buffered_send": False,
-        "compact_block": True
+        "track_detailed_sent_messages": True,
+        "compact_block": True,
+        "tune_send_buffer_size": False
     }
 
     if include_default_btc_args:

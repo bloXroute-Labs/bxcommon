@@ -7,6 +7,7 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.messages.bloxroute.message import Message
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.utils import logger
+from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.object_hash import Sha256Hash
 
 
@@ -34,8 +35,11 @@ class TxsMessage(Message):
 
             self.buf = buf
             self._memoryview = memoryview(self.buf)
-            
+
         self._txs = None
+
+    def log_level(self):
+        return LogLevel.INFO
 
     def get_txs(self) -> List[TransactionInfo]:
         if self._txs is None:
@@ -105,3 +109,6 @@ class TxsMessage(Message):
             txs.append(TransactionInfo(tx_hash, tx, tx_sid))
 
         self._txs = txs
+
+    def __repr__(self):
+        return "TxsMessage<num_txs: {}>".format(len(self.get_txs()))
