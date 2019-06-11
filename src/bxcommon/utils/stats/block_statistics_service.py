@@ -21,7 +21,7 @@ class _BlockStatisticsService(StatisticsEventService):
         else:
             block_hash = block_msg[HDR_COMMON_OFF:HDR_COMMON_OFF + crypto.SHA256_HASH_LEN]
 
-        self.log_event(block_event_settings, convert.bytes_to_hex(block_hash), network_num, start_date_time, end_date_time,
+        self.log_event(block_event_settings, convert.bytes_to_hex(block_hash), start_date_time, end_date_time,
                        network_num=network_num,
                        **kwargs)
 
