@@ -6,6 +6,7 @@ import random
 from hashlib import sha256
 import task_pool_executor as tpe
 from collections import defaultdict
+from bxcommon.utils.stats.stat_event_logic_flags import StatEventLogicFlags
 
 
 class EncodedTestClass(object):
@@ -112,3 +113,13 @@ class ClassJsonEncoderTest(unittest.TestCase):
         keys = d.keys()
         self.assertEqual(json.dumps(list(values)), json.dumps(values, cls=ClassJsonEncoder))
         self.assertEqual(json.dumps(list(keys)), json.dumps(keys, cls=ClassJsonEncoder))
+
+    def test_event_logic_flags(self):
+        self.assertEqual(json.dumps(StatEventLogicFlags.SUMMARY, cls=ClassJsonEncoder),
+                         json.dumps(str(StatEventLogicFlags.SUMMARY.value)))
+        self.assertEqual(json.dumps(StatEventLogicFlags.SUMMARY | StatEventLogicFlags.BLOCK_INFO, cls=ClassJsonEncoder),
+                         json.dumps(str((StatEventLogicFlags.SUMMARY | StatEventLogicFlags.BLOCK_INFO).value))
+                         )
+        self.assertEqual(json.dumps(StatEventLogicFlags.SUMMARY | StatEventLogicFlags.BLOCK_INFO, cls=ClassJsonEncoder),
+                         json.dumps(str(5))
+                         )
