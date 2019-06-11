@@ -39,6 +39,7 @@ class TransactionService(object):
     ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE = 376
     ESTIMATED_TX_HASH_ITEM_SIZE = 312
     ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE = 88
+    ESTIMATED_TX_HASH_NOT_SEEN_IN_BLOCK_ITEM_SIZE = 312
 
     def __init__(self, node, network_num):
         """
@@ -364,6 +365,18 @@ class TransactionService(object):
                 self.ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE * len(self._tx_assignment_expire_queue)
             ),
             len(self._tx_assignment_expire_queue)
+        )
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            self.network_num,
+            self._tx_hash_not_seen_in_block,
+            "tx_hash_not_seen_in_block",
+            self.get_collection_mem_stats(
+                self._tx_hash_not_seen_in_block,
+                self.ESTIMATED_TX_HASH_NOT_SEEN_IN_BLOCK_ITEM_SIZE * len(self._tx_hash_not_seen_in_block)
+            ),
+            len(self._tx_hash_not_seen_in_block)
         )
 
     def get_tx_service_aggregate_stats(self):
