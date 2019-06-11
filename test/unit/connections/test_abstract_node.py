@@ -1,5 +1,6 @@
 from mock import patch, MagicMock
 
+from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
@@ -248,14 +249,14 @@ class AbstractNodeTest(AbstractTestCase):
     @patch("bxcommon.utils.logger.statistics")
     def test_dump_memory_usage(self, mock_warn):
         # set to dump memory at 10 MB
-        self.local_node.opts.dump_detailed_report_at_memory_usage = 10
+        self.local_node.next_report_mem_usage_bytes = 10 * 1024 * 1024
 
         # current memory usage is 5 MB
         memory_utils.get_app_memory_usage = MagicMock(return_value=5 * 1024 * 1024)
 
         self.local_node.dump_memory_usage()
         # expect that memory details are not logged
-        self.assertFalse(self.local_node.memory_dumped_once)
+        self.assertEqual(10 * 1024 * 1024, self.local_node.next_report_mem_usage_bytes)
         mock_warn.assert_not_called()
 
         # current memory usage goes up to 11 MB
@@ -263,7 +264,8 @@ class AbstractNodeTest(AbstractTestCase):
 
         self.local_node.dump_memory_usage()
         # expect that memory details are logged
-        self.assertTrue(self.local_node.memory_dumped_once)
+        self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
+                         self.local_node.next_report_mem_usage_bytes)
         mock_warn.assert_called_once()
 
         # current memory usage goes up to 15 MB
@@ -271,7 +273,8 @@ class AbstractNodeTest(AbstractTestCase):
 
         self.local_node.dump_memory_usage()
         # expect that memory details are not logged again
-        self.assertTrue(self.local_node.memory_dumped_once)
+        self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
+                         self.local_node.next_report_mem_usage_bytes)
         mock_warn.assert_called_once()
 
 
