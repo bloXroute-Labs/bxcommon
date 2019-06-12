@@ -11,6 +11,7 @@ class BlockStatEventType(object):
         "CompactBlockReceivedFromBlockchainNodeIgnoreSeen")
     COMPACT_BLOCK_DECOMPRESSED = StatEventTypeSettings(
         "CompactBlockDecompressed")
+    COMPACT_BLOCK_REQUEST_FULL = StatEventTypeSettings("CompactBlockRequestFull")
     BLOCK_COMPRESSED = StatEventTypeSettings("BlockCompressed",
                                              event_logic_flags=StatEventLogicFlags.BLOCK_INFO | \
                                                                StatEventLogicFlags.MATCH)

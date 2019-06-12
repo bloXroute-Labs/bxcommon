@@ -1,5 +1,5 @@
-from collections import defaultdict, deque
-from typing import List, Tuple
+from collections import defaultdict, deque, OrderedDict
+from typing import List, Tuple, Any
 
 from bxcommon import constants
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
@@ -39,6 +39,7 @@ class TransactionService:
     ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE = 376
     ESTIMATED_TX_HASH_ITEM_SIZE = 312
     ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE = 88
+    ESTIMATED_TX_HASH_NOT_SEEN_IN_BLOCK_ITEM_SIZE = 312
 
     def __init__(self, node, network_num):
         """
@@ -74,6 +75,10 @@ class TransactionService:
         self._total_tx_contents_size = 0
         self._total_tx_removed_by_memory_limit = 0
 
+        # Holds transactions that are known and not seen in any block.
+        # Value False will indicate that transaction already seen in a block but not removed from the dictionary yet
+        self._tx_hash_not_seen_in_block = OrderedDict()
+
     def set_transaction_contents(self, transaction_hash, transaction_contents):
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
@@ -89,6 +94,9 @@ class TransactionService:
 
         self._tx_hash_to_contents[transaction_cache_key] = transaction_contents
         self._total_tx_contents_size += len(transaction_contents) - previous_size
+
+        # Setting item value to True in order to indicate that this transaction is known and not seen in any block
+        self._tx_hash_not_seen_in_block[transaction_cache_key] = True
 
         self._memory_limit_clean_up()
 
@@ -237,6 +245,21 @@ class TransactionService:
         for tx_cache_key in self._tx_hash_to_contents:
             yield self._tx_cache_key_to_hash(tx_cache_key)
 
+    def iter_transaction_hashes_not_seen_in_block(self):
+        for tx_cache_key in self._tx_hash_not_seen_in_block:
+            yield self._tx_cache_key_to_hash(tx_cache_key)
+
+    def clean_transaction_hashes_not_seen_in_block(self):
+        hashes_to_remove = []
+
+        for tx_cache_key in self._tx_hash_not_seen_in_block:
+            # if transaction is known but already seen in a block prior to this call then remove it
+            if not self._tx_hash_not_seen_in_block[tx_cache_key]:
+                hashes_to_remove.append(tx_cache_key)
+
+        for tx_cache_key in hashes_to_remove:
+            del self._tx_hash_not_seen_in_block[tx_cache_key]
+
     def expire_old_assignments(self):
         """
         Clean up expired short ids.
@@ -271,6 +294,21 @@ class TransactionService:
 
             for short_id in final_short_ids:
                 self._remove_transaction_by_short_id(short_id)
+
+    def track_transactions_seen_in_block(self, block_message: Any):
+        """
+        Removes transaction hashes that were seen a block from value returned by iter_transaction_hashes_not_seen_in_block
+        Requires specific implementation per blockchain if functionality is needed
+        :param block_message: block message specific to a blockchain
+        """
+        pass
+
+    def track_seen_transaction_hash(self, transaction_hash: Sha256Hash) -> None:
+
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+
+        if transaction_cache_key in self._tx_hash_not_seen_in_block:
+            self._tx_hash_not_seen_in_block[transaction_cache_key] = True
 
     def log_tx_service_mem_stats(self):
         """
@@ -334,6 +372,18 @@ class TransactionService:
             len(self._tx_assignment_expire_queue)
         )
 
+        hooks.add_obj_mem_stats(
+            class_name,
+            self.network_num,
+            self._tx_hash_not_seen_in_block,
+            "tx_hash_not_seen_in_block",
+            self.get_collection_mem_stats(
+                self._tx_hash_not_seen_in_block,
+                self.ESTIMATED_TX_HASH_NOT_SEEN_IN_BLOCK_ITEM_SIZE * len(self._tx_hash_not_seen_in_block)
+            ),
+            len(self._tx_hash_not_seen_in_block)
+        )
+
     def get_tx_service_aggregate_stats(self):
         """
         Returns dictionary with aggregated statistics of transactions service
@@ -383,6 +433,9 @@ class TransactionService:
                         del self._tx_hash_to_contents[transaction_cache_key]
                 else:
                     short_ids.remove(short_id)
+
+            if transaction_cache_key in self._tx_hash_not_seen_in_block:
+                del self._tx_hash_not_seen_in_block[transaction_cache_key]
 
         self._tx_assignment_expire_queue.remove(short_id)
 
