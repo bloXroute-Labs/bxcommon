@@ -6,6 +6,7 @@ from contextlib import closing
 from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
+from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, USE_EXTENSION_MODULES
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
@@ -51,6 +52,13 @@ def receive_node_message(node, fileno, message):
     node.on_finished_receiving(fileno)
 
 
+def get_queued_node_message(node: AbstractNode, fileno: int, message_type: str):
+    bytes_to_send = node.get_bytes_to_send(fileno)
+    assert message_type in bytes_to_send.tobytes()
+    node.on_bytes_sent(fileno, len(bytes_to_send))
+    return bytes_to_send
+
+
 def get_free_port():
     """
     Find a free port and returns it. Has a race condition that some other process could steal the port between this
@@ -79,7 +87,7 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, blockchain_addre
                      include_default_btc_args=False, include_default_eth_args=False,
                      blockchain_network_num=DEFAULT_NETWORK_NUM, min_peer_gateways=0, remote_blockchain_ip=None,
                      remote_blockchain_port=None, connect_to_remote_blockchain=False, is_internal_gateway=False,
-                     is_gateway_miner=False, **kwargs):
+                     is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True, **kwargs):
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -136,10 +144,10 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, blockchain_addre
                                    final_tx_confirmations_count=3)
         ],
         "transaction_pool_memory_limit": 200000000,
-        "encrypt_blocks": True,
+        "encrypt_blocks": encrypt_blocks,
         "use_extensions": USE_EXTENSION_MODULES,
         "import_extensions": USE_EXTENSION_MODULES,
-        "enable_buffered_send": False,
+        "enable_buffered_send": enable_buffered_send,
         "track_detailed_sent_messages": True,
         "compact_block": True,
         "tune_send_buffer_size": False,
