@@ -12,7 +12,7 @@ class OutputBuffer(object):
       - get_buffer(): some bytes to send in the outputbuffer
       - advance_buffer(): Advances the buffer by some number of bytes
     """
-    EMPTY = bytearray(0)  # The empty outputbuffer
+    EMPTY = memoryview(bytearray(0))  # The empty outputbuffer
 
     def __init__(self, min_size=None, max_hold_time=None, enable_buffering=False):
         if min_size is None:
