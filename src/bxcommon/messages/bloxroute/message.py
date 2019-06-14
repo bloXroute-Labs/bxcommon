@@ -84,7 +84,7 @@ class Message(AbstractMessage):
 
     def payload(self):
         if self._payload is None:
-            self._payload = self.buf[self.HEADER_LENGTH:self.payload_len() + self.HEADER_LENGTH]
+            self._payload = self._memoryview[self.HEADER_LENGTH:self.payload_len() + self.HEADER_LENGTH]
         return self._payload
 
     def __eq__(self, other):
