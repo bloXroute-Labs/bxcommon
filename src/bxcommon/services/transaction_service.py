@@ -265,7 +265,7 @@ class TransactionService(object):
                 hashes_to_remove.append(tx_cache_key)
 
         for tx_cache_key in hashes_to_remove:
-            del self._tx_hash_not_seen_in_block[tx_cache_key]
+            self._remove_tx_not_seen_in_block(tx_cache_key)
 
     def expire_old_assignments(self):
         """
@@ -452,10 +452,13 @@ class TransactionService(object):
                 else:
                     short_ids.remove(short_id)
 
-            if transaction_cache_key in self._tx_hash_not_seen_in_block:
-                del self._tx_hash_not_seen_in_block[transaction_cache_key]
+            self._remove_tx_not_seen_in_block(transaction_cache_key)
 
         self._tx_assignment_expire_queue.remove(short_id)
+
+    def _remove_tx_not_seen_in_block(self, transaction_cache_key):
+        if transaction_cache_key in self._tx_hash_not_seen_in_block:
+            del self._tx_hash_not_seen_in_block[transaction_cache_key]
 
     def _memory_limit_clean_up(self):
         """

@@ -27,6 +27,10 @@ class ExtensionTransactionService(TransactionService):
             self.proxy.tx_hash_to_contents(), raw_encoder, content_encoder
         )
 
+    def _remove_tx_not_seen_in_block(self, transaction_cache_key):
+        super(ExtensionTransactionService, self)._remove_tx_not_seen_in_block(transaction_cache_key)
+        self.proxy.remove_tx_seen_in_block(transaction_cache_key)
+
     def _tx_hash_to_cache_key(self, transaction_hash):
 
         if isinstance(transaction_hash, Sha256Hash):
