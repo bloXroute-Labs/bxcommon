@@ -48,6 +48,10 @@ arg_parser.add_argument("--throughput-debugging",
 arg_parser.add_argument("--transaction-pool-memory-limit",
                         help="Maximum size of transactions to keep in memory pool (MB)",
                         type=int)
+arg_parser.add_argument("--memory-stats-interval",
+                        help="Frequency of memory statistics logs in seconds",
+                        type=int,
+                        default=constants.MEMORY_STATS_INTERVAL)
 arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
                         help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
                         type=int,

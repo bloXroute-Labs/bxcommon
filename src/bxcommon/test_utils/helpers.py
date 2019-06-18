@@ -153,7 +153,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "compact_block_min_tx_count": BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT,
         "dump_detailed_report_at_memory_usage": 100,
         "dump_removed_short_ids": False,
-        "dump_missing_short_ids": False
+        "dump_missing_short_ids": False,
+        "memory_stats_interval": 3600
     }
 
     if include_default_btc_args:

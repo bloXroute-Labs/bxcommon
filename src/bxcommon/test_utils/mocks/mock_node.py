@@ -69,3 +69,4 @@ class MockOpts(object):
         self.dump_detailed_report_at_memory_usage = 100
         self.dump_removed_short_ids = False
         self.dump_missing_short_ids = False
+        self.memory_stats_interval = 3600

@@ -1,7 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
 
-from bxcommon import constants
 from bxcommon.utils import memory_utils
 from bxcommon.utils.stats.class_mem_stats import ClassMemStats
 from bxcommon.utils.stats.statistics_service import StatsIntervalData, ThreadedStatisticsService
@@ -20,6 +19,10 @@ class MemoryStatsService(ThreadedStatisticsService):
 
     def __init__(self, interval=0):
         super(MemoryStatsService, self).__init__("MemoryStats", interval=interval, look_back=5, reset=False)
+
+    def set_node(self, node):
+        super(MemoryStatsService, self).set_node(node)
+        self.interval = node.opts.memory_stats_interval
 
     def add_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info, object_item_count=0):
         mem_stats = self.interval_data.class_mem_stats[class_name]
@@ -54,4 +57,4 @@ class MemoryStatsService(ThreadedStatisticsService):
         return super(MemoryStatsService, self).flush_info()
 
 
-memory_statistics = MemoryStatsService(constants.MEMORY_STATS_INTERVAL)
+memory_statistics = MemoryStatsService()
