@@ -1,9 +1,9 @@
+from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import DEFAULT_NETWORK_NUM
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils.alarm_queue import AlarmQueue
-from bxcommon.connections.abstract_node import AbstractNode
 
 
 class MockNode(AbstractNode):
@@ -39,7 +39,8 @@ class MockOpts(object):
 
     def __init__(self, node_id="foo", external_ip="127.0.0.1", external_port=8000, bloxroute_version="v1.5",
                  log_path="./", to_stdout=True, index=1, sid_start=1, sid_end=100000, sid_expire_time=99999,
-                 outbound_peers=None, blockchain_network_num=DEFAULT_NETWORK_NUM, node_type=NodeType.RELAY):
+                 outbound_peers=None, blockchain_network_num=DEFAULT_NETWORK_NUM, node_type=NodeType.RELAY,
+                 dump_removed_short_ids=False):
         if outbound_peers is None:
             outbound_peers = []
         self.node_id = node_id
@@ -66,3 +67,5 @@ class MockOpts(object):
         self.enable_buffered_send = False
         self.track_detailed_sent_messages = True
         self.dump_detailed_report_at_memory_usage = 100
+        self.dump_removed_short_ids = False
+        self.dump_missing_short_ids = False

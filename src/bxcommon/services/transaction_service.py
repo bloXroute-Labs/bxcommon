@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict, deque, OrderedDict
 from typing import List, Tuple, Any
 
@@ -76,6 +77,16 @@ class TransactionService(object):
         self._total_tx_removed_by_memory_limit = 0
 
         self._tx_hash_not_seen_in_block = OrderedDict()
+
+        self._removed_short_ids = set()
+        if node.opts.dump_removed_short_ids:
+            self.node.alarm_queue.register_alarm(constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S, self._dump_removed_short_ids)
+
+    def _dump_removed_short_ids(self):
+        with open("{}/{}".format(self.node.opts.dump_removed_short_ids_path, int(time.time())), "w") as f:
+            f.write(str(self._removed_short_ids))
+            self._removed_short_ids.clear()
+        return constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S
 
     def set_transaction_contents(self, transaction_hash, transaction_contents):
         """
@@ -233,6 +244,7 @@ class TransactionService(object):
                     missing.append(TransactionInfo(None, None, short_id))
                     logger.debug("Short id {} was requested but is unknown.", short_id)
             else:
+                missing.append(TransactionInfo(None, None, short_id))
                 logger.debug("Short id {} was requested but is unknown.", short_id)
 
         return TransactionSearchResult(found, missing)
@@ -379,6 +391,14 @@ class TransactionService(object):
             len(self._tx_hash_not_seen_in_block)
         )
 
+        hooks.add_obj_mem_stats(
+            class_name,
+            self.network_num,
+            self._removed_short_ids,
+            "removed_short_ids",
+            self.get_collection_mem_stats(self._removed_short_ids),
+        )
+
     def get_tx_service_aggregate_stats(self):
         """
         Returns dictionary with aggregated statistics of transactions service
@@ -415,6 +435,9 @@ class TransactionService(object):
         :param short_id: short id to clean up
         """
         if short_id in self._short_id_to_tx_hash:
+            if self.node.opts.dump_removed_short_ids:
+                self._removed_short_ids.add(short_id)
+
             transaction_cache_key = self._short_id_to_tx_hash.pop(short_id)
             if transaction_cache_key in self._tx_hash_to_short_ids:
                 short_ids = self._tx_hash_to_short_ids[transaction_cache_key]

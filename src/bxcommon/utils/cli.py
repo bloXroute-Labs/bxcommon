@@ -52,6 +52,14 @@ arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
                         help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
                         type=int,
                         default=(0.5 * 1024))
+arg_parser.add_argument("--dump-removed-short-ids",
+                        help="Dump removed short ids to a file at a fixed interval",
+                        type=convert.str_to_bool,
+                        default=False)
+arg_parser.add_argument("--dump-removed-short-ids-path",
+                        help="Folder to dump removed short ids to",
+                        type=str,
+                        default=constants.DUMP_MISSING_SHORT_IDS_PATH)
 arg_parser.add_argument("--enable-buffered-send", help="Enables buffering of sent byte to improve performance",
                         type=convert.str_to_bool, default=True)
 arg_parser.add_argument("--track-detailed-sent-messages", help="Enables tracking of messages written on socket",

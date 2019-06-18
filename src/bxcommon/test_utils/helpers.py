@@ -2,17 +2,15 @@ import os
 import socket
 from argparse import Namespace
 from contextlib import closing
-
-from mock import MagicMock
+from typing import Optional
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
-from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, ALL_NETWORK_NUM, \
-    USE_EXTENSION_MODULES
+from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, USE_EXTENSION_MODULES
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
-from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
+from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 
 BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT = 10
@@ -29,15 +27,16 @@ def generate_bytearray(size):
     return result
 
 
-def create_connection(connection_cls):
+def create_connection(connection_cls, node: Optional[AbstractNode] = None, fileno: int = 1):
     if not issubclass(connection_cls, AbstractConnection):
         raise TypeError("{0} is not a subclass of AbstractConnection".format(connection_cls))
 
+    if node is None:
+        node = MockNode('0.0.0.0', 8002)
+
     test_address = ('0.0.0.0', 8001)
-    test_socket = MagicMock(spec=socket.socket)
-    mock_node = MockNode('0.0.0.0', 8002)
-    test_socket_connection = SocketConnection(test_socket, mock_node)
-    connection = connection_cls(test_socket_connection, test_address, mock_node)
+    test_socket_connection = MockSocketConnection(fileno, node)
+    connection = connection_cls(test_socket_connection, test_address, node)
     connection.idx = 1
 
     return connection
@@ -152,7 +151,9 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "track_detailed_sent_messages": True,
         "compact_block": True,
         "compact_block_min_tx_count": BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT,
-        "dump_detailed_report_at_memory_usage": 100
+        "dump_detailed_report_at_memory_usage": 100,
+        "dump_removed_short_ids": False,
+        "dump_missing_short_ids": False
     }
 
     if include_default_btc_args:
@@ -174,45 +175,4 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         })
     for key, val in kwargs.items():
         opts.__dict__[key] = val
-    return opts
-
-
-SID_SIZE = 100 * 1000 * 1000
-
-
-def get_relay_opts(index, port, external_ip=LOCALHOST, sdn_socket_ip=LOCALHOST, sdn_socket_port=8888,
-                   relay_addresses=None, blockchain_network_num=ALL_NETWORK_NUM, sid_size=SID_SIZE,
-                   sid_expire_time=1000):
-    if relay_addresses is None:
-        relay_addresses = []
-    opts = Namespace()
-    opts.__dict__ = {
-        "node_id": "Relay {0}".format(index),
-        "node_type": NodeType.RELAY,
-        "external_ip": external_ip,
-        "external_port": port,
-        "internal_ip": "0.0.0.0",
-        "internal_port": port,
-        "sdn_socket_ip": sdn_socket_ip,
-        "sdn_socket_port": sdn_socket_port,
-        "sid_start": index * sid_size + 1,
-        "sid_end": (index + 1) * sid_size,  # tx_service is inclusive
-        "sid_expire_time": sid_expire_time,
-        "outbound_peers": relay_addresses,
-        "test_mode": "",
-        "blockchain_network_num": blockchain_network_num,
-        "blockchain_networks": [
-            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0, final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1, final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2, final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3, final_tx_confirmations_count=2)
-        ],
-        "transaction_pool_memory_limit": 200000000,
-        "enable_buffered_send": False,
-        "use_extensions": USE_EXTENSION_MODULES,
-        "import_extensions": USE_EXTENSION_MODULES,
-        "throughput_debugging": False,
-        "track_detailed_sent_messages": True,
-        "dump_detailed_report_at_memory_usage": 100
-    }
     return opts

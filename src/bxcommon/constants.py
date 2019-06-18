@@ -113,6 +113,9 @@ USE_EXTENSION_MODULES = True
 ACCEPT_COMPACT_BLOCK = True
 
 
+DUMP_MISSING_SHORT_IDS_PATH = "/app/bxrelay/debug/missing-short-ids"
+
+
 class SdnRoutes(object):
     nodes = "/nodes"
     node = "/nodes/{0}"
@@ -168,6 +171,10 @@ WARN_ALARM_EXECUTION_OFFSET = 5
 
 # Expiration time for cache of relayed blocks hashes
 RELAYED_BLOCKS_EXPIRE_TIME_S = 6 * 60 * 60
+
+DUMP_REMOVED_SHORT_IDS_INTERVAL_S = 5 * 60
+DUMP_REMOVED_SHORT_IDS_PATH = "/app/bxcommon/debug/removed-short-ids"
+
 # </editor-fold>
 
 # <editor-fold desc="Default Values">

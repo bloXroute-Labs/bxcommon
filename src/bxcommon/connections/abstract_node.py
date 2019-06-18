@@ -1,4 +1,5 @@
 import json
+import os
 import signal
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict, deque
@@ -65,6 +66,9 @@ class AbstractNode(object):
 
         # converting setting in MB to bytes
         self.next_report_mem_usage_bytes = self.opts.dump_detailed_report_at_memory_usage * 1024 * 1024
+
+        if opts.dump_removed_short_ids:
+            os.makedirs(opts.dump_removed_short_ids_path, exist_ok=True)
 
     def get_sdn_address(self):
         """
