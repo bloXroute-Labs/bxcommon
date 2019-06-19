@@ -400,18 +400,20 @@ class TransactionService(object):
 
                 # Only clear mapping and txhash_to_contents if last SID assignment
                 if len(short_ids) == 1 or remove_related_short_ids:
-                    del self._tx_hash_to_short_ids[transaction_cache_key]
-
                     for dup_short_id in short_ids:
                         if dup_short_id != short_id:
                             if dup_short_id in self._short_id_to_tx_hash:
                                 del self._short_id_to_tx_hash[dup_short_id]
-                            if dup_short_id in self._tx_assignment_expire_queue.queue:
-                                self._tx_assignment_expire_queue.remove(dup_short_id)
+                            self._tx_assignment_expire_queue.remove(dup_short_id)
+                            self._removed_short_ids.add(dup_short_id)
 
                     if transaction_cache_key in self._tx_hash_to_contents:
                         self._total_tx_contents_size -= len(self._tx_hash_to_contents[transaction_cache_key])
                         del self._tx_hash_to_contents[transaction_cache_key]
+
+                    # Delete short ids from _tx_hash_to_short_ids after iterating short_ids.
+                    # Otherwise extension implementation disposes short_ids list after this line
+                    del self._tx_hash_to_short_ids[transaction_cache_key]
                 else:
                     short_ids.remove(short_id)
 
