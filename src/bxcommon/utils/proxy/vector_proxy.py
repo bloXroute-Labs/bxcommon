@@ -1,15 +1,15 @@
-import typing
+from typing import List, TypeVar, Generic, Iterator
 from bxcommon.utils.object_encoder import ObjectEncoder
 
 
-TItemRaw = typing.TypeVar("TItemRaw")
-TItemEncoded = typing.TypeVar("TItemEncoded")
+TItemRaw = TypeVar("TItemRaw")
+TItemEncoded = TypeVar("TItemEncoded")
 
 
-class VectorProxy(typing.Generic[TItemRaw, TItemEncoded]):
+class VectorProxy(Generic[TItemRaw, TItemEncoded]):
 
     def __init__(
-            self, vector: typing.List[TItemRaw], encoder: ObjectEncoder[TItemRaw, TItemEncoded]
+            self, vector: List[TItemRaw], encoder: ObjectEncoder[TItemRaw, TItemEncoded]
     ):
         self.vector = vector
         self._encoder = encoder
@@ -26,7 +26,7 @@ class VectorProxy(typing.Generic[TItemRaw, TItemEncoded]):
     def __len__(self) -> int:
         return len(self.vector)
 
-    def __iter__(self) -> typing.Iterator[TItemEncoded]:
+    def __iter__(self) -> Iterator[TItemEncoded]:
         for item in self.vector:
             yield self._encoder.encode(item)
 

@@ -11,9 +11,14 @@ class BlockStatEventType(object):
     COMPACT_BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE = BlockStatEventTypeSettings("CompactBlockReceivedFromBlockchainNode")
     COMPACT_BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = BlockStatEventTypeSettings(
         "CompactBlockReceivedFromBlockchainNodeIgnoreSeen")
-    COMPACT_BLOCK_COMPRESSED = BlockStatEventTypeSettings(
-        "CompactBlockCompressed")
-    COMPACT_BLOCK_RECOVERY = BlockStatEventTypeSettings("CompactBlockRecovery")
+    COMPACT_BLOCK_COMPRESSED_SUCCESS = BlockStatEventTypeSettings(
+        "CompactBlockCompressedSuccess"
+    )
+    COMPACT_BLOCK_COMPRESSED_FAILED = BlockStatEventTypeSettings(
+        "CompactBlockCompressedFailed"
+    )
+    COMPACT_BLOCK_RECOVERY_SUCCESS = BlockStatEventTypeSettings("CompactBlockRecoverySuccess")
+    COMPACT_BLOCK_RECOVERY_FAILED = BlockStatEventTypeSettings("CompactBlockRecoveryFailed")
     COMPACT_BLOCK_REQUEST_FULL = BlockStatEventTypeSettings("CompactBlockRequestFull")
     BLOCK_COMPRESSED = BlockStatEventTypeSettings("BlockCompressed")
     BLOCK_ENCRYPTED = BlockStatEventTypeSettings("BlockEncrypted")
