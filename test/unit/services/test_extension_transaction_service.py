@@ -23,6 +23,9 @@ class ExtensionTransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_track_short_ids_seen_in_block(self):
         self._test_track_short_ids_seen_in_block()
 
+    def test_track_short_ids_seen_in_block_mutiple_per_tx(self):
+        self._test_track_short_ids_seen_in_block_mutiple_per_tx()
+
     def test_transactions_contents_memory_limit(self):
         self._test_transactions_contents_memory_limit()
 
