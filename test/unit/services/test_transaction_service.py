@@ -25,5 +25,8 @@ class TransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_transactions_contents_memory_limit(self):
         self._test_transactions_contents_memory_limit()
 
+    def test_track_short_ids_seen_in_block_mutiple_per_tx(self):
+        self._test_track_short_ids_seen_in_block_mutiple_per_tx()
+
     def _get_transaction_service(self) -> TransactionService:
         return TransactionService(self.mock_node, 0)

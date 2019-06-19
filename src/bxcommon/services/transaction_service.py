@@ -76,8 +76,6 @@ class TransactionService(object):
         self._total_tx_contents_size = 0
         self._total_tx_removed_by_memory_limit = 0
 
-        self._tx_hash_not_seen_in_block = OrderedDict()
-
         self._removed_short_ids = set()
         if node.opts.dump_removed_short_ids:
             self.node.alarm_queue.register_alarm(constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S, self._dump_removed_short_ids)
@@ -102,7 +100,6 @@ class TransactionService(object):
             previous_size = len(self._tx_hash_to_contents[transaction_cache_key])
 
         self._tx_hash_to_contents[transaction_cache_key] = transaction_contents
-        self._tx_hash_not_seen_in_block[transaction_cache_key] = False
         self._total_tx_contents_size += len(transaction_contents) - previous_size
 
         self._memory_limit_clean_up()
@@ -253,20 +250,6 @@ class TransactionService(object):
         for tx_cache_key in self._tx_hash_to_contents:
             yield self._tx_cache_key_to_hash(tx_cache_key)
 
-    def iter_transaction_hashes_not_seen_in_block(self):
-        for tx_cache_key in self._tx_hash_not_seen_in_block:
-            yield self._tx_cache_key_to_hash(tx_cache_key)
-
-    def clean_transaction_hashes_not_seen_in_block(self):
-        hashes_to_remove = []
-
-        for tx_cache_key in self._tx_hash_not_seen_in_block:
-            if self._tx_hash_not_seen_in_block[tx_cache_key]:
-                hashes_to_remove.append(tx_cache_key)
-
-        for tx_cache_key in hashes_to_remove:
-            self._remove_tx_not_seen_in_block(tx_cache_key)
-
     def expire_old_assignments(self):
         """
         Clean up expired short ids.
@@ -295,27 +278,12 @@ class TransactionService(object):
 
         self._short_ids_seen_in_block.append(short_ids)
 
-        if len(self._short_ids_seen_in_block) > self._final_tx_confirmations_count:
+        if len(self._short_ids_seen_in_block) >= self._final_tx_confirmations_count:
 
             final_short_ids = self._short_ids_seen_in_block.popleft()
 
             for short_id in final_short_ids:
-                self._remove_transaction_by_short_id(short_id)
-
-    def track_transactions_seen_in_block(self, block_message: Any):
-        """
-        Removes transaction hashes that were seen a block from value returned by iter_transaction_hashes_not_seen_in_block
-        Requires specific implementation per blockchain if functionality is needed
-        :param block_message: block message specific to a blockchain
-        """
-        pass
-
-    def track_seen_transaction_hash(self, transaction_hash: Sha256Hash) -> None:
-
-        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
-
-        if transaction_cache_key in self._tx_hash_not_seen_in_block:
-            self._tx_hash_not_seen_in_block[transaction_cache_key] = True
+                self._remove_transaction_by_short_id(short_id, remove_related_short_ids=True)
 
     def log_tx_service_mem_stats(self):
         """
@@ -382,18 +350,6 @@ class TransactionService(object):
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
-            self._tx_hash_not_seen_in_block,
-            "tx_hash_not_seen_in_block",
-            self.get_collection_mem_stats(
-                self._tx_hash_not_seen_in_block,
-                self.ESTIMATED_TX_HASH_NOT_SEEN_IN_BLOCK_ITEM_SIZE * len(self._tx_hash_not_seen_in_block)
-            ),
-            len(self._tx_hash_not_seen_in_block)
-        )
-
-        hooks.add_obj_mem_stats(
-            class_name,
-            self.network_num,
             self._removed_short_ids,
             "removed_short_ids",
             self.get_collection_mem_stats(self._removed_short_ids),
@@ -429,7 +385,7 @@ class TransactionService(object):
         else:
             return ObjectSize(size=estimated_size, flat_size=0, is_actual_size=False)
 
-    def _remove_transaction_by_short_id(self, short_id):
+    def _remove_transaction_by_short_id(self, short_id, remove_related_short_ids=False):
         """
         Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
         :param short_id: short id to clean up
@@ -443,8 +399,15 @@ class TransactionService(object):
                 short_ids = self._tx_hash_to_short_ids[transaction_cache_key]
 
                 # Only clear mapping and txhash_to_contents if last SID assignment
-                if len(short_ids) == 1:
+                if len(short_ids) == 1 or remove_related_short_ids:
                     del self._tx_hash_to_short_ids[transaction_cache_key]
+
+                    for dup_short_id in short_ids:
+                        if dup_short_id != short_id:
+                            if dup_short_id in self._short_id_to_tx_hash:
+                                del self._short_id_to_tx_hash[dup_short_id]
+                            if dup_short_id in self._tx_assignment_expire_queue.queue:
+                                self._tx_assignment_expire_queue.remove(dup_short_id)
 
                     if transaction_cache_key in self._tx_hash_to_contents:
                         self._total_tx_contents_size -= len(self._tx_hash_to_contents[transaction_cache_key])
@@ -452,13 +415,7 @@ class TransactionService(object):
                 else:
                     short_ids.remove(short_id)
 
-            self._remove_tx_not_seen_in_block(transaction_cache_key)
-
         self._tx_assignment_expire_queue.remove(short_id)
-
-    def _remove_tx_not_seen_in_block(self, transaction_cache_key):
-        if transaction_cache_key in self._tx_hash_not_seen_in_block:
-            del self._tx_hash_not_seen_in_block[transaction_cache_key]
 
     def _memory_limit_clean_up(self):
         """
