@@ -3,6 +3,7 @@ import re
 import socket
 import time
 import configparser
+import multiprocessing
 from typing import Optional
 
 from requests import get
@@ -108,3 +109,14 @@ def get_env_default(key: str) -> str:
         return config.get(environment, key)
     else:
         return config.defaults()[key]
+
+
+def get_thread_pool_parallelism_degree(parallelism_degree_str: str) -> int:
+    parallelism_degree = int(parallelism_degree_str)
+    if parallelism_degree <= 0:
+        parallelism_degree = 1
+    return min(
+        parallelism_degree,
+        constants.THREAD_POOL_MAX_PARALLELISM_DEGREE,
+        max(multiprocessing.cpu_count() - 1, 1)
+    )

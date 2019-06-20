@@ -7,11 +7,13 @@ from typing import Optional
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
-from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, USE_EXTENSION_MODULES
+from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, USE_EXTENSION_MODULES, \
+    THREAD_POOL_MAX_PARALLELISM_DEGREE
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils.buffers.input_buffer import InputBuffer
+from bxcommon.utils import config
 
 BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT = 10
 
@@ -88,7 +90,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
                      bloxroute_version="bloxroute 1.5", include_default_btc_args=False, include_default_eth_args=False,
                      blockchain_network_num=DEFAULT_NETWORK_NUM, min_peer_gateways=0, remote_blockchain_ip=None,
                      remote_blockchain_port=None, connect_to_remote_blockchain=False, is_internal_gateway=False,
-                     is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True, **kwargs):
+                     is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
+                     parallelism_degree=1, **kwargs):
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -154,7 +157,10 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "dump_detailed_report_at_memory_usage": 100,
         "dump_removed_short_ids": False,
         "dump_missing_short_ids": False,
-        "memory_stats_interval": 3600
+        "memory_stats_interval": 3600,
+        "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
+            str(parallelism_degree)
+        )
     }
 
     if include_default_btc_args:

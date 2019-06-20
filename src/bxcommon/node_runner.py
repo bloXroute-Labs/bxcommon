@@ -8,6 +8,9 @@ from bxcommon.utils import config, logger
 def run_node(process_id_file_path, opts, node_class):
     config.log_pid(process_id_file_path)
     config.init_logging(opts.log_path, opts.to_stdout)
+    if opts.import_extensions or opts.use_extensions:
+        import task_pool_executor as tpe
+        tpe.init(opts.thread_pool_parallelism_degree)
 
     # update constants from cli
     cli.set_sdn_url()
