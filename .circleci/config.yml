@@ -40,8 +40,8 @@ jobs:
                 echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxextensions."
                 git clone -b $CIRCLE_BRANCH --single-branch --depth=1 --recursive git@github.com:bloXroute-Labs/bxextensions.git
             } || { # catch
-                echo "Trying bxextensions develop branch, could not find identical branch name '$CIRCLE_BRANCH'."
-                git clone -b develop --single-branch --depth=1 --recursive git@github.com:bloXroute-Labs/bxextensions.git
+                echo "Trying bxextensions master branch, could not find identical branch name '$CIRCLE_BRANCH'."
+                git clone -b master --single-branch --depth=1 --recursive git@github.com:bloXroute-Labs/bxextensions.git
             }
             cd bxextensions
             python build_extensions.py
@@ -103,22 +103,22 @@ jobs:
                 echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxe2e."
                 git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxe2e.git
             } || { # catch
-                echo "Trying bxe2e develop branch, could not find identical branch name '$CIRCLE_BRANCH'."
-                git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxe2e.git
+                echo "Trying bxe2e master branch, could not find identical branch name '$CIRCLE_BRANCH'."
+                git clone -b master --single-branch --depth=1 git@github.com:bloXroute-Labs/bxe2e.git
             }
             { # try
                 echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxrelay."
                 git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxrelay.git
             } || { # catch
-                echo "Trying bxrelay develop branch, could not find identical branch name '$CIRCLE_BRANCH."
-                git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxrelay.git
+                echo "Trying bxrelay master branch, could not find identical branch name '$CIRCLE_BRANCH."
+                git clone -b master --single-branch --depth=1 git@github.com:bloXroute-Labs/bxrelay.git
             }
             { # try
                 echo "Trying to clone identical branch name '$CIRCLE_BRANCH  from bxgateway."
                 git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway.git
             } || { # catch
-                echo "Trying bxgateway develop branch, could not find identical branch name '$CIRCLE_BRANCH."
-                git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway.git
+                echo "Trying bxgateway master branch, could not find identical branch name '$CIRCLE_BRANCH."
+                git clone -b master --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway.git
             }
       - run:
           name: Initialize virtualenv
