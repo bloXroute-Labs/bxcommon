@@ -27,7 +27,7 @@ class TaskQueueProxy:
         return tsk
 
     def return_task(self, tsk: TaskProxy):
-        self._queue.append(tsk)
+        self._queue.appendleft(tsk)
 
     def _extend_queue(self) -> TaskProxy:
         tsk = None
