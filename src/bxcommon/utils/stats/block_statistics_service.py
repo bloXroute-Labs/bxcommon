@@ -3,13 +3,20 @@ from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.utils import crypto, convert
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.statistics_event_service import StatisticsEventService
-
+from bxcommon.utils.stats.block_stat_event_type import BlockStatEventType
+from typing import Any, Optional
+from datetime import datetime
 
 class _BlockStatisticsService(StatisticsEventService):
     def __init__(self):
         self.name = "BlockInfo"
 
-    def add_block_event(self, block_msg, block_event_settings, network_num, start_date_time=None, end_date_time=None,
+    def add_block_event(self,
+                        block_msg: Any,
+                        block_event_settings: BlockStatEventType,
+                        network_num: int,
+                        start_date_time: Optional[datetime] = None,
+                        end_date_time: Optional[datetime] = None,
                         **kwargs):
         if not self._should_log_stat_event(block_event_settings):
             return
@@ -24,7 +31,12 @@ class _BlockStatisticsService(StatisticsEventService):
         self.log_event(block_event_settings.name, convert.bytes_to_hex(block_hash), start_date_time, end_date_time,
                        network_num=network_num, **kwargs)
 
-    def add_block_event_by_block_hash(self, block_hash, block_event_settings, network_num, start_date_time=None, end_date_time=None,
+    def add_block_event_by_block_hash(self,
+                                      block_hash: Any,
+                                      block_event_settings: BlockStatEventType,
+                                      network_num: int,
+                                      start_date_time: Optional[datetime] = None,
+                                      end_date_time: Optional[datetime] = None,
                                       **kwargs):
         if not self._should_log_stat_event(block_event_settings):
             return
