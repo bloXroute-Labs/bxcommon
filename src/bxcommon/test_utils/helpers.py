@@ -157,6 +157,7 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "dump_detailed_report_at_memory_usage": 100,
         "dump_removed_short_ids": False,
         "dump_missing_short_ids": False,
+        "dump_short_id_mapping_compression": False,
         "memory_stats_interval": 3600,
         "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
             str(parallelism_degree)

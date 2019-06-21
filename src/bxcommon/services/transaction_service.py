@@ -81,8 +81,9 @@ class TransactionService(object):
             self.node.alarm_queue.register_alarm(constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S, self._dump_removed_short_ids)
 
     def _dump_removed_short_ids(self):
-        with open("{}/{}".format(self.node.opts.dump_removed_short_ids_path, int(time.time())), "w") as f:
-            f.write(str(self._removed_short_ids))
+        if self._removed_short_ids:
+            with open("{}/{}".format(self.node.opts.dump_removed_short_ids_path, int(time.time())), "w") as f:
+                f.write(str(self._removed_short_ids))
             self._removed_short_ids.clear()
         return constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S
 

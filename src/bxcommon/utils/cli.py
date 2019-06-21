@@ -63,7 +63,7 @@ arg_parser.add_argument("--dump-removed-short-ids",
 arg_parser.add_argument("--dump-removed-short-ids-path",
                         help="Folder to dump removed short ids to",
                         type=str,
-                        default=constants.DUMP_MISSING_SHORT_IDS_PATH)
+                        default=constants.DUMP_REMOVED_SHORT_IDS_PATH)
 arg_parser.add_argument("--enable-buffered-send", help="Enables buffering of sent byte to improve performance",
                         type=convert.str_to_bool, default=True)
 arg_parser.add_argument("--track-detailed-sent-messages", help="Enables tracking of messages written on socket",
