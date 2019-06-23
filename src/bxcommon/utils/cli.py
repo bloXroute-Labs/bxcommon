@@ -69,6 +69,30 @@ arg_parser.add_argument("--enable-buffered-send", help="Enables buffering of sen
 arg_parser.add_argument("--track-detailed-sent-messages", help="Enables tracking of messages written on socket",
                         type=convert.str_to_bool, default=True)
 
+arg_parser.add_argument(
+    "--use-extensions",
+    help="If true than the gateway will use the extension module for "
+         f"some tasks like block compression (default: {constants.USE_EXTENSION_MODULES})",
+    default=constants.USE_EXTENSION_MODULES,
+    type=convert.str_to_bool
+)
+
+arg_parser.add_argument(
+    "--import-extensions",
+    help="If true than the gateway will import all C++ extensions dependencies on start up"
+         f" (default: {constants.USE_EXTENSION_MODULES})",
+    default=constants.USE_EXTENSION_MODULES,
+    type=convert.str_to_bool
+)
+
+arg_parser.add_argument(
+    "--thread-pool-parallelism-degree",
+    help="The degree of parallelism to use when running task on a "
+    f"concurrent thread pool (default: {constants.THREAD_POOL_MAX_PARALLELISM_DEGREE})",
+    default=constants.THREAD_POOL_MAX_PARALLELISM_DEGREE,
+    type=config.get_thread_pool_parallelism_degree
+)
+
 _args = None
 
 
