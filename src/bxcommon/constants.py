@@ -176,6 +176,8 @@ RELAYED_BLOCKS_EXPIRE_TIME_S = 6 * 60 * 60
 DUMP_REMOVED_SHORT_IDS_INTERVAL_S = 5 * 60
 DUMP_REMOVED_SHORT_IDS_PATH = "/app/bxcommon/debug/removed-short-ids"
 
+CLEAN_UP_SEEN_SHORT_IDS_DELAY_S = 10
+
 # </editor-fold>
 
 # <editor-fold desc="Default Values">
