@@ -1,17 +1,17 @@
-import typing
+from typing import TypeVar, Iterator, Generic, Dict, Optional, Tuple
 from bxcommon.utils.object_encoder import ObjectEncoder
 
-TKeyRaw = typing.TypeVar("TKeyRaw")
-TKeyEncoded = typing.TypeVar("TKeyEncoded")
-TValueRaw = typing.TypeVar("TValueRaw")
-TValueEncoded = typing.TypeVar("TValueEncoded")
+TKeyRaw = TypeVar("TKeyRaw")
+TKeyEncoded = TypeVar("TKeyEncoded")
+TValueRaw = TypeVar("TValueRaw")
+TValueEncoded = TypeVar("TValueEncoded")
 
 
-class DefaultMapProxy(typing.Generic[TKeyRaw, TKeyEncoded, TValueRaw, TValueEncoded]):
+class DefaultMapProxy(Generic[TKeyRaw, TKeyEncoded, TValueRaw, TValueEncoded]):
 
     def __init__(
             self,
-            map_obj: typing.Dict[TKeyRaw, TValueRaw],
+            map_obj: Dict[TKeyRaw, TValueRaw],
             key_encoder: ObjectEncoder[TKeyRaw, TKeyEncoded],
             val_encoder: ObjectEncoder[TValueRaw, TValueEncoded]
     ):
@@ -35,7 +35,7 @@ class DefaultMapProxy(typing.Generic[TKeyRaw, TKeyEncoded, TValueRaw, TValueEnco
     def __len__(self) -> int:
         return len(self._map_obj)
 
-    def __iter__(self) -> typing.Iterator[TKeyEncoded]:
+    def __iter__(self) -> Iterator[TKeyEncoded]:
         for key in self._map_obj:
             yield self._key_encoder.encode(key)
 
@@ -51,24 +51,28 @@ class DefaultMapProxy(typing.Generic[TKeyRaw, TKeyEncoded, TValueRaw, TValueEnco
         return val
 
     def get(
-            self, key: TKeyEncoded, default: typing.Optional[TValueEncoded] = None
-    ) -> typing.Optional[TValueEncoded]:
+            self, key: TKeyEncoded, default: Optional[TValueEncoded] = None
+    ) -> Optional[TValueEncoded]:
         if self._contains(key):
             return self.__getitem__(key)
         else:
             return default
 
-    def popitem(self) -> typing.Tuple[TKeyEncoded, TValueEncoded]:
+    def popitem(self) -> Tuple[TKeyEncoded, TValueEncoded]:
         key, val = next(iter(self.items()))
         self.__delitem__(key)
         return key, val
 
-    def items(self) -> typing.Iterator[typing.Tuple[TKeyEncoded, TValueEncoded]]:
+    def items(self) -> Iterator[Tuple[TKeyEncoded, TValueEncoded]]:
         for key, val in self._map_obj.items():
             yield self._key_encoder.encode(key), self._val_encoder.encode(val)
 
-    def keys(self):
+    def keys(self) -> Iterator[TKeyEncoded]:
         return self.__iter__()
+
+    def values(self) -> Iterator[TValueEncoded]:
+        for _, value in self.items():
+            yield value
 
     def _item_exists_no_exception(self, key: TKeyEncoded) -> bool:
         try:
