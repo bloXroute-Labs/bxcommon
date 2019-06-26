@@ -63,7 +63,7 @@ ENABLE_LOGGING = True
 # LogLevel.ERROR
 # LogLevel.FATAL
 # or their corresponding numbers
-DEFAULT_LOG_LEVEL = LogLevel.INFO
+DEFAULT_LOG_LEVEL = LogLevel.WARN
 DEFAULT_LOG_FORMAT = LogFormat.PLAIN
 
 # set to True to always flush logs to stdout
