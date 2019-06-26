@@ -78,8 +78,10 @@ class TransactionService(object):
 
         self._removed_short_ids = set()
         if node.opts.dump_removed_short_ids:
-            self.node.alarm_queue.register_alarm(constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S,
-                                                 self._dump_removed_short_ids)
+            self.node.alarm_queue.register_alarm(
+                constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S,
+                self._dump_removed_short_ids
+            )
 
     def set_final_tx_confirmations_count(self, val: int):
         self._final_tx_confirmations_count = val
@@ -282,6 +284,19 @@ class TransactionService(object):
 
             for short_id in final_short_ids:
                 self._remove_transaction_by_short_id(short_id, remove_related_short_ids=True)
+
+    def track_seen_short_ids_delayed(self, short_ids):
+        """
+        Schedules alarm task to clean up seen short ids after some delay
+        :param short_ids: transaction short ids
+        :return:
+        """
+
+        self.node.alarm_queue.register_alarm(
+            constants.CLEAN_UP_SEEN_SHORT_IDS_DELAY_S,
+            self.track_seen_short_ids,
+            short_ids
+        )
 
     def log_tx_service_mem_stats(self):
         """

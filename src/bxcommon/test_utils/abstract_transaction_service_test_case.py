@@ -8,7 +8,7 @@ from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_node import MockNode
-from bxcommon.utils import crypto, convert
+from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
 
 
