@@ -8,12 +8,14 @@ from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, USE_EXTENSION_MODULES, \
-    THREAD_POOL_MAX_PARALLELISM_DEGREE
+    DEFAULT_THREAD_POOL_PARALLELISM_DEGREE, DEFAULT_TX_MEM_POOL_BUCKET_SIZE
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils import config
+from bxcommon.utils.proxy import task_pool_proxy
+
 
 BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT = 10
 
@@ -83,6 +85,10 @@ def create_input_buffer_with_bytes(message_bytes):
     input_buffer = InputBuffer()
     input_buffer.add_bytes(message_bytes)
     return input_buffer
+
+
+def set_extensions_parallelism(degree: int = DEFAULT_THREAD_POOL_PARALLELISM_DEGREE) -> None:
+    task_pool_proxy.init(config.get_thread_pool_parallelism_degree(str(degree)))
 
 
 def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0.0.0", blockchain_address=None,
@@ -161,7 +167,8 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, internal_ip="0.0
         "memory_stats_interval": 3600,
         "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
             str(parallelism_degree)
-        )
+        ),
+        "tx_mem_pool_bucket_size": DEFAULT_TX_MEM_POOL_BUCKET_SIZE
     }
 
     if include_default_btc_args:

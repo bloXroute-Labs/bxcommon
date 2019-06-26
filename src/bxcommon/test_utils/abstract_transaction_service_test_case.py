@@ -8,7 +8,7 @@ from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_node import MockNode
-from bxcommon.utils import crypto
+from bxcommon.utils import crypto, convert
 from bxcommon.utils.object_hash import Sha256Hash
 
 
@@ -173,8 +173,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.transaction_service.track_seen_short_ids([])
         self._verify_txs_in_tx_service([], [0, 1, 2, 3, 4])
 
-
-    def _test_track_short_ids_seen_in_block_mutiple_per_tx(self):
+    def _test_track_short_ids_seen_in_block_multiple_per_tx(self):
         short_ids = [1, 2, 3, 4, 5]
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
@@ -184,7 +183,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             cached_key = self.transaction_service._tx_hash_to_cache_key(transaction_hashes[i])
             self.transaction_service._tx_hash_to_contents[cached_key] = transaction_contents[i]
 
-        self.transaction_service._final_tx_confirmations_count = 2
+        self.transaction_service.set_final_tx_confirmations_count(2)
 
         # assign multiple shorts ids to one of the transactions
         first_cached_key = self.transaction_service._tx_hash_to_cache_key(transaction_hashes[0])

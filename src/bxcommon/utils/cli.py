@@ -88,11 +88,18 @@ arg_parser.add_argument(
 arg_parser.add_argument(
     "--thread-pool-parallelism-degree",
     help="The degree of parallelism to use when running task on a "
-    f"concurrent thread pool (default: {constants.THREAD_POOL_MAX_PARALLELISM_DEGREE})",
-    default=constants.THREAD_POOL_MAX_PARALLELISM_DEGREE,
+    f"concurrent thread pool (default: {constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE})",
+    default=constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE,
     type=config.get_thread_pool_parallelism_degree
 )
-
+arg_parser.add_argument(
+    "--tx-mem-pool-bucket-size",
+    help="The size of each bucket of the transaction mem pool. "
+    "In order to efficiently iterate the mem pool concurrently, it is being split into buckets. "
+    f"(default: {constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE})",
+    default=constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
+    type=int
+)
 _args = None
 
 

@@ -81,12 +81,8 @@ class TransactionService(object):
             self.node.alarm_queue.register_alarm(constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S,
                                                  self._dump_removed_short_ids)
 
-    def _dump_removed_short_ids(self):
-        if self._removed_short_ids:
-            with open("{}/{}".format(self.node.opts.dump_removed_short_ids_path, int(time.time())), "w") as f:
-                f.write(str(self._removed_short_ids))
-            self._removed_short_ids.clear()
-        return constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S
+    def set_final_tx_confirmations_count(self, val: int):
+        self._final_tx_confirmations_count = val
 
     def set_transaction_contents(self, transaction_hash, transaction_contents):
         """
@@ -267,16 +263,6 @@ class TransactionService(object):
             self.tx_assign_alarm_scheduled = False
             return 0
 
-    def track_seen_short_ids_delayed(self, short_ids):
-        """
-        Schedules alarm task to clean up seen short ids after some delay
-        :param short_ids: transaction short ids
-        :return:
-        """
-
-        self.node.alarm_queue.register_alarm(constants.CLEAN_UP_SEEN_SHORT_IDS_DELAY_S, self.track_seen_short_ids,
-                                             short_ids)
-
     def track_seen_short_ids(self, short_ids):
         """
         Track short ids that has been seen in a routed block.
@@ -397,6 +383,13 @@ class TransactionService(object):
         else:
             return ObjectSize(size=estimated_size, flat_size=0, is_actual_size=False)
 
+    def _dump_removed_short_ids(self):
+        if self._removed_short_ids:
+            with open("{}/{}".format(self.node.opts.dump_removed_short_ids_path, int(time.time())), "w") as f:
+                f.write(str(self._removed_short_ids))
+            self._removed_short_ids.clear()
+        return constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S
+
     def _remove_transaction_by_short_id(self, short_id, remove_related_short_ids=False):
         """
         Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
@@ -426,6 +419,8 @@ class TransactionService(object):
                     # Delete short ids from _tx_hash_to_short_ids after iterating short_ids.
                     # Otherwise extension implementation disposes short_ids list after this line
                     del self._tx_hash_to_short_ids[transaction_cache_key]
+                    if not remove_related_short_ids:  # TODO : remove this after creating AbstractTransactionService
+                        self._track_seen_transaction(transaction_cache_key)
                 else:
                     short_ids.remove(short_id)
 
@@ -503,3 +498,6 @@ class TransactionService(object):
             return Sha256Hash(transaction_cache_key)
 
         return Sha256Hash(convert.hex_to_bytes(transaction_cache_key))
+
+    def _track_seen_transaction(self, transaction_cache_key):
+        pass

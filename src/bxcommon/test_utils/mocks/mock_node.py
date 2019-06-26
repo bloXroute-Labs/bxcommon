@@ -1,6 +1,6 @@
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
-from bxcommon.constants import DEFAULT_NETWORK_NUM
+from bxcommon.constants import DEFAULT_NETWORK_NUM, DEFAULT_TX_MEM_POOL_BUCKET_SIZE
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils.alarm_queue import AlarmQueue
@@ -70,3 +70,4 @@ class MockOpts(object):
         self.dump_removed_short_ids = False
         self.dump_missing_short_ids = False
         self.memory_stats_interval = 3600
+        self.tx_mem_pool_bucket_size = DEFAULT_TX_MEM_POOL_BUCKET_SIZE

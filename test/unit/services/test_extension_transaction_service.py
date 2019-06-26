@@ -1,9 +1,14 @@
 from bxcommon.services.extension_transaction_service import ExtensionTransactionService
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils.abstract_transaction_service_test_case import AbstractTransactionServiceTestCase
+from bxcommon.test_utils import helpers
 
 
 class ExtensionTransactionServiceTest(AbstractTransactionServiceTestCase):
+
+    def setUp(self):
+        helpers.set_extensions_parallelism()
+        super(ExtensionTransactionServiceTest, self).setUp()
 
     def test_get_missing_transactions(self):
         self._test_get_missing_transactions()
@@ -23,8 +28,8 @@ class ExtensionTransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_track_short_ids_seen_in_block(self):
         self._test_track_short_ids_seen_in_block()
 
-    def test_track_short_ids_seen_in_block_mutiple_per_tx(self):
-        self._test_track_short_ids_seen_in_block_mutiple_per_tx()
+    def test_track_short_ids_seen_in_block_multiple_per_tx(self):
+        self._test_track_short_ids_seen_in_block_multiple_per_tx()
 
     def test_transactions_contents_memory_limit(self):
         self._test_transactions_contents_memory_limit()

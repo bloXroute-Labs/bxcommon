@@ -9,8 +9,12 @@ def run_node(process_id_file_path, opts, node_class):
     config.log_pid(process_id_file_path)
     config.init_logging(opts.log_path, opts.to_stdout)
     if opts.use_extensions:
-        import task_pool_executor as tpe
-        tpe.init(opts.thread_pool_parallelism_degree)
+        from bxcommon.utils.proxy import task_pool_proxy
+        task_pool_proxy.init(opts.thread_pool_parallelism_degree)
+        logger.info(
+            "initialized task thread pool parallelism degree to "
+            f"{task_pool_proxy.get_pool_size()}."
+        )
 
     # update constants from cli
     cli.set_sdn_url()

@@ -117,6 +117,5 @@ def get_thread_pool_parallelism_degree(parallelism_degree_str: str) -> int:
         parallelism_degree = 1
     return min(
         parallelism_degree,
-        constants.THREAD_POOL_MAX_PARALLELISM_DEGREE,
         max(multiprocessing.cpu_count() - 1, 1)
     )
