@@ -37,7 +37,9 @@ class ExtensionTransactionService(TransactionService):
         logger.info(f"tracking {len(short_ids)} seen short ids")
         super(ExtensionTransactionService, self).track_seen_short_ids(short_ids)
         logger.info(f"calling proxy tracking {len(short_ids)} seen short ids")
-        dup_sids = self.proxy.track_seen_short_ids(tpe.UIntList(short_ids))
+        result = self.proxy.track_seen_short_ids(tpe.UIntList(short_ids))
+        dup_sids = result[1]
+        self._total_tx_contents_size -= result[0]
         logger.info(f"finished calling proxy tracking {len(dup_sids)} duplicate short ids")
         for dup_sid in dup_sids:
             self._tx_assignment_expire_queue.remove(dup_sid)
