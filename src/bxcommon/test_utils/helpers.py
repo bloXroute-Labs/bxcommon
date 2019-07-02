@@ -1,18 +1,23 @@
 import os
 import socket
+from typing import Optional
 from argparse import Namespace
 from contextlib import closing
-
-from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
-from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, USE_EXTENSION_MODULES
+from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, USE_EXTENSION_MODULES, \
+    DEFAULT_THREAD_POOL_PARALLELISM_DEGREE, DEFAULT_TX_MEM_POOL_BUCKET_SIZE
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
-from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
+from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils.buffers.input_buffer import InputBuffer
+from bxcommon.utils import config
+from bxcommon.utils.proxy import task_pool_proxy
+
+
+BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT = 10
 
 
 def generate_bytes(size):
@@ -26,15 +31,16 @@ def generate_bytearray(size):
     return result
 
 
-def create_connection(connection_cls):
+def create_connection(connection_cls, node: Optional[AbstractNode] = None, fileno: int = 1):
     if not issubclass(connection_cls, AbstractConnection):
         raise TypeError("{0} is not a subclass of AbstractConnection".format(connection_cls))
 
-    test_address = ('0.0.0.0', 8001)
-    test_socket = MagicMock(spec=socket.socket)
-    mock_node = MockNode('0.0.0.0', 8002)
-    test_socket_connection = SocketConnection(test_socket, mock_node)
-    connection = connection_cls(test_socket_connection, test_address, mock_node)
+    if node is None:
+        node = MockNode("0.0.0.0", 8002)
+
+    test_address = ("0.0.0.0", 8001)
+    test_socket_connection = MockSocketConnection(fileno, node)
+    connection = connection_cls(test_socket_connection, test_address, node)
     connection.idx = 1
 
     return connection
@@ -81,13 +87,18 @@ def create_input_buffer_with_bytes(message_bytes):
     return input_buffer
 
 
+def set_extensions_parallelism(degree: int = DEFAULT_THREAD_POOL_PARALLELISM_DEGREE) -> None:
+    task_pool_proxy.init(config.get_thread_pool_parallelism_degree(str(degree)))
+
+
 def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, blockchain_address=None,
                      test_mode=None, peer_gateways=None, peer_relays=None, peer_transaction_relays=None,
                      split_relays=False, protocol_version=1, sid_expire_time=30, bloxroute_version="bloxroute 1.5",
                      include_default_btc_args=False, include_default_eth_args=False,
                      blockchain_network_num=DEFAULT_NETWORK_NUM, min_peer_gateways=0, remote_blockchain_ip=None,
                      remote_blockchain_port=None, connect_to_remote_blockchain=False, is_internal_gateway=False,
-                     is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True, **kwargs):
+                     is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
+                     parallelism_degree=1, **kwargs):
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -150,8 +161,17 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, blockchain_addre
         "enable_buffered_send": enable_buffered_send,
         "track_detailed_sent_messages": True,
         "compact_block": True,
+        "compact_block_min_tx_count": BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT,
         "tune_send_buffer_size": False,
-        "dump_detailed_report_at_memory_usage": 100
+        "dump_detailed_report_at_memory_usage": 100,
+        "dump_removed_short_ids": False,
+        "dump_missing_short_ids": False,
+        "dump_short_id_mapping_compression": False,
+        "memory_stats_interval": 3600,
+        "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
+            str(parallelism_degree)
+        ),
+        "tx_mem_pool_bucket_size": DEFAULT_TX_MEM_POOL_BUCKET_SIZE
     }
 
     if include_default_btc_args:

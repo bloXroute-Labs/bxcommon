@@ -6,6 +6,7 @@ from bxcommon import constants
 
 BlockOffsets = namedtuple("BlockOffsets", ["short_id_offset", "block_begin_offset"])
 
+
 def get_serialized_short_ids_bytes_len(short_ids):
     """
     Calculates length of list of short ids serialized into bytes

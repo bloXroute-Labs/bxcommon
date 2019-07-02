@@ -2,15 +2,23 @@ from bxcommon.utils.stats.stat_event_logic_flags import StatEventLogicFlags
 from bxcommon.utils.stats.stat_event_type_settings import StatEventTypeSettings
 
 
-class BlockStatEventType(object):
+class BlockStatEventType:
     BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockReceivedFromBlockchainNode")
     BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = StatEventTypeSettings(
-        "BlockReceivedFromBlockchainNodeIgnoreSeen")
+        "BlockReceivedFromBlockchainNodeIgnoreSeen"
+    )
     COMPACT_BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE = StatEventTypeSettings("CompactBlockReceivedFromBlockchainNode")
     COMPACT_BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = StatEventTypeSettings(
-        "CompactBlockReceivedFromBlockchainNodeIgnoreSeen")
-    COMPACT_BLOCK_DECOMPRESSED = StatEventTypeSettings(
-        "CompactBlockDecompressed")
+        "CompactBlockReceivedFromBlockchainNodeIgnoreSeen"
+    )
+    COMPACT_BLOCK_COMPRESSED_SUCCESS = StatEventTypeSettings(
+        "CompactBlockCompressedSuccess"
+    )
+    COMPACT_BLOCK_COMPRESSED_FAILED = StatEventTypeSettings(
+        "CompactBlockCompressedFailed"
+    )
+    COMPACT_BLOCK_RECOVERY_SUCCESS = StatEventTypeSettings("CompactBlockRecoverySuccess")
+    COMPACT_BLOCK_RECOVERY_FAILED = StatEventTypeSettings("CompactBlockRecoveryFailed")
     COMPACT_BLOCK_REQUEST_FULL = StatEventTypeSettings("CompactBlockRequestFull")
     BLOCK_COMPRESSED = StatEventTypeSettings("BlockCompressed",
                                              event_logic_flags=StatEventLogicFlags.BLOCK_INFO | \

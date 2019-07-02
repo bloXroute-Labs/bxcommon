@@ -2,7 +2,7 @@ import signal
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from collections import defaultdict, deque
-from typing import List, Optional, TypeVar, Tuple, Dict
+from typing import List, Optional, Tuple, Dict
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection

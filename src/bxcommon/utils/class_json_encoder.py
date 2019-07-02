@@ -1,6 +1,6 @@
 import json
 import traceback
-import typing
+from typing import Collection, Any, Iterable
 from datetime import date, time, datetime
 from enum import Enum
 from inspect import istraceback
@@ -10,12 +10,12 @@ SPECIAL_ITERABLE_TYPES = (type(dict().values()), type(dict().keys()),)
 
 def is_iterable_no_collection(o):
     return isinstance(o, SPECIAL_ITERABLE_TYPES) or \
-           (isinstance(o, typing.Iterable) and not isinstance(o, typing.Collection))
+           (isinstance(o, Iterable) and not isinstance(o, Collection))
 
 
 class ClassJsonEncoder(json.JSONEncoder):
 
-    def default(self, o: typing.Any) -> typing.Any:
+    def default(self, o: Any) -> Any:
         if is_iterable_no_collection(o):
             o = list(o)
         elif isinstance(o, (bytearray, memoryview)):

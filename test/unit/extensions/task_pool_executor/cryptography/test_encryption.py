@@ -1,8 +1,10 @@
 import unittest
 import task_pool_executor as tpe
+from bxcommon.utils.proxy import task_pool_proxy
 from nacl.secret import SecretBox
 from nacl.exceptions import CryptoError
 from bxcommon.utils.convert import bytes_to_hex
+from bxcommon.test_utils import helpers
 
 
 def wait_for_task(tsk):
@@ -15,12 +17,14 @@ def run_encryption(plain, et=None):
         et = tpe.EncryptionTask(len(plain))
     plain_text = tpe.InputBytes(bytearray(plain))
     et.init(plain_text)
-    tpe.enqueue_task(et)
-    wait_for_task(et)
+    task_pool_proxy.run_task(et)
     return et
 
 
 class EncryptionTest(unittest.TestCase):
+
+    def setUp(self):
+        helpers.set_extensions_parallelism()
 
     def test_text_encryption(self):
         plain_text = b"test text encryption"

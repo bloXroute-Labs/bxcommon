@@ -109,10 +109,22 @@ def get_args():
         arg_parser.add_argument("--transaction-pool-memory-limit",
                                 help="Maximum size of transactions to keep in memory pool (MB)",
                                 type=int)
+        arg_parser.add_argument("--memory-stats-interval",
+                                help="Frequency of memory statistics logs in seconds",
+                                type=int,
+                                default=constants.MEMORY_STATS_INTERVAL)
         arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
                                 help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
                                 type=int,
                                 default=(0.5 * 1024))
+        arg_parser.add_argument("--dump-removed-short-ids",
+                                help="Dump removed short ids to a file at a fixed interval",
+                                type=convert.str_to_bool,
+                                default=False)
+        arg_parser.add_argument("--dump-removed-short-ids-path",
+                                help="Folder to dump removed short ids to",
+                                type=str,
+                                default=constants.DUMP_REMOVED_SHORT_IDS_PATH)
         arg_parser.add_argument("--enable-buffered-send", help="Enables buffering of sent byte to improve performance",
                                 type=convert.str_to_bool, default=True)
         arg_parser.add_argument("--track-detailed-sent-messages", help="Enables tracking of messages written on socket",
@@ -121,7 +133,7 @@ def get_args():
             "--use-extensions",
             help="If true than the node will use the extension module for "
                  "some tasks like block compression (default: {0})".format(
-                constants.USE_EXTENSION_MODULES
+                  constants.USE_EXTENSION_MODULES
             ),
             default=constants.USE_EXTENSION_MODULES,
             type=convert.str_to_bool
@@ -132,6 +144,21 @@ def get_args():
             help="If true than the node will import all C++ extensions dependencies on start up",
             default=False,
             type=convert.str_to_bool
+        )
+        arg_parser.add_argument(
+            "--thread-pool-parallelism-degree",
+            help="The degree of parallelism to use when running task on a "
+            f"concurrent thread pool (default: {constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE})",
+            default=constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE,
+            type=config.get_thread_pool_parallelism_degree
+        )
+        arg_parser.add_argument(
+            "--tx-mem-pool-bucket-size",
+            help="The size of each bucket of the transaction mem pool. "
+                 "In order to efficiently iterate the mem pool concurrently, it is being split into buckets. "
+            f"(default: {constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE})",
+            default=constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
+            type=int
         )
 
         _args, unknown = arg_parser.parse_known_args()

@@ -2,10 +2,10 @@ import unittest
 from unittest import mock
 from argparse import Namespace
 
-from bxcommon import node_runner
+from bxcommon import node_runner, constants
 from bxcommon.connections.node_type import NodeType
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
-from bxcommon.utils import logger, log_level, log_format
+from bxcommon.utils import logger, log_level, log_format, config
 from bxcommon.models.node_model import NodeModel
 
 
@@ -46,7 +46,11 @@ class TestNodeRunner(unittest.TestCase):
             "blockchain_networks": [self.blockchain_network],
             "log_level": log_level.LogLevel.INFO,
             "log_format": log_format.LogFormat.PLAIN,
-            "log_flush_immediately": True
+            "log_flush_immediately": True,
+            "use_extensions": True,
+            "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
+                str(constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE)
+            )
         }
         self.opts = Namespace()
         self.opts.__dict__ = opts

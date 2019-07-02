@@ -19,7 +19,7 @@ jobs:
       - run:
           command: |
             sudo apt update &&
-            sudo apt install build-essential automake autogen autoconf libtool libtool-bin libssl-dev cmake
+            sudo apt install build-essential automake autogen autoconf libtool libtool-bin libssl-dev cmake linux-headers-amd64
       - run: # install and activate virtual environment with pip
           command: |
             cd ~/ws

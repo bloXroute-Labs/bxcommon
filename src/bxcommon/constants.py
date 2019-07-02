@@ -114,6 +114,9 @@ USE_EXTENSION_MODULES = True
 ACCEPT_COMPACT_BLOCK = True
 
 
+DUMP_MISSING_SHORT_IDS_PATH = "/app/bxrelay/debug/missing-short-ids"
+
+
 class SdnRoutes(object):
     nodes = "/nodes"
     node = "/nodes/{0}"
@@ -143,6 +146,8 @@ MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES = 100 * 1024 * 1024
 # Percentage for transactions that will be logged by stats service. The value should be controlled by SDN in the future.
 TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR = 0.5
 ENABLE_TRANSACTIONS_STATS_BY_SHORT_IDS = False
+DEFAULT_THREAD_POOL_PARALLELISM_DEGREE = 1
+DEFAULT_TX_MEM_POOL_BUCKET_SIZE = 10000
 
 # </editor-fold>
 
@@ -172,6 +177,12 @@ WARN_MESSAGE_PROCESSING_S = 0.1
 
 # Expiration time for cache of relayed blocks hashes
 RELAYED_BLOCKS_EXPIRE_TIME_S = 6 * 60 * 60
+
+DUMP_REMOVED_SHORT_IDS_INTERVAL_S = 5 * 60
+DUMP_REMOVED_SHORT_IDS_PATH = "/app/bxcommon/debug/removed-short-ids"
+
+CLEAN_UP_SEEN_SHORT_IDS_DELAY_S = 10
+
 # </editor-fold>
 
 # <editor-fold desc="Default Values">

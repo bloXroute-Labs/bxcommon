@@ -12,6 +12,13 @@ def run_node(process_id_file_path, opts, node_class, node_type=None):
 
     config.log_pid(process_id_file_path)
     config.init_logging(opts.log_path, opts.to_stdout)
+    if opts.use_extensions:
+        from bxcommon.utils.proxy import task_pool_proxy
+        task_pool_proxy.init(opts.thread_pool_parallelism_degree)
+        logger.info(
+            "initialized task thread pool parallelism degree to "
+            f"{task_pool_proxy.get_pool_size()}."
+        )
     try:
         _run_node(opts, node_class, node_type)
     except TerminationError:
