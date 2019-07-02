@@ -1,4 +1,5 @@
 import time
+import traceback
 from abc import ABCMeta, abstractmethod
 from collections import deque
 from datetime import datetime
@@ -130,7 +131,8 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
             try:
                 record_fn()
             except Exception as e:
-                logger.error("Recording {} stats failed with exception: {}".format(self.name, e))
+                logger.error("Recording {} stats failed with exception: {}. Stack trace: {}".format(self.name, e,
+                                                                                                    traceback.format_exc()))
                 runtime = 0
             else:
                 runtime = time.time() - start_time
@@ -138,4 +140,3 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
 
             sleep_time = self.interval - runtime
             alive = self.sleep_and_check_alive(sleep_time)
-
