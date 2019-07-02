@@ -1,10 +1,10 @@
+import time
 from collections import defaultdict, deque
 from typing import List, Tuple
 
-from bxapi.utils import json_utils
 from bxcommon import constants
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
-from bxcommon.utils import logger, memory_utils, convert
+from bxcommon.utils import logger, memory_utils, convert, json_utils
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_hash import Sha256Hash
@@ -520,7 +520,7 @@ class TransactionService:
         pass
 
     def _get_cache_state_str(self):
-        return json_utils.to_json(
+        return json_utils.serialize(
             dict(
                 tx_hash_to_short_ids_len=len(self._tx_hash_to_short_ids),
                 short_id_to_tx_hash_len=len(self._short_id_to_tx_hash),
