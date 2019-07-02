@@ -1,12 +1,12 @@
+import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
+
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import logger
+from bxcommon.utils.object_encoder import ObjectEncoder
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
 from bxcommon.utils.proxy.default_map_proxy import DefaultMapProxy
 from bxcommon.utils.proxy.map_proxy import MapProxy
-from bxcommon.utils.object_encoder import ObjectEncoder
-
-import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
 
 class ExtensionTransactionService(TransactionService):
@@ -44,6 +44,8 @@ class ExtensionTransactionService(TransactionService):
         for dup_sid in dup_sids:
             self._tx_assignment_expire_queue.remove(dup_sid)
         logger.info(f"finished tracking {len(short_ids)} seen short ids")
+        logger.info(
+            f"Transaction cache state after tracking seen short ids in extension: {self._get_cache_state_str()}")
 
     def set_final_tx_confirmations_count(self, val: int):
         super(ExtensionTransactionService, self).set_final_tx_confirmations_count(val)

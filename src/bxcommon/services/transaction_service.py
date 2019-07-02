@@ -2,6 +2,7 @@ import time
 from collections import defaultdict, deque
 from typing import List, Tuple
 
+from bxapi.utils import json_utils
 from bxcommon import constants
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import logger, memory_utils, convert
@@ -285,6 +286,8 @@ class TransactionService(object):
             for short_id in final_short_ids:
                 self._remove_transaction_by_short_id(short_id, remove_related_short_ids=True)
 
+        logger.info("Transaction cache state after tracking seen short ids: {}", self._get_cache_state_str())
+
     def track_seen_short_ids_delayed(self, short_ids):
         """
         Schedules alarm task to clean up seen short ids after some delay
@@ -516,3 +519,14 @@ class TransactionService(object):
 
     def _track_seen_transaction(self, transaction_cache_key):
         pass
+
+    def _get_cache_state_str(self):
+        return json_utils.to_json(
+            dict(
+                tx_hash_to_short_ids_len=len(self._tx_hash_to_short_ids),
+                short_id_to_tx_hash_len=len(self._short_id_to_tx_hash),
+                tx_hash_to_contents_len=len(self._tx_hash_to_contents),
+                short_ids_seen_in_block_len=len(self._short_ids_seen_in_block),
+                total_tx_contents_size=self._total_tx_contents_size
+            )
+        )
