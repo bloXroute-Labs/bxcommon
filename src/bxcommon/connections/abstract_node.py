@@ -1,3 +1,4 @@
+import os
 import signal
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
@@ -72,6 +73,9 @@ class AbstractNode:
 
         # converting setting in MB to bytes
         self.next_report_mem_usage_bytes = self.opts.dump_detailed_report_at_memory_usage * 1024 * 1024
+
+        if opts.dump_removed_short_ids:
+            os.makedirs(opts.dump_removed_short_ids_path, exist_ok=True)
 
     def get_sdn_address(self):
         """
@@ -167,7 +171,6 @@ class AbstractNode:
         for peer in outbound_peer_models:
             peer_ip = peer.ip
             peer_port = peer.port
-            peer_id = peer.node_id
             if not self.connection_pool.has_connection(peer_ip, peer_port):
                 self.enqueue_connection(peer_ip, peer_port)
         self.outbound_peers = outbound_peer_models

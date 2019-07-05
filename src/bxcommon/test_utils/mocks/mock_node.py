@@ -43,7 +43,8 @@ class _MockOpts(Namespace):
 
     def __init__(self, node_id="foo", external_ip="127.0.0.1", external_port=8000, bloxroute_version="v1.5",
                  log_path="./", to_stdout=True, index=1, sid_start=1, sid_end=100000, sid_expire_time=99999,
-                 outbound_peers=None, blockchain_network_num=DEFAULT_NETWORK_NUM, node_type=NodeType.RELAY):
+                 outbound_peers=None, blockchain_network_num=DEFAULT_NETWORK_NUM, node_type=NodeType.RELAY,
+                 dump_removed_short_ids=False):
         if outbound_peers is None:
             outbound_peers = []
         self.node_id = node_id
@@ -73,7 +74,7 @@ class _MockOpts(Namespace):
         self.enable_buffered_send = False
         self.track_detailed_sent_messages = True
         self.dump_detailed_report_at_memory_usage = 100
-        self.dump_removed_short_ids = False
+        self.dump_removed_short_ids = dump_removed_short_ids
         self.dump_missing_short_ids = False
         self.memory_stats_interval = 3600
         self.tx_mem_pool_bucket_size = DEFAULT_TX_MEM_POOL_BUCKET_SIZE

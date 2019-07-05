@@ -1,8 +1,8 @@
 import os
 import socket
-from typing import Optional
 from argparse import Namespace
 from contextlib import closing
+from typing import Optional
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.abstract_node import AbstractNode
@@ -12,10 +12,9 @@ from bxcommon.constants import DEFAULT_NETWORK_NUM, LOCALHOST, USE_EXTENSION_MOD
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
-from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils import config
+from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.proxy import task_pool_proxy
-
 
 BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT = 10
 
@@ -171,7 +170,7 @@ def get_gateway_opts(port, node_id=None, external_ip=LOCALHOST, blockchain_addre
         "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
             str(parallelism_degree)
         ),
-        "tx_mem_pool_bucket_size": DEFAULT_TX_MEM_POOL_BUCKET_SIZE
+        "tx_mem_pool_bucket_size": DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
     }
 
     if include_default_btc_args:

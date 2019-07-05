@@ -86,6 +86,12 @@ class TransactionService:
     def set_final_tx_confirmations_count(self, val: int):
         self._final_tx_confirmations_count = val
 
+    def _dump_removed_short_ids(self):
+        with open("{}/{}".format(self.node.opts.dump_removed_short_ids_path, int(time.time())), "w") as f:
+            f.write(str(self._removed_short_ids))
+            self._removed_short_ids.clear()
+        return constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S
+
     def set_transaction_contents(self, transaction_hash, transaction_contents):
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
@@ -360,6 +366,14 @@ class TransactionService:
                 self.ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE * len(self._tx_assignment_expire_queue)
             ),
             len(self._tx_assignment_expire_queue)
+        )
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            self.network_num,
+            self._removed_short_ids,
+            "removed_short_ids",
+            self.get_collection_mem_stats(self._removed_short_ids),
         )
 
         hooks.add_obj_mem_stats(
