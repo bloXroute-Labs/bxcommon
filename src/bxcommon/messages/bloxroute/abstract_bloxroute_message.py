@@ -35,12 +35,12 @@ class AbstractBloxrouteMessage(AbstractInternalMessage):
         Sets value to control flag
         :param flag: control flag to set
         """
-        self._memoryview[-1] |= flag
+        self.buf[-1] |= flag
 
     def remove_control_flag(self, flag: int) -> None:
         """
         Removes control flag value
         :param flag: flag value to remove
 w        """
-        if self._memoryview[-1] & flag:
-            self._memoryview[-1] ^= flag
+        if self.buf[-1] & flag:
+            self.buf[-1] ^= flag
