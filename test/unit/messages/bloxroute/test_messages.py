@@ -1,5 +1,6 @@
-from bxcommon.constants import HDR_COMMON_OFF
-from bxcommon.messages.bloxroute.message import Message
+import struct
+
+from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 
 
@@ -9,19 +10,19 @@ class MessageTest(AbstractTestCase):
         self.buf1 = bytearray([i for i in range(40)])
         self.payload_len1 = 20
         self.msg_type1 = b"example"
-        self.message1 = Message(msg_type=self.msg_type1, payload_len=self.payload_len1, buf=self.buf1)
-        self.buf2 = bytearray([i for i in range(20)])
+        self.message1 = AbstractBloxrouteMessage(msg_type=self.msg_type1, payload_len=self.payload_len1, buf=self.buf1)
+        self.buf2 = bytearray([i for i in range(24)])
         self.payload_len2 = 50
         self.msg_type2 = b"hello"
-        self.message2 = Message(msg_type=self.msg_type2, payload_len=self.payload_len2, buf=self.buf2)
+        self.message2 = AbstractBloxrouteMessage(msg_type=self.msg_type2, payload_len=self.payload_len2, buf=self.buf2)
 
     def test_init(self):
+        with self.assertRaises(struct.error):
+            AbstractBloxrouteMessage(msg_type=None, payload_len=20, buf=bytearray([i for i in range(40)]))
         with self.assertRaises(ValueError):
-            Message(msg_type=None, payload_len=20, buf=bytearray([i for i in range(40)]))
+            AbstractBloxrouteMessage(msg_type=b"hello", payload_len=-5, buf=bytearray([i for i in range(40)]))
         with self.assertRaises(ValueError):
-            Message(msg_type=b"hello", payload_len=-5, buf=bytearray([i for i in range(40)]))
-        with self.assertRaises(ValueError):
-            Message(msg_type=b"hello", payload_len=20, buf=bytearray([i for i in range(10)]))
+            AbstractBloxrouteMessage(msg_type=b"hello", payload_len=20, buf=bytearray([i for i in range(10)]))
 
         self.assertEqual(self.buf1, self.message1.buf)
         self.assertEqual(self.buf1, self.message1._memoryview)
@@ -44,5 +45,9 @@ class MessageTest(AbstractTestCase):
 
     def test_payload(self):
         self.assertIsNone(self.message1._payload)
-        self.assertEqual(self.buf1[HDR_COMMON_OFF:self.payload_len1 + HDR_COMMON_OFF], self.message1.payload())
-        self.assertEqual(self.buf1[HDR_COMMON_OFF:self.payload_len1 + HDR_COMMON_OFF], self.message1._payload)
+        self.assertEqual(self.buf1[
+                         AbstractBloxrouteMessage.HEADER_LENGTH:self.payload_len1 + AbstractBloxrouteMessage.HEADER_LENGTH],
+                         self.message1.payload())
+        self.assertEqual(self.buf1[
+                         AbstractBloxrouteMessage.HEADER_LENGTH:self.payload_len1 + AbstractBloxrouteMessage.HEADER_LENGTH],
+                         self.message1._payload)

@@ -1,19 +1,19 @@
 from bxcommon import constants
-from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
+from bxcommon.messages.bloxroute.v4.message_v4 import MessageV4
 from bxcommon.utils.message_buffer_builder import PayloadElement, PayloadBlock
 
 
-class VersionMessage(AbstractBloxrouteMessage):
+class VersionMessageV4(MessageV4):
     """
     Bloxroute message that contains version info.
     """
 
-    BASE_LENGTH = constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF + constants.VERSION_NUM_LEN + constants.NETWORK_NUM_LEN
-    VERSION_MESSAGE_BLOCK = PayloadBlock(AbstractBloxrouteMessage.HEADER_LENGTH, "VersionMessage", 0,
+    BASE_LENGTH = constants.BX_HDR_COMMON_OFF + constants.VERSION_NUM_LEN + constants.NETWORK_NUM_LEN
+    VERSION_MESSAGE_BLOCK = PayloadBlock(constants.BX_HDR_COMMON_OFF, "VersionMessage", 0,
                                          PayloadElement(structure="<L", name="protocol_version"),
                                          PayloadElement(structure="<L", name="network_num")
                                          )
-    VERSION_MESSAGE_LENGTH = VERSION_MESSAGE_BLOCK.size + constants.CONTROL_FLAGS_LEN
+    VERSION_MESSAGE_LENGTH = VERSION_MESSAGE_BLOCK.size
 
     def __init__(self, msg_type, payload_len, protocol_version, network_num, buf):
         if protocol_version is not None and network_num is not None:
@@ -23,7 +23,7 @@ class VersionMessage(AbstractBloxrouteMessage):
 
         self._protocol_version = None
         self._network_num = None
-        super(VersionMessage, self).__init__(msg_type, payload_len, buf)
+        super(VersionMessageV4, self).__init__(msg_type, payload_len, buf)
 
     def __unpack(self):
         contents = self.VERSION_MESSAGE_BLOCK.read(self._memoryview)

@@ -46,6 +46,26 @@ class AbstractMessageConverter(object):
         pass
 
     @abstractmethod
+    def convert_last_bytes_to_older_version(self, last_msg_bytes):
+        """
+        Converts last bytes of message of current protocol version to older version (version of converter)
+
+        :param last_msg_bytes: first bytes of message in current protocol version
+        :return: converted message bytes
+        """
+        pass
+
+    @abstractmethod
+    def convert_last_bytes_from_older_version(self, last_msg_bytes):
+        """
+        Converts last message bytes of older version (version of converter) to current protocol version
+
+        :param last_msg_bytes: first message bytes in older protocol version
+        :return: converted message bytes
+        """
+        pass
+
+    @abstractmethod
     def get_message_size_change_to_older_version(self):
         """
         Returns the difference in size between current protocol version and older version

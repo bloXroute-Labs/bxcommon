@@ -266,7 +266,9 @@ class TransactionService:
         logger.info(
             "Finished cleaning up short ids. Entries remaining: {}".format(len(self._tx_assignment_expire_queue)))
         if len(self._tx_assignment_expire_queue) > 0:
-            return self.node.opts.sid_expire_time
+            oldest_tx_timestamp = self._tx_assignment_expire_queue.get_oldest_item_timestamp()
+            time_to_expire_oldest = (oldest_tx_timestamp + self.node.opts.sid_expire_time) - time.time()
+            return max(time_to_expire_oldest, constants.MIN_CLEAN_UP_EXPIRED_TXS_TASK_INTERVAL_S)
         else:
             self.tx_assign_alarm_scheduled = False
             return 0

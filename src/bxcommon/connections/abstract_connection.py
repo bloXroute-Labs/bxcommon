@@ -8,6 +8,7 @@ from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import PayloadLenError
+from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import logger, convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -76,6 +77,8 @@ class AbstractConnection(Generic[Node]):
 
         # Default network number to network number of current node. But it can change after hello message is received
         self.network_num = node.network_num
+
+        self.message_validator = DefaultMessageValidator()
 
         self._trace_message_tracker = defaultdict(int)
         self._last_trace_message_log_time = time.time()
@@ -159,6 +162,9 @@ class AbstractConnection(Generic[Node]):
     def pre_process_msg(self):
         is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview_from_input_buffer(
             self.inputbuf)
+
+        self.message_validator.validate(is_full_msg, msg_type, self.header_size, payload_len, self.inputbuf)
+
         return is_full_msg, msg_type, payload_len
 
     def process_msg_type(self, message_type, is_full_msg, payload_len):
@@ -290,7 +296,7 @@ class AbstractConnection(Generic[Node]):
         :return: message object
         """
 
-        msg_len = self.header_size + payload_len
+        msg_len = self.message_factory.base_message_type.HEADER_LENGTH + payload_len
         msg_contents = self.inputbuf.remove_bytes(msg_len)
         return self.message_factory.create_message_from_buffer(msg_contents)
 

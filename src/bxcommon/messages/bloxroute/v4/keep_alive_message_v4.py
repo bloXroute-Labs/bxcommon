@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from bxcommon import constants
+from bxcommon.messages.bloxroute.v4.message_v4 import MessageV4
 from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.message_buffer_builder import PayloadElement, PayloadBlock
 from bxcommon.constants import BX_HDR_COMMON_OFF
@@ -8,7 +8,7 @@ from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxr
 from bxcommon.messages.bloxroute.protocol_version import PROTOCOL_VERSION
 
 
-class KeepAliveMessage(AbstractBloxrouteMessage):
+class KeepAliveMessageV4(MessageV4):
     """
     BloXroute Version message that contains a message nonce to be used in the response.
 
@@ -18,12 +18,12 @@ class KeepAliveMessage(AbstractBloxrouteMessage):
                                             PayloadElement(name="nonce", structure="<Q",
                                                            decode=lambda x: x or None),
                                             )
-    KEEP_ALIVE_MESSAGE_LENGTH = KEEP_ALIVE_MESSAGE_BLOCK.size + constants.CONTROL_FLAGS_LEN
+    KEEP_ALIVE_MESSAGE_LENGTH = KEEP_ALIVE_MESSAGE_BLOCK.size
 
     def __init__(self, msg_type, nonce=None, buf=None):
         self.timestamp = datetime.utcnow()
         if buf is None:
-            buf = bytearray(self.HEADER_LENGTH + self.KEEP_ALIVE_MESSAGE_LENGTH)
+            buf = bytearray(BX_HDR_COMMON_OFF + self.KEEP_ALIVE_MESSAGE_LENGTH)
 
         buf = self.KEEP_ALIVE_MESSAGE_BLOCK.build(buf, nonce=nonce)
 
@@ -31,7 +31,7 @@ class KeepAliveMessage(AbstractBloxrouteMessage):
         self._nonce = None
         self._network_num = None
         self._memoryview = memoryview(buf)
-        super(KeepAliveMessage, self).__init__(msg_type, self.KEEP_ALIVE_MESSAGE_LENGTH, buf)
+        super(KeepAliveMessageV4, self).__init__(msg_type, self.KEEP_ALIVE_MESSAGE_LENGTH, buf)
 
     def __unpack(self):
         contents = self.KEEP_ALIVE_MESSAGE_BLOCK.read(self._memoryview)
@@ -43,4 +43,4 @@ class KeepAliveMessage(AbstractBloxrouteMessage):
         return self._nonce
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG

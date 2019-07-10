@@ -1,7 +1,8 @@
 from collections import deque
 
+from bxcommon import constants
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, NODE_ID_SIZE_IN_BYTES, \
-    HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN
+    BX_HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
@@ -33,7 +34,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
     def get_hashed_message_preview_successfully(self, message, expected_hash):
         is_full_message, msg_hash, network_num, _payload_length = \
             bloxroute_message_factory.get_hashed_message_preview_from_input_buffer(
-                create_input_buffer_with_bytes(message.rawbytes()[:HDR_COMMON_OFF + SHA256_HASH_LEN + NETWORK_NUM_LEN])
+                create_input_buffer_with_bytes(message.rawbytes()[:message.HEADER_LENGTH + SHA256_HASH_LEN + NETWORK_NUM_LEN])
             )
         self.assertTrue(is_full_message)
         self.assertEqual(expected_hash, msg_hash)
@@ -51,27 +52,30 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                               HelloMessage.MESSAGE_TYPE,
                                               VersionMessage.VERSION_MESSAGE_LENGTH + UL_INT_SIZE_IN_BYTES +
                                               NODE_ID_SIZE_IN_BYTES - UL_INT_SIZE_IN_BYTES)
-        self.get_message_preview_successfully(AckMessage(), AckMessage.MESSAGE_TYPE, 0)
-        self.get_message_preview_successfully(PingMessage(), PingMessage.MESSAGE_TYPE, 8)
-        self.get_message_preview_successfully(PongMessage(), PongMessage.MESSAGE_TYPE, 8)
+        self.get_message_preview_successfully(AckMessage(), AckMessage.MESSAGE_TYPE, constants.CONTROL_FLAGS_LEN)
+        self.get_message_preview_successfully(PingMessage(), PingMessage.MESSAGE_TYPE, 9)
+        self.get_message_preview_successfully(PongMessage(), PongMessage.MESSAGE_TYPE, 9)
 
         blob = bytearray(1 for _ in range(4))
         self.get_message_preview_successfully(BroadcastMessage(self.HASH, 1, True, blob), BroadcastMessage.MESSAGE_TYPE,
-                                              SHA256_HASH_LEN + NETWORK_NUM_LEN + BLOCK_ENCRYPTED_FLAG_LEN + len(blob))
+                                              SHA256_HASH_LEN + NETWORK_NUM_LEN + BLOCK_ENCRYPTED_FLAG_LEN + len(
+                                                  blob) + constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(TxMessage(self.HASH, 1, 12, blob), TxMessage.MESSAGE_TYPE,
-                                              SHA256_HASH_LEN + NETWORK_NUM_LEN + UL_INT_SIZE_IN_BYTES + len(blob))
+                                              SHA256_HASH_LEN + NETWORK_NUM_LEN + UL_INT_SIZE_IN_BYTES + len(
+                                                  blob) + constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(KeyMessage(self.HASH, 1, bytearray(1 for _ in range(KEY_SIZE))),
-                                              KeyMessage.MESSAGE_TYPE, SHA256_HASH_LEN + KEY_SIZE + NETWORK_NUM_LEN)
+                                              KeyMessage.MESSAGE_TYPE,
+                                              SHA256_HASH_LEN + KEY_SIZE + NETWORK_NUM_LEN + constants.CONTROL_FLAGS_LEN)
 
         get_txs = [1, 2, 3]
         self.get_message_preview_successfully(GetTxsMessage(get_txs), GetTxsMessage.MESSAGE_TYPE,
-                                              UL_INT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES * len(get_txs))
+                                              UL_INT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES * len(get_txs) + constants.CONTROL_FLAGS_LEN)
 
         txs = deque([TransactionInfo(crypto.double_sha256(b"123"), bytearray(4), 1),
                      TransactionInfo(crypto.double_sha256(b"234"), bytearray(8), 2)])
         expected_length = (UL_INT_SIZE_IN_BYTES +
                            sum(UL_INT_SIZE_IN_BYTES + SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES +
-                               len(tx.contents) for tx in txs))
+                               len(tx.contents) for tx in txs) + constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(TxsMessage(txs), TxsMessage.MESSAGE_TYPE, expected_length)
 
     def test_message_preview_incomplete(self):
@@ -103,7 +107,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         is_full_message, msg_hash, network_num, payload_length = \
             bloxroute_message_factory.get_hashed_message_preview_from_input_buffer(
                 create_input_buffer_with_bytes(broadcast_message.rawbytes()
-                                               [:HDR_COMMON_OFF + SHA256_HASH_LEN + NETWORK_NUM_LEN - 1])
+                                               [:BX_HDR_COMMON_OFF + SHA256_HASH_LEN + NETWORK_NUM_LEN - 1])
             )
         self.assertFalse(is_full_message)
         self.assertIsNone(msg_hash)

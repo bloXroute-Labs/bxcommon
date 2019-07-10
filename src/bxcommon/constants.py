@@ -75,6 +75,9 @@ MAX_LOGGED_BYTES_LEN = 500 * 1024
 
 # <editor-fold desc="Message Packing Constants">
 
+STARTING_SEQUENCE_BYTES = bytearray(b"\xFF\xFE\xFD\xFC")
+STARTING_SEQUENCE_BYTES_LEN = 4
+CONTROL_FLAGS_LEN = 1
 UL_SHORT_SIZE_IN_BYTES = 2
 UL_INT_SIZE_IN_BYTES = 4
 UL_ULL_SIZE_IN_BYTES = 8
@@ -84,7 +87,7 @@ IP_ADDR_SIZE_IN_BYTES = 16
 MSG_NULL_BYTE = b"\x00"
 
 # bytes of basic message header
-HDR_COMMON_OFF = 16
+BX_HDR_COMMON_OFF = 16
 
 # bytes for storing message type
 MSG_TYPE_LEN = 12
@@ -172,6 +175,9 @@ WARN_ALARM_EXECUTION_DURATION = 5
 # Timeout to warn on if alarm executed later than expected
 WARN_ALARM_EXECUTION_OFFSET = 5
 
+# Minimal expired transactions clean up task frequency
+MIN_CLEAN_UP_EXPIRED_TXS_TASK_INTERVAL_S = 1 * 60
+
 # Duration to warn on if message processing takes longer than
 WARN_MESSAGE_PROCESSING_S = 0.1
 
@@ -182,13 +188,15 @@ DUMP_REMOVED_SHORT_IDS_INTERVAL_S = 5 * 60
 DUMP_REMOVED_SHORT_IDS_PATH = "/app/bxcommon/debug/removed-short-ids"
 
 CLEAN_UP_SEEN_SHORT_IDS_DELAY_S = 10
-
 # </editor-fold>
 
 # <editor-fold desc="Default Values">
 
 # Default transactions contents cache maximum size per network number
 DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES = 250 * 1024 * 1024
+
+# Default maximum allowed length of internal message payload
+DEFAULT_MAX_PAYLOAD_LEN_BYTES = 1024 * 1024
 
 # </editor-fold>
 
