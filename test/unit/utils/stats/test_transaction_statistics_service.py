@@ -13,7 +13,7 @@ from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 class TransactionStatisticsServiceTest(AbstractTestCase):
 
     def setUp(self):
-        self.node = MockNode("localhost", 8888)
+        self.node = MockNode(helpers.get_common_opts(8888))
         tx_stats.set_node(self.node)
 
     def test_should_log_event(self):

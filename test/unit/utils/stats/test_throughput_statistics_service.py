@@ -1,5 +1,6 @@
 from collections import deque
 
+from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils.stats.direction import Direction
@@ -12,7 +13,7 @@ from bxcommon.utils.stats.throughput_event import ThroughputEvent
 class ThroughputServiceTests(AbstractTestCase):
 
     def setUp(self):
-        throughput_statistics.set_node(MockNode("localhost", 8888))
+        throughput_statistics.set_node(MockNode(helpers.get_common_opts(8888)))
 
         self.inbound_throughput_event1 = ThroughputEvent(Direction.INBOUND, "test_in_msg", 100, "localhost 0000")
         self.inbound_throughput_event2 = ThroughputEvent(Direction.INBOUND, "test_in_msg", 50, "localhost 0000")
@@ -60,7 +61,6 @@ class ThroughputServiceTests(AbstractTestCase):
                          peer_stats.messages_received[self.inbound_throughput_event1.msg_type].bytes)
         self.assertNotEqual(self.inbound_throughput_event1.msg_size, peer_stats.messages_sent.bytes)
 
-
     def test_adding_outbound_event(self):
         add_throughput_event(**self.outbound_throughput_event1.__dict__)
 
@@ -70,7 +70,6 @@ class ThroughputServiceTests(AbstractTestCase):
         self.assertEqual(self.outbound_throughput_event1.msg_size, peer_stats.messages_sent.bytes)
         self.assertNotEqual(self.outbound_throughput_event1.msg_size,
                             peer_stats.messages_received[self.inbound_throughput_event1.msg_size].bytes)
-
 
     def test_get_json_when_no_node_set(self):
         throughput_statistics.node = None

@@ -1,5 +1,4 @@
 import time
-import unittest
 from threading import Thread
 
 from bxcommon.connections.abstract_node import AbstractNode
@@ -8,14 +7,12 @@ from bxcommon.network.network_event_loop_factory import create_event_loop
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import generate_bytearray
-from bxcommon.test_utils.mocks.mock_node import _MockOpts
 from bxcommon.utils import logger
 
 
 class TestNode(AbstractNode):
     def __init__(self, port, peers_ports, timeout=None, send_bytes=None):
-        opts = _MockOpts()
-        opts.external_port = port
+        opts = helpers.get_common_opts(port)
         super(TestNode, self).__init__(opts)
 
         self.port = port

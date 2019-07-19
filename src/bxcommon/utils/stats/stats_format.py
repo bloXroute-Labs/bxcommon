@@ -1,9 +1,19 @@
-from typing import List, Optional
+from typing import List
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.test_utils.mocks.mock_connection import MockConnectionType
+
+SUFFIXES = ["bytes", "kB", "MB", "GB"]
+
+
+def byte_count(num_bytes: float) -> str:
+    i = 0
+    while num_bytes > 1024 and i < len(SUFFIXES):
+        num_bytes /= 1024
+
+    return f"{int(num_bytes)} {SUFFIXES[i]}"
 
 
 def connections(conns: List[AbstractConnection]) -> str:

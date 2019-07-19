@@ -22,7 +22,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
     TEST_MEMORY_LIMIT_MB = 0.01
 
     def setUp(self) -> None:
-        self.mock_node = MockNode(LOCALHOST, 8000)
+        self.mock_node = MockNode(helpers.get_common_opts(8000))
         self.mock_node.opts.transaction_pool_memory_limit = self.TEST_MEMORY_LIMIT_MB
         self.transaction_service = self._get_transaction_service()
 

@@ -129,7 +129,11 @@ class AbstractConnection(Generic[Node]):
         """
         logger.log(msg.log_level(), "Enqueued message: {} on connection: {}", msg, self)
 
-        self.enqueue_msg_bytes(msg.rawbytes(), prepend, full_message=msg)
+        if self.message_tracker:
+            full_message = msg
+        else:
+            full_message = None
+        self.enqueue_msg_bytes(msg.rawbytes(), prepend, full_message)
 
     def enqueue_msg_bytes(self, msg_bytes, prepend=False, full_message=None):
         """

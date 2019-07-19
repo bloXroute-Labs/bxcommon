@@ -475,10 +475,10 @@ class AbstractNode:
         memory_statistics.stop_recording()
 
     def init_block_stats_logging(self):
-        tx_stats.set_node(self)
+        block_stats.set_node(self)
 
     def init_tx_stats_logging(self):
-        block_stats.set_node(self)
+        tx_stats.set_node(self)
 
     def flush_all_send_buffers(self):
         for conn in self.connection_pool:
