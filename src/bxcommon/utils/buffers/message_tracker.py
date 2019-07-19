@@ -42,6 +42,7 @@ class MessageTracker:
     messages: Deque[MessageTrackerEntry]
     connection: "AbstractConnection"
     is_working: bool = True
+    bytes_remaining: int = 0
 
     def __init__(self, connection: "AbstractConnection"):
         self.connection = connection
@@ -62,6 +63,7 @@ class MessageTracker:
             return
 
         bytes_left = num_bytes
+        self.bytes_remaining -= num_bytes
         while bytes_left > 0:
 
             if not self.messages:
@@ -72,16 +74,20 @@ class MessageTracker:
 
             if bytes_left >= (self.messages[0].length - self.messages[0].sent_bytes):
                 sent_message = self.messages.popleft()
-                logger.log(sent_message.message_log_level(), "Sent {} to socket on connection: {}. Took {:.2f}ms.",
-                           sent_message.message, self.connection, 1000 * (time.time() - sent_message.queued_time))
+                logger.log(sent_message.message_log_level(),
+                           "Sent {} to socket on connection: {}. Took {:.2f}ms. {} bytes remaining on buffer.",
+                           sent_message.message, self.connection, 1000 * (time.time() - sent_message.queued_time),
+                           self.bytes_remaining)
                 bytes_left -= (sent_message.length - sent_message.sent_bytes)
             else:
                 in_progress_message = self.messages[0]
                 in_progress_message.sent_bytes += bytes_left
                 logger.log(in_progress_message.message_log_level(),
-                           "Sent {} out of {} bytes of {} to socket on connection: {}. Elapsed time: {:.2f}ms.",
+                           "Sent {} out of {} bytes of {} to socket on connection: {}. Elapsed time: {:.2f}ms."
+                           "{} bytes remaining on buffer.",
                            in_progress_message.sent_bytes, in_progress_message.length, in_progress_message.message,
-                           self.connection, 1000 * (time.time() - in_progress_message.queued_time))
+                           self.connection, 1000 * (time.time() - in_progress_message.queued_time),
+                           self.bytes_remaining)
                 bytes_left = 0
 
     def append_message(self, num_bytes: int, message: Optional[AbstractMessage]):
@@ -95,6 +101,7 @@ class MessageTracker:
             return
 
         self.messages.append(MessageTrackerEntry(message, num_bytes))
+        self.bytes_remaining += num_bytes
 
     def prepend_message(self, num_bytes: int, message: Optional[AbstractMessage]):
         """
@@ -112,3 +119,5 @@ class MessageTracker:
             self.messages.appendleft(in_progress_message)
         else:
             self.messages.append(MessageTrackerEntry(message, num_bytes))
+
+        self.bytes_remaining += num_bytes
