@@ -107,8 +107,6 @@ class AbstractConnection(Generic[Node]):
 
         self.inputbuf.add_bytes(bytes_received)
 
-        return True
-
     def get_bytes_to_send(self):
         assert not self.state & ConnectionState.MARK_FOR_CLOSE
 
@@ -350,6 +348,13 @@ class AbstractConnection(Generic[Node]):
 
         if msg_is_in_input_buffer:
             self.inputbuf.remove_bytes(self.header_size + payload_len)
+
+    def on_input_received(self) -> bool:
+        """handles an input event from the event loop
+
+        :return: True if the connection is receivable, otherwise False
+        """
+        return True
 
     def _report_bad_message(self):
         """

@@ -36,7 +36,7 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
                 return 0
             raise ioe
 
-        receive_connections = self._node.get_and_clear_receivable_connections()
+        receive_connections = []
 
         for fileno, event in events:
 
@@ -75,7 +75,8 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
         # Process receive events in the end
         for socket_connection in receive_connections:
             if not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-                socket_connection.receive()
+                if self._node.on_input_received(socket_connection.fileno()):
+                    socket_connection.receive()
 
         return len(events)
 

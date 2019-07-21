@@ -37,8 +37,6 @@ class AbstractNode:
         self.disconnect_queue = deque()
         self.outbound_peers = opts.outbound_peers[:]
 
-        self.receivable_connections = []
-
         self.connection_pool = ConnectionPool()
 
         self.schedule_pings_on_timeout = False
@@ -182,7 +180,7 @@ class AbstractNode:
 
         return
 
-    def on_bytes_received(self, fileno: int, bytes_received: bytearray) -> bool:
+    def on_bytes_received(self, fileno: int, bytes_received: bytearray) -> None:
         """
         :param fileno:
         :param bytes_received:
@@ -192,20 +190,15 @@ class AbstractNode:
 
         if conn is None:
             logger.warn("Received bytes for connection not in pool. Fileno {0}", fileno)
-            return False
+            return
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            return False
+            return
 
-        continue_receiving = conn.add_received_bytes(bytes_received)
-
-        if not continue_receiving:
-            self.receivable_connections.append(conn.socket_connection)
+        conn.add_received_bytes(bytes_received)
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
             self.destroy_conn(conn)
-
-        return continue_receiving
 
     def on_finished_receiving(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)
@@ -318,14 +311,6 @@ class AbstractNode:
             -> Optional[AbstractConnection]:
         pass
 
-    def get_and_clear_receivable_connections(self):
-        """
-        :return: returns connections that have some bytes in the socket layer that we can still receive.
-        """
-        receivable_connections = self.receivable_connections
-        self.receivable_connections = []
-        return receivable_connections
-
     def enqueue_connection(self, ip, port):
         """
         Add address to the queue of outbound connections
@@ -364,51 +349,6 @@ class AbstractNode:
 
         return
 
-    def _initialize_connection(self, socket_connection: SocketConnection, ip: str, port: int, from_me: bool):
-        conn_obj = self.build_connection(socket_connection, ip, port, from_me)
-        if conn_obj:
-            logger.info("Adding connection: {}.", conn_obj)
-
-            self.alarm_queue.register_alarm(constants.CONNECTION_TIMEOUT, self._connection_timeout, conn_obj)
-            self.connection_pool.add(socket_connection.fileno(), ip, port, conn_obj)
-
-            if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
-                self.sdn_connection = conn_obj
-
-    def _connection_timeout(self, conn):
-        """
-        Check if the connection is established.
-        If it is not established, we give up for untrusted connections and try again for trusted connections.
-        """
-
-        logger.debug("Checking connection status: {}", conn)
-
-        if conn.state & ConnectionState.ESTABLISHED:
-            logger.debug("Connection is still established: {}", conn)
-
-            if self.schedule_pings_on_timeout:
-                self.alarm_queue.register_alarm(constants.PING_INTERVAL_S, conn.send_ping)
-
-            return constants.CANCEL_ALARMS
-
-        if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            logger.debug("Connection has already been marked for closure: {}", conn)
-            return constants.CANCEL_ALARMS
-
-        # Clean up the old connection and retry it if it is trusted
-        logger.debug("Connection has timed out: {}", conn)
-        self.destroy_conn(conn, retry_connection=True)
-
-        # It is connect_to_address's job to schedule this function.
-        return constants.CANCEL_ALARMS
-
-    def _kill_node(self, _signum, _stack):
-        """
-        Kills the node immediately
-        """
-        logger.fatal("Node has been killed")
-        raise TerminationError("Node killed.")
-
     def destroy_conn(self, conn, retry_connection=False):
         """
         Clean up the associated connection and update all data structures tracking it.
@@ -435,20 +375,6 @@ class AbstractNode:
 
     def is_outbound_peer(self, ip, port):
         return any(peer.ip == ip and peer.port == port for peer in self.outbound_peers)
-
-    def _retry_init_client_socket(self, ip, port, connection_type):
-        self.num_retries_by_ip[(ip, port)] += 1
-
-        if self.should_retry_connection(ip, port, connection_type):
-            logger.info("Retrying {} connection to {}:{}. Attempt #{}.", connection_type, ip, port,
-                        self.num_retries_by_ip[(ip, port)])
-            self.enqueue_connection(ip, port)
-        else:
-            del self.num_retries_by_ip[(ip, port)]
-            logger.warn("Maximum retry attempts exceeded. Dropping {} connection to {}:{}.", connection_type, ip, port)
-            self.on_failed_connection_retry(ip, port, connection_type)
-
-        return 0
 
     def should_retry_connection(self, ip: str, port: int, connection_type: ConnectionType) -> bool:
         is_sdn = bool(connection_type & ConnectionType.SDN)
@@ -510,3 +436,70 @@ class AbstractNode:
                 "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}",
                 total_mem_usage, self.next_report_mem_usage_bytes, json_utils.serialize(node_size))
             self.next_report_mem_usage_bytes = total_mem_usage + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES
+
+    def on_input_received(self, file_no: int) -> bool:
+        """handles an input event from the event loop
+
+        :param file_no: the socket connection file_no
+        :return: True if the connection is receivable, otherwise False
+        """
+        return self.connection_pool.get_by_fileno(file_no).on_input_received()
+
+    def _initialize_connection(self, socket_connection: SocketConnection, ip: str, port: int, from_me: bool):
+        conn_obj = self.build_connection(socket_connection, ip, port, from_me)
+        if conn_obj:
+            logger.info("Adding connection: {}.", conn_obj)
+
+            self.alarm_queue.register_alarm(constants.CONNECTION_TIMEOUT, self._connection_timeout, conn_obj)
+            self.connection_pool.add(socket_connection.fileno(), ip, port, conn_obj)
+
+            if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
+                self.sdn_connection = conn_obj
+
+    def _connection_timeout(self, conn):
+        """
+        Check if the connection is established.
+        If it is not established, we give up for untrusted connections and try again for trusted connections.
+        """
+
+        logger.debug("Checking connection status: {}", conn)
+
+        if conn.state & ConnectionState.ESTABLISHED:
+            logger.debug("Connection is still established: {}", conn)
+
+            if self.schedule_pings_on_timeout:
+                self.alarm_queue.register_alarm(constants.PING_INTERVAL_S, conn.send_ping)
+
+            return constants.CANCEL_ALARMS
+
+        if conn.state & ConnectionState.MARK_FOR_CLOSE:
+            logger.debug("Connection has already been marked for closure: {}", conn)
+            return constants.CANCEL_ALARMS
+
+        # Clean up the old connection and retry it if it is trusted
+        logger.debug("Connection has timed out: {}", conn)
+        self.destroy_conn(conn, retry_connection=True)
+
+        # It is connect_to_address's job to schedule this function.
+        return constants.CANCEL_ALARMS
+
+    def _kill_node(self, _signum, _stack):
+        """
+        Kills the node immediately
+        """
+        logger.fatal("Node has been killed")
+        raise TerminationError("Node killed.")
+
+    def _retry_init_client_socket(self, ip, port, connection_type):
+        self.num_retries_by_ip[(ip, port)] += 1
+
+        if self.should_retry_connection(ip, port, connection_type):
+            logger.info("Retrying {} connection to {}:{}. Attempt #{}.", connection_type, ip, port,
+                        self.num_retries_by_ip[(ip, port)])
+            self.enqueue_connection(ip, port)
+        else:
+            del self.num_retries_by_ip[(ip, port)]
+            logger.warn("Maximum retry attempts exceeded. Dropping {} connection to {}:{}.", connection_type, ip, port)
+            self.on_failed_connection_retry(ip, port, connection_type)
+
+        return 0

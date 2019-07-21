@@ -76,7 +76,7 @@ class SocketConnection:
                 self._node.on_connection_closed(fileno)
                 return
             else:
-                collect_input = self._node.on_bytes_received(fileno, piece)
+                self._node.on_bytes_received(fileno, piece)
 
         self._node.on_finished_receiving(fileno)
 
