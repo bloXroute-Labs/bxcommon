@@ -1,9 +1,17 @@
 from dataclasses import dataclass
+from typing import Optional, Dict, Any
 
 
 @dataclass
 class OutboundPeerModel(object):
-    def __init__(self, ip=None, port=None, node_id=None, is_internal_gateway=False, attributes=None):
+    ip: str
+    port: int
+    node_id: Optional[str]
+    is_internal_gateway: bool
+    attributes: Dict[Any, Any]
+
+    def __init__(self, ip: str = None, port: int = None, node_id: Optional[str] = None,
+                 is_internal_gateway: bool = False, attributes: Dict[Any, Any] = None):
         if attributes is None:
             attributes = {}
 

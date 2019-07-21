@@ -7,6 +7,7 @@ NOTE: A similar model loader exists in BXAPI - if making changes, check both for
 
 import json
 import logging
+import inspect
 from typing import Dict, Type, TypeVar, Any, List, Optional, Union
 
 logger = logging.getLogger(__name__)
@@ -64,7 +65,12 @@ def _load_attribute(attribute_type: Type[T], attribute_value: Any, cast_basic_va
     :param cast_basic_values: if to cast between str, int, etc.
     :return: instance of attribute value
     """
-    if hasattr(attribute_type, "__annotations__"):
+    annotations = {}
+    try:
+        annotations = inspect.getfullargspec(attribute_type).annotations
+    except TypeError:
+        pass
+    if hasattr(attribute_type, "__annotations__") or annotations:
         return load_model(attribute_type, attribute_value)
     elif attribute_type == Any or attribute_value is None or attribute_type.__class__ == TypeVar:
         return attribute_value
