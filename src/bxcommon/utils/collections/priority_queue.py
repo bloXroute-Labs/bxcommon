@@ -15,7 +15,7 @@ class ObjectPriority(Generic[T]):
         self._obj = obj
 
     def __repr__(self):
-        return repr(self._obj)
+        return f"{self.__class__.__name__}<{self._obj}>"
 
     def get_priority(self) -> Any:
         return self._get_priority(self._obj)
@@ -72,7 +72,7 @@ class PriorityQueue(Generic[T]):
             if obj not in self._items_dict:
                 self._items_dict[obj] = priority_item
         else:
-            raise ValueError(f"object {obj} never added to the queue")
+            raise self._missing_object_error(obj)
 
     def remove(self, obj: T) -> None:
         """
@@ -98,11 +98,15 @@ class PriorityQueue(Generic[T]):
         """
         attempts to remove an item from the priority queue (not from the tracker).
         :param obj: the object to be removed.
+        :raise ValueError: if the object was never added to the queue
         """
-        try:
-            del self._items_dict[obj]
-        except KeyError:
-            pass
+        if obj in self._items_tracker:
+            try:
+                del self._items_dict[obj]
+            except KeyError:
+                pass
+        else:
+            raise self._missing_object_error(obj)
 
     def update_priority(self) -> None:
         """
@@ -117,3 +121,6 @@ class PriorityQueue(Generic[T]):
             new_items_dict[item.get_object()] = item
 
         self._items_dict = new_items_dict
+
+    def _missing_object_error(self, obj) -> ValueError:
+        return ValueError(f"object {obj} is missing in items tracker {self._items_tracker}")
