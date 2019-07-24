@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Callable, Any, Dict
+from typing import Generic, TypeVar, Callable, Any, Dict, Iterator
 
 T = TypeVar("T")
 
@@ -42,11 +42,18 @@ class PriorityQueue(Generic[T]):
         self._items_tracker: Dict[T, ObjectPriority] = {}
         self._is_reversed = is_reversed
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}<{list(self._items_dict.values())}>"
+
     def __len__(self) -> int:
         return len(self._items_dict)
 
     def __bool__(self) -> bool:
         return len(self) > 0
+
+    def __iter__(self) -> Iterator[T]:
+        for obj in self._items_dict.keys():
+            yield obj
 
     def add(self, item: ObjectPriority[T]) -> None:
         """
