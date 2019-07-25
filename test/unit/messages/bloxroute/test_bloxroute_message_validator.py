@@ -5,6 +5,7 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.messages.bloxroute.bloxroute_message_validator import BloxrouteMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
 from bxcommon.messages.validation.message_validation_settings import MessageValidationSettings
+from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 
@@ -123,6 +124,10 @@ class TestBloxrouteMessageValidator(AbstractTestCase):
         message_bytes[-1] = BloxrouteMessageControlFlags.VALID
         input_buffer = InputBuffer()
         input_buffer.add_bytes(message_bytes)
+
+        # adding random bytes to the end of intput buffer
+        input_buffer.add_bytes(helpers.generate_bytearray(10))
+
         payload_len = message_len - constants.STARTING_SEQUENCE_BYTES_LEN - constants.BX_HDR_COMMON_OFF
 
         # valid payload len

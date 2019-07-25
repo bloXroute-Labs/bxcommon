@@ -82,7 +82,7 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
                 "Not enough bytes in the input buffer to get control flags. Header length: {}. Payload length: {}. Input buffer length: {}".format(
                     header_len, payload_len, input_buffer.length))
 
-        control_flag_byte = input_buffer[-constants.CONTROL_FLAGS_LEN:]
+        control_flag_byte = input_buffer[header_len + payload_len - 1:header_len + payload_len]
 
         if not control_flag_byte[0] & BloxrouteMessageControlFlags.VALID:
             raise MessageValidationError(
