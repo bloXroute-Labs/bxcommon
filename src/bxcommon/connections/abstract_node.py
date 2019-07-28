@@ -443,7 +443,10 @@ class AbstractNode:
         :param file_no: the socket connection file_no
         :return: True if the connection is receivable, otherwise False
         """
-        return self.connection_pool.get_by_fileno(file_no).on_input_received()
+        connection = self.connection_pool.get_by_fileno(file_no)
+        if connection is None:
+            return False
+        return connection.on_input_received()
 
     def _initialize_connection(self, socket_connection: SocketConnection, ip: str, port: int, from_me: bool):
         conn_obj = self.build_connection(socket_connection, ip, port, from_me)
