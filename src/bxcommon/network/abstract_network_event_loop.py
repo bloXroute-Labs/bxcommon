@@ -134,8 +134,10 @@ class AbstractNetworkEventLoop(object):
 
         while fileno is not None:
             if fileno in self._socket_connections:
-                logger.debug("Closing connection to {0}".format(fileno))
-                socket_connection = self._socket_connections[fileno]
+                logger.trace("Closing connection to {0}, total_connections: {1}".format(
+                    fileno, len(self._socket_connections))
+                )
+                socket_connection = self._socket_connections.pop(fileno)
                 socket_connection.close()
 
                 # TODO this line should be removed as well. The network layer should not be telling
@@ -190,7 +192,7 @@ class AbstractNetworkEventLoop(object):
                 raise e
 
         self._register_socket(sock, (ip, port), is_server=False, initialized=initialized, from_me=True)
-        logger.info("Connected to {0}:{1}.".format(ip, port))
+        logger.info("Connected to {0}:{1}, fileno: {2}.".format(ip, port, sock.fileno()))
 
     def _handle_incoming_connections(self, socket_connection):
         logger.info("Received incoming request(s) for connection...")

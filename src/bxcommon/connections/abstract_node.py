@@ -450,7 +450,7 @@ class AbstractNode:
 
     def _initialize_connection(self, socket_connection: SocketConnection, ip: str, port: int, from_me: bool):
         conn_obj = self.build_connection(socket_connection, ip, port, from_me)
-        if conn_obj:
+        if conn_obj is not None:
             logger.info("Adding connection: {}.", conn_obj)
 
             self.alarm_queue.register_alarm(constants.CONNECTION_TIMEOUT, self._connection_timeout, conn_obj)
@@ -458,6 +458,8 @@ class AbstractNode:
 
             if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
                 self.sdn_connection = conn_obj
+        else:
+            self.enqueue_disconnect(socket_connection.fileno())
 
     def _connection_timeout(self, conn):
         """
