@@ -25,7 +25,7 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
         self._txs_content_short_ids: List[TxContentShortIds] = txs_content_short_ids
 
         if txs_content_short_ids is not None and buf is None:
-            self.buf = bytearray(self.HEADER_LENGTH + UL_INT_SIZE_IN_BYTES + UL_SHORT_SIZE_IN_BYTES)
+            self.buf = bytearray(self.HEADER_LENGTH + UL_INT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES)
             self._parse()
         elif buf is not None:
             self.buf = buf
@@ -49,11 +49,11 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
     def tx_count(self) -> int:
         if self._tx_count is None:
             off = self.HEADER_LENGTH + UL_INT_SIZE_IN_BYTES
-            self._tx_count, = struct.unpack_from("<H", self._memoryview, off)
+            self._tx_count, = struct.unpack_from("<L", self._memoryview, off)
         return self._tx_count
 
     def txs_content_short_ids(self) -> List[TxContentShortIds]:
-        offset = self.HEADER_LENGTH + UL_INT_SIZE_IN_BYTES + UL_SHORT_SIZE_IN_BYTES
+        offset = self.HEADER_LENGTH + UL_INT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES
         return txs_serializer.deserialize_txs_content_short_ids_from_buffer(self._memoryview, offset, self.tx_count())
 
     def __repr__(self) -> str:
@@ -62,7 +62,7 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
     def _parse(self) -> None:
         off = self.HEADER_LENGTH
         tx_count = len(self._txs_content_short_ids)
-        struct.pack_into("<LH", self.buf, off, self._network_num, tx_count)
+        struct.pack_into("<LL", self.buf, off, self._network_num, tx_count)
         off += UL_INT_SIZE_IN_BYTES + UL_SHORT_SIZE_IN_BYTES
 
         self.buf.extend(txs_serializer.serialize_txs_content_short_ids_into_bytes(self._txs_content_short_ids))

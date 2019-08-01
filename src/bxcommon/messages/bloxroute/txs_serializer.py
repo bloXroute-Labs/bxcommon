@@ -18,7 +18,7 @@ def get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids: TxConten
     :return: length of serialized bytes = tx_hash_size + tx_content_size + len(tx_content) + expiration_time_size + short_ids_count + short_ids_count * short_id_size
     """
 
-    return SHA256_HASH_LEN + UL_SHORT_SIZE_IN_BYTES + len(tx_content_short_ids.tx_content) + UL_INT_SIZE_IN_BYTES + \
+    return SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES + len(tx_content_short_ids.tx_content) + UL_INT_SIZE_IN_BYTES + \
            UL_SHORT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES * len(tx_content_short_ids.short_ids)
 
 
@@ -38,8 +38,8 @@ def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxCon
     for tx_content_short_ids in txs_content_short_ids:
         buffer[off: off + SHA256_HASH_LEN] = tx_content_short_ids.tx_hash
         off += SHA256_HASH_LEN
-        struct.pack_into("<H", buffer, off, len(tx_content_short_ids.tx_content))
-        off += UL_SHORT_SIZE_IN_BYTES
+        struct.pack_into("<L", buffer, off, len(tx_content_short_ids.tx_content))
+        off += UL_INT_SIZE_IN_BYTES
         buffer[off: off + len(tx_content_short_ids.tx_content)] = tx_content_short_ids.tx_content
         off += len(tx_content_short_ids.tx_content)
         # expiration date
@@ -69,8 +69,8 @@ def deserialize_txs_content_short_ids_from_buffer(buffer: Union[bytearray, memor
     for _ in range(tx_count):
         tx_hash = Sha256Hash(buffer[offset:offset + SHA256_HASH_LEN])
         offset = offset + SHA256_HASH_LEN
-        tx_content_size, = struct.unpack_from("<H", buffer, offset)
-        offset += UL_SHORT_SIZE_IN_BYTES
+        tx_content_size, = struct.unpack_from("<L", buffer, offset)
+        offset += UL_INT_SIZE_IN_BYTES
         tx_content = buffer[offset: offset + tx_content_size]
         offset += tx_content_size
         expiration_time, = struct.unpack_from("<L", buffer, offset)
