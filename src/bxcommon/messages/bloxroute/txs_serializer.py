@@ -17,9 +17,12 @@ def get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids: TxConten
     :param tx_content_short_ids: transaction content and short ids
     :return: length of serialized bytes = tx_hash_size + tx_content_size + len(tx_content) + expiration_time_size + short_ids_count + short_ids_count * short_id_size
     """
+    short_ids_count = 0
+    if tx_content_short_ids.short_ids is not None:
+        short_ids_count = len(tx_content_short_ids.short_ids)
 
     return SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES + len(tx_content_short_ids.tx_content) + UL_INT_SIZE_IN_BYTES + \
-           UL_SHORT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES * len(tx_content_short_ids.short_ids)
+           UL_SHORT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES * short_ids_count
 
 
 def get_serialized_txs_content_short_ids_bytes_len(txs_content_short_ids: List[TxContentShortIds]) -> int:
