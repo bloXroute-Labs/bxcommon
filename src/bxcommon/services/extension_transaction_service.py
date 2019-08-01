@@ -35,10 +35,11 @@ class ExtensionTransactionService(TransactionService):
             self.proxy.tx_hash_to_contents(), raw_encoder, content_encoder
         )
 
-    def track_seen_short_ids(self, short_ids):
+    def track_seen_short_ids(self, block_hash, short_ids):
         start_datetime = datetime.now()
-        super(ExtensionTransactionService, self).track_seen_short_ids(short_ids)
+        super(ExtensionTransactionService, self).track_seen_short_ids(block_hash, short_ids)
         proxy_start_datetime = datetime.now()
+        # TODO when refactoring add `block_hash` to proxy.track_seen_short_ids as first parameter and change ds type in cpp
         result = self.proxy.track_seen_short_ids(tpe.UIntList(short_ids))
         removed_contents_size, dup_sids = result
         self._total_tx_contents_size -= removed_contents_size

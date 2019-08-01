@@ -124,7 +124,8 @@ class SdnRoutes(object):
     nodes = "/nodes"
     node = "/nodes/{0}"
     node_relays = "/nodes/{0}/peers"
-    node_potential_relays = "/nodes/{0}/potential_relays"
+    node_potential_relays = "/nodes/{0}/potential-relays"
+    node_potential_relays_by_network = "/nodes/{0}/{1}/potential-relays"
     node_gateways = "/nodes/{0}/gateways"
     node_remote_blockchain = "/nodes/blockchain-peers/{0}"
     node_event = "/nodes/{0}/events"
@@ -198,6 +199,17 @@ DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES = 250 * 1024 * 1024
 # Default maximum allowed length of internal message payload
 DEFAULT_MAX_PAYLOAD_LEN_BYTES = 1024 * 1024
 
+TXS_MSG_SIZE = 15000
+TX_SERVICE_SYNC_TXS_S = 0.5
+
+PING_TIMEOUT_S = 2
+
+NODE_LATENCY_THRESHOLD_MS = 2
+FASTEST_PING_LATENCY_THRESHOLD_PERCENT = 0.2
+UPDATE_TX_SERVICE_FULLY_SYNCED_S = 1
+TX_SERVICE_SYNC_PROCESS_S = 10
+TX_SERVICE_SYNC_COMPLETE_S = 1
+TX_SERVICE_SYNC_RELAY_IN_NETWORKS_S = 30
 # </editor-fold>
 
 # keep constants_local.py file to override settings in the constants file

@@ -1,6 +1,6 @@
 import time
-from collections import defaultdict, deque
-from typing import List, Tuple
+from collections import defaultdict, OrderedDict
+from typing import List, Tuple, Generator, Optional, Union
 
 from bxcommon import constants
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
@@ -70,8 +70,8 @@ class TransactionService:
         logger.info("Memory limit for transaction service by network number {} is {} bytes.".format(self.network_num,
                                                                                                     self._tx_content_memory_limit))
 
-        # deque of short ids in blocks in the order they are received
-        self._short_ids_seen_in_block = deque()
+        # short ids seen in block ordered by them block hash
+        self._short_ids_seen_in_block: OrderedDict[str, List[int]] = OrderedDict()
 
         self._total_tx_contents_size = 0
         self._total_tx_removed_by_memory_limit = 0
@@ -85,12 +85,6 @@ class TransactionService:
 
     def set_final_tx_confirmations_count(self, val: int):
         self._final_tx_confirmations_count = val
-
-    def _dump_removed_short_ids(self):
-        with open("{}/{}".format(self.node.opts.dump_removed_short_ids_path, int(time.time())), "w") as f:
-            f.write(str(self._removed_short_ids))
-            self._removed_short_ids.clear()
-        return constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S
 
     def set_transaction_contents(self, transaction_hash, transaction_contents):
         """
@@ -214,7 +208,7 @@ class TransactionService:
                 has_missing = True
         return has_missing, unknown_tx_sids, unknown_tx_hashes
 
-    def get_transaction_by_hash(self, transaction_hash):
+    def get_transaction_by_hash(self, transaction_hash) -> Optional[Union[bytearray, memoryview]]:
         """
         Fetches transaction contents for a given transaction hash.
         Results might be None.
@@ -256,6 +250,20 @@ class TransactionService:
         for tx_cache_key in self._tx_hash_to_contents:
             yield self._tx_cache_key_to_hash(tx_cache_key)
 
+    def iter_short_ids_seen_in_block(self) -> Generator[Tuple[str, List[int]], None, None]:
+        for block_hash, short_ids in self._short_ids_seen_in_block.items():
+            yield block_hash, short_ids
+
+    def get_short_ids_seen_in_block_count_info(self) -> Tuple[int, int]:
+        """
+        :return: tuple of number of blocks and total count of short ids seen in all blocks
+        """
+        total_short_ids_seen_in_blocks = 0
+        for _, seen_short_ids_in_block in self._short_ids_seen_in_block.items():
+            total_short_ids_seen_in_blocks += len(seen_short_ids_in_block)
+
+        return len(self._short_ids_seen_in_block), total_short_ids_seen_in_blocks
+
     def expire_old_assignments(self):
         """
         Clean up expired short ids.
@@ -273,31 +281,33 @@ class TransactionService:
             self.tx_assign_alarm_scheduled = False
             return 0
 
-    def track_seen_short_ids(self, short_ids):
+    def track_seen_short_ids(self, block_hash, short_ids):
         """
         Track short ids that has been seen in a routed block.
         That information helps transaction service make a decision when to remove transactions from cache.
 
+        :param block_hash: block hash of the tx short ids
         :param short_ids: transaction short ids
         """
 
         if short_ids is None:
             return ValueError("short_ids is required.")
 
-        self._short_ids_seen_in_block.append(short_ids)
+        self._short_ids_seen_in_block[block_hash] = short_ids
 
         if len(self._short_ids_seen_in_block) >= self._final_tx_confirmations_count:
 
-            final_short_ids = self._short_ids_seen_in_block.popleft()
+            _, final_short_ids = self._short_ids_seen_in_block.popitem(last=False)
 
             for short_id in final_short_ids:
                 self._remove_transaction_by_short_id(short_id, remove_related_short_ids=True)
 
         logger.info("Transaction cache state after tracking seen short ids: {}", self._get_cache_state_str())
 
-    def track_seen_short_ids_delayed(self, short_ids):
+    def track_seen_short_ids_delayed(self, block_hash, short_ids):
         """
         Schedules alarm task to clean up seen short ids after some delay
+        :param block_hash: block hash
         :param short_ids: transaction short ids
         :return:
         """
@@ -305,6 +315,7 @@ class TransactionService:
         self.node.alarm_queue.register_alarm(
             constants.CLEAN_UP_SEEN_SHORT_IDS_DELAY_S,
             self.track_seen_short_ids,
+            block_hash,
             short_ids
         )
 
@@ -415,6 +426,13 @@ class TransactionService:
             return memory_utils.get_object_size(collection_obj)
         else:
             return ObjectSize(size=estimated_size, flat_size=0, is_actual_size=False)
+
+    def get_snapshot(self) -> List[Sha256Hash]:
+        return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in self._tx_hash_to_contents]
+
+    def get_expiration_date_by_short_id(self, short_id: int):
+        # TODO find a way to find expiration by short id
+        raise NotImplementedError("Expiration time has not yet been implemented when handling tx service msgs")
 
     def _dump_removed_short_ids(self):
         if self._removed_short_ids:

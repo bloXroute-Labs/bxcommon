@@ -140,39 +140,48 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.transaction_service._tx_hash_to_contents[cached_key] = transaction_contents[i]
 
         # 1st block with short ids arrives
-        self.transaction_service.track_seen_short_ids([0, 1])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [0, 1])
         self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
 
         # 2nd block with short ids arrives
-        self.transaction_service.track_seen_short_ids([2])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [2])
         self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
 
         # 3rd block with short ids arrives
-        self.transaction_service.track_seen_short_ids([3, 4])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [3, 4])
         self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
 
         # 4th block with short ids arrives
-        self.transaction_service.track_seen_short_ids([])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
         self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
 
         # 5th block with short ids arrives
-        self.transaction_service.track_seen_short_ids([])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
         self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
 
         # 6th block with short ids arrives
-        self.transaction_service.track_seen_short_ids([])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
         self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
 
         # 7th block with short ids arrives
-        self.transaction_service.track_seen_short_ids([])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
         self._verify_txs_in_tx_service([2, 3, 4], [0, 1])
 
         # 8th block with short ids arrives
-        self.transaction_service.track_seen_short_ids([])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
         self._verify_txs_in_tx_service([3, 4], [0, 1, 2])
 
         # 9th block with short ids arrives
-        self.transaction_service.track_seen_short_ids([])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
         self._verify_txs_in_tx_service([], [0, 1, 2, 3, 4])
 
     def _test_track_short_ids_seen_in_block_multiple_per_tx(self):
@@ -193,13 +202,15 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.transaction_service.assign_short_id(first_cached_key, 11)
 
         # 1st block with short ids arrives
-        self.transaction_service.track_seen_short_ids([1, 2])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [1, 2])
         self._verify_txs_in_tx_service([1, 2, 3, 4, 5, 10, 11], [])
         self.assertTrue(self.transaction_service.has_transaction_contents(transaction_hashes[0]))
         self.assertTrue(self.transaction_service.has_transaction_contents(transaction_hashes[1]))
 
         # 2nd block with short ids arrives
-        self.transaction_service.track_seen_short_ids([3])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [3])
         self._verify_txs_in_tx_service([3, 4, 5], [1, 2, 10, 11])
         self.assertFalse(self.transaction_service.has_transaction_contents(transaction_hashes[0]))
         self.assertFalse(self.transaction_service.has_transaction_contents(transaction_hashes[1]))
@@ -207,14 +218,16 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
 
 
         # 3rd block with short ids arrives
-        self.transaction_service.track_seen_short_ids([4, 5])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [4, 5])
         self._verify_txs_in_tx_service([4, 5], [1, 2, 3, 10, 11])
         self.assertFalse(self.transaction_service.has_transaction_contents(transaction_hashes[2]))
         self.assertTrue(self.transaction_service.has_transaction_contents(transaction_hashes[3]))
         self.assertTrue(self.transaction_service.has_transaction_contents(transaction_hashes[4]))
 
         # 4th block with short ids arrives
-        self.transaction_service.track_seen_short_ids([])
+        block_hash = bytearray(helpers.generate_bytearray(32))
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
         self._verify_txs_in_tx_service([], [1, 2, 3, 4, 5, 10, 11])
         self.assertFalse(self.transaction_service.has_transaction_contents(transaction_hashes[3]))
         self.assertFalse(self.transaction_service.has_transaction_contents(transaction_hashes[4]))

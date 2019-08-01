@@ -11,6 +11,10 @@ from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
+from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
+from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
+from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
+from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.disconnect_relay_peer_message import DisconnectRelayPeerMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
@@ -31,7 +35,11 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         BloxrouteMessageType.TRANSACTIONS: TxsMessage,
         BloxrouteMessageType.KEY: KeyMessage,
         BloxrouteMessageType.BLOCK_HOLDING: BlockHoldingMessage,
-        BloxrouteMessageType.DISCONNECT_RELAY_PEER: DisconnectRelayPeerMessage
+        BloxrouteMessageType.DISCONNECT_RELAY_PEER: DisconnectRelayPeerMessage,
+        BloxrouteMessageType.TX_SERVICE_SYNC_REQ: TxServiceSyncReqMessage,
+        BloxrouteMessageType.TX_SERVICE_SYNC_BLOCKS_SHORT_IDS: TxServiceSyncBlocksShortIdsMessage,
+        BloxrouteMessageType.TX_SERVICE_SYNC_TXS: TxServiceSyncTxsMessage,
+        BloxrouteMessageType.TX_SERVICE_SYNC_COMPLETE: TxServiceSyncCompleteMessage
     }
 
     def __init__(self):
@@ -62,6 +70,9 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
 
             network_num, = struct.unpack_from("<L", hash_header[offset:offset + constants.NETWORK_NUM_LEN])
             return is_full_header, Sha256Hash(message_hash), network_num, payload_length
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}; message_type_mapping: {self.message_type_mapping}"
 
 
 bloxroute_message_factory = _BloxrouteMessageFactory()

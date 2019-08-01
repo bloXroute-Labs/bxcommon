@@ -11,3 +11,7 @@ class BloxrouteMessageType(object):
     KEY = b"key"
     BLOCK_HOLDING = b"blockhold"
     DISCONNECT_RELAY_PEER = b"droprelay"
+    TX_SERVICE_SYNC_REQ = b"txstart"
+    TX_SERVICE_SYNC_BLOCKS_SHORT_IDS = b"txblock"
+    TX_SERVICE_SYNC_TXS = b"txtxs"
+    TX_SERVICE_SYNC_COMPLETE = b"txdone"

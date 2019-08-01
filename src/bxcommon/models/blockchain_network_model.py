@@ -1,26 +1,32 @@
 from dataclasses import dataclass
 from bxcommon import constants
 from typing import Dict, Any
+from bxcommon.models.blockchain_network_type import BlockchainNetworkType
+from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
+
 
 @dataclass
 class BlockchainNetworkModel(object):
     protocol: str
     network: str
-    network_num: int
-    type: str
-    environment: str
-    default_attributes: Dict[str, Any]
-    block_interval: int
-    ignore_block_interval_count: int
-    final_tx_confirmations_count: int
-    tx_contents_memory_limit_bytes: int
-    max_tx_size_bytes: int
+    network_num: int = None
+    sdn_id: str = None
+    type: BlockchainNetworkType = None
+    environment: BlockchainNetworkEnvironment = None
+    default_attributes: Dict[str, Any] = None
+    block_interval: int = None
+    ignore_block_interval_count: int = None
+    final_tx_confirmations_count: int = None
+    tx_contents_memory_limit_bytes: int = None
+    max_block_size_bytes: int = None
+    max_tx_size_bytes: int = None
 
-    def __init__(self, protocol: str = None, network: str = None, network_num: int = None, type: str = None,
-                 environment: str = None, default_attributes: Dict[str, Any] = None, block_interval: int = None,
-                 ignore_block_interval_count: int = None, final_tx_confirmations_count: int = None,
-                 tx_contents_memory_limit_bytes: int = None, max_block_size_bytes: int = None,
-                 max_tx_size_bytes: int = None):
+    def __init__(
+            self, protocol: str = None, network: str = None, network_num: int = None, type: BlockchainNetworkType = None,
+            environment: BlockchainNetworkEnvironment = None, default_attributes: Dict[str, Any] = None,
+            block_interval: int = None, ignore_block_interval_count: int = None, final_tx_confirmations_count: int = None,
+            tx_contents_memory_limit_bytes: int = None, max_block_size_bytes: int = None, max_tx_size_bytes: int = None
+    ):
         self.protocol = protocol
         self.network = network
         self.network_num = network_num

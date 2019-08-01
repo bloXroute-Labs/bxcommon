@@ -8,7 +8,7 @@ class NodeModel:
                  sid_start=None, sid_end=None, sid_expire_time=None, last_pong_time=None, is_gateway_miner=None,
                  is_internal_gateway=None, source_version=None, protocol_version=None, blockchain_network_num=None,
                  blockchain_ip=None, blockchain_port=None, node_public_key=None, hostname=None, sdn_id=None,
-                 os_version=None, continent=None, country=None, split_relays=None, idx: int = None):
+                 os_version=None, continent=None, country=None, split_relays=None, idx: int = None, has_fully_updated_tx_service=False):
         self.external_port = external_port
         self.network = network
         self.online = online
@@ -36,6 +36,7 @@ class NodeModel:
         else:
             self.country = None
         self.idx = idx
+        self.sync_txs_status = has_fully_updated_tx_service
 
         # Ethereum remote blockchain attribute
         self.node_public_key = node_public_key

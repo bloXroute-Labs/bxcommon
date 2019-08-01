@@ -1,4 +1,5 @@
 import time
+from typing import List, Optional
 
 from bxcommon.constants import SdnRoutes
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
@@ -38,8 +39,13 @@ def _fetch_peers(node_url, node_id=None):
     return outbound_peers
 
 
-def fetch_potential_relay_peers(node_id):
+def fetch_potential_relay_peers(node_id: str) -> Optional[List[OutboundPeerModel]]:
     node_url = SdnRoutes.node_potential_relays.format(node_id)
+    return _fetch_peers(node_url, node_id)
+
+
+def fetch_potential_relay_peers_by_network(node_id: str, network_num: int) -> Optional[List[OutboundPeerModel]]:
+    node_url = SdnRoutes.node_potential_relays_by_network.format(node_id, network_num)
     return _fetch_peers(node_url, node_id)
 
 
@@ -106,6 +112,14 @@ def submit_peer_connection_event(event_type, node_id, peer_ip, peer_port):
 
 def submit_gateway_inbound_connection(node_id, peer_id):
     http_service.post_json(SdnRoutes.gateway_inbound_connection.format(node_id), peer_id)
+
+
+def submit_sync_txs_event(node_id):
+    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_FULLY_SYNCED))
+
+
+def submit_node_txs_sync_in_network(node_id, networks: List[int]):
+    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_SYNCED_IN_NETWORK, tx_sync_networks=networks))
 
 
 def delete_gateway_inbound_connection(node_id, peer_id):
