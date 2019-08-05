@@ -21,7 +21,11 @@ def get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids: TxConten
     if tx_content_short_ids.short_ids is not None:
         short_ids_count = len(tx_content_short_ids.short_ids)
 
-    return SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES + len(tx_content_short_ids.tx_content) + UL_INT_SIZE_IN_BYTES + \
+    tx_content_size = 0
+    if tx_content_short_ids.tx_content is not None:
+        tx_content_size = len(tx_content_short_ids.tx_content)
+
+    return SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES + tx_content_size + UL_INT_SIZE_IN_BYTES + \
            UL_SHORT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES * short_ids_count
 
 
@@ -39,21 +43,25 @@ def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxCon
     buffer = bytearray(get_serialized_txs_content_short_ids_bytes_len(txs_content_short_ids))
     off = 0
     for tx_content_short_ids in txs_content_short_ids:
-        buffer[off: off + SHA256_HASH_LEN] = tx_content_short_ids.tx_hash
-        off += SHA256_HASH_LEN
-        struct.pack_into("<L", buffer, off, len(tx_content_short_ids.tx_content))
-        off += UL_INT_SIZE_IN_BYTES
-        buffer[off: off + len(tx_content_short_ids.tx_content)] = tx_content_short_ids.tx_content
-        off += len(tx_content_short_ids.tx_content)
-        # expiration date
-        struct.pack_into("<L", buffer, off, 0)
-        off += UL_INT_SIZE_IN_BYTES
-        struct.pack_into("<H", buffer, off, len(tx_content_short_ids.short_ids))
-        off += UL_SHORT_SIZE_IN_BYTES
+        if tx_content_short_ids.tx_content is not None and tx_content_short_ids.short_ids is not None:
+            buffer[off: off + SHA256_HASH_LEN] = tx_content_short_ids.tx_hash
+            off += SHA256_HASH_LEN
 
-        for short_id in tx_content_short_ids.short_ids:
-            struct.pack_into("<L", buffer, off, short_id)
+            struct.pack_into("<L", buffer, off, len(tx_content_short_ids.tx_content))
             off += UL_INT_SIZE_IN_BYTES
+            buffer[off: off + len(tx_content_short_ids.tx_content)] = tx_content_short_ids.tx_content
+            off += len(tx_content_short_ids.tx_content)
+
+            # expiration date
+            struct.pack_into("<L", buffer, off, 0)
+            off += UL_INT_SIZE_IN_BYTES
+
+            struct.pack_into("<H", buffer, off, len(tx_content_short_ids.short_ids))
+            off += UL_SHORT_SIZE_IN_BYTES
+
+            for short_id in tx_content_short_ids.short_ids:
+                struct.pack_into("<L", buffer, off, short_id)
+                off += UL_INT_SIZE_IN_BYTES
 
     return buffer
 
