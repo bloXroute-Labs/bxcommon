@@ -1,10 +1,13 @@
-from typing import List, Any
+from typing import List, TypeVar, Generic, Set
 
 from bxcommon.utils import logger
+from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.expiration_queue import ExpirationQueue
 
+T = TypeVar("T")
 
-class ExpiringSet(object):
+
+class ExpiringSet(Generic[T]):
     """
     Set with expiration time.
 
@@ -13,27 +16,35 @@ class ExpiringSet(object):
     and we're avoiding extra function call overhead.
     """
 
-    def __init__(self, alarm_queue, expiration_time_s, log_removal=False):
+    contents: Set[T]
+    _alarm_queue: AlarmQueue
+    _expiration_queue: ExpirationQueue[T]
+    _expiration_time: int
+    _log_removal: bool
+
+    def __init__(self, alarm_queue: AlarmQueue, expiration_time_s: int, log_removal: bool = False):
         self.contents = set()
         self._alarm_queue = alarm_queue
         self._expiration_queue = ExpirationQueue(expiration_time_s)
         self._expiration_time = expiration_time_s
         self._log_removal = log_removal
 
-    def __contains__(self, item):
+    def __contains__(self, item: T):
         return item in self.contents
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.contents)
 
-    def add(self, item):
+    def add(self, item: T):
         self.contents.add(item)
         self._expiration_queue.add(item)
         self._alarm_queue.register_approx_alarm(self._expiration_time * 2, self._expiration_time, self.cleanup)
 
-    def get_recent_items(self, count: int) -> List[Any]:
+    def get_recent_items(self, count: int) -> List[T]:
         items = []
-        entries = reversed(self._expiration_queue.queue.keys())
+        # noinspection PyTypeChecker
+        entries = reversed(self._expiration_queue.queue.keys())  # pyre-ignore queue is actually an OrderedDict
+
 
         try:
             for i in range(count):
@@ -47,9 +58,8 @@ class ExpiringSet(object):
         self._expiration_queue.remove_expired(remove_callback=self._safe_remove_item)
         return 0
 
-    def _safe_remove_item(self, item):
+    def _safe_remove_item(self, item: T):
         if self._log_removal:
             logger.info("Removing {} from expiring set.", item)
         if item in self.contents:
             self.contents.remove(item)
-

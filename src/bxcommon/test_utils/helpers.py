@@ -10,7 +10,7 @@ from bxcommon.connections.node_type import NodeType
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
-from bxcommon.utils import config
+from bxcommon.utils import config, crypto
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.proxy import task_pool_proxy
 
@@ -32,6 +32,10 @@ def generate_bytearray(size):
     result.extend(os.urandom(size))
 
     return result
+
+
+def generate_hash() -> bytearray:
+    return generate_bytearray(crypto.SHA256_HASH_LEN)
 
 
 Connection = TypeVar("Connection", bound="AbstractConnection")
@@ -212,6 +216,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
             str(parallelism_degree)
         ),
+        "max_block_interval": 10,
         "cookie_path_file": cookie_path_file,
     })
 

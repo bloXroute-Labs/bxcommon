@@ -54,11 +54,11 @@ class BlockStatEventType:
     BLOCK_TO_ENC_BLOCK_MATCH = StatEventTypeSettings("BlockHashToEncBlockHash",
                                                      event_logic_flags=StatEventLogicFlags.MATCH)
     BLOCK_DECOMPRESSED_IGNORE_SEEN = StatEventTypeSettings("BlockDecompressedIgnoreSeen",
-                                                           event_logic_flags=StatEventLogicFlags.BLOCK_INFO | \
+                                                           event_logic_flags=StatEventLogicFlags.BLOCK_INFO |
                                                                              StatEventLogicFlags.MATCH)
     BLOCK_DECOMPRESSED_SUCCESS = StatEventTypeSettings("BlockDecompressedSuccess",
-                                                       event_logic_flags=StatEventLogicFlags.BLOCK_INFO | \
-                                                                         StatEventLogicFlags.MATCH | \
+                                                       event_logic_flags=StatEventLogicFlags.BLOCK_INFO |
+                                                                         StatEventLogicFlags.MATCH |
                                                                          StatEventLogicFlags.SUMMARY)
     BLOCK_DECOMPRESSED_WITH_UNKNOWN_TXS = StatEventTypeSettings("BlockDecompressedWithUnknownTxs")
     BLOCK_RECOVERY_STARTED = StatEventTypeSettings("BlockRecoveryStarted")
@@ -66,6 +66,7 @@ class BlockStatEventType:
     BLOCK_RECOVERY_COMPLETED = StatEventTypeSettings("BlockRecoveryCompleted")
     BLOCK_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockSentToBlockchainNode",
                                                           event_logic_flags=StatEventLogicFlags.SUMMARY)
+    BLOCK_IGNORE_SEEN_BY_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockIgnoreSeenByBlockchainNode")
     ENC_BLOCK_KEY_SENT_FROM_GATEWAY_TO_NETWORK = StatEventTypeSettings("EncBlockKeySentFromGatewayToNetwork",
                                                                        event_logic_flags=StatEventLogicFlags.SUMMARY)
     ENC_BLOCK_KEY_RECEIVED_BY_GATEWAY_FROM_NETWORK = StatEventTypeSettings("EncBlockKeyReceivedByGatewayFromNetwork")

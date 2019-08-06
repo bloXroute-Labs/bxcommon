@@ -1,11 +1,9 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod, ABC
 
 from bxcommon.utils.log_level import LogLevel
 
 
-class AbstractMessage:
-    __metaclass__ = ABCMeta
-
+class AbstractMessage(ABC):
     HEADER_LENGTH = 0
 
     @classmethod
@@ -38,4 +36,3 @@ class AbstractMessage:
     @abstractmethod
     def rawbytes(self) -> memoryview:
         pass
-

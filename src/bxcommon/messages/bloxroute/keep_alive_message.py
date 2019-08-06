@@ -43,4 +43,4 @@ class KeepAliveMessage(AbstractBloxrouteMessage):
         return self._nonce
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG
