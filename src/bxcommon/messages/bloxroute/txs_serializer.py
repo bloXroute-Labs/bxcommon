@@ -34,10 +34,11 @@ def get_serialized_txs_content_short_ids_bytes_len(txs_content_short_ids: List[T
     return sum([get_serialized_tx_content_short_ids_bytes_len(tx) for tx in txs_content_short_ids])
 
 
-def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxContentShortIds]) -> bytearray:
+def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxContentShortIds], network_num: int) -> bytearray:
     """
     Serializes list of txs content and short ids into bytes
     :param txs_content_short_ids: list of tuple txs content and short ids
+    :param network_num: tx's network number
     :return: bytearray with serialized bytes
     """
 
@@ -64,7 +65,7 @@ def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxCon
                 struct.pack_into("<L", buffer, off, short_id)
                 off += UL_INT_SIZE_IN_BYTES
         else:
-            logger.warn("Transaction {} is missing either content or short ids".format(tx_content_short_ids.tx_hash))
+            logger.warn("Transaction {} in netwrok {} is missing either content or short ids".format(tx_content_short_ids.tx_hash, network_num))
 
     return buffer
 
