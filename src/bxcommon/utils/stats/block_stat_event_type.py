@@ -3,6 +3,7 @@ from bxcommon.utils.stats.stat_event_type_settings import StatEventTypeSettings
 
 
 class BlockStatEventType:
+    BLOCK_ANNOUNCED_BY_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockAnnouncedByBlockchainNode")
     BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockReceivedFromBlockchainNode")
     BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = StatEventTypeSettings(
         "BlockReceivedFromBlockchainNodeIgnoreSeen"

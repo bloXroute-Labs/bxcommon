@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import datetime
 
+from bxcommon import constants
 from bxcommon.utils import memory_utils
 from bxcommon.utils.stats.class_mem_stats import ClassMemStats
 from bxcommon.utils.stats.statistics_service import StatsIntervalData, ThreadedStatisticsService

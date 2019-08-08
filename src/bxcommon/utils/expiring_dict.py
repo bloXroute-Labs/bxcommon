@@ -1,7 +1,13 @@
+from typing import TypeVar, Generic, Mapping
+
+from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.expiration_queue import ExpirationQueue
 
+KT = TypeVar("KT")
+VT = TypeVar("VT")
 
-class ExpiringDict(object):
+
+class ExpiringDict(Generic[KT, VT]):
     """
     Set with expiration time.
 
@@ -9,6 +15,11 @@ class ExpiringDict(object):
     __contains__ is intentionally not overwritten. This is a performance critical class,
     and we're avoiding extra function call overhead.
     """
+
+    contents: Mapping[KT, VT]
+    _alarm_queue: AlarmQueue
+    _expiration_queue: ExpirationQueue
+    _expiration_time: int
 
     def __init__(self, alarm_queue, expiration_time_s):
         self.contents = dict()

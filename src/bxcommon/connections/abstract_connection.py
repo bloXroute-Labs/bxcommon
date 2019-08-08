@@ -306,9 +306,6 @@ class AbstractConnection(Generic[Node]):
 
     def advance_bytes_on_buffer(self, buf, bytes_written):
         hooks.add_throughput_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc)
-        logger.info("Sent {} bytes to {}", bytes_written, self.peer_desc,
-                    condition=self.node.opts.throughput_debugging and self.CONNECTION_TYPE in (
-                        ConnectionType.RELAY, ConnectionType.GATEWAY))
         buf.advance_buffer(bytes_written)
 
     def send_ping(self):

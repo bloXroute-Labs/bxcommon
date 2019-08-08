@@ -8,3 +8,10 @@ class AbstractBlockMessage(metaclass=ABCMeta):
     @abstractmethod
     def block_hash(self) -> Sha256Hash:
         pass
+
+    @abstractmethod
+    def timestamp(self) -> int:
+        pass
+
+    def extra_stats_data(self):
+        return ""
