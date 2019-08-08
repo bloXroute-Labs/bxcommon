@@ -8,10 +8,10 @@ class DisconnectRelayPeerMessage(AbstractBloxrouteMessage):
 
     def __init__(self, buf=None):
         if buf is None:
-            buf = bytearray(constants.BX_HDR_COMMON_OFF)
+            buf = bytearray(self.HEADER_LENGTH + constants.CONTROL_FLAGS_LEN)
             self.buf = buf
 
-            super().__init__(self.MESSAGE_TYPE, 0, buf)
+            super(DisconnectRelayPeerMessage, self).__init__(self.MESSAGE_TYPE, constants.CONTROL_FLAGS_LEN, self.buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(self.buf)
