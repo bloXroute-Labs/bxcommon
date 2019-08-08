@@ -1,4 +1,3 @@
-import json
 import os
 import sys
 import threading
@@ -10,7 +9,7 @@ from enum import Enum
 from threading import Condition, Lock, Thread
 
 from bxcommon.constants import ENABLE_LOGGING, FLUSH_LOG, DEFAULT_LOG_LEVEL, DEFAULT_LOG_FORMAT
-from bxcommon.utils.class_json_encoder import ClassJsonEncoder
+from bxcommon.utils import json_utils
 from bxcommon.utils.log_format import LogFormat
 from bxcommon.utils.log_level import LogLevel
 
@@ -30,6 +29,7 @@ _default_log = None
 # The time (in seconds) to cycle through to another log.
 LOG_ROTATION_INTERVAL = 24 * 3600
 LOG_MSG_ITEMS = {"instance", "level", "timestamp", "msg"}
+
 
 # Log class that you can write to which asynchronously dumps the log to the background
 class Log(object):
@@ -221,10 +221,10 @@ def log(level, msg, *args, condition=True, **kwargs):
 
     if _log_format == LogFormat.JSON:
         log_msg["msg"] = msg
-        log_msg_str = json.dumps(log_msg, cls=ClassJsonEncoder) + "\n"
+        log_msg_str = json_utils.serialize(log_msg) + "\n"
     elif _log_format == LogFormat.PLAIN:
         if isinstance(msg, (list, dict)):
-            log_msg["msg"] = json.dumps(msg, cls=ClassJsonEncoder)
+            log_msg["msg"] = json_utils.serialize(msg)
         else:
             log_msg["msg"] = msg
         log_msg["extra"] = ",".join([" {}={}".format(k, v) for (k, v) in log_msg.items()

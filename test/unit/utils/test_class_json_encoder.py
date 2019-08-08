@@ -1,8 +1,12 @@
 import unittest
 from bxcommon.utils.class_json_encoder import ClassJsonEncoder
+from bxcommon.utils import convert
 import json
 import random
+from hashlib import sha256
+import task_pool_executor as tpe
 from collections import defaultdict
+from bxcommon.utils.stats.stat_event_logic_flags import StatEventLogicFlags
 
 
 class EncodedTestClass(object):
@@ -15,6 +19,18 @@ class EncodedTestClass(object):
 
 
 class ClassJsonEncoderTest(unittest.TestCase):
+
+    def test_encode_sha256(self):
+        hash_ = "96e900d13d89eb12219e18ddc7aae8ec173a3cff196f09556b5d730df4a10732"
+        items = [sha256(hash_.encode())]
+        js = json.dumps(items, cls=ClassJsonEncoder)
+        self.assertEqual(json.loads(js), [sha256(hash_.encode()).hexdigest()])
+
+    def test_encode_sha256_tpe(self):
+        hash_ = "96e900d13d89eb12219e18ddc7aae8ec173a3cff196f09556b5d730df4a10732"
+        items = [tpe.Sha256(tpe.InputBytes(convert.hex_to_bytes(hash_)))]
+        js = json.dumps(items, cls=ClassJsonEncoder)
+        self.assertEqual(json.loads(js), [hash_])
 
     def test_encode_list(self):
         items = list(random.getrandbits(10) for _ in range(100))
@@ -97,3 +113,13 @@ class ClassJsonEncoderTest(unittest.TestCase):
         keys = d.keys()
         self.assertEqual(json.dumps(list(values)), json.dumps(values, cls=ClassJsonEncoder))
         self.assertEqual(json.dumps(list(keys)), json.dumps(keys, cls=ClassJsonEncoder))
+
+    def test_event_logic_flags(self):
+        self.assertEqual(json.dumps(StatEventLogicFlags.SUMMARY, cls=ClassJsonEncoder),
+                         json.dumps(str(StatEventLogicFlags.SUMMARY.value)))
+        self.assertEqual(json.dumps(StatEventLogicFlags.SUMMARY | StatEventLogicFlags.BLOCK_INFO, cls=ClassJsonEncoder),
+                         json.dumps(str((StatEventLogicFlags.SUMMARY | StatEventLogicFlags.BLOCK_INFO).value))
+                         )
+        self.assertEqual(json.dumps(StatEventLogicFlags.SUMMARY | StatEventLogicFlags.BLOCK_INFO, cls=ClassJsonEncoder),
+                         json.dumps(str(5))
+                         )

@@ -24,12 +24,13 @@ class MemoryStatsService(ThreadedStatisticsService):
         super(MemoryStatsService, self).set_node(node)
         self.interval = node.opts.memory_stats_interval
 
-    def add_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info, object_item_count=0):
+    def add_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info, object_item_count=None):
         mem_stats = self.interval_data.class_mem_stats[class_name]
         mem_stats.timestamp = datetime.utcnow()
 
         # If the object being analyzed doesn't have a length property
-        object_item_count = len(obj) if hasattr(obj, "__len__") else object_item_count
+        if object_item_count is None:
+            object_item_count = len(obj) if hasattr(obj, "__len__") else 0
 
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_item_count = object_item_count
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_size = obj_mem_info.size
@@ -57,4 +58,4 @@ class MemoryStatsService(ThreadedStatisticsService):
         return super(MemoryStatsService, self).flush_info()
 
 
-memory_statistics = MemoryStatsService()
+memory_statistics = MemoryStatsService(constants.MEMORY_STATS_INTERVAL)

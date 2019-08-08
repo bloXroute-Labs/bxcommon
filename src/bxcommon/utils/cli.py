@@ -23,83 +23,6 @@ PROTOCOL_VERSION = "protocol_version"
 REQUIRED_PARAMS_IN_MANIFEST = [MANIFEST_SOURCE_VERSION]
 VERSION_TYPE_LIST = ["dev", "v", "ci"]
 
-arg_parser = argparse.ArgumentParser()
-
-arg_parser.add_argument("--external-ip", help="External network ip of this node", type=config.blocking_resolve_ip)
-arg_parser.add_argument("--external-port", help="External network port to listen on", type=int,
-                        default=config.get_env_default(NodeStartArgs.EXTERNAL_PORT))
-arg_parser.add_argument("--continent", help="The continent of this node", type=str,
-                        choices=["NA", "SA", "EU", "AS", "AF", "OC", "AN"])
-arg_parser.add_argument("--country", help="The country of this node.", type=str)
-arg_parser.add_argument("--hostname", help="Hostname the node is running on", type=str, default=constants.HOSTNAME)
-arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", type=str,
-                        default=config.get_env_default(NodeStartArgs.SDN_ROOT_URL))
-arg_parser.add_argument("--log-path", help="Path to store logfiles in")
-arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode",
-                        type=convert.str_to_bool, default=True)
-arg_parser.add_argument("--node-id", help="(TEST ONLY) Set the node_id for using in testing.")
-arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__getattr__, choices=list(LogLevel))
-arg_parser.add_argument("--log-format", help="set log format", type=LogFormat.__getattr__, choices=list(LogFormat))
-arg_parser.add_argument("--log-flush-immediately", help="Enables immediate flush for logs",
-                        type=convert.str_to_bool, default=False)
-arg_parser.add_argument("--throughput-debugging",
-                        help="Logs additional information that is helpful for debugging of throughput issues",
-                        type=convert.str_to_bool, default=False)
-arg_parser.add_argument("--transaction-pool-memory-limit",
-                        help="Maximum size of transactions to keep in memory pool (MB)",
-                        type=int)
-arg_parser.add_argument("--memory-stats-interval",
-                        help="Frequency of memory statistics logs in seconds",
-                        type=int,
-                        default=constants.MEMORY_STATS_INTERVAL)
-arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
-                        help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
-                        type=int,
-                        default=(0.5 * 1024))
-arg_parser.add_argument("--dump-removed-short-ids",
-                        help="Dump removed short ids to a file at a fixed interval",
-                        type=convert.str_to_bool,
-                        default=False)
-arg_parser.add_argument("--dump-removed-short-ids-path",
-                        help="Folder to dump removed short ids to",
-                        type=str,
-                        default=constants.DUMP_REMOVED_SHORT_IDS_PATH)
-arg_parser.add_argument("--enable-buffered-send", help="Enables buffering of sent byte to improve performance",
-                        type=convert.str_to_bool, default=True)
-arg_parser.add_argument("--track-detailed-sent-messages", help="Enables tracking of messages written on socket",
-                        type=convert.str_to_bool, default=True)
-
-arg_parser.add_argument(
-    "--use-extensions",
-    help="If true than the gateway will use the extension module for "
-         f"some tasks like block compression (default: {constants.USE_EXTENSION_MODULES})",
-    default=constants.USE_EXTENSION_MODULES,
-    type=convert.str_to_bool
-)
-
-arg_parser.add_argument(
-    "--import-extensions",
-    help="If true than the gateway will import all C++ extensions dependencies on start up"
-         f" (default: {constants.USE_EXTENSION_MODULES})",
-    default=constants.USE_EXTENSION_MODULES,
-    type=convert.str_to_bool
-)
-
-arg_parser.add_argument(
-    "--thread-pool-parallelism-degree",
-    help="The degree of parallelism to use when running task on a "
-    f"concurrent thread pool (default: {constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE})",
-    default=constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE,
-    type=config.get_thread_pool_parallelism_degree
-)
-arg_parser.add_argument(
-    "--tx-mem-pool-bucket-size",
-    help="The size of each bucket of the transaction mem pool. "
-    "In order to efficiently iterate the mem pool concurrently, it is being split into buckets. "
-    f"(default: {constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE})",
-    default=constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
-    type=int
-)
 _args = None
 
 
@@ -109,13 +32,10 @@ def is_valid_version(full_version):
     :param full_version: {version_type}{version_number}
     :return:
     """
-    try:
-        version_number = full_version[re.search("\d", full_version).start():]
-        version_type = full_version[:re.search("\d", full_version).start()]
-        return (version_number.count(".") == 3 and all(str(x).isdigit() for x in version_number.split("."))) and \
-               (version_type in VERSION_TYPE_LIST)
-    except Exception:
-        raise
+    version_number = full_version[re.search("\d", full_version).start():]
+    version_type = full_version[:re.search("\d", full_version).start()]
+    return (version_number.count(".") == 3 and all(str(x).isdigit() for x in version_number.split("."))) and \
+           (version_type in VERSION_TYPE_LIST)
 
 
 def read_manifest(manifest_path):
@@ -166,6 +86,80 @@ def get_args():
     global _args
 
     if not _args:
+        arg_parser = argparse.ArgumentParser()
+
+        arg_parser.add_argument("--external-ip", help="External network ip of this node", type=config.blocking_resolve_ip)
+        arg_parser.add_argument("--external-port", help="External network port to listen on", type=int,
+                                default=config.get_env_default(NodeStartArgs.EXTERNAL_PORT))
+        arg_parser.add_argument("--continent", help="The continent of this node", type=str,
+                                choices=["NA", "SA", "EU", "AS", "AF", "OC", "AN"])
+        arg_parser.add_argument("--country", help="The country of this node.", type=str)
+        arg_parser.add_argument("--hostname", help="Hostname the node is running on", type=str, default=constants.HOSTNAME)
+        arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", type=str,
+                                default=config.get_env_default(NodeStartArgs.SDN_ROOT_URL))
+        arg_parser.add_argument("--log-path", help="Path to store logfiles in")
+        arg_parser.add_argument("--to-stdout", help="Log to stdout. Doesn't generate logfiles in this mode",
+                                type=convert.str_to_bool, default=True)
+        arg_parser.add_argument("--node-id", help="(TEST ONLY) Set the node_id for using in testing.")
+        arg_parser.add_argument("--log-level", help="set log level", type=LogLevel.__getattr__, choices=list(LogLevel))
+        arg_parser.add_argument("--log-format", help="set log format", type=LogFormat.__getattr__, choices=list(LogFormat))
+        arg_parser.add_argument("--log-flush-immediately", help="Enables immediate flush for logs",
+                                type=convert.str_to_bool, default=False)
+        arg_parser.add_argument("--transaction-pool-memory-limit",
+                                help="Maximum size of transactions to keep in memory pool (MB)",
+                                type=int)
+        arg_parser.add_argument("--memory-stats-interval",
+                                help="Frequency of memory statistics logs in seconds",
+                                type=int,
+                                default=constants.MEMORY_STATS_INTERVAL)
+        arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
+                                help="Total memory usage of application when detailed memory report should be dumped to log (MB)",
+                                type=int,
+                                default=(0.5 * 1024))
+        arg_parser.add_argument("--dump-removed-short-ids",
+                                help="Dump removed short ids to a file at a fixed interval",
+                                type=convert.str_to_bool,
+                                default=False)
+        arg_parser.add_argument("--dump-removed-short-ids-path",
+                                help="Folder to dump removed short ids to",
+                                type=str,
+                                default=constants.DUMP_REMOVED_SHORT_IDS_PATH)
+        arg_parser.add_argument("--enable-buffered-send", help="Enables buffering of sent byte to improve performance",
+                                type=convert.str_to_bool, default=True)
+        arg_parser.add_argument("--track-detailed-sent-messages", help="Enables tracking of messages written on socket",
+                                type=convert.str_to_bool, default=True)
+        arg_parser.add_argument(
+            "--use-extensions",
+            help="If true than the node will use the extension module for "
+                 "some tasks like block compression (default: {0})".format(
+                  constants.USE_EXTENSION_MODULES
+            ),
+            default=constants.USE_EXTENSION_MODULES,
+            type=convert.str_to_bool
+        )
+
+        arg_parser.add_argument(
+            "--import-extensions",
+            help="If true than the node will import all C++ extensions dependencies on start up",
+            default=False,
+            type=convert.str_to_bool
+        )
+        arg_parser.add_argument(
+            "--thread-pool-parallelism-degree",
+            help="The degree of parallelism to use when running task on a "
+            f"concurrent thread pool (default: {constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE})",
+            default=constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE,
+            type=config.get_thread_pool_parallelism_degree
+        )
+        arg_parser.add_argument(
+            "--tx-mem-pool-bucket-size",
+            help="The size of each bucket of the transaction mem pool. "
+                 "In order to efficiently iterate the mem pool concurrently, it is being split into buckets. "
+            f"(default: {constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE})",
+            default=constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
+            type=int
+        )
+
         _args, unknown = arg_parser.parse_known_args()
         if not _args.external_ip:
             _args.external_ip = config.get_node_public_ip()
@@ -193,7 +187,7 @@ def parse_blockchain_opts(opts, node_type):
     """
     opts_dict = opts.__dict__
 
-    if node_type == NodeType.RELAY:
+    if node_type & NodeType.RELAY:
         opts_dict["blockchain_network_num"] = ALL_NETWORK_NUM
         return
 

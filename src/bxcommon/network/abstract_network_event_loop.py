@@ -57,7 +57,6 @@ class AbstractNetworkEventLoop(object):
 
                 timeout = self._node.get_sleep_timeout(events_count == 0)
         finally:
-            logger.info("Ending event loop. Shutdown has been requested.")
             self.close()
 
     def close(self):

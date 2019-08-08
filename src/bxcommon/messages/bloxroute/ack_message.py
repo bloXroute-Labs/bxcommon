@@ -1,17 +1,17 @@
-from bxcommon.constants import HDR_COMMON_OFF
+from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.messages.bloxroute.message import Message
+from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 
 
-class AckMessage(Message):
+class AckMessage(AbstractBloxrouteMessage):
     MESSAGE_TYPE = BloxrouteMessageType.ACK
 
     def __init__(self, buf=None):
         if buf is None:
-            buf = bytearray(HDR_COMMON_OFF)
+            buf = bytearray(self.HEADER_LENGTH + constants.CONTROL_FLAGS_LEN)
             self.buf = buf
 
-            Message.__init__(self, self.MESSAGE_TYPE, 0, buf)
+            super(AckMessage, self).__init__(self.MESSAGE_TYPE, constants.CONTROL_FLAGS_LEN, buf)
         else:
             self.buf = buf
             self._memoryview = memoryview(self.buf)

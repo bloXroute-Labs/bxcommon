@@ -31,13 +31,12 @@ class ThroughputStatistics(StatisticsService):
 
         if direction is Direction.INBOUND_MESSAGE:
             peer_stats.messages_received[msg_type].bytes += msg_size
-            peer_stats.peer_total_message_bytes_processed += msg_size
-            self.interval_data.total_processed_message_bytes += msg_size
-        elif direction is Direction.INBOUND:
+            peer_stats.messages_received[msg_type].count += 1
             peer_stats.peer_total_received += msg_size
             self.interval_data.total_in += msg_size
         elif direction is Direction.OUTBOUND:
             peer_stats.messages_sent.bytes += msg_size
+            peer_stats.messages_sent.count += 1
             peer_stats.peer_total_sent += msg_size
             self.interval_data.total_out += msg_size
 

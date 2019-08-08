@@ -1,9 +1,10 @@
 import struct
 
-from bxcommon.constants import HDR_COMMON_OFF, MSG_NULL_BYTE
+from bxcommon import constants
+from bxcommon.constants import BX_HDR_COMMON_OFF, MSG_NULL_BYTE
 from bxcommon.exceptions import ParseError, UnrecognizedCommandError
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
-from bxcommon.messages.bloxroute.message import Message
+from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 
@@ -16,27 +17,25 @@ def create_input_buffer_with_bytes(contents):
 
 class AbstractMessageFactoryTest(AbstractTestCase):
     PAYLOAD_LENGTH = 8
-    TOTAL_LENGTH = PAYLOAD_LENGTH + HDR_COMMON_OFF
+    TOTAL_LENGTH = PAYLOAD_LENGTH + AbstractBloxrouteMessage.HEADER_LENGTH
 
-    class TestMessage(Message):
-        HEADER_LENGTH = HDR_COMMON_OFF
-
+    class TestMessage(AbstractBloxrouteMessage):
         def __init__(self, message_type=b"test", buf=None):
             self.initialized = False
             if buf is None:
-                buf = bytearray(AbstractMessageFactoryTest.PAYLOAD_LENGTH + HDR_COMMON_OFF)
+                buf = bytearray(AbstractMessageFactoryTest.PAYLOAD_LENGTH + self.HEADER_LENGTH)
             super(AbstractMessageFactoryTest.TestMessage, self).__init__(message_type,
                                                                          AbstractMessageFactoryTest.PAYLOAD_LENGTH,
                                                                          buf)
 
         @classmethod
         def unpack(cls, buf):
-            command, payload_length = struct.unpack_from("<12sL", buf)
+            command, payload_length = struct.unpack_from("<12sL", buf, constants.STARTING_SEQUENCE_BYTES_LEN)
             return command.rstrip(MSG_NULL_BYTE), payload_length
 
         @classmethod
         def validate_payload(cls, buf, unpacked_args):
-            if all(i == 12 for i in buf[HDR_COMMON_OFF:]):
+            if all(i == 12 for i in buf[cls.HEADER_LENGTH:-constants.CONTROL_FLAGS_LEN]):
                 raise ValueError("test failure")
 
         @classmethod

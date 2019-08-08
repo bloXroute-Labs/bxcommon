@@ -41,8 +41,8 @@ def load_model(model_class: Type[T], model_params: Dict[str, Any]) -> T:
     :param model_params: Attributes from the retrieved model to load_model
     :return: instance of model class
     """
-    attributes = {}
     if hasattr(model_class, "__annotations__"):
+        attributes = {}
         for attribute_name, attribute_type in model_class.__annotations__.items():
             if attribute_name in model_params:
                 attributes[attribute_name] = _load_attribute(attribute_type, model_params[attribute_name])

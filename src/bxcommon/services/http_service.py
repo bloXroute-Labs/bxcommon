@@ -1,11 +1,8 @@
-import json
-
 import requests
 from requests import HTTPError, RequestException
 
 from bxcommon import constants
-from bxcommon.utils import logger
-from bxcommon.utils.class_json_encoder import ClassJsonEncoder
+from bxcommon.utils import logger, json_utils
 
 
 def build_url(endpoint):
@@ -35,15 +32,15 @@ def get_json(endpoint):
 
 
 def post_json(endpoint, payload=None):
-    return _http_request("POST", endpoint, data=json.dumps(payload, cls=ClassJsonEncoder),
+    return _http_request("POST", endpoint, data=json_utils.serialize(payload),
                          headers={"Content-Type": "application/json"})
 
 
 def patch_json(endpoint, payload=None):
-    return _http_request("PATCH", endpoint, data=json.dumps(payload, cls=ClassJsonEncoder),
+    return _http_request("PATCH", endpoint, data=json_utils.serialize(payload),
                          headers={"Content-Type": "application/json"})
 
 
 def delete_json(endpoint, payload=None):
-    return _http_request("DELETE", endpoint, data=json.dumps(payload, cls=ClassJsonEncoder),
+    return _http_request("DELETE", endpoint, data=json_utils.serialize(payload),
                          headers={"Content-Type": "application/json"})

@@ -1,8 +1,9 @@
 import time
+from typing import Optional
 import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
 
-_executor: tpe.TaskPoolExecutor = None
+_executor: Optional[tpe.TaskPoolExecutor] = None  # pyre-ignore
 
 
 def init(thread_pool_parallelism_degree: int):
@@ -21,4 +22,4 @@ def run_task(tsk: tpe.MainTaskBase):
 
 
 def get_pool_size() -> int:
-    return _executor.size()
+    return _executor.size()  # pyre-ignore

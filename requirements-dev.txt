@@ -1,0 +1,4 @@
+pylint==1.9.2
+mock==2.0.0
+coverage==4.3.4
+pyre-check==0.0.27

@@ -1,4 +1,3 @@
-import json
 import time
 
 from bxcommon.constants import SdnRoutes
@@ -7,12 +6,13 @@ from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.services import http_service
-from bxcommon.utils import config, logger, model_loader
+from bxcommon.utils import config, logger, model_loader, json_utils
+
+
 # TODO port this to sockets soon and remove json serialization perf hit on the node.
-from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 
 
-def fetch_config(node_id):
+def fetch_node_attributes(node_id):
     # Should only be used for test networks.
     node_url = SdnRoutes.node.format(node_id)
     opts = http_service.get_json(node_url)
@@ -115,7 +115,7 @@ def delete_gateway_inbound_connection(node_id, peer_id):
 def submit_node_event(node_event_model):
     node_event_model.timestamp = str(time.time())
     logger.debug("Submitting event for node {0} {1}"
-                 .format(node_event_model.node_id, json.dumps(node_event_model, cls=ClassJsonEncoder)))
+                 .format(node_event_model.node_id, json_utils.serialize(node_event_model)))
     url = SdnRoutes.node_event.format(node_event_model.node_id)
     http_service.post_json(url, node_event_model)
 
@@ -128,18 +128,9 @@ def register_node(node_model):
     # SDN determines peers and returns full config.
     node_config = http_service.post_json(SdnRoutes.nodes, node_model)
 
-    logger.debug("Registered node. Response: {}".format(json.dumps(node_config, cls=ClassJsonEncoder)))
+    logger.debug("Registered node. Response: {}".format(json_utils.serialize(node_config)))
 
     if not node_config:
         raise EnvironmentError("Unable to reach SDN and register this node. Please check connection.")
 
     return model_loader.load(NodeModel, node_config)
-
-
-# TODO: Remove this function once we had decided on a way to mark a gateway as a bloxroute controller gateway
-# Long term, we don't want to allow the gateway itself to specify whether it is an internal gateway - this should
-# rather be done via an admin console on the SDN or similar
-def set_node_as_internal_gateway(node_id):
-    node_url = SdnRoutes.node.format(node_id)
-    updated_node = http_service.patch_json(node_url, {"is_internal_gateway": True})
-    return model_loader.load(NodeModel, updated_node)

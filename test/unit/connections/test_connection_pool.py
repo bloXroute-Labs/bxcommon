@@ -1,10 +1,14 @@
-import unittest
 import uuid
+from enum import Flag, auto
 
 from bxcommon.connections.connection_pool import ConnectionPool
+from bxcommon.connections.connection_type import ConnectionType
+from bxcommon.constants import LOCALHOST
+from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
+from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 
 
 class ConnectionPoolTest(AbstractTestCase):
@@ -15,25 +19,23 @@ class ConnectionPoolTest(AbstractTestCase):
         self.fileno1 = 1
         self.ip1 = "123.123.123.123"
         self.port1 = 1000
-        self.node1 = MockNode("128.128.128.128", 1001)
+        self.node1 = MockNode(helpers.get_common_opts(1001, external_ip="128.128.128.128"))
         self.node_id1 = str(uuid.uuid1())
-        self.conn1 = MockConnection(self.fileno1, (self.ip1, self.port1), self.node1)
-
+        self.conn1 = MockConnection(MockSocketConnection(self.fileno1), (self.ip1, self.port1), self.node1)
 
         self.fileno2 = 5
         self.ip2 = "234.234.234.234"
         self.port2 = 2000
-        self.node2 = MockNode("321.321.321.321", 1003)
+        self.node2 = MockNode(helpers.get_common_opts(1003, external_ip="321.321.321.321"))
         self.node_id2 = str(uuid.uuid1())
-        self.conn2 = MockConnection(self.fileno2, (self.ip2, self.port2), self.node2)
-
+        self.conn2 = MockConnection(MockSocketConnection(self.fileno2), (self.ip2, self.port2), self.node2)
 
         self.fileno3 = 6
         self.ip3 = "234.234.234.234"
         self.port3 = 3000
-        self.node3 = MockNode("213.213.213.213", 1003)
+        self.node3 = MockNode(helpers.get_common_opts(1003, external_ip="213.213.213.213."))
         self.node_id3 = str(uuid.uuid1())
-        self.conn3 = MockConnection(self.fileno3, (self.ip3, self.port3), self.node3)
+        self.conn3 = MockConnection(MockSocketConnection(self.fileno3), (self.ip3, self.port3), self.node3)
 
     def test_add(self):
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
@@ -55,20 +57,35 @@ class ConnectionPoolTest(AbstractTestCase):
         self.assertFalse(self.conn_pool1.has_connection(self.ip1, self.port1))
 
     def test_has_connection(self):
-        self.add_conn()
+        self._add_connections()
         self.assertTrue(self.conn_pool1.has_connection(self.ip1, self.port1))
         self.assertFalse(self.conn_pool1.has_connection("111.111.111.111", self.port1))
         self.assertFalse(self.conn_pool1.has_connection("111.111.111.111", 1))
         self.assertFalse(self.conn_pool1.has_connection(self.ip1, 1))
 
     def test_get_byipport(self):
-        self.add_conn()
+        self._add_connections()
         self.assertEqual(self.conn1, self.conn_pool1.get_by_ipport(self.ip1, self.port1))
         with self.assertRaises(KeyError):
             self.conn_pool1.get_by_ipport(self.ip1, 1)
 
+    def test_get_by_connection_type(self):
+        self.conn1.CONNECTION_TYPE = ConnectionType.GATEWAY
+        self.conn2.CONNECTION_TYPE = ConnectionType.RELAY_BLOCK
+        self.conn3.CONNECTION_TYPE = ConnectionType.RELAY_ALL
+        self._add_connections()
+
+        gateway_connections = self.conn_pool1.get_by_connection_type(ConnectionType.GATEWAY)
+        self.assertEqual(1, len(gateway_connections))
+        self.assertEqual(self.conn1, gateway_connections[0])
+
+        relay_connections = self.conn_pool1.get_by_connection_type(ConnectionType.RELAY_BLOCK)
+        self.assertEqual(2, len(relay_connections))
+        self.assertIn(self.conn2, relay_connections)
+        self.assertIn(self.conn3, relay_connections)
+
     def test_get_by_fileno(self):
-        self.add_conn()
+        self._add_connections()
         self.assertEqual(self.conn1, self.conn_pool1.get_by_fileno(self.fileno1))
         self.assertEqual(self.conn2, self.conn_pool1.get_by_fileno(self.fileno2))
         self.conn_pool1.add(6000, "0.0.0.0", 4000, self.conn3)
@@ -76,13 +93,13 @@ class ConnectionPoolTest(AbstractTestCase):
         self.assertIsNone(self.conn_pool1.get_by_fileno(2))
 
     def test_get_num_conn_by_ip(self):
-        self.add_conn()
+        self._add_connections()
         self.assertEqual(1, self.conn_pool1.get_num_conn_by_ip(self.ip1))
         self.assertEqual(2, self.conn_pool1.get_num_conn_by_ip(self.ip2))
         self.assertEqual(0, self.conn_pool1.get_num_conn_by_ip("222.222.222.222"))
 
     def test_delete(self):
-        self.add_conn()
+        self._add_connections()
         self.conn_pool1.delete(self.conn1)
         self.assertIsNone(self.conn_pool1.get_by_fileno(self.fileno1))
         with self.assertRaises(KeyError):
@@ -92,14 +109,31 @@ class ConnectionPoolTest(AbstractTestCase):
         self.assertIsNone(self.conn_pool1.get_by_fileno(self.fileno2))
         self.assertEqual(1, self.conn_pool1.count_conn_by_ip[self.ip2])
 
+    # noinspection PyTypeChecker
+    def test_delete_removes_multiple_types(self):
+        class TestConnectionType(Flag):
+            A = auto()
+            B = auto()
+            AB = A | B
+
+        conn = MockConnection(MockSocketConnection(), (LOCALHOST, 8000), self.node1)
+        conn.CONNECTION_TYPE = TestConnectionType.AB
+        self.conn_pool1.add(self.fileno1, LOCALHOST, 8000, conn)
+        self.assertIn(conn, self.conn_pool1.get_by_connection_type(TestConnectionType.A))
+        self.assertIn(conn, self.conn_pool1.get_by_connection_type(TestConnectionType.B))
+
+        self.conn_pool1.delete(conn)
+        self.assertNotIn(conn, self.conn_pool1.get_by_connection_type(TestConnectionType.A))
+        self.assertNotIn(conn, self.conn_pool1.get_by_connection_type(TestConnectionType.B))
+
     def test_delete_by_fileno(self):
-        self.add_conn()
+        self._add_connections()
         self.conn_pool1.delete_by_fileno(self.fileno1)
         with self.assertRaises(KeyError):
             self.conn_pool1.get_by_ipport(self.ip1, self.port1)
 
     def test_iter(self):
-        self.add_conn()
+        self._add_connections()
         pool_connections = list(iter(self.conn_pool1))
         self.assertEqual(3, len(pool_connections))
         self.assertTrue(self.conn1 in pool_connections)
@@ -108,12 +142,12 @@ class ConnectionPoolTest(AbstractTestCase):
 
     def test_len(self):
         self.assertEqual(0, len(self.conn_pool1))
-        self.add_conn()
+        self._add_connections()
         self.assertEqual(3, len(self.conn_pool1))
         self.conn_pool1.delete(self.conn2)
         self.assertEqual(2, len(self.conn_pool1))
 
-    def add_conn(self):
+    def _add_connections(self):
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
         self.conn_pool1.add(self.fileno2, self.ip2, self.port2, self.conn2)
         self.conn_pool1.add(self.fileno3, self.ip3, self.port3, self.conn3)

@@ -1,8 +1,9 @@
+from bxcommon import constants
 from bxcommon.constants import VERSIONED_HELLO_MSG_MIN_PAYLOAD_LEN
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
-from bxcommon.messages.bloxroute.v1.hello_message_v1 import HelloMessageV1
+from bxcommon.messages.bloxroute.v4.hello_message_v4 import HelloMessageV4
 from bxcommon.messages.versioning.abstract_version_manager import AbstractVersionManager
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils import crypto
@@ -65,19 +66,19 @@ class AbstractVersionManagerTest(AbstractTestCase):
 
         self.assertEqual(0, self.version_manager.get_connection_protocol_version(input_buffer))
 
-    def test_get_connection_protocol_version__v1(self):
-        hello_msg_v1 = HelloMessageV1(idx=0)
+    def test_get_connection_protocol_version__v4(self):
+        hello_msg_v4 = HelloMessageV4(
+            protocol_version=4,
+            network_num=constants.DEFAULT_NETWORK_NUM)
         input_buffer = InputBuffer()
-        input_buffer.add_bytes(hello_msg_v1.rawbytes())
+        input_buffer.add_bytes(hello_msg_v4.rawbytes())
 
-        self.assertEqual(1, self.version_manager.get_connection_protocol_version(input_buffer))
+        self.assertEqual(4, self.version_manager.get_connection_protocol_version(input_buffer))
 
     def test_get_connection_protocol_version__over_v2(self):
-        self._test_version_over_v1(2)
-        self._test_version_over_v1(3)
-        self._test_version_over_v1(4)
+        self._test_version_over_v4(5)
 
-    def _test_version_over_v1(self, version):
+    def _test_version_over_v4(self, version):
         hello_msg = HelloMessage(protocol_version=version, network_num=1)
         input_buffer = InputBuffer()
         input_buffer.add_bytes(hello_msg.rawbytes())

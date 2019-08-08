@@ -3,6 +3,7 @@ from contextlib import closing
 from threading import Thread
 
 from bxcommon.network import network_event_loop_factory
+from bxcommon.utils import logger
 
 
 class NetworkThread(object):
@@ -35,5 +36,6 @@ class NetworkThread(object):
         try:
             self.event_loop.run()
         except Exception as e:
+            logger.error(e)
             self.error = e
 

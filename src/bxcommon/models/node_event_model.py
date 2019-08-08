@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass()
 class NodeEventModel(object):
 
     def __init__(self, node_id, event_type, peer_ip=None, peer_port=None, timestamp=None):
@@ -17,3 +21,5 @@ class NodeEventType(object):
     SID_SPACE_FULL = "SID_SPACE_FULL"
     BLOCKCHAIN_NODE_CONN_ERR = "BLOCKCHAIN_NODE_CONN_ERR"
     BLOCKCHAIN_NODE_CONN_ESTABLISHED = "BLOCKCHAIN_NODE_CONN_ESTABLISHED"
+    REMOTE_BLOCKCHAIN_CONN_ERR = "REMOTE_BLOCKCHAIN_CONN_ERR"
+    REMOTE_BLOCKCHAIN_CONN_ESTABLISHED = "REMOTE_BLOCKCHAIN_CONN_ESTABLISHED"

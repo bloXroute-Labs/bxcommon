@@ -2,6 +2,7 @@ import time
 from collections import deque
 from typing import Deque, Optional, TYPE_CHECKING
 
+from bxcommon.messages.abstract_block_message import AbstractBlockMessage
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.utils import logger
 from bxcommon.utils.log_level import LogLevel
@@ -33,6 +34,11 @@ class MessageTrackerEntry:
 
 
 class MessageTracker:
+    """
+    Service to track when message bytes get fully written from the output buffer to the
+    OS level socket.
+    """
+
     messages: Deque[MessageTrackerEntry]
     connection: "AbstractConnection"
     is_working: bool = True
@@ -44,6 +50,13 @@ class MessageTracker:
     def __repr__(self):
         return "MessageTracker<connection: {}, messages: {}>".format(self.connection, repr(self.messages))
 
+    def is_sending_block_message(self) -> bool:
+        if not self.messages:
+            return False
+
+        entry = self.messages[0]
+        return entry.message is not None and isinstance(entry.message, AbstractBlockMessage)
+
     def advance_bytes(self, num_bytes: int):
         if not self.is_working:
             return
@@ -53,7 +66,8 @@ class MessageTracker:
 
             if not self.messages:
                 logger.error("Message tracker somehow got out of sync on connection: {}. Attempted to send {} bytes"
-                             "when none left in tracker.".format(self.connection, bytes_left))
+                             "when none left in tracker. Disabling further tracking."
+                             .format(self.connection, bytes_left))
                 self.is_working = False
 
             if bytes_left >= (self.messages[0].length - self.messages[0].sent_bytes):
@@ -71,20 +85,26 @@ class MessageTracker:
                 bytes_left = 0
 
     def append_message(self, num_bytes: int, message: Optional[AbstractMessage]):
+        """
+        Appends a message entry to the tracker.
+
+        This method trusts that that num_bytes matches the message, but does not verify it.
+        This is useful for Ethereum, which frames and encrypts the message, which may change the length of the message.
+        """
         if not self.is_working:
             return
-
-        if message is not None and num_bytes != len(message.rawbytes()):
-            raise ValueError("Message does not match byte length.")
 
         self.messages.append(MessageTrackerEntry(message, num_bytes))
 
     def prepend_message(self, num_bytes: int, message: Optional[AbstractMessage]):
+        """
+        Appends a message entry to the tracker.
+
+        This method trusts that that num_bytes matches the message, but does not verify it.
+        This is useful for Ethereum, which frames and encrypts the message, which may change the length of the message.
+        """
         if not self.is_working:
             return
-
-        if message is not None and num_bytes != len(message.rawbytes()):
-            raise ValueError("Message does not match byte length.")
 
         if self.messages and self.messages[0].sent_bytes != 0:
             in_progress_message = self.messages.popleft()

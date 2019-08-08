@@ -11,7 +11,7 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 
 
-class TransactionService(object):
+class TransactionService:
     """
     Service for managing transaction mappings.
     In this class, we assume that no more than MAX_ID unassigned transactions exist at a time.
@@ -85,6 +85,12 @@ class TransactionService(object):
 
     def set_final_tx_confirmations_count(self, val: int):
         self._final_tx_confirmations_count = val
+
+    def _dump_removed_short_ids(self):
+        with open("{}/{}".format(self.node.opts.dump_removed_short_ids_path, int(time.time())), "w") as f:
+            f.write(str(self._removed_short_ids))
+            self._removed_short_ids.clear()
+        return constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S
 
     def set_transaction_contents(self, transaction_hash, transaction_contents):
         """
@@ -260,7 +266,9 @@ class TransactionService(object):
         logger.info(
             "Finished cleaning up short ids. Entries remaining: {}".format(len(self._tx_assignment_expire_queue)))
         if len(self._tx_assignment_expire_queue) > 0:
-            return self.node.opts.sid_expire_time
+            oldest_tx_timestamp = self._tx_assignment_expire_queue.get_oldest_item_timestamp()
+            time_to_expire_oldest = (oldest_tx_timestamp + self.node.opts.sid_expire_time) - time.time()
+            return max(time_to_expire_oldest, constants.MIN_CLEAN_UP_EXPIRED_TXS_TASK_INTERVAL_S)
         else:
             self.tx_assign_alarm_scheduled = False
             return 0
@@ -360,6 +368,14 @@ class TransactionService(object):
                 self.ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE * len(self._tx_assignment_expire_queue)
             ),
             len(self._tx_assignment_expire_queue)
+        )
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            self.network_num,
+            self._removed_short_ids,
+            "removed_short_ids",
+            self.get_collection_mem_stats(self._removed_short_ids),
         )
 
         hooks.add_obj_mem_stats(

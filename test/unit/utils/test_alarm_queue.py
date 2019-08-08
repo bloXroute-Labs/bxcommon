@@ -18,14 +18,14 @@ class AlarmQueueTest(AbstractTestCase):
         alarm_id = self.alarm_queue.register_alarm(1, self.function_to_pass, 1, 5)
         self.assertEqual(1, len(self.alarm_queue.alarms))
         self.assertEqual(1, self.alarm_queue.uniq_count)
-        self.assertEqual(0, self.alarm_queue.alarms[0][1])
-        self.assertEqual(0, alarm_id[1])
+        self.assertEqual(0, self.alarm_queue.alarms[0].count)
+        self.assertEqual(0, alarm_id.count)
 
     def test_register_approx_alarm(self):
         self.alarm_queue.register_approx_alarm(1, 3, self.function_to_pass, 1, 5)
         self.assertEqual(1, len(self.alarm_queue.approx_alarms_scheduled[self.function_to_pass]))
         self.assertEqual(self.function_to_pass,
-                         self.alarm_queue.approx_alarms_scheduled[self.function_to_pass][0][2].fn)
+                         self.alarm_queue.approx_alarms_scheduled[self.function_to_pass][0].alarm.fn)
 
     def test_unregister_alarm(self):
         alarm_id1 = self.alarm_queue.register_alarm(1, self.function_to_pass, 1, 5)

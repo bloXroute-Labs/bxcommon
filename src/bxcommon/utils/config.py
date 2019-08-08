@@ -4,7 +4,6 @@ import socket
 import time
 import configparser
 import multiprocessing
-from typing import Optional
 
 from requests import get
 from bxcommon import constants

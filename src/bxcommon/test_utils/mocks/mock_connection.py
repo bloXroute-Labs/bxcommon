@@ -1,17 +1,24 @@
+from enum import IntFlag
+
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
+from bxcommon.connections.connection_type import ConnectionType
+from bxcommon.constants import PING_INTERVAL_S
+from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.constants import PING_INTERVAL_S
 
 
-class MockConnection(object):
+class MockConnectionType(IntFlag):
+    MOCK = max(ConnectionType) << 1
+    NOT_MOCK = max(ConnectionType) << 2
 
-    CONNECTION_TYPE = "mock"
 
-    def __init__(self, fileno, address, node, from_me=False):
-        self.socket_connection = MockSocketConnection(fileno)
-        self.fileno = fileno
+class MockConnection:
+    CONNECTION_TYPE = MockConnectionType.MOCK
+
+    def __init__(self, sock: SocketConnection, address, node, from_me=False):
+        self.socket_connection = sock
+        self.fileno = sock.fileno()
 
         # (IP, Port) at time of socket creation. We may get a new application level port in
         # the version message if the connection is not from me.
@@ -45,6 +52,7 @@ class MockConnection(object):
     def add_received_bytes(self, bytes_received):
         self.inputbuf.add_bytes(bytes_received)
         self.mark_for_close()
+        return True
 
     def get_bytes_to_send(self):
         return self.outputbuf.output_msgs[0]
@@ -74,4 +82,3 @@ class MockConnection(object):
 
     def send_ping(self):
         return PING_INTERVAL_S
-

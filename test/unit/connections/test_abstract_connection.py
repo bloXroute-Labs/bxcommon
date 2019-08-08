@@ -1,12 +1,13 @@
 from mock import MagicMock
 
+from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import BLOXROUTE_HELLO_MESSAGES, HDR_COMMON_OFF
+from bxcommon.constants import BLOXROUTE_HELLO_MESSAGES, BX_HDR_COMMON_OFF
+from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory, _BloxrouteMessageFactory
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
-from bxcommon.messages.bloxroute.message import Message
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -25,7 +26,7 @@ class AbstractConnectionTest(AbstractTestCase):
         def __init__(self, *args, **kwargs):
             super(AbstractConnectionTest.TestAbstractConnection, self).__init__(*args, **kwargs)
             self.hello_messages = BLOXROUTE_HELLO_MESSAGES
-            self.header_size = HDR_COMMON_OFF
+            self.header_size = constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF
             self.message_factory = AbstractConnectionTest.TestMessageFactory()
             self.ping_message = PingMessage()
             self.pong_message = PongMessage()
@@ -42,7 +43,8 @@ class AbstractConnectionTest(AbstractTestCase):
         self.connection.pop_next_message.assert_not_called()
 
     def test_process_message_quit_on_bad_message(self):
-        bad_message = Message(b"badtype", 0, bytearray(HDR_COMMON_OFF)).rawbytes()
+        bad_message = AbstractBloxrouteMessage(b"badtype", 0, bytearray(
+            constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF + constants.CONTROL_FLAGS_LEN)).rawbytes()
         self.connection.inputbuf.add_bytes(bad_message)
         self.connection.inputbuf.add_bytes(bad_message)
         self.connection.inputbuf.add_bytes(bad_message)
@@ -74,7 +76,7 @@ class AbstractConnectionTest(AbstractTestCase):
     def test_msg_ping(self):
         self.connection.msg_ping(PingMessage())
         self.assertTrue(self.connection.outputbuf.length > 0)
-        self.connection.outputbuf._flush_to_buffer()
+        self.connection.outputbuf.flush()
 
         output_buf_msg = self.connection.outputbuf.get_buffer()
         pong_reply_msg = bloxroute_message_factory.create_message_from_buffer(output_buf_msg)

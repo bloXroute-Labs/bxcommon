@@ -64,26 +64,30 @@ ENABLE_LOGGING = True
 # LogLevel.FATAL
 # or their corresponding numbers
 DEFAULT_LOG_LEVEL = LogLevel.WARN
-DEFAULT_LOG_FORMAT = LogFormat.PLAIN
+DEFAULT_LOG_FORMAT = LogFormat.JSON
 
 # set to True to always flush logs to stdout
 FLUSH_LOG = True
+
+MAX_LOGGED_BYTES_LEN = 500 * 1024
 
 # </editor-fold>
 
 # <editor-fold desc="Message Packing Constants">
 
+STARTING_SEQUENCE_BYTES = bytearray(b"\xFF\xFE\xFD\xFC")
+STARTING_SEQUENCE_BYTES_LEN = 4
+CONTROL_FLAGS_LEN = 1
 UL_SHORT_SIZE_IN_BYTES = 2
 UL_INT_SIZE_IN_BYTES = 4
 UL_ULL_SIZE_IN_BYTES = 8
-C_SIZE_T_SIZE_IN_BYTES = ctypes.sizeof(ctypes.c_size_t)
 IP_V4_PREFIX = bytearray(b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff")
 IP_V4_PREFIX_LENGTH = 12
 IP_ADDR_SIZE_IN_BYTES = 16
 MSG_NULL_BYTE = b"\x00"
 
 # bytes of basic message header
-HDR_COMMON_OFF = 16
+BX_HDR_COMMON_OFF = 16
 
 # bytes for storing message type
 MSG_TYPE_LEN = 12
@@ -133,7 +137,7 @@ class SdnRoutes(object):
 
 # <editor-fold desc="Stats Recording">
 
-THROUGHPUT_STATS_INTERVAL = 30
+THROUGHPUT_STATS_INTERVAL = 300
 THROUGHPUT_STATS_LOOK_BACK = 5
 
 INFO_STATS_INTERVAL = 3600
@@ -171,6 +175,12 @@ WARN_ALARM_EXECUTION_DURATION = 5
 # Timeout to warn on if alarm executed later than expected
 WARN_ALARM_EXECUTION_OFFSET = 5
 
+# Minimal expired transactions clean up task frequency
+MIN_CLEAN_UP_EXPIRED_TXS_TASK_INTERVAL_S = 1 * 60
+
+# Duration to warn on if message processing takes longer than
+WARN_MESSAGE_PROCESSING_S = 0.1
+
 # Expiration time for cache of relayed blocks hashes
 RELAYED_BLOCKS_EXPIRE_TIME_S = 6 * 60 * 60
 
@@ -178,7 +188,6 @@ DUMP_REMOVED_SHORT_IDS_INTERVAL_S = 5 * 60
 DUMP_REMOVED_SHORT_IDS_PATH = "/app/bxcommon/debug/removed-short-ids"
 
 CLEAN_UP_SEEN_SHORT_IDS_DELAY_S = 10
-
 # </editor-fold>
 
 # <editor-fold desc="Default Values">
@@ -186,11 +195,15 @@ CLEAN_UP_SEEN_SHORT_IDS_DELAY_S = 10
 # Default transactions contents cache maximum size per network number
 DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES = 250 * 1024 * 1024
 
+# Default maximum allowed length of internal message payload
+DEFAULT_MAX_PAYLOAD_LEN_BYTES = 1024 * 1024
+
 # </editor-fold>
 
 # keep constants_local.py file to override settings in the constants file
 # this part should be at the bottom of the file
 try:
+    # pyre-ignore Leave this for CircleCI, as it lacks a constants_local.py
     from bxcommon.constants_local import *
 except ImportError as e:
     pass

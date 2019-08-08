@@ -76,7 +76,7 @@ class SocketConnection:
                 self._node.on_connection_closed(fileno)
                 return
             else:
-                self._node.on_bytes_received(fileno, piece)
+                collect_input = self._node.on_bytes_received(fileno, piece)
 
         self._node.on_finished_receiving(fileno)
 
@@ -125,13 +125,12 @@ class SocketConnection:
                 elif e.errno in [errno.EDESTADDRREQ, errno.EFAULT, errno.EINVAL,
                                  errno.EISCONN, errno.EMSGSIZE, errno.ENOTCONN, errno.ENOTSOCK]:
                     # Should never happen errors
-                    logger.debug("Got {0}, send to {1} failed. Should not have happened..."
-                                 .format(e.strerror, fileno))
+                    logger.fatal("Unexpected fatal error {} on fileno {}: {}. Shutting down node.", e.errno, fileno,
+                                 e.strerror)
                     exit(1)
                 elif e.errno in [errno.ENOMEM]:
                     # Fatal errors for the node
-                    logger.debug("Got {0}, send to {1} failed. Fatal error! Shutting down node."
-                                 .format(e.strerror, fileno))
+                    logger.fatal("Fatal error ENOMEM on fileno {}: {}. Shutting down node.", fileno, e.strerror)
                     exit(1)
                 else:
                     raise e
@@ -154,4 +153,3 @@ class SocketConnection:
         self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
         self.socket_instance.close()
         self._receive_buf = None
-

@@ -1,5 +1,4 @@
 import time
-import unittest
 from threading import Thread
 
 from bxcommon.connections.abstract_node import AbstractNode
@@ -8,15 +7,12 @@ from bxcommon.network.network_event_loop_factory import create_event_loop
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import generate_bytearray
-from bxcommon.test_utils.mocks.mock_node import MockOpts
 from bxcommon.utils import logger
 
 
 class TestNode(AbstractNode):
     def __init__(self, port, peers_ports, timeout=None, send_bytes=None):
-        opts = MockOpts()
-        opts.internal_port = port
-        opts.external_port = port
+        opts = helpers.get_common_opts(port)
         super(TestNode, self).__init__(opts)
 
         self.port = port
@@ -52,7 +48,7 @@ class TestNode(AbstractNode):
 
         return peer_addresses
 
-    def get_connection_class(self, ip=None, port=None, from_me=False):
+    def build_connection(self, socket_connection, ip, port, from_me=False):
         return None
 
     def on_connection_added(self, socket_connection, port, ip, from_me):
@@ -84,10 +80,11 @@ class TestNode(AbstractNode):
         if len(self.send_bytes) == self.bytes_sent:
             self.ready_to_close = True
 
-    def on_bytes_received(self, fileno, bytes_received):
+    def on_bytes_received(self, fileno: int, bytes_received: bytearray):
         print("Node {0}: on_bytes_received call. {1} bytes received from connection {2}"
               .format(self.port, len(bytes_received), fileno))
         self.receive_buffers[fileno] += bytes_received
+        return True
 
     def get_sleep_timeout(self, triggered_by_timeout, first_call=False):
         print("Node {0}: get_sleep_timeout called.".format(self.port))

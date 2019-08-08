@@ -21,7 +21,7 @@ class TestSdnHttpService(unittest.TestCase):
 
             mock_http_service.return_value = mock_node
 
-            loaded_node = sdn_http_service.fetch_config("aaa")
+            loaded_node = sdn_http_service.fetch_node_attributes("aaa")
 
             self.assertEqual("aaa", loaded_node.node_id)
 

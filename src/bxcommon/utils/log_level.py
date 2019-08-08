@@ -12,5 +12,9 @@ class LogLevel(IntEnum):
     STATS = 50
     OFF = 100
 
+    @classmethod
+    def from_string(cls, string_value: str):
+        return cls[string_value.upper()]
+
     def __str__(self):
         return self.name

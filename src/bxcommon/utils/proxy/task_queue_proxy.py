@@ -18,7 +18,7 @@ class TaskQueueProxy:
     def __len__(self) -> int:
         return len(self._queue)
 
-    def borrow_task(self) -> tpe.MainTaskBase:
+    def borrow_task(self) -> tpe.MainTaskBase:   # pyre-ignore
         try:
             tsk = self._queue.popleft()
         except IndexError:
@@ -28,7 +28,7 @@ class TaskQueueProxy:
     def return_task(self, tsk: tpe.MainTaskBase):
         self._queue.appendleft(tsk)
 
-    def _extend_queue(self) -> tpe.MainTaskBase:
+    def _extend_queue(self) -> tpe.MainTaskBase:  # pyre-ignore
         tsk = None
         for _ in range(self._grow_size):
             tsk = self._task_creator()

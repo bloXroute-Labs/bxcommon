@@ -1,12 +1,14 @@
 from bxcommon.constants import MAX_COUNTRY_LENGTH
+from dataclasses import dataclass
 
 
-class NodeModel(object):
+@dataclass
+class NodeModel:
     def __init__(self, node_type=None, external_ip=None, external_port=None, network=None, online=None, node_id=None,
                  sid_start=None, sid_end=None, sid_expire_time=None, last_pong_time=None, is_gateway_miner=None,
                  is_internal_gateway=None, source_version=None, protocol_version=None, blockchain_network_num=None,
                  blockchain_ip=None, blockchain_port=None, node_public_key=None, hostname=None, sdn_id=None,
-                 os_version=None, continent=None, country=None):
+                 os_version=None, continent=None, country=None, split_relays=None, idx: int = None):
         self.external_port = external_port
         self.network = network
         self.online = online
@@ -28,10 +30,12 @@ class NodeModel(object):
         self.sdn_id = sdn_id
         self.os_version = os_version
         self.continent = continent
+        self.split_relays = split_relays
         if country is not None:
             self.country = country[:MAX_COUNTRY_LENGTH]
         else:
             self.country = None
+        self.idx = idx
 
         # Ethereum remote blockchain attribute
         self.node_public_key = node_public_key

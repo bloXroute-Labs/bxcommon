@@ -14,7 +14,7 @@ See bxgateway/test/integration/test_gateway_connection_peering.py for an example
 """
 
 # Timeout for polling on connections in integration tests
-INTEGRATION_TEST_WAIT_INTERVAL_S = 0.3
+INTEGRATION_TEST_WAIT_INTERVAL_S = 1
 INTEGRATION_TEST_WAIT_TIMEOUT_S = 5
 
 
@@ -27,7 +27,7 @@ def send_on_connection(connection):
     connection.socket_connection.can_send = True
     while connection.outputbuf.length > 1 and not connection.state & ConnectionState.MARK_FOR_CLOSE:
         if connection.outputbuf.last_bytearray is not None:
-            connection.outputbuf._flush_to_buffer()
+            connection.outputbuf.flush()
         connection.socket_connection.send()
 
 

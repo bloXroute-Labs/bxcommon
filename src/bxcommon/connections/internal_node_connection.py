@@ -1,34 +1,37 @@
+from abc import ABCMeta
 from datetime import datetime
 
-from bxcommon.constants import REQUEST_EXPIRATION_TIME
-from bxcommon.connections.abstract_connection import AbstractConnection
+from bxcommon.connections.abstract_connection import AbstractConnection, Node
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.constants import ALL_NETWORK_NUM, DEFAULT_NETWORK_NUM, PING_INTERVAL_S
+from bxcommon.constants import REQUEST_EXPIRATION_TIME
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
-from bxcommon.utils import nonce_generator
 from bxcommon.utils import logger
+from bxcommon.utils import nonce_generator
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.utils.stats.measurement_type import MeasurementType
-from bxcommon.utils.stats import hooks
 from bxcommon.utils.expiring_dict import ExpiringDict
+from bxcommon.utils.stats import hooks
+from bxcommon.utils.stats.measurement_type import MeasurementType
 
 
-class InternalNodeConnection(AbstractConnection):
+class InternalNodeConnection(AbstractConnection[Node]):
+    __metaclass__ = ABCMeta
 
     def __init__(self, sock, address, node, from_me=False):
         super(InternalNodeConnection, self).__init__(sock, address, node, from_me)
 
         # Enable buffering only on internal connections
-        self.outputbuf = OutputBuffer(enable_buffering=node.opts.enable_buffered_send)
+        self.enable_buffered_send = node.opts.enable_buffered_send
+        self.outputbuf = OutputBuffer(enable_buffering=self.enable_buffered_send)
 
         self.network_num = node.network_num
         self.version_manager = bloxroute_version_manager
-        
+
         # Setting default protocol version and message factory; override when hello message received
         self.message_factory = bloxroute_message_factory
         self.protocol_version = self.version_manager.CURRENT_PROTOCOL_VERSION
@@ -39,6 +42,16 @@ class InternalNodeConnection(AbstractConnection):
 
         self.can_send_pings = True
         self.sent_response_messages_timestamps = ExpiringDict(self.node.alarm_queue, REQUEST_EXPIRATION_TIME)
+
+    def disable_buffering(self):
+        """
+        Disable buffering on this particular connection.
+        :return:
+        """
+        self.enable_buffered_send = False
+        self.outputbuf.flush()
+        self.outputbuf.enable_buffering = False
+        self.socket_connection.send()
 
     def set_protocol_version_and_message_factory(self):
         """

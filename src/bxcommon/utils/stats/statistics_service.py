@@ -1,4 +1,5 @@
 import time
+import traceback
 from abc import ABCMeta, abstractmethod
 from collections import deque
 from datetime import datetime
@@ -19,11 +20,10 @@ class StatsIntervalData(object):
         self.end_time = end_time
 
 
-class StatisticsService(object):
+class StatisticsService(metaclass=ABCMeta):
     """
     Abstract class of statistics services.
     """
-    __metaclass__ = ABCMeta
 
     INTERVAL_DATA_CLASS = StatsIntervalData
 
@@ -63,17 +63,25 @@ class StatisticsService(object):
             self.create_interval_data_object()
         return self.interval
 
-class ThreadedStatisticsService(StatisticsService):
+
+class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
     """
     Abstract class for stats service that may take a long time to execute.
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, name, interval=0, look_back=1, reset=False):
         super(ThreadedStatisticsService, self).__init__(name, interval, look_back, reset)
         self._thread = None
         self._alive = True
         self._lock = Lock()
+
+    @abstractmethod
+    def get_info(self):
+        """
+        Constructs response object to be outputted on stat service set interval.
+        :return: dictionary to be converted to JSON
+        """
+        pass
 
     def start_recording(self, record_fn):
         self._thread = Thread(target=self.loop_record_on_thread, args=(record_fn,))
@@ -85,8 +93,10 @@ class ThreadedStatisticsService(StatisticsService):
         # Thus, there is unclear ownership of the global variable. The right fix here is to make
         # memory_statistics_service not a singleton anymore and have it be a variable that is assigned
         # on a per-node basis.
-        if self._thread == None:
-            logger.error("Thread was not initialized yet, but stop_recording was called. An invariant in the code is broken.")
+        if self._thread is None:
+            logger.error(
+                "Thread was not initialized yet, but stop_recording was called. An invariant in the code is broken."
+            )
             return
 
         with self._lock:
@@ -94,7 +104,7 @@ class ThreadedStatisticsService(StatisticsService):
 
         self._thread.join()
 
-    def sleep_and_check_alive(self, sleeptime):
+    def sleep_and_check_alive(self, sleep_time):
         """
         Sleeps for sleeptime seconds and checks whether or this service is alive every 30 seconds.
         Returns whether or not this service is alive at the end of this sleep time.
@@ -102,12 +112,13 @@ class ThreadedStatisticsService(StatisticsService):
 
         with self._lock:
             alive = self._alive
-        while sleeptime > 0 and alive:
+        while sleep_time > 0 and alive:
             time.sleep(30)
-            sleeptime -= 30
+            sleep_time -= 30
             with self._lock:
                 alive = self._alive
-
+        else:
+            time.sleep(0)  # ensure sleep is called regardless of the sleep time value
         return alive
 
     def loop_record_on_thread(self, record_fn):
@@ -120,12 +131,12 @@ class ThreadedStatisticsService(StatisticsService):
             try:
                 record_fn()
             except Exception as e:
-                logger.error("Recording {} stats failed with exception: {}".format(self.name, e))
+                logger.error("Recording {} stats failed with exception: {}. Stack trace: {}".format(self.name, e,
+                                                                                                    traceback.format_exc()))
                 runtime = 0
             else:
                 runtime = time.time() - start_time
                 logger.info("Recording {} stats took {} seconds".format(self.name, runtime))
 
-            sleeptime = self.interval - runtime
-            alive = self.sleep_and_check_alive(sleeptime)
-
+            sleep_time = self.interval - runtime
+            alive = self.sleep_and_check_alive(sleep_time)

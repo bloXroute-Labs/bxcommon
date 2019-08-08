@@ -50,8 +50,8 @@ class TestInputBuffer(unittest.TestCase):
 
     def test_peek_message(self):
         self.make_input_buffer()
-        # Edge Case: peek_message returns bytearray(0) when it peeks a number greater than the message length.
-        self.assertEqual(bytearray(0), self.in_buf.peek_message(70))
+        # Edge Case: peek_message returns all bytes when it peeks a number greater than the message length.
+        self.assertEqual(bytearray([i for i in range(1, 61)]), self.in_buf.peek_message(70))
 
         self.assertIn(bytearray([i for i in range(1, 5)]), self.in_buf.peek_message(5))
         self.assertIn(bytearray([i for i in range(1, 31)]), self.in_buf.peek_message(30))

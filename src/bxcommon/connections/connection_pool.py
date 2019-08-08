@@ -1,13 +1,25 @@
 from collections import defaultdict
+from typing import List, Dict, Set, Optional, Tuple, ClassVar
+
 from bxcommon.utils.stats import hooks
 from bxcommon.utils import memory_utils
+
+from bxcommon.connections.abstract_connection import AbstractConnection
+from bxcommon.connections.connection_type import ConnectionType
 
 
 class ConnectionPool(object):
     """
     A group of connections with active sockets.
     """
-    INITIAL_FILENO = 100
+    INITIAL_FILENO: ClassVar[int] = 100
+
+    by_fileno: List[Optional[AbstractConnection]]
+    by_ipport: Dict[Tuple[str, int], AbstractConnection]
+    by_connection_type: Dict[ConnectionType, Set[AbstractConnection]]
+    len_fileno: int
+    count_conn_by_ip: Dict[str, int]
+    num_peer_conn: int
 
     def __init__(self):
         self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO
@@ -49,11 +61,14 @@ class ConnectionPool(object):
     def has_connection(self, ip, port):
         return (ip, port) in self.by_ipport
 
-    def get_by_connection_type(self, connection_type):
+    def get_by_connection_type(self, connection_type: ConnectionType) -> List[AbstractConnection]:
         """
         Returns list of connections that match the connection type.
         """
-        return self.by_connection_type[connection_type]
+        matching_types = [stored_type for stored_type in self.by_connection_type.keys() if stored_type & connection_type]
+        return [connection
+                for matching_type in matching_types
+                for connection in self.by_connection_type[matching_type]]
 
     def get_by_ipport(self, ip, port):
         return self.by_ipport[(ip, port)]
@@ -84,7 +99,9 @@ class ConnectionPool(object):
         if ipport in self.by_ipport and self.by_ipport[ipport].fileno == conn.fileno:
             del self.by_ipport[(conn.peer_ip, conn.peer_port)]
 
-        self.by_connection_type[conn.CONNECTION_TYPE].discard(conn)
+        for connection_type in self.by_connection_type:
+            if connection_type & conn.CONNECTION_TYPE:
+                self.by_connection_type[connection_type].discard(conn)
 
         # Decrement the count- if it's 0, we delete the key.
         if self.count_conn_by_ip[conn.peer_ip] == 1:

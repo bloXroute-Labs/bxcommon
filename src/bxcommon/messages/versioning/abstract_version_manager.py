@@ -3,6 +3,7 @@ from abc import ABCMeta
 
 from bxcommon import constants
 from bxcommon.constants import VERSION_NUM_LEN
+from bxcommon.messages.bloxroute.v4.version_message_v4 import VersionMessageV4
 from bxcommon.messages.bloxroute.version_message import VersionMessage
 from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -125,6 +126,52 @@ class AbstractVersionManager(object):
 
         return msg_converter.convert_first_bytes_from_older_version(first_message_bytes)
 
+    def convert_message_last_bytes_to_older_version(self, convert_to_version, msg_type, message_last_bytes):
+        """
+        Converts message last bytes from current version to provided version
+
+        :param convert_to_version: version to convert to
+        :param msg_type: message type
+        :param message_last_bytes: message bytes
+        :return: converted message bytes
+        """
+
+        if not convert_to_version:
+            raise ValueError("convert_to_version is required")
+
+        if not msg_type:
+            raise ValueError("msg_type is required")
+
+        if not message_last_bytes:
+            raise ValueError("first_message_bytes is required")
+
+        msg_converter = self._get_message_converter(convert_to_version, msg_type)
+
+        return msg_converter.convert_last_bytes_to_older_version(message_last_bytes)
+
+    def convert_message_last_bytes_from_older_version(self, convert_from_version, msg_type, message_last_bytes):
+        """
+        Converts first message bytes from older version to current version
+
+        :param convert_from_version: version to convert from
+        :param msg_type: message type
+        :param message_last_bytes: message bytes
+        :return: converted message bytes
+        """
+
+        if not convert_from_version:
+            raise ValueError("convert_from_version is required")
+
+        if not msg_type:
+            raise ValueError("msg_type is required")
+
+        if not message_last_bytes:
+            raise ValueError("first_message_bytes is required")
+
+        msg_converter = self._get_message_converter(convert_from_version, msg_type)
+
+        return msg_converter.convert_last_bytes_from_older_version(message_last_bytes)
+
     def get_message_size_change_to_older_version(self, convert_to_version, msg_type):
         """
         Returns the difference in size between current protocol version and older version
@@ -167,11 +214,18 @@ class AbstractVersionManager(object):
             raise TypeError("Argument input_buffer expected to have type InputBuffer but was {}"
                             .format(type(input_buffer)))
 
-        if input_buffer.length < constants.HDR_COMMON_OFF + constants.VERSION_NUM_LEN:
+        if input_buffer.length < constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF + constants.VERSION_NUM_LEN:
             return None
 
         header_buf = input_buffer.peek_message(VersionMessage.HEADER_LENGTH)
-        command, payload_len = VersionMessage.unpack(header_buf)
+
+        if header_buf[:constants.STARTING_SEQUENCE_BYTES_LEN] == constants.STARTING_SEQUENCE_BYTES:
+            command, payload_len = VersionMessage.unpack(header_buf)
+            header_len = VersionMessage.HEADER_LENGTH
+        else:
+            command, payload_len = VersionMessageV4.unpack(header_buf)
+            header_len = VersionMessageV4.HEADER_LENGTH
+
         if command != self.version_message_command:
             logger.error("Received a nonversion hello message of type {}. Ignoring and closing connection."
                          .format(command))
@@ -180,8 +234,7 @@ class AbstractVersionManager(object):
         if payload_len < self.VERSION_MESSAGE_MAIN_LENGTH:
             return 1
 
-        version_buf = input_buffer.get_slice(VersionMessage.HEADER_LENGTH,
-                                             VersionMessage.HEADER_LENGTH + VERSION_NUM_LEN)
+        version_buf = input_buffer.get_slice(header_len, header_len + VERSION_NUM_LEN)
         version, = struct.unpack_from("<L", version_buf, 0)
         return version
 
