@@ -87,5 +87,7 @@ class ExtensionTransactionService(TransactionService):
         # this is only a temporary fix and the whole class hierarchy requires some refactoring!
         if remove_related_short_ids:
             self._tx_assignment_expire_queue.remove(short_id)
+            if self.node.opts.dump_removed_short_ids:
+                self._removed_short_ids.add(short_id)
         else:
             super(ExtensionTransactionService, self)._remove_transaction_by_short_id(short_id)
