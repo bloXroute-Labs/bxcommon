@@ -9,6 +9,7 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
 from bxcommon.utils.proxy.default_map_proxy import DefaultMapProxy
 from bxcommon.utils.proxy.map_proxy import MapProxy
+from bxcommon import constants
 
 
 class ExtensionTransactionService(TransactionService):
@@ -18,7 +19,10 @@ class ExtensionTransactionService(TransactionService):
         self.proxy = tpe.TransactionService(
             task_pool_proxy.get_pool_size(),
             node.opts.tx_mem_pool_bucket_size,
-            self._get_final_tx_confirmations_count()
+            self._get_final_tx_confirmations_count(),
+            constants.MAX_ALLOCATION_POINTER_COUNT,
+            constants.MAX_COUNT_PER_ALLOCATION,
+            constants.ALLOCATION_THREAD_SLEEP_MICROSECONDS
         )
         raw_encoder = ObjectEncoder.raw_encoder()
         self._tx_hash_to_short_ids = DefaultMapProxy(

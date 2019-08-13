@@ -210,6 +210,12 @@ UPDATE_TX_SERVICE_FULLY_SYNCED_S = 1
 TX_SERVICE_SYNC_PROCESS_S = 10
 TX_SERVICE_SYNC_COMPLETE_S = 1
 TX_SERVICE_SYNC_RELAY_IN_NETWORKS_S = 30
+
+# extensions memory management params
+MAX_ALLOCATION_POINTER_COUNT = 10
+MAX_COUNT_PER_ALLOCATION = 10
+ALLOCATION_THREAD_SLEEP_MICROSECONDS = 1000
+
 # </editor-fold>
 
 # keep constants_local.py file to override settings in the constants file
