@@ -164,7 +164,7 @@ DEFAULT_SLEEP_TIMEOUT = 0.1
 REQUEST_EXPIRATION_TIME = 60
 
 # Expiration time for block broadcast message if services info is missing
-MISSING_BLOCK_EXPIRE_TIME = 60
+MISSING_BLOCK_EXPIRE_TIME = 0.2
 
 # Expiration time for encrypted blocks in cache on relays and gateways
 BLOCK_CACHE_TIMEOUT_S = 60 * 60
