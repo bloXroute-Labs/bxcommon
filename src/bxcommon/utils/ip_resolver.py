@@ -53,8 +53,8 @@ def get_node_public_ip() -> Optional[str]:
             return public_ip_addr[0]
 
         raise ConnectionError("Unable to parse IP from response - response was [{}]".format(get_response))
-    except ConnectionError as conn_err:
+    except Exception as ex:
         # logger might not yet be initialized
-        print("Unable to determine public IP address, please specify one manually via the command line arguments.\n\n"
-              "Detailed error message:\n\t{}".format(conn_err))
+        print("Unable to determine public IP address, please specify one manually via the '--external-ip' command line "
+              "argument.\n\nDetailed error message:\n\t{}".format(ex))
         exit(1)
