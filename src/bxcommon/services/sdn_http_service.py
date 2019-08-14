@@ -13,7 +13,7 @@ from bxcommon.utils import config, logger, model_loader, json_utils
 # TODO port this to sockets soon and remove json serialization perf hit on the node.
 
 
-def fetch_node_attributes(node_id):
+def fetch_node_attributes(node_id: str) -> Optional[NodeModel]:
     # Should only be used for test networks.
     node_url = SdnRoutes.node.format(node_id)
     opts = http_service.get_json(node_url)
@@ -25,7 +25,7 @@ def fetch_node_attributes(node_id):
         return None
 
 
-def _fetch_peers(node_url, node_id=None):
+def _fetch_peers(node_url: str, node_id=None) -> List[OutboundPeerModel]:
     outbound_peers = http_service.get_json(node_url)
     logger.trace("Retrieved outbound peers for node {0} from endpoint {1}: {2}"
                  .format(node_id, node_url, outbound_peers))
@@ -49,12 +49,12 @@ def fetch_potential_relay_peers_by_network(node_id: str, network_num: int) -> Op
     return _fetch_peers(node_url, node_id)
 
 
-def fetch_gateway_peers(node_id):
+def fetch_gateway_peers(node_id: str) -> Optional[List[OutboundPeerModel]]:
     node_url = SdnRoutes.node_gateways.format(node_id)
     return _fetch_peers(node_url, node_id)
 
 
-def fetch_remote_blockchain_peer(network_num):
+def fetch_remote_blockchain_peer(network_num: int) -> Optional[OutboundPeerModel]:
     node_url = SdnRoutes.node_remote_blockchain.format(network_num)
     peers = _fetch_peers(node_url)
     if len(peers) != 1:
@@ -64,7 +64,7 @@ def fetch_remote_blockchain_peer(network_num):
         return peers[0]
 
 
-def fetch_blockchain_network(protocol_name, network_name):
+def fetch_blockchain_network(protocol_name: str, network_name: str) -> Optional[BlockchainNetworkModel]:
     node_url = SdnRoutes.blockchain_network.format(protocol_name, network_name)
     blockchain_network = http_service.get_json(node_url)
 
@@ -76,7 +76,7 @@ def fetch_blockchain_network(protocol_name, network_name):
     return blockchain_network
 
 
-def fetch_blockchain_networks():
+def fetch_blockchain_networks() -> List[BlockchainNetworkModel]:
     node_url = SdnRoutes.blockchain_networks
     blockchain_networks = http_service.get_json(node_url)
 
@@ -89,44 +89,44 @@ def fetch_blockchain_networks():
     return blockchain_networks
 
 
-def submit_sid_space_full_event(node_id):
+def submit_sid_space_full_event(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.SID_SPACE_FULL))
 
 
-def submit_node_online_event(node_id):
+def submit_node_online_event(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.ONLINE))
 
 
-def submit_node_offline_event(node_id):
+def submit_node_offline_event(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.OFFLINE))
 
 
-def submit_peer_connection_error_event(node_id, peer_ip, peer_port):
+def submit_peer_connection_error_event(node_id: str, peer_ip: str, peer_port: str):
     submit_peer_connection_event(NodeEventType.PEER_CONN_ERR, node_id, peer_ip, peer_port)
 
 
-def submit_peer_connection_event(event_type, node_id, peer_ip, peer_port):
+def submit_peer_connection_event(event_type: str, node_id: str, peer_ip: str, peer_port: str):
     submit_node_event(
         NodeEventModel(node_id=node_id, event_type=event_type, peer_ip=peer_ip, peer_port=peer_port))
 
 
-def submit_gateway_inbound_connection(node_id, peer_id):
+def submit_gateway_inbound_connection(node_id: str, peer_id: str):
     http_service.post_json(SdnRoutes.gateway_inbound_connection.format(node_id), peer_id)
 
 
-def submit_sync_txs_event(node_id):
+def submit_sync_txs_event(node_id: str):
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_FULLY_SYNCED))
 
 
-def submit_node_txs_sync_in_network(node_id, networks: List[int]):
+def submit_node_txs_sync_in_network(node_id: str, networks: List[int]):
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_SYNCED_IN_NETWORK, tx_sync_networks=networks))
 
 
-def delete_gateway_inbound_connection(node_id, peer_id):
+def delete_gateway_inbound_connection(node_id: str, peer_id: str):
     http_service.delete_json(SdnRoutes.gateway_inbound_connection.format(node_id), peer_id)
 
 
-def submit_node_event(node_event_model):
+def submit_node_event(node_event_model: NodeEventModel):
     node_event_model.timestamp = str(time.time())
     logger.debug("Submitting event for node {0} {1}"
                  .format(node_event_model.node_id, json_utils.serialize(node_event_model)))
@@ -134,7 +134,7 @@ def submit_node_event(node_event_model):
     http_service.post_json(url, node_event_model)
 
 
-def register_node(node_model):
+def register_node(node_model: NodeModel) -> NodeModel:
     if not node_model:
         raise ValueError("Missing node model.")
 
