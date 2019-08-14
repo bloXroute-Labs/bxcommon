@@ -12,6 +12,7 @@ def run_node(process_id_file_path, opts, node_class, node_type=None):
 
     config.log_pid(process_id_file_path)
     config.init_logging(opts.log_path, opts.to_stdout)
+
     try:
         if opts.use_extensions:
             from bxcommon.utils.proxy import task_pool_proxy
@@ -30,9 +31,6 @@ def run_node(process_id_file_path, opts, node_class, node_type=None):
 
 
 def _run_node(opts, node_class, node_type):
-    # update constants from cli
-    cli.set_sdn_url()
-
     node_model = None
     if opts.node_id:
         # Test network, get pre-configured peers from the SDN.
@@ -55,12 +53,9 @@ def _run_node(opts, node_class, node_type):
         opts.__dict__["outbound_peers"] = []
 
     logger.set_log_name(opts.node_id)
-    if cli.get_args().log_level is not None:
-        logger.set_log_level(cli.get_args().log_level)
-    if cli.get_args().log_format is not None:
-        logger.set_log_format(cli.get_args().log_format)
-
-    logger.set_immediate_flush(cli.get_args().log_flush_immediately)
+    logger.set_log_level(opts.log_level)
+    logger.set_log_format(opts.log_format)
+    logger.set_immediate_flush(opts.log_flush_immediately)
 
     logger.info({"type": "node_init", "Data": opts})
 

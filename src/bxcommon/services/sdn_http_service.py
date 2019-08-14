@@ -6,10 +6,7 @@ from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.services import http_service
-from bxcommon.utils import config, logger, model_loader, json_utils
-
-
-# TODO port this to sockets soon and remove json serialization perf hit on the node.
+from bxcommon.utils import logger, model_loader, json_utils, ip_resolver
 
 
 def fetch_node_attributes(node_id):
@@ -34,7 +31,7 @@ def _fetch_peers(node_url, node_id=None):
         return []
 
     outbound_peers = [model_loader.load(OutboundPeerModel, o) for o in outbound_peers]
-    config.blocking_resolve_peers(outbound_peers)
+    ip_resolver.blocking_resolve_peers(outbound_peers)
     return outbound_peers
 
 

@@ -15,11 +15,17 @@ MAX_BYTE_VALUE = 255
 PUBLIC_IP_ADDR_REGEX = r"[0-9]+(?:\.[0-9]+){3}"
 PUBLIC_IP_ADDR_RESOLVER = "http://checkip.dyndns.org/"
 
-NODE_CONFIG_PATH = "config.cfg"
+NODE_CONFIG_FILE = "config.cfg"
 BLXR_ENV_VAR = "BLXR_ENV"
 
 HOSTNAME = socket.gethostname()
 OS_VERSION = platform.platform()
+
+MANIFEST_PATH = "MANIFEST.MF"
+MANIFEST_SOURCE_VERSION = "source_version"
+PROTOCOL_VERSION = "protocol_version"
+REQUIRED_PARAMS_IN_MANIFEST = [MANIFEST_SOURCE_VERSION]
+VERSION_TYPE_LIST = ["dev", "v", "ci"]
 
 # <editor-fold desc="Internal Constants">
 ALL_NETWORK_NUM = 0
@@ -141,6 +147,9 @@ THROUGHPUT_STATS_INTERVAL = 300
 THROUGHPUT_STATS_LOOK_BACK = 5
 
 INFO_STATS_INTERVAL = 3600
+
+# how often the threaded stats services check for termination
+THREADED_STAT_SLEEP_INTERVAL = 1
 
 # TODO: turn this number up to 60 minutes after we've done some testing to ensure that this is ok
 MEMORY_STATS_INTERVAL = 3600

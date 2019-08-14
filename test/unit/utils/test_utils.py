@@ -3,7 +3,7 @@ import unittest
 
 from mock import patch
 
-from bxcommon.utils import config
+from bxcommon.utils import ip_resolver
 
 
 class UtilsTests(unittest.TestCase):
@@ -30,8 +30,8 @@ class UtilsTests(unittest.TestCase):
             return MockResponse("No ip returned")
 
     @patch("bxcommon.utils.config.get_env_default")
-    @patch("bxcommon.utils.config.get_node_public_ip")
-    @patch("bxcommon.utils.config.blocking_resolve_ip")
+    @patch("bxcommon.utils.ip_resolver.get_node_public_ip")
+    @patch("bxcommon.utils.ip_resolver.blocking_resolve_ip")
     def test_use_default_external_ip_command_line_arg(self, mock_blocking_resolve_ip, mock_get_node_public_ip,
                                                       mock_get_env_default):
         from bxcommon.utils import cli
@@ -49,8 +49,8 @@ class UtilsTests(unittest.TestCase):
         mock_blocking_resolve_ip.assert_called_once()
 
     @patch("bxcommon.utils.config.get_env_default")
-    @patch("bxcommon.utils.config.get_node_public_ip")
-    @patch("bxcommon.utils.config.blocking_resolve_ip")
+    @patch("bxcommon.utils.ip_resolver.get_node_public_ip")
+    @patch("bxcommon.utils.ip_resolver.blocking_resolve_ip")
     def test_set_external_ip_via_command_line_arg(self, mock_blocking_resolve_ip, mock_get_node_public_ip,
                                                   mock_get_env_default):
         from bxcommon.utils import cli
@@ -69,35 +69,32 @@ class UtilsTests(unittest.TestCase):
         mock_get_node_public_ip.assert_not_called()
         mock_blocking_resolve_ip.called_once_with(custom_external_ip)
 
-    @patch("bxcommon.utils.config.get")
+    @patch("requests.get")
     @patch("bxcommon.constants.PUBLIC_IP_ADDR_RESOLVER", "VALID_URL")
     def test_get_node_public_ip_with_valid_url(self, mock_get):
         mock_get.side_effect = self.mocked_requests_get
 
-        public_ip = config.get_node_public_ip()
+        public_ip = ip_resolver.get_node_public_ip()
 
         self.assertEqual("135.84.167.43", public_ip)
         mock_get.assert_called_once_with("VALID_URL")
 
-    @patch("bxcommon.utils.config.get")
+    @patch("requests.get")
     @patch("bxcommon.constants.PUBLIC_IP_ADDR_RESOLVER", "INVALID_URL")
     def test_get_node_public_ip_raising_connection_exception(self, mock_get):
         mock_get.side_effect = self.mocked_requests_get
 
         with self.assertRaises(SystemExit) as system_exit:
-            public_ip = config.get_node_public_ip()
+            public_ip = ip_resolver.get_node_public_ip()
 
         self.assertTrue(system_exit.exception.code, 1)
 
-    @patch("bxcommon.utils.config.get")
+    @patch("requests.get")
     @patch("bxcommon.constants.PUBLIC_IP_ADDR_RESOLVER", "INVALID_IP")
     def test_get_node_public_ip_with_no_ip_in_response(self, mock_get):
         mock_get.side_effect = self.mocked_requests_get
 
         with self.assertRaises(SystemExit) as system_exit:
-            public_ip = config.get_node_public_ip()
+            public_ip = ip_resolver.get_node_public_ip()
 
         self.assertTrue(system_exit.exception.code, 1)
-
-
-

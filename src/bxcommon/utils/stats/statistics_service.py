@@ -5,6 +5,7 @@ from collections import deque
 from datetime import datetime
 from threading import Thread, Lock
 
+from bxcommon import constants
 from bxcommon.utils import logger
 from bxcommon.utils.publish_stats import publish_stats
 
@@ -113,8 +114,8 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
         with self._lock:
             alive = self._alive
         while sleep_time > 0 and alive:
-            time.sleep(30)
-            sleep_time -= 30
+            time.sleep(constants.THREADED_STAT_SLEEP_INTERVAL)
+            sleep_time -= constants.THREADED_STAT_SLEEP_INTERVAL
             with self._lock:
                 alive = self._alive
         else:
