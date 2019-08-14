@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from bxcommon.connections.abstract_connection import AbstractConnection
 
 
-COOKIE_PATH_FILE = f"{os.getcwd()}/.cookie.blxrbdn-gw-localhost:8080"
+COOKIE_FILE_PATH = f"{os.getcwd()}/.cookie.blxrbdn-gw-localhost:8080"
 BTC_COMPACT_BLOCK_DECOMPRESS_MIN_TX_COUNT = 10
 
 
@@ -160,7 +160,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
                      remote_blockchain_ip=None,
                      remote_blockchain_port=None, connect_to_remote_blockchain=False, is_internal_gateway=False,
                      is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
-                     parallelism_degree=1, cookie_path_file=COOKIE_PATH_FILE, **kwargs) -> Namespace:
+                     parallelism_degree=1, cookie_file_path=COOKIE_FILE_PATH, **kwargs) -> Namespace:
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -217,7 +217,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
             str(parallelism_degree)
         ),
         "max_block_interval": 10,
-        "cookie_path_file": cookie_path_file,
+        "cookie_file_path": cookie_file_path,
     })
 
     if include_default_btc_args:

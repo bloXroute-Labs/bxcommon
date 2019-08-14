@@ -1,58 +1,31 @@
+import configparser
+import json
+import multiprocessing
 import os
 import re
-import socket
-import time
-import configparser
-import multiprocessing
+import sys
+from typing import Dict, Any
 
-from requests import get
 from bxcommon import constants
+from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
 from bxcommon.utils import logger
 
-
-def blocking_resolve_ip(net_address):
-    if not net_address:
-        raise ValueError("Missing network address.")
-
-    tries = 0
-    resolved_ip = None
-    while resolved_ip is None:
-        try:
-            resolved_ip = socket.gethostbyname(net_address)
-        except socket.error:
-            time.sleep(constants.NET_ADDR_INIT_CONNECT_RETRY_INTERVAL_SECONDS)
-            resolved_ip = None
-            tries += 1
-
-            # logger might not yet be initialized
-            print("Unable to connect to address {0}. Retried {1}".format(net_address, tries))
-
-            if tries >= constants.NET_ADDR_INIT_CONNECT_TRIES:
-                raise EnvironmentError("Unable to resolve address {}.".format(net_address))
-
-    return resolved_ip
+_working_directory = ""
 
 
-def blocking_resolve_peers(peer_models):
-    if not peer_models:
-        return
-
-    for peer in peer_models:
-        resolved_ip = blocking_resolve_ip(peer.ip)
-
-        if peer.ip != resolved_ip:
-            logger.debug("Resolved peer {0} to {1}".format(peer.ip, resolved_ip))
-            peer.ip = resolved_ip
-
-    logger.debug("Resolved peers successfully.")
+def set_working_directory(working_directory: str):
+    global _working_directory
+    _working_directory = working_directory
 
 
-# Configure the global logger.
+def get_relative_file(file_path: str) -> str:
+    return os.path.join(_working_directory, file_path)
+
+
 def init_logging(log_path, to_stdout=True):
     """
     Configure global logger.
     """
-    log_path = log_path
     logger.log_init(log_path, to_stdout)
 
 
@@ -62,27 +35,6 @@ def log_pid(file_name):
     """
     with open(file_name, "w") as writable_file:
         writable_file.write(str(os.getpid()))
-
-
-def get_node_public_ip() -> str:
-    """
-    Get the public IP address of the node based on a request to `PUBLIC_IP_ADDR_RESOLVER`. If address cannot be
-    resolved, it must be specified as a command line argument
-
-    :return: the resolved IP address
-    """
-    try:
-        get_response = get(constants.PUBLIC_IP_ADDR_RESOLVER).text
-        public_ip_addr = re.findall(constants.PUBLIC_IP_ADDR_REGEX, get_response)
-        if public_ip_addr:
-            return public_ip_addr[0]
-
-        raise ConnectionError("Unable to parse IP from response - response was [{}]".format(get_response))
-    except ConnectionError as conn_err:
-        # logger might not yet be initialized
-        print("Unable to determine public IP address, please specify one manually via the command line arguments.\n\n"
-              "Detailed error message:\n\t{}".format(conn_err))
-        exit(1)
 
 
 def get_env_default(key: str) -> str:
@@ -95,7 +47,8 @@ def get_env_default(key: str) -> str:
     :return: the env default value
     """
     config = configparser.ConfigParser()
-    config.read(constants.NODE_CONFIG_PATH)
+    config_file_path = get_relative_file(constants.NODE_CONFIG_FILE)
+    config.read(config_file_path)
 
     # If the environment var itself does not exist, return the global default value for the key
     if constants.BLXR_ENV_VAR not in os.environ:
@@ -118,3 +71,50 @@ def get_thread_pool_parallelism_degree(parallelism_degree_str: str) -> int:
         parallelism_degree,
         max(multiprocessing.cpu_count() - 1, 1)
     )
+
+
+def is_valid_version(full_version: str) -> bool:
+    """
+    check if version number in template: {int}.{int}.{int}.{int} and version type is dev/ci/v
+    :param full_version: {version_type}{version_number}
+    :return: if the version is valid
+    """
+    index = re.search("\d", full_version)
+    if index is None:
+        raise ValueError(f"Version is incorrectly formated: {full_version}")
+    index = index.start()
+
+    version_number = full_version[index:]
+    version_type = full_version[:index]
+    return (version_number.count(".") == 3 and all(str(x).isdigit() for x in version_number.split("."))) and \
+           (version_type in constants.VERSION_TYPE_LIST)
+
+
+def read_manifest(manifest_path: str) -> Dict[str, str]:
+    """
+    Reads manifest file, ensuring that manifest contains all expected properties.
+    :param manifest_path:
+    :return: manifest
+    """
+    try:
+        with open(manifest_path, "r") as json_file:
+            manifest = json.load(json_file)
+            version = manifest[constants.MANIFEST_SOURCE_VERSION]
+
+            if not is_valid_version(version):
+                raise ValueError(f"Invalid version: {version}")
+
+            if not all(params in manifest for params in constants.REQUIRED_PARAMS_IN_MANIFEST):
+                missing_params_str = ", ".join([item for item in constants.REQUIRED_PARAMS_IN_MANIFEST if item not in manifest])
+                raise ValueError(f"Missing attributes: {missing_params_str}")
+
+            return manifest
+    except Exception as e:
+        raise Exception(f"Unexpected error while reading manifest file at: {manifest_path}. Error: {e}")
+
+
+def append_manifest_args(opts_dict: Dict[Any, Any]):
+    manifest_path = get_relative_file(constants.MANIFEST_PATH)
+    manifest = read_manifest(manifest_path)
+    opts_dict.update(manifest)
+    opts_dict.update({constants.PROTOCOL_VERSION: bloxroute_version_manager.CURRENT_PROTOCOL_VERSION})

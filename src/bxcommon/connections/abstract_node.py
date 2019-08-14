@@ -265,10 +265,9 @@ class AbstractNode:
     def close(self):
         logger.error("Node is closing! Closing everything.")
 
-        self.cleanup_memory_stats_logging()
-
         for _fileno, conn in self.connection_pool.items():
             self.destroy_conn(conn)
+        self.cleanup_memory_stats_logging()
 
     def broadcast(self, msg: AbstractMessage, broadcasting_conn: Optional[AbstractConnection] = None,
                   prepend_to_queue: bool = False, network_num: Optional[int] = None,
@@ -492,7 +491,7 @@ class AbstractNode:
         """
         Kills the node immediately
         """
-        logger.fatal("Node has been killed")
+        self.close()
         raise TerminationError("Node killed.")
 
     def _retry_init_client_socket(self, ip, port, connection_type):

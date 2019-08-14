@@ -7,10 +7,7 @@ from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.services import http_service
-from bxcommon.utils import config, logger, model_loader, json_utils
-
-
-# TODO port this to sockets soon and remove json serialization perf hit on the node.
+from bxcommon.utils import logger, model_loader, json_utils, ip_resolver
 
 
 def fetch_node_attributes(node_id: str) -> Optional[NodeModel]:
@@ -35,7 +32,7 @@ def _fetch_peers(node_url: str, node_id=None) -> List[OutboundPeerModel]:
         return []
 
     outbound_peers = [model_loader.load(OutboundPeerModel, o) for o in outbound_peers]
-    config.blocking_resolve_peers(outbound_peers)
+    ip_resolver.blocking_resolve_peers(outbound_peers)
     return outbound_peers
 
 
@@ -119,7 +116,8 @@ def submit_sync_txs_event(node_id: str):
 
 
 def submit_node_txs_sync_in_network(node_id: str, networks: List[int]):
-    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_SYNCED_IN_NETWORK, tx_sync_networks=networks))
+    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_SYNCED_IN_NETWORK,
+                                     tx_sync_networks=networks))
 
 
 def delete_gateway_inbound_connection(node_id: str, peer_id: str):
