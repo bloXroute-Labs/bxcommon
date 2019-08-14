@@ -78,7 +78,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         for i in range(len(short_ids)):
             self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
             cache_key = self.transaction_service._tx_hash_to_cache_key(transaction_hashes[i])
-            self.transaction_service._tx_hash_to_contents[cache_key] = transaction_contents[i]
+            self.transaction_service._tx_cache_key_to_contents[cache_key] = transaction_contents[i]
 
         time.time = MagicMock(return_value=time.time() + self.transaction_service.node.opts.sid_expire_time + 10)
         self.transaction_service.node.alarm_queue.fire_alarms()
@@ -137,7 +137,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         for i in range(len(short_ids)):
             self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
             cached_key = self.transaction_service._tx_hash_to_cache_key(transaction_hashes[i])
-            self.transaction_service._tx_hash_to_contents[cached_key] = transaction_contents[i]
+            self.transaction_service._tx_cache_key_to_contents[cached_key] = transaction_contents[i]
 
         # 1st block with short ids arrives
         block_hash = bytearray(helpers.generate_bytearray(32))
@@ -192,7 +192,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         for i in range(len(short_ids)):
             self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
             cached_key = self.transaction_service._tx_hash_to_cache_key(transaction_hashes[i])
-            self.transaction_service._tx_hash_to_contents[cached_key] = transaction_contents[i]
+            self.transaction_service._tx_cache_key_to_contents[cached_key] = transaction_contents[i]
 
         self.transaction_service.set_final_tx_confirmations_count(2)
 
@@ -242,7 +242,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.assertEqual(memory_limit_bytes, self.transaction_service._total_tx_contents_size)
         stats = self.transaction_service.get_tx_service_aggregate_stats()
         self.assertEqual(0, stats["transactions_removed_by_memory_limit"])
-        self.assertEqual(tx_count_set_1, len(self.transaction_service._tx_hash_to_contents))
+        self.assertEqual(tx_count_set_1, len(self.transaction_service._tx_cache_key_to_contents))
 
         # adding transactions that does not fit into memory limit
         tx_count_set_2 = tx_count_set_1 / 2
@@ -250,7 +250,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.assertEqual(memory_limit_bytes, self.transaction_service._total_tx_contents_size)
         stats = self.transaction_service.get_tx_service_aggregate_stats()
         self.assertEqual(tx_count_set_2, stats["transactions_removed_by_memory_limit"])
-        self.assertEqual(tx_count_set_1, len(self.transaction_service._tx_hash_to_contents))
+        self.assertEqual(tx_count_set_1, len(self.transaction_service._tx_cache_key_to_contents))
 
         # verify that first half of transactions from set 1 no longer in cache and second half still cached
         for i in range(len(transactions_set_1)):
@@ -279,7 +279,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self._add_transactions(1, tx_size * 2)
         stats = self.transaction_service.get_tx_service_aggregate_stats()
         self.assertEqual(tx_count_set_2 + 2, stats["transactions_removed_by_memory_limit"])
-        self.assertEqual(tx_count_set_1 - 1, len(self.transaction_service._tx_hash_to_contents))
+        self.assertEqual(tx_count_set_1 - 1, len(self.transaction_service._tx_cache_key_to_contents))
 
     def _test_get_missing_transactions(self):
         existing_short_ids = list(range(1, 51))

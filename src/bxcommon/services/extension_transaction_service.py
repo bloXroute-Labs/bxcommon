@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
-
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import logger
 from bxcommon.utils.object_encoder import ObjectEncoder
@@ -25,17 +24,17 @@ class ExtensionTransactionService(TransactionService):
             constants.ALLOCATION_THREAD_SLEEP_MICROSECONDS
         )
         raw_encoder = ObjectEncoder.raw_encoder()
-        self._tx_hash_to_short_ids = DefaultMapProxy(
+        self._tx_cache_key_to_short_ids = DefaultMapProxy(
             self.proxy.tx_hash_to_short_ids(), raw_encoder, raw_encoder
         )
-        self._short_id_to_tx_hash = MapProxy(
+        self._short_id_to_tx_cache_key = MapProxy(
             self.proxy.short_id_to_tx_hash(), raw_encoder, raw_encoder
         )
         content_encoder = ObjectEncoder(
             lambda buf_view: memoryview(buf_view),
             lambda buf: tpe.InputBytes(buf)
         )
-        self._tx_hash_to_contents = MapProxy(
+        self._tx_cache_key_to_contents = MapProxy(
             self.proxy.tx_hash_to_contents(), raw_encoder, content_encoder
         )
 
@@ -62,7 +61,7 @@ class ExtensionTransactionService(TransactionService):
         super(ExtensionTransactionService, self).set_final_tx_confirmations_count(val)
         self.proxy.set_final_tx_confirmations_count(val)
 
-    def _tx_hash_to_cache_key(self, transaction_hash):
+    def _tx_hash_to_cache_key(self, transaction_hash) -> tpe.Sha256: #pyre-ignore
 
         if isinstance(transaction_hash, Sha256Hash):
             return tpe.Sha256(tpe.InputBytes(transaction_hash.binary))
@@ -70,9 +69,14 @@ class ExtensionTransactionService(TransactionService):
         if isinstance(transaction_hash, (bytes, bytearray, memoryview)):
             return tpe.Sha256(tpe.InputBytes(transaction_hash))
 
-        return transaction_hash
+        if isinstance(transaction_hash, tpe.Sha256):
+            return transaction_hash
 
-    def _tx_cache_key_to_hash(self, transaction_cache_key):
+        raise ValueError("Attempted to find cache entry with incorrect key type")
+
+        # return transaction_hash
+
+    def _tx_cache_key_to_hash(self, transaction_cache_key) -> Sha256Hash:
         if isinstance(transaction_cache_key, Sha256Hash):
             return transaction_cache_key
 
