@@ -11,10 +11,7 @@ from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.node_start_args import NodeStartArgs
 
 
-def get_args() -> argparse.Namespace:
-
-    # TODO: need to close log if arguments are not all there
-    # parse rest of the arguments
+def get_argument_parser() -> argparse.ArgumentParser:
     arg_parser = argparse.ArgumentParser()
 
     arg_parser.add_argument("--external-ip", help="External network ip of this node",
@@ -116,7 +113,11 @@ def get_args() -> argparse.Namespace:
         type=int
     )
 
-    opts, unknown = arg_parser.parse_known_args()
+    return arg_parser
+
+
+def parse_arguments(arg_parser: argparse.ArgumentParser) -> argparse.Namespace:
+    opts, _unknown = arg_parser.parse_known_args()
     if not opts.external_ip:
         opts.external_ip = ip_resolver.get_node_public_ip()
     assert opts.external_ip is not None
