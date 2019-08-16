@@ -42,7 +42,7 @@ class UtilsTests(unittest.TestCase):
         mock_get_node_public_ip.return_value = default_external_ip
         mock_blocking_resolve_ip.return_value = default_external_ip
 
-        parse_args = cli.get_args()
+        parse_args = cli.parse_arguments(cli.get_argument_parser())
 
         self.assertEqual(default_external_ip, parse_args.__dict__["external_ip"])
         mock_get_node_public_ip.assert_called_once()
@@ -62,7 +62,7 @@ class UtilsTests(unittest.TestCase):
 
         sys.argv.append("--external-ip={}".format(custom_external_ip))
 
-        parse_args = cli.get_args()
+        parse_args = cli.parse_arguments(cli.get_argument_parser())
 
         self.assertEqual(custom_external_ip, parse_args.__dict__["external_ip"])
         mock_get_node_public_ip.assert_not_called()
