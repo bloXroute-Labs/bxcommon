@@ -401,14 +401,6 @@ class TransactionService:
             self.get_collection_mem_stats(self._removed_short_ids),
         )
 
-        hooks.add_obj_mem_stats(
-            class_name,
-            self.network_num,
-            self._removed_short_ids,
-            "removed_short_ids",
-            self.get_collection_mem_stats(self._removed_short_ids),
-        )
-
     def get_tx_service_aggregate_stats(self):
         """
         Returns dictionary with aggregated statistics of transactions service

@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import logger
 from bxcommon.utils.object_encoder import ObjectEncoder
@@ -9,6 +8,9 @@ from bxcommon.utils.proxy import task_pool_proxy
 from bxcommon.utils.proxy.default_map_proxy import DefaultMapProxy
 from bxcommon.utils.proxy.map_proxy import MapProxy
 from bxcommon import constants
+from bxcommon.utils.stats import hooks
+
+import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
 
 class ExtensionTransactionService(TransactionService):
@@ -37,6 +39,7 @@ class ExtensionTransactionService(TransactionService):
         self._tx_cache_key_to_contents = MapProxy(
             self.proxy.tx_hash_to_contents(), raw_encoder, content_encoder
         )
+        self._tx_not_seen_in_blocks = self.proxy.tx_not_seen_in_blocks()
 
     def track_seen_short_ids(self, block_hash, short_ids):
         start_datetime = datetime.now()
@@ -61,7 +64,20 @@ class ExtensionTransactionService(TransactionService):
         super(ExtensionTransactionService, self).set_final_tx_confirmations_count(val)
         self.proxy.set_final_tx_confirmations_count(val)
 
-    def _tx_hash_to_cache_key(self, transaction_hash) -> tpe.Sha256: #pyre-ignore
+    def log_tx_service_mem_stats(self):
+        super(ExtensionTransactionService, self).log_tx_service_mem_stats()
+        hooks.add_obj_mem_stats(
+            self.__class__.__name__,
+            self.network_num,
+            self._tx_not_seen_in_blocks,
+            "tx_not_seen_in_blocks",
+            self.get_collection_mem_stats(
+                self._tx_not_seen_in_blocks
+            ),
+            len(self._tx_not_seen_in_blocks)
+        )
+
+    def _tx_hash_to_cache_key(self, transaction_hash) -> tpe.Sha256:  # pyre-ignore
 
         if isinstance(transaction_hash, Sha256Hash):
             return tpe.Sha256(tpe.InputBytes(transaction_hash.binary))
