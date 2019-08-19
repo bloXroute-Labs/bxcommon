@@ -30,10 +30,11 @@ class UtilsTests(unittest.TestCase):
             return MockResponse("No ip returned")
 
     @patch("bxcommon.utils.config.get_env_default")
+    @patch("bxcommon.utils.config.append_manifest_args")
     @patch("bxcommon.utils.ip_resolver.get_node_public_ip")
     @patch("bxcommon.utils.ip_resolver.blocking_resolve_ip")
     def test_use_default_external_ip_command_line_arg(self, mock_blocking_resolve_ip, mock_get_node_public_ip,
-                                                      mock_get_env_default):
+                                                      mock_append_manifest_args, mock_get_env_default):
         from bxcommon.utils import cli
         cli._args = None
 
@@ -41,6 +42,7 @@ class UtilsTests(unittest.TestCase):
         mock_get_env_default.side_effect = self.mock_env_config
         mock_get_node_public_ip.return_value = default_external_ip
         mock_blocking_resolve_ip.return_value = default_external_ip
+        mock_append_manifest_args.side_effect = lambda opts: opts
 
         parse_args = cli.parse_arguments(cli.get_argument_parser())
 
@@ -49,16 +51,18 @@ class UtilsTests(unittest.TestCase):
         mock_blocking_resolve_ip.assert_called_once()
 
     @patch("bxcommon.utils.config.get_env_default")
+    @patch("bxcommon.utils.config.append_manifest_args")
     @patch("bxcommon.utils.ip_resolver.get_node_public_ip")
     @patch("bxcommon.utils.ip_resolver.blocking_resolve_ip")
     def test_set_external_ip_via_command_line_arg(self, mock_blocking_resolve_ip, mock_get_node_public_ip,
-                                                  mock_get_env_default):
+                                                  mock_append_manifest_args, mock_get_env_default):
         from bxcommon.utils import cli
         cli._args = None
 
         custom_external_ip = "1.1.1.1"
         mock_get_env_default.side_effect = self.mock_env_config
         mock_blocking_resolve_ip.return_value = custom_external_ip
+        mock_append_manifest_args.side_effect = lambda opts: opts
 
         sys.argv.append("--external-ip={}".format(custom_external_ip))
 
