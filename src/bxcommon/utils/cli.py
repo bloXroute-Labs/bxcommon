@@ -123,6 +123,7 @@ def parse_arguments(arg_parser: argparse.ArgumentParser) -> argparse.Namespace:
     assert opts.external_ip is not None
     opts.external_ip = ip_resolver.blocking_resolve_ip(opts.external_ip)
     constants.SDN_ROOT_URL = opts.sdn_url
+    config.append_manifest_args(opts.__dict__)
     return opts
 
 
@@ -178,11 +179,3 @@ def _get_blockchain_network_info(opts):
 def set_os_version(opts):
     opts.__dict__["os_version"] = constants.OS_VERSION
 
-
-def merge_args(from_args: argparse.Namespace, into_args: argparse.Namespace) -> argparse.Namespace:
-    for key, val in from_args.__dict__.items():
-        into_args.__dict__[key] = val
-
-    config.append_manifest_args(into_args.__dict__)
-
-    return into_args
