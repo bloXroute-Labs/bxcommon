@@ -22,8 +22,7 @@ class ExtensionTransactionService(TransactionService):
             node.opts.tx_mem_pool_bucket_size,
             self._get_final_tx_confirmations_count(),
             constants.MAX_ALLOCATION_POINTER_COUNT,
-            constants.MAX_COUNT_PER_ALLOCATION,
-            constants.ALLOCATION_THREAD_SLEEP_MICROSECONDS
+            constants.MAX_COUNT_PER_ALLOCATION
         )
         raw_encoder = ObjectEncoder.raw_encoder()
         self._tx_cache_key_to_short_ids = DefaultMapProxy(
