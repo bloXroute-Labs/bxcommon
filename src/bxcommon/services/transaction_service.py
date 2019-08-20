@@ -12,6 +12,16 @@ from bxcommon.utils.stats import hooks
 from bxcommon.connections.abstract_node import AbstractNode
 
 
+def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash]) -> Sha256Hash:
+    if isinstance(transaction_hash, Sha256Hash):
+        return transaction_hash
+
+    if isinstance(transaction_hash, (bytes, bytearray, memoryview)):
+        return Sha256Hash(binary=transaction_hash)
+
+    return Sha256Hash(binary=convert.hex_to_bytes(transaction_hash))
+
+
 class TransactionService:
     """
     Service for managing transaction mappings.
@@ -80,8 +90,7 @@ class TransactionService:
                                                                                                     self._tx_content_memory_limit))
 
         # short ids seen in block ordered by them block hash
-        self._short_ids_seen_in_block: OrderedDict[str, List[int]] = OrderedDict()
-
+        self._short_ids_seen_in_block: Dict[Sha256Hash, List[int]] = OrderedDict()
         self._total_tx_contents_size = 0
         self._total_tx_removed_by_memory_limit = 0
 
@@ -261,7 +270,7 @@ class TransactionService:
         for tx_cache_key in self._tx_cache_key_to_contents:
             yield self._tx_cache_key_to_hash(tx_cache_key)
 
-    def iter_short_ids_seen_in_block(self) -> Generator[Tuple[str, List[int]], None, None]:
+    def iter_short_ids_seen_in_block(self) -> Generator[Tuple[Sha256Hash, List[int]], None, None]:
         for block_hash, short_ids in self._short_ids_seen_in_block.items():
             yield block_hash, short_ids
 
@@ -305,7 +314,8 @@ class TransactionService:
         if short_ids is None:
             return ValueError("short_ids is required.")
 
-        self._short_ids_seen_in_block[block_hash] = short_ids
+        wrapped_block_hash = wrap_sha256(block_hash)
+        self._short_ids_seen_in_block[wrapped_block_hash] = short_ids
 
         if len(self._short_ids_seen_in_block) >= self._final_tx_confirmations_count:
 
@@ -437,6 +447,14 @@ class TransactionService:
     def get_expiration_date_by_short_id(self, short_id: int):
         # TODO find a way to find expiration by short id
         raise NotImplementedError("Expiration time has not yet been implemented when handling tx service msgs")
+
+    def on_block_cleaned_up(self, block_hash: Sha256Hash) -> None:
+        """
+        notify the transaction service about a block transactions cleaned from the pool
+        :param block_hash: the block sha
+        """
+        if block_hash in self._short_ids_seen_in_block:
+            del self._short_ids_seen_in_block[block_hash]
 
     def _dump_removed_short_ids(self) -> int:
         if self._removed_short_ids:

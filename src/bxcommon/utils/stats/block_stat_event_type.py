@@ -62,6 +62,7 @@ class BlockStatEventType:
                                                                          StatEventLogicFlags.MATCH |
                                                                          StatEventLogicFlags.SUMMARY)
     BLOCK_DECOMPRESSED_WITH_UNKNOWN_TXS = StatEventTypeSettings("BlockDecompressedWithUnknownTxs")
+    BLOCK_CONVERSION_FAILED = StatEventTypeSettings("BlockConversionFailed")
     BLOCK_RECOVERY_STARTED = StatEventTypeSettings("BlockRecoveryStarted")
     BLOCK_RECOVERY_REPEATED = StatEventTypeSettings("BlockRecoveryRepeated")
     BLOCK_RECOVERY_COMPLETED = StatEventTypeSettings("BlockRecoveryCompleted")
