@@ -416,7 +416,7 @@ class AbstractNode:
         We also retry trusted connections since they can never be destroyed.
         """
 
-        logger.info("Breaking connection to {}. Attempting retry: {}", conn, retry_connection)
+        logger.warn("Breaking connection to {}. Attempting retry: {}", conn, retry_connection)
 
         self.connection_pool.delete(conn)
         conn.mark_for_close()
