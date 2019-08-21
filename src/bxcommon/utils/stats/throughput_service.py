@@ -21,7 +21,7 @@ class ThroughputIntervalData(StatsIntervalData):
 class ThroughputStatistics(StatisticsService):
     INTERVAL_DATA_CLASS = ThroughputIntervalData
 
-    def __init__(self, interval=constants.THROUGHPUT_STATS_INTERVAL, look_back=constants.THROUGHPUT_STATS_LOOK_BACK):
+    def __init__(self, interval=constants.THROUGHPUT_STATS_INTERVAL_S, look_back=constants.THROUGHPUT_STATS_LOOK_BACK):
         super(ThroughputStatistics, self).__init__("ThroughputStats", interval, look_back, reset=True)
 
     def add_event(self, direction, msg_type, msg_size, peer_desc):

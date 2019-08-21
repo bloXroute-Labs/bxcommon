@@ -59,4 +59,4 @@ class MemoryStatsService(ThreadedStatisticsService):
         return super(MemoryStatsService, self).flush_info()
 
 
-memory_statistics = MemoryStatsService(constants.MEMORY_STATS_INTERVAL)
+memory_statistics = MemoryStatsService(constants.MEMORY_STATS_INTERVAL_S)

@@ -1,6 +1,6 @@
 from datetime import datetime
 from bxcommon.utils.stats.statistics_service import StatisticsService
-from bxcommon.constants import INFO_STATS_INTERVAL
+from bxcommon.constants import INFO_STATS_INTERVAL_S
 
 
 class NodeInfo(StatisticsService):
@@ -16,4 +16,4 @@ class NodeInfo(StatisticsService):
         return payload
 
 
-node_info_statistics = NodeInfo(interval=INFO_STATS_INTERVAL)
+node_info_statistics = NodeInfo(interval=INFO_STATS_INTERVAL_S)

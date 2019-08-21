@@ -5,7 +5,7 @@ from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import DEFAULT_SLEEP_TIMEOUT, PING_INTERVAL_S, \
-    CONNECTION_RETRY_SECONDS, MAX_CONNECT_RETRIES, THROUGHPUT_STATS_INTERVAL
+    CONNECTION_RETRY_SECONDS, MAX_CONNECT_RETRIES, FIRST_STATS_INTERVAL_S
 from bxcommon.exceptions import TerminationError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.test_utils import helpers
@@ -241,7 +241,7 @@ class AbstractNodeTest(AbstractTestCase):
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
     def test_init_throughput_logging(self, mocked_alarm_queue):
         self.local_node.init_throughput_logging()
-        mocked_alarm_queue.assert_called_once_with(THROUGHPUT_STATS_INTERVAL, throughput_statistics.flush_info)
+        mocked_alarm_queue.assert_called_once_with(FIRST_STATS_INTERVAL_S, throughput_statistics.flush_info)
 
     @patch("bxcommon.utils.logger.statistics")
     def test_dump_memory_usage(self, mock_warn):

@@ -386,11 +386,11 @@ class AbstractNode:
 
     def init_throughput_logging(self):
         throughput_statistics.set_node(self)
-        self.alarm_queue.register_alarm(constants.THROUGHPUT_STATS_INTERVAL, throughput_statistics.flush_info)
+        self.alarm_queue.register_alarm(constants.FIRST_STATS_INTERVAL_S, throughput_statistics.flush_info)
 
     def init_node_info_logging(self):
         node_info_statistics.set_node(self)
-        self.alarm_queue.register_alarm(constants.INFO_STATS_INTERVAL, node_info_statistics.flush_info)
+        self.alarm_queue.register_alarm(constants.FIRST_STATS_INTERVAL_S, node_info_statistics.flush_info)
 
     def init_memory_stats_logging(self):
         memory_statistics.set_node(self)
@@ -459,6 +459,7 @@ class AbstractNode:
                 self.sdn_connection = conn_obj
         else:
             self.enqueue_disconnect(socket_connection.fileno())
+
 
     def _connection_timeout(self, conn):
         """

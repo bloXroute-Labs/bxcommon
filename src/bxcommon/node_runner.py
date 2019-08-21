@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from bxcommon.models.node_model import NodeModel
 from bxcommon.network import network_event_loop_factory
 from bxcommon.services import sdn_http_service
@@ -40,6 +42,7 @@ def _run_node(opts, node_class, node_type):
     cli.parse_blockchain_opts(opts, node_type)
     cli.set_os_version(opts)
 
+    opts.node_start_time = datetime.utcnow()
     if not node_model:
         opts.node_type = node_type
         node_model = sdn_http_service.register_node(model_loader.load_model(NodeModel, opts.__dict__))

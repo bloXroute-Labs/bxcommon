@@ -178,9 +178,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
     else:
         remote_blockchain_peer = None
 
-    partial_apply_args = locals()["kwargs"]
-    for param, arg in locals().items():
-        partial_apply_args[param] = arg
+    partial_apply_args = locals().copy()
+
     partial_apply_args["outbound_peers"] = peer_gateways + peer_relays
 
     opts = get_common_opts(**partial_apply_args)
@@ -239,4 +238,5 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         })
     for key, val in kwargs.items():
         opts.__dict__[key] = val
+
     return opts
