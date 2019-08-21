@@ -1,7 +1,9 @@
+from typing import Any
 from datetime import datetime
 
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import logger
+from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_encoder import ObjectEncoder
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
@@ -71,10 +73,22 @@ class ExtensionTransactionService(TransactionService):
             self._tx_not_seen_in_blocks,
             "tx_not_seen_in_blocks",
             self.get_collection_mem_stats(
-                self._tx_not_seen_in_blocks
+                self._tx_not_seen_in_blocks,
+                self._tx_not_seen_in_blocks.get_bytes_length()
             ),
             len(self._tx_not_seen_in_blocks)
         )
+
+    def get_collection_mem_stats(self, collection_obj: Any, estimated_size: int = 0) -> ObjectSize:
+        if isinstance(collection_obj, DefaultMapProxy):
+            collection_size = collection_obj.map_obj.get_bytes_length()  # pyre-ignore
+            if collection_obj is self._tx_cache_key_to_contents:
+                collection_size += self._total_tx_contents_size
+            elif collection_obj is self._tx_cache_key_to_short_ids:
+                collection_size += (len(self._short_id_to_tx_cache_key) * constants.UL_INT_SIZE_IN_BYTES)
+            return ObjectSize(size=collection_size, flat_size=0, is_actual_size=True)
+        else:
+            return super(ExtensionTransactionService, self).get_collection_mem_stats(collection_obj, estimated_size)
 
     def _tx_hash_to_cache_key(self, transaction_hash) -> tpe.Sha256:  # pyre-ignore
 

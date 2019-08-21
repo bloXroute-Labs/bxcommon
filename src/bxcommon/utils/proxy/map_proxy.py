@@ -15,4 +15,4 @@ class MapProxy(DefaultMapProxy[TKeyRaw, TKeyEncoded, TValueRaw, TValueEncoded]):
         super(MapProxy, self).__init__(map_obj, key_encoder, val_encoder)
 
     def __setitem__(self, key: TKeyEncoded, value: TValueEncoded):
-        self._map_obj[self._key_encoder.decode(key)] = self._val_encoder.decode(value)
+        self.map_obj[self._key_encoder.decode(key)] = self._val_encoder.decode(value)

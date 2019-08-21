@@ -388,7 +388,8 @@ class TransactionService:
             self.network_num,
             self._short_ids_seen_in_block,
             "short_ids_seen_in_block",
-            self.get_collection_mem_stats(self._short_ids_seen_in_block, 0)
+            self.get_collection_mem_stats(self._short_ids_seen_in_block, 0),
+            len(self._short_ids_seen_in_block)
         )
 
         hooks.add_obj_mem_stats(

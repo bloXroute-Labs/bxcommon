@@ -15,32 +15,32 @@ class DefaultMapProxy(Generic[TKeyRaw, TKeyEncoded, TValueRaw, TValueEncoded]):
             key_encoder: ObjectEncoder[TKeyRaw, TKeyEncoded],
             val_encoder: ObjectEncoder[TValueRaw, TValueEncoded]
     ):
-        self._map_obj = map_obj
+        self.map_obj = map_obj
         self._key_encoder = key_encoder
         self._val_encoder = val_encoder
-        if hasattr(self._map_obj, "__contains__"):
+        if hasattr(self.map_obj, "__contains__"):
             self._contains = self._item_exists
         else:
             self._contains = self._item_exists_no_exception
 
     def __repr__(self):
-        return self._map_obj.__repr__()
+        return self.map_obj.__repr__()
 
     def __str__(self) -> str:
-        return self._map_obj.__str__()
+        return self.map_obj.__str__()
 
     def __getitem__(self, key: TKeyEncoded) -> TValueEncoded:
-        return self._val_encoder.encode(self._map_obj[self._key_encoder.decode(key)])
+        return self._val_encoder.encode(self.map_obj[self._key_encoder.decode(key)])
 
     def __len__(self) -> int:
-        return len(self._map_obj)
+        return len(self.map_obj)
 
     def __iter__(self) -> Iterator[TKeyEncoded]:
-        for key in self._map_obj:
+        for key in self.map_obj:
             yield self._key_encoder.encode(key)
 
     def __delitem__(self, key: TKeyEncoded):
-        del self._map_obj[self._key_encoder.decode(key)]
+        del self.map_obj[self._key_encoder.decode(key)]
 
     def __contains__(self, key: TKeyEncoded) -> bool:
         return self._contains(key)
@@ -64,7 +64,7 @@ class DefaultMapProxy(Generic[TKeyRaw, TKeyEncoded, TValueRaw, TValueEncoded]):
         return key, val
 
     def items(self) -> Iterator[Tuple[TKeyEncoded, TValueEncoded]]:
-        for key, val in self._map_obj.items():
+        for key, val in self.map_obj.items():
             yield self._key_encoder.encode(key), self._val_encoder.encode(val)
 
     def keys(self) -> Iterator[TKeyEncoded]:
@@ -82,4 +82,4 @@ class DefaultMapProxy(Generic[TKeyRaw, TKeyEncoded, TValueRaw, TValueEncoded]):
             return False
 
     def _item_exists(self, key: TKeyEncoded) -> bool:
-        return self._key_encoder.decode(key) in self._map_obj
+        return self._key_encoder.decode(key) in self.map_obj
