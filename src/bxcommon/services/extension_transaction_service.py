@@ -82,9 +82,7 @@ class ExtensionTransactionService(TransactionService):
     def get_collection_mem_stats(self, collection_obj: Any, estimated_size: int = 0) -> ObjectSize:
         if isinstance(collection_obj, DefaultMapProxy):
             collection_size = collection_obj.map_obj.get_bytes_length()  # pyre-ignore
-            if collection_obj is self._tx_cache_key_to_contents:
-                collection_size += self._total_tx_contents_size
-            elif collection_obj is self._tx_cache_key_to_short_ids:
+            if collection_obj is self._tx_cache_key_to_short_ids:
                 collection_size += (len(self._short_id_to_tx_cache_key) * constants.UL_INT_SIZE_IN_BYTES)
             return ObjectSize(size=collection_size, flat_size=0, is_actual_size=True)
         else:
