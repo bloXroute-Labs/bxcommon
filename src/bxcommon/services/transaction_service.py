@@ -47,7 +47,6 @@ class TransactionService:
     node: AbstractNode
     tx_assign_alarm_scheduled: bool
     network_num: int
-    _tx_hash_to_short_ids: Dict[Sha256Hash, Set[int]]
     _short_id_to_tx_cache_key: Dict[int, str]
     _tx_cache_key_to_contents: Dict[str, Union[bytearray, memoryview]]
     _tx_assignment_expire_queue: ExpirationQueue
@@ -511,9 +510,20 @@ class TransactionService:
                      .format(self._tx_content_memory_limit, self._total_tx_contents_size))
         removed_tx_count = 0
 
-        while self._total_tx_contents_size > self._tx_content_memory_limit:
+        while self._is_exceeding_memory_limit() and self._tx_assignment_expire_queue:
             self._tx_assignment_expire_queue.remove_oldest(remove_callback=self._remove_transaction_by_short_id)
             removed_tx_count += 1
+        if self._is_exceeding_memory_limit() and not self._tx_assignment_expire_queue:
+            logger.warn(
+                "failed to decrease memory consumption due to lack of short ids, clearing the mem pool!\n{}",
+                self._get_cache_state_str()
+            )
+            removed_tx_count += len(self._tx_cache_key_to_contents)
+            self._tx_cache_key_to_contents.clear()
+            self._tx_cache_key_to_short_ids.clear()
+            self._short_id_to_tx_cache_key.clear()
+            self._short_ids_seen_in_block.clear()
+            self._total_tx_contents_size = 0
 
         self._total_tx_removed_by_memory_limit += removed_tx_count
         logger.debug("Removed {} oldest transactions from transaction service cache. Size after clean up: {}".format(
@@ -566,7 +576,6 @@ class TransactionService:
         if isinstance(transaction_hash, str):
             return transaction_hash
 
-
         raise ValueError("Attempted to find cache entry with incorrect key type")
 
     def _tx_cache_key_to_hash(self, transaction_cache_key: Union[Sha256Hash, bytes, bytearray, memoryview, str]) \
@@ -581,6 +590,9 @@ class TransactionService:
 
     def _track_seen_transaction(self, transaction_cache_key):
         pass
+
+    def _is_exceeding_memory_limit(self) -> bool:
+        return self._total_tx_contents_size > self._tx_content_memory_limit
 
     def _get_cache_state_str(self):
         return json_utils.serialize(

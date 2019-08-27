@@ -74,6 +74,9 @@ class DefaultMapProxy(Generic[TKeyRaw, TKeyEncoded, TValueRaw, TValueEncoded]):
         for _, value in self.items():
             yield value
 
+    def clear(self) -> None:
+        self.map_obj.clear()
+
     def _item_exists_no_exception(self, key: TKeyEncoded) -> bool:
         try:
             self.__getitem__(key)

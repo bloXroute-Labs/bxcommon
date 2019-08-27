@@ -23,6 +23,12 @@ class ExpirationQueue(Generic[T]):
         self.time_to_live_sec = time_to_live_sec
         self.queue = OrderedDict()
 
+    def __len__(self) -> int:
+        return len(self.queue)
+
+    def __bool__(self) -> bool:
+        return len(self) > 0
+
     def add(self, item: T):
         """
         Adds item to the queue
@@ -87,6 +93,3 @@ class ExpirationQueue(Generic[T]):
 
             if remove_callback is not None:
                 remove_callback(item)
-
-    def __len__(self) -> int:
-        return len(self.queue)
