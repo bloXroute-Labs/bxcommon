@@ -3,6 +3,7 @@ import argparse
 from bxcommon import constants
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import ALL_NETWORK_NUM
+from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import config, ip_resolver
 from bxcommon.utils import convert, logger
@@ -150,13 +151,15 @@ def parse_blockchain_opts(opts, node_type):
     opts_dict["blockchain_network_num"] = network_info.network_num
     opts_dict["blockchain_block_interval"] = network_info.block_interval
     opts_dict["blockchain_ignore_block_interval_count"] = network_info.ignore_block_interval_count
+    opts_dict["blockchain_block_recovery_timeout_s"] = network_info.block_recovery_timeout_s
+    opts_dict["blockchain_block_hold_timeout_s"] = network_info.block_hold_timeout_s
 
 
 def set_blockchain_networks_info(opts):
     opts.blockchain_networks = sdn_http_service.fetch_blockchain_networks()
 
 
-def _get_blockchain_network_info(opts):
+def _get_blockchain_network_info(opts) -> BlockchainNetworkModel:
     """
     Retrieves the blockchain network info from the SDN based on blockchain-protocol and blockchain-network cli arguments.
 

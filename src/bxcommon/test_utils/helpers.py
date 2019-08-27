@@ -7,7 +7,9 @@ from typing import Optional, TypeVar, Type, TYPE_CHECKING
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
+from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
+from bxcommon.models.blockchain_network_type import BlockchainNetworkType
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils import config, crypto
@@ -112,6 +114,19 @@ def set_extensions_parallelism(degree: int = constants.DEFAULT_THREAD_POOL_PARAL
     task_pool_proxy.init(config.get_thread_pool_parallelism_degree(str(degree)))
 
 
+def blockchain_network(protocol: str, network_name: str, network_num: int, block_recovery_timeout: int = 30,
+                       block_hold_timeout: int = 30, final_tx_confirmations_count: int = 2, **kwargs) \
+        -> BlockchainNetworkModel:
+    _blockchain_network = BlockchainNetworkModel(
+        protocol, network_name, network_num, BlockchainNetworkType.PUBLIC, BlockchainNetworkEnvironment.DEVELOPMENT,
+        {}, 60, 5, block_recovery_timeout, block_hold_timeout, final_tx_confirmations_count, 50 * 1024 * 1024
+    )
+
+    for key, val in kwargs.items():
+        _blockchain_network.__dict__[key] = val
+    return _blockchain_network
+
+
 def get_common_opts(port, external_ip=constants.LOCALHOST, node_id=None, outbound_peers=None,
                     blockchain_network_num=constants.ALL_NETWORK_NUM, **kwargs) -> Namespace:
     if node_id is None:
@@ -132,14 +147,10 @@ def get_common_opts(port, external_ip=constants.LOCALHOST, node_id=None, outboun
         "dump_missing_short_ids": False,
         "sid_expire_time": 30,
         "blockchain_networks": [
-            BlockchainNetworkModel(protocol="Bitcoin", network="Mainnet", network_num=0,
-                                   final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Bitcoin", network="Testnet", network_num=1,
-                                   final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Ethereum", network="Mainnet", network_num=2,
-                                   final_tx_confirmations_count=2),
-            BlockchainNetworkModel(protocol="Ethereum", network="Testnet", network_num=3,
-                                   final_tx_confirmations_count=2)
+            blockchain_network("Bitcoin", "Mainnet", 0, 15, 15, 2),
+            blockchain_network("Bitcoin", "Testnet", 1, 15, 15, 2),
+            blockchain_network("Ethereum", "Mainnet", 2, 5, 5, 2),
+            blockchain_network("Ethereum", "Testnet", 3, 5, 5, 2)
         ],
         "transaction_pool_memory_limit": 200000000,
         "track_detailed_sent_messages": True,
@@ -157,10 +168,10 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
                      split_relays=False, protocol_version=1, sid_expire_time=30, bloxroute_version="bloxroute 1.5",
                      include_default_btc_args=False, include_default_eth_args=False,
                      blockchain_network_num=constants.DEFAULT_NETWORK_NUM, min_peer_gateways=0,
-                     remote_blockchain_ip=None,
-                     remote_blockchain_port=None, connect_to_remote_blockchain=False, is_internal_gateway=False,
-                     is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
-                     parallelism_degree=1, cookie_file_path=COOKIE_FILE_PATH, **kwargs) -> Namespace:
+                     remote_blockchain_ip=None, remote_blockchain_port=None, connect_to_remote_blockchain=False,
+                     is_internal_gateway=False, is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
+                     parallelism_degree=1, cookie_file_path=COOKIE_FILE_PATH, blockchain_block_hold_timeout_s=30,
+                     blockchain_block_recovery_timeout_s=30, **kwargs) -> Namespace:
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -199,6 +210,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "protocol_version": protocol_version,
         "blockchain_block_interval": 600,
         "blockchain_ignore_block_interval_count": 3,
+        "blockchain_block_recovery_timeout_s": blockchain_block_recovery_timeout_s,
+        "blockchain_block_hold_timeout_s": blockchain_block_hold_timeout_s,
         "min_peer_gateways": min_peer_gateways,
         "remote_blockchain_ip": remote_blockchain_ip,
         "remote_blockchain_port": remote_blockchain_port,

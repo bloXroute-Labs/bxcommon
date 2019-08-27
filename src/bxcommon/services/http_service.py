@@ -1,11 +1,12 @@
 import requests
 from requests import HTTPError, RequestException
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union, List
 
 from bxcommon import constants
 from bxcommon.utils import logger, json_utils
 
-jsonT = Dict[str, str]
+# recursive types are not supported: https://github.com/python/typing/issues/182
+jsonT = Union[Dict[str, Any], List[Any]]
 
 
 def build_url(endpoint: str) -> str:

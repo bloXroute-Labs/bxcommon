@@ -310,9 +310,6 @@ class TransactionService:
         :param short_ids: transaction short ids
         """
 
-        if short_ids is None:
-            return ValueError("short_ids is required.")
-
         wrapped_block_hash = wrap_sha256(block_hash)
         self._short_ids_seen_in_block[wrapped_block_hash] = short_ids
 

@@ -149,6 +149,10 @@ def log_init(path, use_stdout):
     _log = Log(path, use_stdout)
 
 
+def is_initialized() -> bool:
+    return _log is not None
+
+
 # Cleanly closes the log and flushes all contents to disk.
 def log_close():
     _log.close()

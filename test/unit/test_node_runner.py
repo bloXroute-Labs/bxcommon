@@ -1,13 +1,13 @@
 import argparse
 import unittest
-from unittest import mock
 from argparse import Namespace
+from unittest import mock
 
 from bxcommon import node_runner, constants
 from bxcommon.connections.node_type import NodeType
-from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
-from bxcommon.utils import logger, log_level, log_format, config
 from bxcommon.models.node_model import NodeModel
+from bxcommon.test_utils import helpers
+from bxcommon.utils import logger, log_level, log_format, config
 
 
 class NodeMock(object):
@@ -29,12 +29,12 @@ class EventLoopMock(object):
 class TestNodeRunner(unittest.TestCase):
 
     def setUp(self):
-        self.blockchain_network = BlockchainNetworkModel(
-                    protocol="Bitcoin",
-                    network="Mainnet",
-                    network_num=1,
-                    block_interval=600,
-                    final_tx_confirmations_count=6
+        self.blockchain_network = helpers.blockchain_network(
+            protocol="Bitcoin",
+            network_name="Mainnet",
+            network_num=1,
+            block_interval=600,
+            final_tx_confirmations_count=6
         )
         opts = {
             "log_path": "",
@@ -85,5 +85,5 @@ class TestNodeRunner(unittest.TestCase):
         get_argument_parser_mock.return_value = argparse.ArgumentParser()
         parse_arguments_mock.return_value = self.opts
         fatal_mock.return_value = None
-        node_runner.run_node("",  self.opts, NodeMock)
+        node_runner.run_node("", self.opts, NodeMock)
         self.assertEqual(self.event_loop_mock.run_count, 1)

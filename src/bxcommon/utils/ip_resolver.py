@@ -21,7 +21,11 @@ def blocking_resolve_ip(net_address: str) -> str:
             resolved_ip = None
             tries += 1
 
-            logger.warn("Unable to connect to address {0}. Retried {1}".format(net_address, tries))
+            message = "Unable to connect to address {0}. Retried {1}".format(net_address, tries)
+            if logger.is_initialized():
+                logger.warn(message)
+            else:
+                print(message)
             if tries >= constants.NET_ADDR_INIT_CONNECT_TRIES:
                 raise EnvironmentError("Unable to resolve address {}.".format(net_address))
     assert resolved_ip is not None
