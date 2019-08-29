@@ -22,9 +22,7 @@ class ExtensionTransactionService(TransactionService):
         self.proxy = tpe.TransactionService(
             task_pool_proxy.get_pool_size(),
             node.opts.tx_mem_pool_bucket_size,
-            self._get_final_tx_confirmations_count(),
-            constants.MAX_ALLOCATION_POINTER_COUNT,
-            constants.MAX_COUNT_PER_ALLOCATION
+            self._get_final_tx_confirmations_count()
         )
         raw_encoder = ObjectEncoder.raw_encoder()
         self._tx_cache_key_to_short_ids = DefaultMapProxy(
