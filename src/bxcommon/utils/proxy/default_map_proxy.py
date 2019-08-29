@@ -46,9 +46,12 @@ class DefaultMapProxy(Generic[TKeyRaw, TKeyEncoded, TValueRaw, TValueEncoded]):
         return self._contains(key)
 
     def pop(self, key: TKeyEncoded) -> TValueEncoded:
-        val = self.__getitem__(key)
-        self.__delitem__(key)
-        return val
+        if hasattr(self.map_obj, "pop"):
+            return self._val_encoder.encode(self.map_obj.pop(self._key_encoder.decode(key)))
+        else:
+            val = self.__getitem__(key)
+            self.__delitem__(key)
+            return val
 
     def get(
             self, key: TKeyEncoded, default: Optional[TValueEncoded] = None
