@@ -63,10 +63,22 @@ def get_argument_parser() -> argparse.ArgumentParser:
     arg_parser.add_argument("--transaction-pool-memory-limit",
                             help="Maximum size of transactions to keep in memory pool (MB)",
                             type=int)
+
+    arg_parser.add_argument("--info-stats-interval",
+                            help="Frequency of info statistics logs in seconds",
+                            type=int,
+                            default=constants.INFO_STATS_INTERVAL_S)
+
+    arg_parser.add_argument("--throughput-stats-interval",
+                            help="Frequency of throughput statistics logs in seconds",
+                            type=int,
+                            default=constants.THROUGHPUT_STATS_INTERVAL_S)
+
     arg_parser.add_argument("--memory-stats-interval",
                             help="Frequency of memory statistics logs in seconds",
                             type=int,
                             default=constants.MEMORY_STATS_INTERVAL_S)
+
     arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
                             help="Total memory usage of application when detailed memory report "
                                  "should be dumped to log (MB)",

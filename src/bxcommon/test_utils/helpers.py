@@ -157,6 +157,8 @@ def get_common_opts(port, external_ip=constants.LOCALHOST, node_id=None, outboun
         "use_extensions": constants.USE_EXTENSION_MODULES,
         "import_extensions": constants.USE_EXTENSION_MODULES,
         "tx_mem_pool_bucket_size": constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
+        "throughput_stats_interval": constants.THROUGHPUT_STATS_INTERVAL_S,
+        "info_stats_interval": constants.INFO_STATS_INTERVAL_S,
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val
@@ -230,6 +232,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         ),
         "max_block_interval": 10,
         "cookie_file_path": cookie_file_path,
+        "config_update_interval": 60
     })
 
     if include_default_btc_args:

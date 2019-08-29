@@ -129,6 +129,7 @@ DUMP_MISSING_SHORT_IDS_PATH = "/app/bxrelay/debug/missing-short-ids"
 class SdnRoutes(object):
     nodes = "/nodes"
     node = "/nodes/{0}"
+    gateway_node_config = "/configs/gateway_node/{0}"
     node_relays = "/nodes/{0}/peers"
     node_potential_relays = "/nodes/{0}/potential-relays"
     node_potential_relays_by_network = "/nodes/{0}/{1}/potential-relays"
@@ -199,6 +200,7 @@ DUMP_REMOVED_SHORT_IDS_INTERVAL_S = 5 * 60
 DUMP_REMOVED_SHORT_IDS_PATH = "/app/bxcommon/debug/removed-short-ids"
 
 CLEAN_UP_SEEN_SHORT_IDS_DELAY_S = 10
+
 # </editor-fold>
 
 # <editor-fold desc="Default Values">
@@ -220,6 +222,12 @@ UPDATE_TX_SERVICE_FULLY_SYNCED_S = 1
 TX_SERVICE_SYNC_PROCESS_S = 10
 TX_SERVICE_SYNC_COMPLETE_S = 1
 TX_SERVICE_SYNC_RELAY_IN_NETWORKS_S = 30
+
+ALARM_QUEUE_INIT_EVENT = 1
+
+# extensions memory management params
+MAX_ALLOCATION_POINTER_COUNT = 10
+MAX_COUNT_PER_ALLOCATION = 10
 
 # </editor-fold>
 
