@@ -1,6 +1,7 @@
 from collections import deque
 
 from bxcommon import constants
+from bxcommon.test_utils import helpers
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, NODE_ID_SIZE_IN_BYTES, \
     BX_HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN
 from bxcommon.exceptions import PayloadLenError
@@ -16,6 +17,7 @@ from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.version_message import VersionMessage
+from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.test_utils.helpers import create_input_buffer_with_bytes
 from bxcommon.test_utils.message_factory_test_case import MessageFactoryTestCase
@@ -188,3 +190,22 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         pong = PongMessage(nonce=50)
         self.assertEqual(50, pong.nonce())
         msg = bloxroute_message_factory.create_message_from_buffer(pong.buf)
+
+    def test_block_confirmation_msg(self):
+        block_hash = Sha256Hash(helpers.generate_bytes(crypto.SHA256_HASH_LEN))
+        short_ids = [23, 99, 192, 1089, 3000500]
+        tx_hashes = [
+            Sha256Hash(helpers.generate_bytes(crypto.SHA256_HASH_LEN)),
+            Sha256Hash(helpers.generate_bytes(crypto.SHA256_HASH_LEN))
+        ]
+        network_num = 3
+
+        msg = BlockConfirmationMessage(block_hash=block_hash,
+                                       sids=short_ids,
+                                       tx_hashes=tx_hashes,
+                                       network_num=network_num)
+        rebuilt_msg = BlockConfirmationMessage(buf=msg.buf)
+        self.assertEqual(block_hash, rebuilt_msg.get_block_hash())
+        self.assertEqual(short_ids, rebuilt_msg.get_sids())
+        self.assertEqual(tx_hashes, rebuilt_msg.get_tx_hashes())
+        self.assertEqual(network_num, rebuilt_msg.network_num())

@@ -88,7 +88,6 @@ def deserialize_txs_content_short_ids_from_buffer(buffer: Union[bytearray, memor
         offset += UL_INT_SIZE_IN_BYTES
         tx_content = buffer[offset: offset + tx_content_size]
         offset += tx_content_size
-        expiration_time, = struct.unpack_from("<L", buffer, offset)
         offset += UL_INT_SIZE_IN_BYTES
         short_ids_count, = struct.unpack_from("<H", buffer, offset)
         offset += UL_SHORT_SIZE_IN_BYTES

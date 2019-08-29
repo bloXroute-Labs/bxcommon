@@ -15,3 +15,4 @@ class BloxrouteMessageType(object):
     TX_SERVICE_SYNC_BLOCKS_SHORT_IDS = b"txblock"
     TX_SERVICE_SYNC_TXS = b"txtxs"
     TX_SERVICE_SYNC_COMPLETE = b"txdone"
+    BLOCK_CONFIRMATION = b"blkcnfrm"

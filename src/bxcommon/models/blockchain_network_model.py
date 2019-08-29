@@ -22,3 +22,4 @@ class BlockchainNetworkModel:
     tx_contents_memory_limit_bytes: int
     max_block_size_bytes: int = constants.DEFAULT_MAX_PAYLOAD_LEN_BYTES
     max_tx_size_bytes: int = constants.DEFAULT_MAX_PAYLOAD_LEN_BYTES
+    block_confirmations_count: int = constants.BLOCK_CONFIRMATIONS_COUNT

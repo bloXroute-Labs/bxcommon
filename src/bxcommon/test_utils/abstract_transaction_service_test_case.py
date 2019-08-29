@@ -6,12 +6,12 @@ from bxcommon.connections.node_type import NodeType
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from mock import MagicMock
 
-from bxcommon.constants import LOCALHOST, NULL_TX_SID
+from bxcommon.constants import NULL_TX_SID
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_node import MockNode
-from bxcommon.utils import crypto, logger, log_level
+from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
 
 
@@ -172,7 +172,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.assertEqual(short_ids_2[i], self.transaction_service.get_short_id(transaction_hash))
 
     def _test_track_short_ids_seen_in_block(self):
-        short_ids = [0, 1, 2, 3, 4]
+        short_ids = [1, 2, 3, 4, 5]
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
 
@@ -181,35 +181,37 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             cached_key = self.transaction_service._tx_hash_to_cache_key(transaction_hashes[i])
             self.transaction_service._tx_cache_key_to_contents[cached_key] = transaction_contents[i]
 
+        self.transaction_service.set_final_tx_confirmations_count(7)
         # 1st block with short ids arrives
         block_hash = bytearray(helpers.generate_bytearray(32))
-        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [0, 1])
-        self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
+        self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [1])
+        self._verify_txs_in_tx_service([1, 2, 3, 4, 5], [])
 
         # 2nd block with short ids arrives
         block_hash = bytearray(helpers.generate_bytearray(32))
         self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [2])
-        self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
+        self._verify_txs_in_tx_service([1, 2, 3, 4, 5], [])
 
         # 3rd block with short ids arrives
         block_hash = bytearray(helpers.generate_bytearray(32))
         self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [3, 4])
-        self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
+        self._verify_txs_in_tx_service([1, 2, 3, 4, 5], [])
 
         # 4th block with short ids arrives
         block_hash = bytearray(helpers.generate_bytearray(32))
         self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
-        self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
+        self._verify_txs_in_tx_service([1, 2, 3, 4, 5], [])
+
 
         # 5th block with short ids arrives
         block_hash = bytearray(helpers.generate_bytearray(32))
         self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
-        self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
+        self._verify_txs_in_tx_service([1, 2, 3, 4, 5], [])
 
         # 6th block with short ids arrives
         block_hash = bytearray(helpers.generate_bytearray(32))
         self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
-        self._verify_txs_in_tx_service([0, 1, 2, 3, 4], [])
+        self._verify_txs_in_tx_service([1, 2, 3, 4, 5], [])
 
         # 7th block with short ids arrives
         block_hash = bytearray(helpers.generate_bytearray(32))
@@ -343,6 +345,21 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.assertEqual(missing_short_ids, unknown_short_ids)
         self.assertEqual(missing_transaction_hashes, unknown_hashes)
 
+    def _test_verify_tx_removal_by_hash(self):
+        short_ids = [1, 2, 3, 4]
+        transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
+        transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
+
+        for i in range(len(short_ids)):
+            self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
+
+        self._verify_txs_in_tx_service(expected_short_ids=[1, 2, 3, 4], not_expected_short_ids=[])
+
+        for tx_hash in transaction_hashes:
+            self.transaction_service.remove_transaction_by_tx_hash(tx_hash)
+        self._verify_txs_in_tx_service(expected_short_ids=[], not_expected_short_ids=[0, 1, 2, 3, 4])
+
     def _test_memory_stats(self):
         self._add_transactions(1000, 100)
         self.transaction_service.log_tx_service_mem_stats()
@@ -365,11 +382,11 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
 
     def _verify_txs_in_tx_service(self, expected_short_ids, not_expected_short_ids):
         for short_id in expected_short_ids:
-            self.assertIsNotNone(self.transaction_service.get_transaction(short_id))
+            self.assertIsNotNone(self.transaction_service.get_transaction(short_id).hash)
 
         for short_id in not_expected_short_ids:
-            self.assertIsNone(self.transaction_service.get_transaction(short_id)[0])
-            self.assertIsNone(self.transaction_service.get_transaction(short_id)[1])
+            self.assertIsNone(self.transaction_service.get_transaction(short_id).hash)
+            self.assertIsNone(self.transaction_service.get_transaction(short_id).contents)
             self.assertNotIn(short_id, self.transaction_service._tx_assignment_expire_queue.queue)
 
     @abstractmethod

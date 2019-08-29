@@ -115,11 +115,13 @@ def set_extensions_parallelism(degree: int = constants.DEFAULT_THREAD_POOL_PARAL
 
 
 def blockchain_network(protocol: str, network_name: str, network_num: int, block_recovery_timeout: int = 30,
-                       block_hold_timeout: int = 30, final_tx_confirmations_count: int = 2, **kwargs) \
+                       block_hold_timeout: int = 30, final_tx_confirmations_count: int = 2,
+                       block_confirmations_count: int = 1, **kwargs) \
         -> BlockchainNetworkModel:
     _blockchain_network = BlockchainNetworkModel(
         protocol, network_name, network_num, BlockchainNetworkType.PUBLIC, BlockchainNetworkEnvironment.DEVELOPMENT,
-        {}, 60, 5, block_recovery_timeout, block_hold_timeout, final_tx_confirmations_count, 50 * 1024 * 1024
+        {}, 60, 5, block_recovery_timeout, block_hold_timeout, final_tx_confirmations_count, 50 * 1024 * 1024,
+        block_confirmations_count=block_confirmations_count
     )
 
     for key, val in kwargs.items():
@@ -127,8 +129,14 @@ def blockchain_network(protocol: str, network_name: str, network_num: int, block
     return _blockchain_network
 
 
-def get_common_opts(port, external_ip=constants.LOCALHOST, node_id=None, outbound_peers=None,
-                    blockchain_network_num=constants.ALL_NETWORK_NUM, **kwargs) -> Namespace:
+def get_common_opts(port,
+                    external_ip=constants.LOCALHOST,
+                    node_id=None,
+                    outbound_peers=None,
+                    blockchain_network_num=constants.ALL_NETWORK_NUM,
+                    block_confirmations_count=2,
+                    final_tx_confirmations_count=4,
+                    **kwargs) -> Namespace:
     if node_id is None:
         node_id = f"Node at {port}"
     if outbound_peers is None:
@@ -147,10 +155,10 @@ def get_common_opts(port, external_ip=constants.LOCALHOST, node_id=None, outboun
         "dump_missing_short_ids": False,
         "sid_expire_time": 30,
         "blockchain_networks": [
-            blockchain_network("Bitcoin", "Mainnet", 0, 15, 15, 2),
-            blockchain_network("Bitcoin", "Testnet", 1, 15, 15, 2),
-            blockchain_network("Ethereum", "Mainnet", 2, 5, 5, 2),
-            blockchain_network("Ethereum", "Testnet", 3, 5, 5, 2)
+            blockchain_network("Bitcoin", "Mainnet", 0, 15, 15, final_tx_confirmations_count, block_confirmations_count),
+            blockchain_network("Bitcoin", "Testnet", 1, 15, 15, final_tx_confirmations_count, block_confirmations_count),
+            blockchain_network("Ethereum", "Mainnet", 2, 5, 5, final_tx_confirmations_count, block_confirmations_count),
+            blockchain_network("Ethereum", "Testnet", 3, 5, 5, final_tx_confirmations_count, block_confirmations_count)
         ],
         "transaction_pool_memory_limit": 200000000,
         "track_detailed_sent_messages": True,

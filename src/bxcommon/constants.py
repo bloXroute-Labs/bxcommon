@@ -146,7 +146,7 @@ class SdnRoutes(object):
 # <editor-fold desc="Stats Recording">
 FIRST_STATS_INTERVAL_S = 5 * 60
 
-THROUGHPUT_STATS_INTERVAL_S = 1 * 60
+THROUGHPUT_STATS_INTERVAL_S = 15
 THROUGHPUT_STATS_LOOK_BACK = 5
 
 INFO_STATS_INTERVAL_S = 60 * 60
@@ -155,7 +155,7 @@ INFO_STATS_INTERVAL_S = 60 * 60
 THREADED_STAT_SLEEP_INTERVAL = 1
 
 # TODO: turn this number up to 60 minutes after we've done some testing to ensure that this is ok
-MEMORY_STATS_INTERVAL_S = 15 * 60
+MEMORY_STATS_INTERVAL_S = 10 * 60
 MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES = 100 * 1024 * 1024
 
 # Percentage for transactions that will be logged by stats service. The value should be controlled by SDN in the future.
@@ -211,6 +211,9 @@ DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES = 250 * 1024 * 1024
 # Default maximum allowed length of internal message payload
 DEFAULT_MAX_PAYLOAD_LEN_BYTES = 1024 * 1024
 
+# cleanup confirmed blocks in this depth
+BLOCK_CONFIRMATIONS_COUNT = 4
+
 TXS_MSG_SIZE = 64000
 TX_SERVICE_SYNC_TXS_S = 0.01
 
@@ -228,6 +231,7 @@ ALARM_QUEUE_INIT_EVENT = 1
 # extensions memory management params
 MAX_ALLOCATION_POINTER_COUNT = 10
 MAX_COUNT_PER_ALLOCATION = 10
+
 
 # </editor-fold>
 

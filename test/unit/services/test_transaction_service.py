@@ -31,6 +31,9 @@ class TransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_track_short_ids_seen_in_block_multiple_per_tx(self):
         self._test_track_short_ids_seen_in_block_multiple_per_tx()
 
+    def test_verify_tx_removal_by_hash(self):
+        self._test_verify_tx_removal_by_hash()
+
     def test_memory_stats(self):
         self._test_memory_stats()
 

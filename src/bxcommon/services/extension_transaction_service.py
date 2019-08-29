@@ -1,5 +1,6 @@
 from typing import Any
 from datetime import datetime
+from typing import List
 
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import logger
@@ -40,28 +41,50 @@ class ExtensionTransactionService(TransactionService):
         )
         self._tx_not_seen_in_blocks = self.proxy.tx_not_seen_in_blocks()
 
-    def track_seen_short_ids(self, block_hash, short_ids):
+    def track_seen_short_ids(self, block_hash, short_ids: List[int]) -> None:
         start_datetime = datetime.now()
         super(ExtensionTransactionService, self).track_seen_short_ids(block_hash, short_ids)
+        wrapped_block_hash = tpe.Sha256(tpe.InputBytes(self._wrap_sha256(block_hash).binary))
         proxy_start_datetime = datetime.now()
         # TODO when refactoring add `block_hash` to proxy.track_seen_short_ids as first parameter and change ds type in cpp
-        result = self.proxy.track_seen_short_ids(tpe.UIntList(short_ids))
+        result = self.proxy.track_seen_short_ids(wrapped_block_hash, tpe.UIntList(short_ids))
         removed_contents_size, dup_sids = result
         self._total_tx_contents_size -= removed_contents_size
         for dup_sid in dup_sids:
             self._tx_assignment_expire_queue.remove(dup_sid)
-        logger.info(
-            f"finished tracking {len(short_ids)} seen short ids, "
-            f"removed total {removed_contents_size} bytes, "
-            f"cleaned up {len(dup_sids)}, started at {start_datetime}, "
-            f"proxy called at {proxy_start_datetime}."
+        logger.statistics(
+            {
+                "type": "MemoryCleanup",
+                "event": "ExtensionTransactionServiceTrackSeenSummary",
+                "seen_short_ids_count": len(short_ids),
+                "total_content_size_removed": removed_contents_size,
+                "total_duplicate_short_ids": len(dup_sids),
+                "proxy_call_datetime": proxy_start_datetime,
+                "data": self.get_cache_state_json(),
+                "start_datetime": start_datetime,
+                "block_hash": repr(block_hash)
+            }
         )
-        logger.info(
-            f"Transaction cache state after tracking seen short ids in extension: {self._get_cache_state_str()}")
 
     def set_final_tx_confirmations_count(self, val: int):
         super(ExtensionTransactionService, self).set_final_tx_confirmations_count(val)
         self.proxy.set_final_tx_confirmations_count(val)
+
+    def get_expiration_time_by_short_id(self, short_id: int) -> float:
+        # TODO find a way to find expiration by short id
+        return super(ExtensionTransactionService, self).get_expiration_time_by_short_id(short_id)
+
+    def on_block_cleaned_up(self, block_hash: Sha256Hash) -> None:
+        super(ExtensionTransactionService, self).on_block_cleaned_up(block_hash)
+        wrapped_block_hash = tpe.Sha256(tpe.InputBytes(block_hash.binary))
+        self.proxy.on_block_cleaned_up(wrapped_block_hash)
+
+    def update_removed_transactions(self, removed_content_size: int, short_ids: List[int]) -> None:
+        self._total_tx_contents_size -= removed_content_size
+        for short_id in short_ids:
+            self._tx_assignment_expire_queue.remove(short_id)
+            if self.node.opts.dump_removed_short_ids:
+                self._removed_short_ids.add(short_id)
 
     def log_tx_service_mem_stats(self):
         super(ExtensionTransactionService, self).log_tx_service_mem_stats()
@@ -87,7 +110,6 @@ class ExtensionTransactionService(TransactionService):
             return super(ExtensionTransactionService, self).get_collection_mem_stats(collection_obj, estimated_size)
 
     def _tx_hash_to_cache_key(self, transaction_hash) -> tpe.Sha256:  # pyre-ignore
-
         if isinstance(transaction_hash, Sha256Hash):
             return tpe.Sha256(tpe.InputBytes(transaction_hash.binary))
 
@@ -114,7 +136,7 @@ class ExtensionTransactionService(TransactionService):
         super(ExtensionTransactionService, self)._track_seen_transaction(transaction_cache_key)
         self.proxy.track_seen_transaction(transaction_cache_key)
 
-    def _remove_transaction_by_short_id(self, short_id, remove_related_short_ids=False):
+    def remove_transaction_by_short_id(self, short_id: int, remove_related_short_ids: bool = False):
         # overriding this in order to handle removes triggered by either the mem limit or expiration queue
         # if the remove_related_short_ids is True than we assume the call originated by the track seen call
         # else we assume it was triggered by the cleanup.
@@ -124,4 +146,8 @@ class ExtensionTransactionService(TransactionService):
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
         else:
-            super(ExtensionTransactionService, self)._remove_transaction_by_short_id(short_id)
+            super(ExtensionTransactionService, self).remove_transaction_by_short_id(short_id)
+
+    def _clear_mem_pool(self):
+        super(ExtensionTransactionService, self)._clear_mem_pool()
+        self.proxy.clear_short_ids_seen_in_block()

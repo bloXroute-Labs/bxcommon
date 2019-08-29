@@ -66,3 +66,6 @@ class ConcatHash(AbstractObjectHash):
 
     def __repr__(self):
         return "ConcatHash<binary: {}>".format(convert.bytes_to_hex(self.binary))
+
+
+NULL_SHA256_HASH = Sha256Hash(binary=bytearray(SHA256_HASH_LEN))
