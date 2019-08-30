@@ -219,7 +219,7 @@ class AbstractConnection(Generic[Node]):
                 # Full messages must be one of the handshake messages if the connection isn't established yet.
                 if not (self.is_active()) \
                         and msg_type not in self.hello_messages:
-                    logger.error("Connection to {0} not established and got {1} message!  Closing.", self.peer_desc,
+                    logger.warn("Connection to {0} not established and got {1} message!  Closing.", self.peer_desc,
                                  msg_type)
                     self.mark_for_close()
                     return

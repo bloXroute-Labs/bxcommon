@@ -25,7 +25,7 @@ def get_ping_latency(outbound_peer: OutboundPeerModel) -> NodeLatencyInfo:
             logger.error("ping {} is empty".format(outbound_peer.ip))
     except subprocess.TimeoutExpired:
         ping_latency = constants.PING_TIMEOUT_S * 1000
-        logger.error("pinging to {} returned timeout".format(outbound_peer.ip))
+        logger.warn("pinging to {} returned timeout".format(outbound_peer.ip))
     except Exception as ex:
         logger.error("Error getting ping command output for IP:{}, Error:{}".format(outbound_peer.ip, str(ex)))
         ping_latency = constants.PING_TIMEOUT_S * 1000
