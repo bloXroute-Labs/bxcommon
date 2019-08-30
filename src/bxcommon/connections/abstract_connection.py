@@ -15,6 +15,7 @@ from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.log_level import LogLevel
+from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.direction import Direction
 
@@ -355,6 +356,26 @@ class AbstractConnection(Generic[Node]):
         :return: True if the connection is receivable, otherwise False
         """
         return True
+
+    def log_connection_mem_stats(self) -> None:
+        """
+        logs the connection's memory stats
+        """
+        class_name = self.__class__.__name__
+        hooks.increment_obj_mem_stats(
+            class_name,
+            self.network_num,
+            self.inputbuf,
+            "input_buffer",
+            ObjectSize("input_buffer", self.inputbuf.length, is_actual_size=False)
+        )
+        hooks.increment_obj_mem_stats(
+            class_name,
+            self.network_num,
+            self.outputbuf,
+            "output_buffer",
+            ObjectSize("output_buffer", self.outputbuf.length, is_actual_size=False)
+        )
 
     def _report_bad_message(self):
         """

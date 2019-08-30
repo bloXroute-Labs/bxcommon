@@ -58,5 +58,22 @@ class MemoryStatsService(ThreadedStatisticsService):
         self.node.dump_memory_usage()
         return super(MemoryStatsService, self).flush_info()
 
+    def increment_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info, object_item_count=None):
+        mem_stats = self.interval_data.class_mem_stats[class_name]
+
+        # If the object being analyzed doesn't have a length property
+        if object_item_count is None:
+            object_item_count = len(obj) if hasattr(obj, "__len__") else 0
+
+        mem_stats.networks[network_num].analyzed_objects[obj_name].object_item_count += object_item_count
+        mem_stats.networks[network_num].analyzed_objects[obj_name].object_size += obj_mem_info.size
+        mem_stats.networks[network_num].analyzed_objects[obj_name].object_flat_size += obj_mem_info.flat_size
+        mem_stats.networks[network_num].analyzed_objects[obj_name].is_actual_size = obj_mem_info.is_actual_size
+
+    def reset_class_mem_stats(self, class_name):
+        mem_stats = ClassMemStats()
+        mem_stats.timestamp = datetime.utcnow()
+        self.interval_data.class_mem_stats[class_name] = mem_stats
+
 
 memory_statistics = MemoryStatsService(constants.MEMORY_STATS_INTERVAL_S)

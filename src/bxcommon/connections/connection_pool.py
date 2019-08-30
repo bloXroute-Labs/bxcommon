@@ -184,3 +184,10 @@ class ConnectionPool(object):
             memory_utils.get_object_size(self.count_conn_by_ip),
             len(self.count_conn_by_ip)
         )
+        self._log_connections_mem_stats()
+
+    def _log_connections_mem_stats(self):
+        for connection in self.by_ipport.values():
+            hooks.reset_class_mem_stats(connection.__class__.__name__)
+        for connection in self.by_ipport.values():
+            connection.log_connection_mem_stats()
