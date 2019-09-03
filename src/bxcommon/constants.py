@@ -173,7 +173,7 @@ CANCEL_ALARMS = 0
 # Fast execution timeout on alarm queue
 DEFAULT_SLEEP_TIMEOUT = 0.1
 
-REQUEST_EXPIRATION_TIME = 60
+REQUEST_EXPIRATION_TIME = 15 * 60  # TODO: Return this value to 1 minute
 
 # Expiration time for block broadcast message if services info is missing
 MISSING_BLOCK_EXPIRE_TIME = 60
