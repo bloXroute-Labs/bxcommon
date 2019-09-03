@@ -3,8 +3,7 @@ from datetime import datetime
 
 from bxcommon.connections.abstract_connection import AbstractConnection, Node
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import ALL_NETWORK_NUM, DEFAULT_NETWORK_NUM, PING_INTERVAL_S
-from bxcommon.constants import REQUEST_EXPIRATION_TIME
+from bxcommon import constants
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
@@ -41,7 +40,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.ack_message = AckMessage()
 
         self.can_send_pings = True
-        self.sent_response_messages_timestamps = ExpiringDict(self.node.alarm_queue, REQUEST_EXPIRATION_TIME)
+        self.sent_response_messages_timestamps = ExpiringDict(self.node.alarm_queue, constants.REQUEST_EXPIRATION_TIME)
 
     def disable_buffering(self):
         """
@@ -115,20 +114,20 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
         network_num = msg.network_num()
 
-        if self.node.network_num != ALL_NETWORK_NUM and network_num != self.node.network_num:
+        if self.node.network_num != constants.ALL_NETWORK_NUM and network_num != self.node.network_num:
             logger.error("Network number mismatch. Current network num {}, remote network num {}. Closing connection."
                          .format(self.node.network_num, network_num))
             self.mark_for_close()
             return
 
         self.network_num = network_num
-        self.node.alarm_queue.register_alarm(PING_INTERVAL_S, self.send_ping)
+        self.node.alarm_queue.register_alarm(self.ping_interval_s, self.send_ping)
         logger.debug("Received Hello message from peer with network number '{}'.".format(network_num))
 
     def peek_broadcast_msg_network_num(self, input_buffer):
 
         if self.protocol_version == 1:
-            return DEFAULT_NETWORK_NUM
+            return constants.DEFAULT_NETWORK_NUM
 
         return BroadcastMessage.peek_network_num(input_buffer)
 
@@ -136,12 +135,13 @@ class InternalNodeConnection(AbstractConnection[Node]):
         """
         Send a ping (and reschedule if called from alarm queue)
         """
-        if self.can_send_pings:
+        if self.can_send_pings and not self.state & ConnectionState.MARK_FOR_CLOSE:
             nonce = nonce_generator.get_nonce()
             msg = PingMessage(nonce=nonce)
             self.enqueue_msg(msg)
             self.sent_response_messages_timestamps.add(nonce, msg.timestamp)
-            return PING_INTERVAL_S
+            return self.ping_interval_s
+        return constants.CANCEL_ALARMS
 
     def msg_ping(self, msg):
         nonce = msg.nonce()

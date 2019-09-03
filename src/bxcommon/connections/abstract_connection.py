@@ -30,7 +30,6 @@ class AbstractConnection(Generic[Node]):
     __metaclass__ = ABCMeta
 
     CONNECTION_TYPE: ClassVar[ConnectionType] = ConnectionType.NONE
-
     node: Node
 
     def __init__(self, socket_connection, address, node: Node, from_me=False):
@@ -83,6 +82,7 @@ class AbstractConnection(Generic[Node]):
 
         self._trace_message_tracker = defaultdict(int)
         self._last_trace_message_log_time = time.time()
+        self.ping_interval_s: int = constants.PING_INTERVAL_S
         logger.info("Initialized new connection: {}", self)
 
     def __repr__(self):
@@ -311,9 +311,10 @@ class AbstractConnection(Generic[Node]):
         """
         Send a ping (and reschedule if called from alarm queue)
         """
-        if self.can_send_pings:
+        if self.can_send_pings and not self.state & ConnectionState.MARK_FOR_CLOSE:
             self.enqueue_msg(self.ping_message)
-            return constants.PING_INTERVAL_S
+            return self.ping_interval_s
+        return constants.CANCEL_ALARMS
 
     def msg_hello(self, msg):
         self.state |= ConnectionState.HELLO_RECVD
