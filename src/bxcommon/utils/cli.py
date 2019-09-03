@@ -183,11 +183,15 @@ def _get_blockchain_network_info(opts) -> BlockchainNetworkModel:
                 blockchain_network.network.lower() == opts.blockchain_network.lower():
             return blockchain_network
 
-    all_networks_names = "\n".join(
-        map(lambda n: "{} - {}".format(n.protocol, n.network), opts.blockchain_networks))
-    error_msg = "Network number does not exist for blockchain protocol {} and network {}.\nValid options:\n{}" \
-        .format(opts.blockchain_protocol, opts.blockchain_network, all_networks_names)
-    logger.fatal(error_msg)
+    if opts.blockchain_networks:
+        all_networks_names = "\n".join(
+            map(lambda n: "{} - {}".format(n.protocol, n.network), opts.blockchain_networks))
+        error_msg = "Network number does not exist for blockchain protocol {} and network {}.\nValid options:\n{}" \
+            .format(opts.blockchain_protocol, opts.blockchain_network, all_networks_names)
+        logger.fatal(error_msg, include_stack_trace=False)
+    else:
+        logger.fatal("Could not reach the SDN to fetch network information. Check that {} is the actual address "
+                     "you are trying to reach.", opts.sdn_url, include_stack_trace=False)
     exit(1)
 
 

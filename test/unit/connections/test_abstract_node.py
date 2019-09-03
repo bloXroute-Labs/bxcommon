@@ -4,8 +4,7 @@ from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
-from bxcommon.constants import DEFAULT_SLEEP_TIMEOUT, PING_INTERVAL_S, \
-    CONNECTION_RETRY_SECONDS, MAX_CONNECT_RETRIES, FIRST_STATS_INTERVAL_S
+from bxcommon.constants import DEFAULT_SLEEP_TIMEOUT, PING_INTERVAL_S, MAX_CONNECT_RETRIES, FIRST_STATS_INTERVAL_S
 from bxcommon.exceptions import TerminationError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.test_utils import helpers
@@ -205,6 +204,37 @@ class AbstractNodeTest(AbstractTestCase):
         with self.assertRaises(TerminationError):
             self.local_node._kill_node(None, None)
 
+    def test_get_next_retry_timeout(self):
+        self.connection.CONNECTION_TYPE = ConnectionType.BLOCKCHAIN_NODE
+        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
+
+        self.assertEqual(1, self.local_node._get_next_retry_timeout(self.remote_ip, self.remote_port))
+
+        self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)] += 1
+        self.assertEqual(1, self.local_node._get_next_retry_timeout(self.remote_ip, self.remote_port))
+
+        self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)] += 1
+        self.assertEqual(2, self.local_node._get_next_retry_timeout(self.remote_ip, self.remote_port))
+
+        self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)] += 1
+        self.assertEqual(3, self.local_node._get_next_retry_timeout(self.remote_ip, self.remote_port))
+
+        self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)] += 1
+        self.assertEqual(5, self.local_node._get_next_retry_timeout(self.remote_ip, self.remote_port))
+
+        self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)] += 1
+        self.assertEqual(8, self.local_node._get_next_retry_timeout(self.remote_ip, self.remote_port))
+
+        self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)] += 1
+        self.assertEqual(13, self.local_node._get_next_retry_timeout(self.remote_ip, self.remote_port))
+
+        # caps at 13
+        self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)] += 1
+        self.assertEqual(13, self.local_node._get_next_retry_timeout(self.remote_ip, self.remote_port))
+
+        self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)] += 10
+        self.assertEqual(13, self.local_node._get_next_retry_timeout(self.remote_ip, self.remote_port))
+
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
     def test_destroy_conn(self, mocked_register_alarm):
         self.connection.CONNECTION_TYPE = ConnectionType.BLOCKCHAIN_NODE
@@ -214,7 +244,7 @@ class AbstractNodeTest(AbstractTestCase):
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         self.local_node.destroy_conn(self.connection, retry_connection=True)
         self.assertIn(self.connection.fileno, self.local_node.disconnect_queue)
-        mocked_register_alarm.assert_called_with(CONNECTION_RETRY_SECONDS, self.local_node._retry_init_client_socket,
+        mocked_register_alarm.assert_called_with(1, self.local_node._retry_init_client_socket,
                                                  self.remote_ip, self.remote_port, self.connection.CONNECTION_TYPE)
 
     def test_is_outbound_peer(self):

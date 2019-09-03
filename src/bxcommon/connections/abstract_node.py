@@ -365,7 +365,8 @@ class AbstractNode:
                     conn.CONNECTION_TYPE == ConnectionType.BLOCKCHAIN_NODE or \
                     conn.CONNECTION_TYPE == ConnectionType.REMOTE_BLOCKCHAIN_NODE or \
                     conn.CONNECTION_TYPE == ConnectionType.SDN:
-                self.alarm_queue.register_alarm(constants.CONNECTION_RETRY_SECONDS, self._retry_init_client_socket,
+                self.alarm_queue.register_alarm(self._get_next_retry_timeout(peer_ip, peer_port),
+                                                self._retry_init_client_socket,
                                                 peer_ip, peer_port, conn.CONNECTION_TYPE)
         else:
             self.on_failed_connection_retry(peer_ip, peer_port, conn.CONNECTION_TYPE)
@@ -494,6 +495,14 @@ class AbstractNode:
         """
         self.close()
         raise TerminationError("Node killed.")
+
+    def _get_next_retry_timeout(self, ip: str, port: int) -> int:
+        """
+        Returns Fibonnaci(n), where n is the number of retry attempts + 1, up to max of Fibonacci(8) == 13.
+        """
+        golden_ratio = (1 + 5**.5) / 2
+        sequence_number = min(self.num_retries_by_ip[(ip, port)] + 1, constants.MAX_CONNECT_TIMEOUT_INCREASE)
+        return int((golden_ratio ** sequence_number - (1 - golden_ratio) ** sequence_number) / 5 ** .5)
 
     def _retry_init_client_socket(self, ip, port, connection_type):
         self.num_retries_by_ip[(ip, port)] += 1

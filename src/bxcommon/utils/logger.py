@@ -18,7 +18,6 @@ from bxcommon.utils.log_level import LogLevel
 ##
 
 
-DUMP_LOG = False
 MAX_ERR_QUEUE_SIZE = 30
 
 error_msgs = deque()
@@ -243,10 +242,6 @@ def log(level, msg, *args, **kwargs):
 
     _log.write(log_msg_str)
 
-    # Print out crash logs to the console for easy debugging.
-    if DUMP_LOG or level == LogLevel.FATAL:
-        sys.stdout.write(log_msg_str)
-
 
 def debug(msg, *args):
     log(LogLevel.DEBUG, msg, *args)
@@ -268,8 +263,11 @@ def error(msg, *args):
     log(LogLevel.ERROR, msg, *args)
 
 
-def fatal(msg, *args):
-    log(LogLevel.FATAL, msg, *args, exc_info=sys.exc_info())
+def fatal(msg, *args, include_stack_trace=True):
+    if include_stack_trace:
+        log(LogLevel.FATAL, msg, *args, exc_info=sys.exc_info())
+    else:
+        log(LogLevel.FATAL, msg, *args)
 
 
 def statistics(msg, *args):

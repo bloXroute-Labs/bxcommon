@@ -181,7 +181,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
                      remote_blockchain_ip=None, remote_blockchain_port=None, connect_to_remote_blockchain=False,
                      is_internal_gateway=False, is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
                      parallelism_degree=1, cookie_file_path=COOKIE_FILE_PATH, blockchain_block_hold_timeout_s=30,
-                     blockchain_block_recovery_timeout_s=30, **kwargs) -> Namespace:
+                     blockchain_block_recovery_timeout_s=30, stay_alive_duration=30 * 60, **kwargs) -> Namespace:
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -240,7 +240,10 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         ),
         "max_block_interval": 10,
         "cookie_file_path": cookie_file_path,
-        "config_update_interval": 60
+        "config_update_interval": 60,
+        "blockchain_message_ttl": 10,
+        "remote_blockchain_message_ttl": 10,
+        "stay_alive_duration": stay_alive_duration,
     })
 
     if include_default_btc_args:
