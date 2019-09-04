@@ -39,7 +39,6 @@ class AbstractNode:
 
         self.connection_pool = ConnectionPool()
 
-        self.schedule_pings_on_timeout = False
         self.should_force_exit = False
 
         self.num_retries_by_ip: Dict[Tuple[str, int], int] = defaultdict(int)
@@ -461,7 +460,6 @@ class AbstractNode:
         else:
             self.enqueue_disconnect(socket_connection.fileno())
 
-
     def _connection_timeout(self, conn):
         """
         Check if the connection is established.
@@ -472,9 +470,6 @@ class AbstractNode:
 
         if conn.state & ConnectionState.ESTABLISHED:
             logger.debug("Connection is still established: {}", conn)
-
-            if self.schedule_pings_on_timeout:
-                self.alarm_queue.register_alarm(constants.PING_INTERVAL_S, conn.send_ping)
 
             return constants.CANCEL_ALARMS
 

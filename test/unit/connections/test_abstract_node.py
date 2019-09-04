@@ -188,9 +188,8 @@ class AbstractNodeTest(AbstractTestCase):
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
     def test_connection_timeout_established(self, mocked_register_alarm):
         self.connection.state = ConnectionState.ESTABLISHED
-        self.local_node.schedule_pings_on_timeout = True
         self.assertEqual(0, self.local_node._connection_timeout(self.connection))
-        mocked_register_alarm.assert_called_with(PING_INTERVAL_S, self.connection.send_ping)
+        mocked_register_alarm.assert_not_called()
         self.connection.state = ConnectionState.MARK_FOR_CLOSE
         self.assertEqual(0, self.local_node._connection_timeout(self.connection))
 
