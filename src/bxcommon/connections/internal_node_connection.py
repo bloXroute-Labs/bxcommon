@@ -112,6 +112,10 @@ class InternalNodeConnection(AbstractConnection[Node]):
     def msg_hello(self, msg):
         super(InternalNodeConnection, self).msg_hello(msg)
 
+        if self.state & ConnectionState.MARK_FOR_CLOSE:
+            logger.debug("Connection has been closed: {}, Ignoring: {} ", self, msg)
+            return
+
         network_num = msg.network_num()
 
         if self.node.network_num != constants.ALL_NETWORK_NUM and network_num != self.node.network_num:

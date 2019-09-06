@@ -147,6 +147,18 @@ class ConnectionPoolTest(AbstractTestCase):
         self.conn_pool1.delete(self.conn2)
         self.assertEqual(2, len(self.conn_pool1))
 
+    def test_get_by_node_id(self):
+        self._add_connections()
+        self.conn1.peer_id = self.node_id2
+        self.conn_pool1.index_conn_node_id(self.node_id2, self.conn1)
+        connections_for_node_id = self.conn_pool1.get_by_node_id(self.node_id2)
+        self.assertEqual(1, len(connections_for_node_id))
+        self.conn_pool1.add(4000, "0.0.0.0", 6000, self.conn2)
+        self.conn_pool1.index_conn_node_id(self.node_id2, self.conn2)
+        connections_for_node_id = self.conn_pool1.get_by_node_id(self.node_id2)
+        self.assertEqual(2, len(connections_for_node_id))
+        self.assertEqual(0, len(self.conn_pool1.get_by_node_id("node_id")))
+
     def _add_connections(self):
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
         self.conn_pool1.add(self.fileno2, self.ip2, self.port2, self.conn2)

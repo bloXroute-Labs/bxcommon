@@ -17,6 +17,7 @@ class ConnectionPool(object):
     by_fileno: List[Optional[AbstractConnection]]
     by_ipport: Dict[Tuple[str, int], AbstractConnection]
     by_connection_type: Dict[ConnectionType, Set[AbstractConnection]]
+    by_node_id: Dict[str, Set[AbstractConnection]]
     len_fileno: int
     count_conn_by_ip: Dict[str, int]
     num_peer_conn: int
@@ -25,6 +26,7 @@ class ConnectionPool(object):
         self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO
         self.by_ipport = {}
         self.by_connection_type = defaultdict(set)
+        self.by_node_id = defaultdict(set)
         self.len_fileno = ConnectionPool.INITIAL_FILENO
         self.count_conn_by_ip = defaultdict(lambda: 0)
         self.num_peer_conn = 0
@@ -58,6 +60,10 @@ class ConnectionPool(object):
 
         self.by_ipport[(conn.peer_ip, new_port)] = conn
 
+    def index_conn_node_id(self, node_id: str, conn: AbstractConnection) -> None:
+        if node_id:
+            self.by_node_id[node_id].add(conn)
+
     def has_connection(self, ip, port):
         return (ip, port) in self.by_ipport
 
@@ -86,6 +92,18 @@ class ConnectionPool(object):
             return self.count_conn_by_ip[ip]
         return 0
 
+    def get_by_node_id(self, node_id: str) -> Set[AbstractConnection]:
+        """
+        Returns list of connections where the peer_id matches the node id param
+
+        NOTE: The connection's peer_id attribute only gets assigned once the hello message is received so you will only
+        be able to retrieve connections by node id once this has been exchanged
+
+        :param node_id: node id to match
+        :return: list of matched connections
+        """
+        return self.by_node_id[node_id]
+
     def delete(self, conn):
         """
         Delete connection from connection pool.
@@ -108,6 +126,12 @@ class ConnectionPool(object):
             del self.count_conn_by_ip[conn.peer_ip]
         else:
             self.count_conn_by_ip[conn.peer_ip] -= 1
+
+        if conn.peer_id and conn.peer_id in self.by_node_id:
+            if len(self.get_by_node_id(conn.peer_id)) == 1:
+                del self.by_node_id[conn.peer_id]
+            else:
+                self.by_node_id[conn.peer_id].discard(conn)
 
     def delete_by_fileno(self, fileno):
         """

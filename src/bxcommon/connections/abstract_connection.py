@@ -318,6 +318,17 @@ class AbstractConnection(Generic[Node]):
 
     def msg_hello(self, msg):
         self.state |= ConnectionState.HELLO_RECVD
+        if msg.node_id() is None:
+            logger.warn("Hello message without peer_id received from {}".format(self))
+        self.peer_id = msg.node_id()
+        self.node.connection_pool.index_conn_node_id(self.peer_id, self)
+
+        if len(self.node.connection_pool.get_by_node_id(self.peer_id)) > 1:
+            if self.from_me:
+                logger.info("Connection already exists for node id: {}. Closing connection: {}", self.peer_id, self)
+                self.node.destroy_conn(self)
+            return
+
         self.enqueue_msg(self.ack_message)
 
     def msg_ack(self, _msg):
