@@ -151,5 +151,9 @@ class SocketConnection:
         # A socket should have the state MARK_FOR_CLOSE *before* close()
         # is called on it.
         self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
+        try:
+            self.socket_instance.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
         self.socket_instance.close()
         self._receive_buf = None
