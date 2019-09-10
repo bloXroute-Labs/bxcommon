@@ -154,7 +154,7 @@ INFO_STATS_INTERVAL_S = 60 * 60
 THREADED_STAT_SLEEP_INTERVAL = 1
 
 # TODO: turn this number up to 60 minutes after we've done some testing to ensure that this is ok
-MEMORY_STATS_INTERVAL_S = 1 * 60
+MEMORY_STATS_INTERVAL_S = 5 * 60
 MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES = 100 * 1024 * 1024
 
 # Percentage for transactions that will be logged by stats service. The value should be controlled by SDN in the future.
