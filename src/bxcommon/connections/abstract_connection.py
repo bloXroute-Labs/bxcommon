@@ -2,7 +2,7 @@ import time
 import traceback
 from abc import ABCMeta
 from collections import defaultdict
-from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING
+from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Set, Optional, Tuple
 
 from bxutils import logging
 from bxutils.logging.log_level import LogLevel
@@ -17,7 +17,9 @@ from bxcommon.utils import convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.utils.memory_utils import ObjectSize
+from bxcommon.utils.log_level import LogLevel
+from bxcommon.utils.memory_utils import ObjectSize, SpecialMemoryProperties, SpecialTuple
+from bxcommon.utils import memory_utils
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.direction import Direction
 
@@ -29,7 +31,7 @@ logger = logging.get_logger(__name__)
 Node = TypeVar("Node", bound="AbstractNode")
 
 
-class AbstractConnection(Generic[Node]):
+class AbstractConnection(Generic[Node], SpecialMemoryProperties):
     __metaclass__ = ABCMeta
 
     CONNECTION_TYPE: ClassVar[ConnectionType] = ConnectionType.NONE
@@ -382,14 +384,14 @@ class AbstractConnection(Generic[Node]):
             self.network_num,
             self.inputbuf,
             "input_buffer",
-            ObjectSize("input_buffer", self.inputbuf.length, is_actual_size=False)
+            ObjectSize("input_buffer", memory_utils.get_special_size(self.inputbuf).size, is_actual_size=True)
         )
         hooks.increment_obj_mem_stats(
             class_name,
             self.network_num,
             self.outputbuf,
             "output_buffer",
-            ObjectSize("output_buffer", self.outputbuf.length, is_actual_size=False)
+            ObjectSize("output_buffer", memory_utils.get_special_size(self.outputbuf).size, is_actual_size=True)
         )
 
     def _report_bad_message(self):
@@ -416,3 +418,6 @@ class AbstractConnection(Generic[Node]):
                 self.inputbuf.peek_message(min(self.header_size + payload_len, constants.MAX_LOGGED_BYTES_LEN)))
 
         return "<not available>"
+
+    def special_memory_size(self, ids: Optional[Set[int]] = None) -> SpecialTuple:
+        return memory_utils.add_special_objects(self.inputbuf, self.outputbuf, ids=ids)

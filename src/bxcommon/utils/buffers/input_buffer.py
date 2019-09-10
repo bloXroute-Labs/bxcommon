@@ -1,7 +1,10 @@
 from collections import deque
+from bxcommon.utils import memory_utils
+from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
+from typing import Set, Optional
 
 
-class InputBuffer(object):
+class InputBuffer(SpecialMemoryProperties):
     def __init__(self):
         self.input_list = deque()
         self.length = 0
@@ -106,3 +109,5 @@ class InputBuffer(object):
 
         return self.get_slice(start, stop)
 
+    def special_memory_size(self, ids: Optional[Set[int]] = None) -> SpecialTuple:
+        return memory_utils.get_special_size(self.input_list, ids=ids)

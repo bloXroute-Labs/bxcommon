@@ -6,6 +6,9 @@ from bxcommon.constants import PING_INTERVAL_S
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
+from typing import Optional, Set
+from bxcommon.utils import memory_utils
+from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
 
 
 class MockConnectionType(IntFlag):
@@ -13,7 +16,7 @@ class MockConnectionType(IntFlag):
     NOT_MOCK = max(ConnectionType) << 2
 
 
-class MockConnection:
+class MockConnection(SpecialMemoryProperties):
     CONNECTION_TYPE = MockConnectionType.MOCK
 
     def __init__(self, sock: SocketConnection, address, node, from_me=False):
@@ -81,3 +84,6 @@ class MockConnection:
 
     def send_ping(self):
         return PING_INTERVAL_S
+
+    def special_memory_size(self, ids: Optional[Set[int]] = None) -> SpecialTuple:
+        return memory_utils.add_special_objects(self.inputbuf, self.outputbuf, ids=ids)

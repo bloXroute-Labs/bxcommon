@@ -1,10 +1,12 @@
 import time
 from collections import deque
-
+from bxcommon.utils import memory_utils
+from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
+from typing import Set, Optional
 from bxcommon import constants
 
 
-class OutputBuffer(object):
+class OutputBuffer(SpecialMemoryProperties):
     """
     There are three key functions on the outputbuffer read interface. This should also
     be implemented by the cut through sink interface.
@@ -133,3 +135,6 @@ class OutputBuffer(object):
         self.last_bytearray = None
         self.last_memview = None
         self.valid_len = 0
+
+    def special_memory_size(self, ids: Optional[Set[int]] = None) -> SpecialTuple:
+        return memory_utils.get_special_size(self.output_msgs, ids=ids)
