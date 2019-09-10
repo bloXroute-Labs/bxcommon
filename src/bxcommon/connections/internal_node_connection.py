@@ -68,8 +68,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
             return False
 
         if not self.version_manager.is_protocol_supported(protocol_version):
-            logger.warn("Protocol version of remote node '{}' is not supported. Closing connection."
-                         .format(protocol_version))
+            logger.warn("Protocol version {} of remote node '{}' is not supported. Closing connection."
+                         .format(protocol_version, self.peer_desc))
             self.mark_for_close()
             return False
 
