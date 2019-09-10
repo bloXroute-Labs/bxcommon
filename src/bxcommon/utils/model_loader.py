@@ -6,11 +6,12 @@ NOTE: A similar model loader exists in BXAPI - if making changes, check both for
 # This file does type manipulation that type checkers will not understand.
 
 import json
-import logging
 import inspect
 from typing import Dict, Type, TypeVar, Any, List, Optional, Union
 
-logger = logging.getLogger(__name__)
+from bxutils import logging
+
+logger = logging.get_logger(__name__)
 T = TypeVar("T")
 _TYPE_HANDLER_MAPPING = {}
 

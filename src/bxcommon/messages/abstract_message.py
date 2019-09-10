@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABC
 
-from bxcommon.utils.log_level import LogLevel
+from bxutils.logging.log_level import LogLevel
 
 
 class AbstractMessage(ABC):

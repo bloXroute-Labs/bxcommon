@@ -1,38 +1,43 @@
 from datetime import datetime
+from typing import List, Optional
+
+from bxutils import logging
+from bxutils.logging import log_config
 
 from bxcommon.models.node_model import NodeModel
 from bxcommon.network import network_event_loop_factory
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import cli, model_loader
-from bxcommon.utils import config, logger
+from bxcommon.utils import config
 from bxcommon.exceptions import TerminationError
 
+logger = logging.get_logger(__name__)
 
-def run_node(process_id_file_path, opts, node_class, node_type=None):
+LOGGER_NAMES = ["bxcommon", "bxutils"]
+
+
+def run_node(process_id_file_path, opts, node_class, node_type=None, logger_names: List[Optional[str]] = LOGGER_NAMES):
     if node_type is None:
         node_type = node_class.NODE_TYPE
 
     config.log_pid(process_id_file_path)
-    config.init_logging(opts.log_path, opts.to_stdout)
 
     try:
         if opts.use_extensions:
             from bxcommon.utils.proxy import task_pool_proxy
             task_pool_proxy.init(opts.thread_pool_parallelism_degree)
             logger.info(
-                "initialized task thread pool parallelism degree to "
-                f"{task_pool_proxy.get_pool_size()}."
+                "initialized task thread pool parallelism degree to {}.",
+                task_pool_proxy.get_pool_size()
             )
-        _run_node(opts, node_class, node_type)
+        _run_node(opts, node_class, node_type, logger_names)
     except TerminationError:
         logger.fatal("Node terminated")
     except Exception as e:
-        logger.fatal("Unhandled exception %s raised, terminating!", e)
-    finally:
-        logger.log_close()
+        logger.fatal("Unhandled exception {} raised, terminating!", e)
 
 
-def _run_node(opts, node_class, node_type):
+def _run_node(opts, node_class, node_type, logger_names: List[Optional[str]]):
     node_model = None
     if opts.node_id:
         # Test network, get pre-configured peers from the SDN.
@@ -55,15 +60,11 @@ def _run_node(opts, node_class, node_type):
     if not hasattr(opts, "outbound_peers"):
         opts.__dict__["outbound_peers"] = []
 
-    logger.set_log_name(opts.node_id)
-    logger.set_log_level(opts.log_level)
-    logger.set_log_format(opts.log_format)
-    logger.set_immediate_flush(opts.log_flush_immediately)
-
     logger.info({"type": "node_init", "Data": opts})
 
     # Start main loop
     node = node_class(opts)
+    log_config.set_instance(logger_names, node.opts.node_id)
     event_loop = network_event_loop_factory.create_event_loop(node)
 
     logger.debug("Running node")

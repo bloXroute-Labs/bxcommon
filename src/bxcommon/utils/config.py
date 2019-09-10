@@ -3,12 +3,14 @@ import json
 import multiprocessing
 import os
 import re
-import sys
 from typing import Dict, Any
+
+from bxutils import logging
 
 from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 _working_directory = ""
 

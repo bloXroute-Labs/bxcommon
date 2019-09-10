@@ -2,10 +2,13 @@ import time
 from collections import deque
 from typing import Deque, Optional, TYPE_CHECKING
 
+from bxutils import logging
+from bxutils.logging.log_level import LogLevel
+
 from bxcommon.messages.abstract_block_message import AbstractBlockMessage
 from bxcommon.messages.abstract_message import AbstractMessage
-from bxcommon.utils import logger
-from bxcommon.utils.log_level import LogLevel
+
+logger = logging.get_logger(__name__)
 
 if TYPE_CHECKING:
     from bxcommon.connections.abstract_connection import AbstractConnection

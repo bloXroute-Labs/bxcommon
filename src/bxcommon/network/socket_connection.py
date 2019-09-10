@@ -1,9 +1,13 @@
 import errno
 import socket
 
+from bxutils import logging
+
 from bxcommon import constants
 from bxcommon.network.socket_connection_state import SocketConnectionState
-from bxcommon.utils import logger, convert
+from bxcommon.utils import convert
+
+logger = logging.get_logger(__name__)
 
 
 # TODO: This needs to be renamed to "SocketWrapper". This just wraps the socket object- does not contain any connection

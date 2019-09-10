@@ -1,14 +1,16 @@
 import argparse
 
+from bxutils.logging.log_format import LogFormat
+from bxutils.logging.log_level import LogLevel
+from bxutils import constants as utils_constants
+
 from bxcommon import constants
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import ALL_NETWORK_NUM
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import config, ip_resolver
-from bxcommon.utils import convert, logger
-from bxcommon.utils.log_format import LogFormat
-from bxcommon.utils.log_level import LogLevel
+from bxcommon.utils import convert
 from bxcommon.utils.node_start_args import NodeStartArgs
 
 
@@ -41,14 +43,14 @@ def get_argument_parser() -> argparse.ArgumentParser:
         help="set log level",
         type=LogLevel.__getattr__,  # pyre-ignore
         choices=list(LogLevel),
-        default=constants.DEFAULT_LOG_LEVEL
+        default=utils_constants.DEFAULT_LOG_LEVEL
     )
     arg_parser.add_argument(
         "--log-format",
         help="set log format",
         type=LogFormat.__getattr__,  # pyre-ignore
         choices=list(LogFormat),
-        default=constants.DEFAULT_LOG_FORMAT
+        default=utils_constants.DEFAULT_LOG_FORMAT
     )
     arg_parser.add_argument(
         "--log-flush-immediately",

@@ -1,9 +1,8 @@
 import platform
 import socket
-import ctypes
 
-from bxcommon.utils.log_level import LogLevel
-from bxcommon.utils.log_format import LogFormat
+from bxutils.logging.log_level import LogLevel
+from bxutils.logging.log_format import LogFormat
 
 PLATFORM_LINUX = "linux"
 PLATFORM_MAC = "darwin"

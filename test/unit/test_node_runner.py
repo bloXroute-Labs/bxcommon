@@ -3,11 +3,15 @@ import unittest
 from argparse import Namespace
 from unittest import mock
 
+from bxutils.logging import log_config
+from bxutils.logging.log_level import LogLevel
+from bxutils.logging.log_format import LogFormat
+
 from bxcommon import node_runner, constants
+from bxcommon.utils import config
 from bxcommon.connections.node_type import NodeType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.test_utils import helpers
-from bxcommon.utils import logger, log_level, log_format, config
 
 
 class NodeMock(object):
@@ -45,8 +49,8 @@ class TestNodeRunner(unittest.TestCase):
             "network_num": self.blockchain_network.network_num,
             "blockchain_protocol": self.blockchain_network.protocol,
             "blockchain_networks": [self.blockchain_network],
-            "log_level": log_level.LogLevel.INFO,
-            "log_format": log_format.LogFormat.PLAIN,
+            "log_level": LogLevel.INFO,
+            "log_format": LogFormat.PLAIN,
             "log_flush_immediately": True,
             "use_extensions": True,
             "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
@@ -55,7 +59,7 @@ class TestNodeRunner(unittest.TestCase):
         }
         self.opts = Namespace()
         self.opts.__dict__ = opts
-        logger._log = mock.MagicMock()
+        log_config.create_logger(None, LogLevel.WARNING)
         self.event_loop_mock = EventLoopMock()
 
     @mock.patch("bxcommon.utils.logger.fatal")

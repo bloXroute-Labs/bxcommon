@@ -1,15 +1,17 @@
 import time
 from abc import abstractmethod, ABCMeta
+from mock import MagicMock
 
+from bxutils.logging import log_config
+from bxutils.logging.log_level import LogLevel
+
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants
 from bxcommon.connections.node_type import NodeType
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
-from mock import MagicMock
-
 from bxcommon.constants import NULL_TX_SID
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils import helpers
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
@@ -23,6 +25,11 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
     __metaclass__ = ABCMeta
 
     TEST_MEMORY_LIMIT_MB = 0.01
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        log_config.create_logger(None, log_level=LogLevel.INFO)
 
     def setUp(self) -> None:
         self.mock_node = MockNode(helpers.get_common_opts(8000, node_type=NodeType.GATEWAY))

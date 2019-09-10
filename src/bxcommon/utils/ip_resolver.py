@@ -1,13 +1,15 @@
 import re
 import socket
 import time
+import requests
 from typing import List, Optional
 
-import requests
+from bxutils import logging
 
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
 def blocking_resolve_ip(net_address: str) -> str:
@@ -21,11 +23,7 @@ def blocking_resolve_ip(net_address: str) -> str:
             resolved_ip = None
             tries += 1
 
-            message = "Unable to connect to address {0}. Retried {1}".format(net_address, tries)
-            if logger.is_initialized():
-                logger.warn(message)
-            else:
-                print(message)
+            logger.warning("Unable to connect to address {0}. Retried {1}", net_address, tries)
             if tries >= constants.NET_ADDR_INIT_CONNECT_TRIES:
                 raise EnvironmentError("Unable to resolve address {}.".format(net_address))
     assert resolved_ip is not None

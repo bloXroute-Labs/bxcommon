@@ -5,6 +5,8 @@ from argparse import Namespace
 from collections import defaultdict, deque
 from typing import List, Optional, Tuple, Dict
 
+from bxutils import logging
+
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_pool import ConnectionPool
@@ -14,13 +16,15 @@ from bxcommon.exceptions import TerminationError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_http_service
-from bxcommon.utils import logger, memory_utils, json_utils
+from bxcommon.utils import memory_utils, json_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
+
+logger = logging.get_logger(__name__)
 
 
 class AbstractNode:
@@ -108,7 +112,7 @@ class AbstractNode:
 
         # If we're already connected to the remote peer, log the event and request disconnect.
         if self.connection_exists(ip, port):
-            logger.warn("Duplicate connection attempted to: {0}:{1}.", ip, port)
+            logger.warning("Duplicate connection attempted to: {0}:{1}.", ip, port)
 
             # Schedule dropping the added connection and keep the old one.
             self.enqueue_disconnect(fileno)
@@ -119,7 +123,7 @@ class AbstractNode:
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Initialized connection not in pool. Fileno: {0}", fileno)
+            logger.warning("Initialized connection not in pool. Fileno: {0}", fileno)
             return
 
         logger.info("Connection state initialized: {}", conn)
@@ -134,7 +138,7 @@ class AbstractNode:
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Connection not in pool. Fileno: {0}", fileno)
+            logger.warning("Connection not in pool. Fileno: {0}", fileno)
             return
 
         logger.info("Destroying connection: {}", conn)
@@ -147,7 +151,7 @@ class AbstractNode:
 
     def on_updated_peers(self, outbound_peer_models):
         if not outbound_peer_models:
-            logger.warn("Got peer update with no peers.")
+            logger.warning("Got peer update with no peers.")
             return
 
         logger.trace("Processing updated outbound peers: {}.", outbound_peer_models)
@@ -193,7 +197,7 @@ class AbstractNode:
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Received bytes for connection not in pool. Fileno {0}", fileno)
+            logger.warning("Received bytes for connection not in pool. Fileno {0}", fileno)
             return
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
@@ -208,7 +212,7 @@ class AbstractNode:
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Received bytes for connection not in pool. Fileno {0}", fileno)
+            logger.warning("Received bytes for connection not in pool. Fileno {0}", fileno)
             return
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
@@ -220,7 +224,7 @@ class AbstractNode:
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Request to get bytes for connection not in pool. Fileno {0}", fileno)
+            logger.warning("Request to get bytes for connection not in pool. Fileno {0}", fileno)
             return
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
@@ -232,7 +236,7 @@ class AbstractNode:
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
-            logger.warn("Bytes sent call for connection not in pool. Fileno {0}", fileno)
+            logger.warning("Bytes sent call for connection not in pool. Fileno {0}", fileno)
             return
 
         conn.advance_sent_bytes(bytes_sent)
@@ -513,7 +517,7 @@ class AbstractNode:
             self.enqueue_connection(ip, port)
         else:
             del self.num_retries_by_ip[(ip, port)]
-            logger.warn("Maximum retry attempts exceeded. Dropping {} connection to {}:{}.", connection_type, ip, port)
+            logger.warning("Maximum retry attempts exceeded. Dropping {} connection to {}:{}.", connection_type, ip, port)
             self.on_failed_connection_retry(ip, port, connection_type)
 
         return 0

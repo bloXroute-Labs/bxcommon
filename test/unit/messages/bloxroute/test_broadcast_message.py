@@ -1,6 +1,6 @@
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.test_utils import helpers
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash

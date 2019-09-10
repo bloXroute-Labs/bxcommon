@@ -1,4 +1,6 @@
-from bxcommon.utils import logger, json_utils
+from bxutils import logging
+
+logger = logging.get_logger(__name__)
 
 
 def publish_stats(stats_name, stats_payload):

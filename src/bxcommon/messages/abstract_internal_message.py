@@ -1,9 +1,12 @@
 import struct
 
+from bxutils import logging
+
 from bxcommon import constants
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.abstract_message import AbstractMessage
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
 class AbstractInternalMessage(AbstractMessage):

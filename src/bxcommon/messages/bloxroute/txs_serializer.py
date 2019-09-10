@@ -2,12 +2,13 @@ import struct
 from typing import List, Union
 from collections import namedtuple
 
+from bxutils import logging
+
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES, UL_SHORT_SIZE_IN_BYTES
-from bxcommon.utils import logger
 
-
+logger = logging.get_logger(__name__)
 TxContentShortIds = namedtuple("TxContentAndShortIds", ["tx_hash", "tx_content", "short_ids"])
 
 
@@ -65,7 +66,11 @@ def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxCon
                 struct.pack_into("<L", buffer, off, short_id)
                 off += UL_INT_SIZE_IN_BYTES
         else:
-            logger.warn("Transaction {} in netwrok {} is missing either content or short ids".format(tx_content_short_ids.tx_hash, network_num))
+            logger.warning(
+                "Transaction {} in netwrok {} is missing either content or short ids",
+                tx_content_short_ids.tx_hash,
+                network_num
+            )
 
     return buffer
 

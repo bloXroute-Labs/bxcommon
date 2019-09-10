@@ -1,7 +1,12 @@
 from typing import List
-from bxcommon.utils import logger, ping_latency
+
+from bxutils import logging
+
+from bxcommon.utils import ping_latency
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon import constants
+
+logger = logging.get_logger(__name__)
 
 
 def get_best_relay_by_ping_latency(relays: List[OutboundPeerModel]) -> OutboundPeerModel:

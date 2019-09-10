@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
-from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.test_utils import helpers
 
 
 class MessageFactoryTestCase(AbstractTestCase):

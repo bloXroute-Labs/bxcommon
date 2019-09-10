@@ -8,10 +8,11 @@ from datetime import datetime
 from enum import Enum
 from threading import Condition, Lock, Thread
 
+from bxutils.logging.log_level import LogLevel
+from bxutils.logging.log_format import LogFormat
+
 from bxcommon.constants import ENABLE_LOGGING, FLUSH_LOG, DEFAULT_LOG_LEVEL, DEFAULT_LOG_FORMAT
 from bxcommon.utils import json_utils
-from bxcommon.utils.log_format import LogFormat
-from bxcommon.utils.log_level import LogLevel
 
 ##
 # The Logging Interface

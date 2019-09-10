@@ -1,11 +1,14 @@
 from collections import defaultdict
 
+from bxutils import logging
+
 from bxcommon import constants
-from bxcommon.utils import logger
 from bxcommon.utils.stats.direction import Direction
 from bxcommon.utils.stats.measurement_type import MeasurementType
 from bxcommon.utils.stats.peer_stats import PeerStats
 from bxcommon.utils.stats.statistics_service import StatisticsService, StatsIntervalData
+
+logger = logging.get_logger(__name__)
 
 
 class ThroughputIntervalData(StatsIntervalData):

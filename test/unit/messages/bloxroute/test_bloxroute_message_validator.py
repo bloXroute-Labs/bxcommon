@@ -1,3 +1,4 @@
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants
 from bxcommon.messages.bloxroute import protocol_version
 from bxcommon.messages.bloxroute.bloxroute_message_control_flags import BloxrouteMessageControlFlags
@@ -6,7 +7,6 @@ from bxcommon.messages.bloxroute.bloxroute_message_validator import BloxrouteMes
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
 from bxcommon.messages.validation.message_validation_settings import MessageValidationSettings
 from bxcommon.test_utils import helpers
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 
 

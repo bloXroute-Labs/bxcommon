@@ -1,12 +1,15 @@
 import struct
 from abc import ABCMeta
 
+from bxutils import logging
+
 from bxcommon import constants
 from bxcommon.constants import VERSION_NUM_LEN
 from bxcommon.messages.bloxroute.v4.version_message_v4 import VersionMessageV4
 from bxcommon.messages.bloxroute.version_message import VersionMessage
-from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
+
+logger = logging.get_logger(__name__)
 
 
 class AbstractVersionManager(object):

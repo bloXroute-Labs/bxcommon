@@ -1,7 +1,7 @@
 import struct
 
-from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 
 
 class MessageTest(AbstractTestCase):

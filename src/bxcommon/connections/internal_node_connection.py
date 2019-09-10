@@ -1,6 +1,8 @@
 from abc import ABCMeta
 from datetime import datetime
 
+from bxutils import logging
+
 from bxcommon.connections.abstract_connection import AbstractConnection, Node
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon import constants
@@ -10,12 +12,13 @@ from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_vers
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
-from bxcommon.utils import logger
 from bxcommon.utils import nonce_generator
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
+
+logger = logging.get_logger(__name__)
 
 
 class InternalNodeConnection(AbstractConnection[Node]):
@@ -68,8 +71,11 @@ class InternalNodeConnection(AbstractConnection[Node]):
             return False
 
         if not self.version_manager.is_protocol_supported(protocol_version):
-            logger.warn("Protocol version {} of remote node '{}' is not supported. Closing connection."
-                         .format(protocol_version, self.peer_desc))
+            logger.warning(
+                "Protocol version {} of remote node '{}' is not supported. Closing connection.",
+                protocol_version,
+                self.peer_desc
+            )
             self.mark_for_close()
             return False
 
@@ -160,5 +166,5 @@ class InternalNodeConnection(AbstractConnection[Node]):
                          .format(msg.nonce(), request_response_time, self))
             hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
         elif nonce is not None:
-            logger.warn("Received pong message from {} {} with nonce {}, ping request was not found in cache"
+            logger.warning("Received pong message from {} {} with nonce {}, ping request was not found in cache"
                         .format(self.peer_desc, self.CONNECTION_TYPE, nonce))

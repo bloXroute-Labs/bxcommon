@@ -1,6 +1,6 @@
+from bxcommon.test_utils.abstract_transaction_service_test_case import AbstractTransactionServiceTestCase
 from bxcommon.services.extension_transaction_service import ExtensionTransactionService
 from bxcommon.services.transaction_service import TransactionService
-from bxcommon.test_utils.abstract_transaction_service_test_case import AbstractTransactionServiceTestCase
 from bxcommon.test_utils import helpers
 
 

@@ -1,7 +1,8 @@
 from datetime import datetime
 
+from bxutils.logging.log_level import LogLevel
+
 from bxcommon.messages.bloxroute.v4.message_v4 import MessageV4
-from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.message_buffer_builder import PayloadElement, PayloadBlock
 from bxcommon.constants import BX_HDR_COMMON_OFF
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage

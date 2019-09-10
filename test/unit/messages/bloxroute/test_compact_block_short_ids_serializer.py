@@ -1,5 +1,5 @@
-from bxcommon.messages.bloxroute import compact_block_short_ids_serializer
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.messages.bloxroute import compact_block_short_ids_serializer
 
 
 class CompactBlockShortIdsSerializer(AbstractTestCase):

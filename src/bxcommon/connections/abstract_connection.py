@@ -4,17 +4,19 @@ from abc import ABCMeta
 from collections import defaultdict
 from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING
 
+from bxutils import logging
+from bxutils.logging.log_level import LogLevel
+
 from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.network.socket_connection import SocketConnection
-from bxcommon.utils import logger, convert
+from bxcommon.utils import convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.direction import Direction
@@ -23,6 +25,7 @@ if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
     from bxcommon.connections.abstract_node import AbstractNode
 
+logger = logging.get_logger(__name__)
 Node = TypeVar("Node", bound="AbstractNode")
 
 
@@ -219,7 +222,7 @@ class AbstractConnection(Generic[Node]):
                 # Full messages must be one of the handshake messages if the connection isn't established yet.
                 if not (self.is_active()) \
                         and msg_type not in self.hello_messages:
-                    logger.warn("Connection to {0} not established and got {1} message!  Closing.", self.peer_desc,
+                    logger.warning("Connection to {0} not established and got {1} message!  Closing.", self.peer_desc,
                                  msg_type)
                     self.mark_for_close()
                     return
@@ -227,7 +230,7 @@ class AbstractConnection(Generic[Node]):
                 if self.log_throughput:
                     hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
 
-                if not logger.should_log_level(msg.log_level()) and logger.should_log_level(LogLevel.INFO):
+                if not logger.isEnabledFor(msg.log_level()) and logger.isEnabledFor(LogLevel.INFO):
                     self._trace_message_tracker[msg_type] += 1
                 elif len(self._trace_message_tracker) > 0:
                     logger.info("Processed the following message types: {} on connection {} over {:.2f} seconds.",
@@ -395,7 +398,7 @@ class AbstractConnection(Generic[Node]):
         :return: if connection should be closed
         """
         if self.num_bad_messages == constants.MAX_BAD_MESSAGES:
-            logger.warn("Received too many bad messages. Closing connection: {}", self)
+            logger.warning("Received too many bad messages. Closing connection: {}", self)
             self.mark_for_close()
             return True
         else:

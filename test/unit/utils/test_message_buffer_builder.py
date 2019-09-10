@@ -1,6 +1,5 @@
 import struct
 
-from bxcommon.utils import logger
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.message_buffer_builder import PayloadElement, PayloadBlock
 from bxcommon.utils import uuid_pack

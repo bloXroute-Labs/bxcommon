@@ -1,13 +1,17 @@
 import time
 from typing import List, Optional, Dict, Any, cast
 
+from bxutils import logging
+
 from bxcommon.constants import SdnRoutes
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.services import http_service
-from bxcommon.utils import logger, model_loader, json_utils, ip_resolver
+from bxcommon.utils import model_loader, json_utils, ip_resolver
+
+logger = logging.get_logger(__name__)
 
 
 def fetch_node_attributes(node_id: str) -> Optional[NodeModel]:
@@ -24,11 +28,15 @@ def fetch_node_attributes(node_id: str) -> Optional[NodeModel]:
 
 def _fetch_peers(node_url: str, node_id=None) -> List[OutboundPeerModel]:
     outbound_peers_response = cast(List[Dict[str, Any]], http_service.get_json(node_url))
-    logger.trace("Retrieved outbound peers for node {0} from endpoint {1}: {2}"
-                 .format(node_id, node_url, outbound_peers_response))
+    logger.trace(
+        "Retrieved outbound peers for node {0} from endpoint {1}: {2}",
+        node_id,
+        node_url,
+        outbound_peers_response
+    )
 
     if not outbound_peers_response:
-        logger.warn("Got no outbound peers for endpoint: {}".format(node_url))
+        logger.warning("Got no outbound peers for endpoint: {}".format(node_url))
         return []
 
     outbound_peers = [model_loader.load_model(OutboundPeerModel, o) for o in outbound_peers_response]
@@ -55,7 +63,7 @@ def fetch_remote_blockchain_peer(network_num: int) -> Optional[OutboundPeerModel
     node_url = SdnRoutes.node_remote_blockchain.format(network_num)
     peers = _fetch_peers(node_url)
     if len(peers) != 1:
-        logger.warn("Did not get expected number of peers from SDN.")
+        logger.warning("Did not get expected number of peers from SDN.")
         return None
     else:
         return peers[0]
@@ -78,7 +86,7 @@ def fetch_blockchain_networks() -> List[BlockchainNetworkModel]:
     blockchain_networks = http_service.get_json(node_url)
 
     if not blockchain_networks:
-        logger.warn("There are no blockchain networks configured in SDN")
+        logger.warning("There are no blockchain networks configured in SDN")
         return []
 
     blockchain_networks = [model_loader.load_model(BlockchainNetworkModel, b) for b in blockchain_networks]

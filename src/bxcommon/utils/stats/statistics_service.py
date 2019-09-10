@@ -5,9 +5,12 @@ from collections import deque
 from datetime import datetime
 from threading import Thread, Lock
 
+from bxutils import logging
+
 from bxcommon import constants
-from bxcommon.utils import logger
 from bxcommon.utils.publish_stats import publish_stats
+
+logger = logging.get_logger(__name__)
 
 
 # TODO replace with dataclass

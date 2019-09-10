@@ -2,12 +2,15 @@ import errno
 import socket
 from abc import ABCMeta, abstractmethod
 
+from bxutils import logging
+
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.constants import LISTEN_ON_IP_ADDRESS
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
 from bxcommon.network.socket_connection_state import SocketConnectionState
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
 class AbstractNetworkEventLoop(object):
@@ -110,7 +113,7 @@ class AbstractNetworkEventLoop(object):
         if sdn_address:
             self._connect_to_server(sdn_address[0], sdn_address[1])
         else:
-            logger.warn("SDN address not provided, skipping connection. This is expected for gateways.")
+            logger.warning("SDN address not provided, skipping connection. This is expected for gateways.")
 
     def _connect_to_peers(self):
         peers_addresses = self._node.get_outbound_peer_addresses()
@@ -148,13 +151,13 @@ class AbstractNetworkEventLoop(object):
                 if not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
                     logger.error("Connection on fileno {0} was enqueued for disconnect without being marked for close!".format(fileno))
             else:
-                logger.warn("Fileno {0} could not be closed".format(fileno))
+                logger.warning("Fileno {0} could not be closed".format(fileno))
 
             fileno = self._node.pop_next_disconnect_connection()
 
     def _connect_to_server(self, ip, port, protocol=TransportLayerProtocol.TCP):
         if self._node.connection_exists(ip, port):
-            logger.warn("Ignoring repeat connection to {0}:{1}.".format(ip, port))
+            logger.warning("Ignoring repeat connection to {0}:{1}.".format(ip, port))
             return
 
         sock = None
@@ -192,14 +195,14 @@ class AbstractNetworkEventLoop(object):
                 raise e
 
         self._register_socket(sock, (ip, port), is_server=False, initialized=initialized, from_me=True)
-        logger.info("Connected to {0}:{1}, fileno: {2}.".format(ip, port, sock.fileno()))
+        logger.info("Connected to {0}:{1}, fileno: {2}.", ip, port, sock.fileno())
 
     def _handle_incoming_connections(self, socket_connection):
         logger.info("Received incoming request(s) for connection...")
         try:
             while True:
                 new_socket, address = socket_connection.socket_instance.accept()
-                logger.info("Accepted new connection from {0}.".format(address))
+                logger.info("Accepted new connection from {0}.", address)
 
                 new_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 new_socket.setblocking(0)

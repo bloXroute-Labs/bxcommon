@@ -1,11 +1,12 @@
 import struct
 
+from bxutils.logging.log_level import LogLevel
+
 from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.crypto import SHA256_HASH_LEN
-from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.object_hash import Sha256Hash, ConcatHash
 
 

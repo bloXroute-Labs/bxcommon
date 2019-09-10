@@ -1,9 +1,13 @@
 from nacl.exceptions import CryptoError
 
+from bxutils import logging
+
 from bxcommon.exceptions import DecryptionError
-from bxcommon.utils import crypto, logger, convert
+from bxcommon.utils import crypto, convert
 from bxcommon.utils.crypto import symmetric_decrypt, symmetric_encrypt
 from bxcommon.utils.expiration_queue import ExpirationQueue
+
+logger = logging.get_logger(__name__)
 
 
 class EncryptionCacheItem(object):
@@ -118,7 +122,7 @@ class EncryptedCache(object):
             return cache_item.decrypt()
         except DecryptionError:
             failed_ciphertext = self.pop_ciphertext(hash_key)
-            logger.warn("Could not decrypt encrypted item with hash {}. Last four bytes: {}".format(
+            logger.warning("Could not decrypt encrypted item with hash {}. Last four bytes: {}".format(
                 convert.bytes_to_hex(hash_key), convert.bytes_to_hex(failed_ciphertext[-4:])))
             return None
 

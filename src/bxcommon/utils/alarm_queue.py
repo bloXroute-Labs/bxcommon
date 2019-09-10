@@ -2,8 +2,10 @@ import time
 from heapq import heappop, heappush
 from typing import List
 
+from bxutils import logging
 from bxcommon import constants
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
 class Alarm:
@@ -22,7 +24,7 @@ class Alarm:
     def fire(self):
         time_from_expected = time.time() - self.fire_time
         if time_from_expected > constants.WARN_ALARM_EXECUTION_OFFSET:
-            logger.warn("{} executed {} seconds later than expected.".format(self, time_from_expected))
+            logger.warning("{} executed {} seconds later than expected.".format(self, time_from_expected))
         return self.fn(*self.args, **self.kwargs)
 
     def get_function_name(self):
@@ -166,7 +168,7 @@ class AlarmQueue(object):
                     logger.error("Alarm {} could not fire and failed with exception: {}", alarm, e)
                 else:
                     if end_time - start_time > constants.WARN_ALARM_EXECUTION_DURATION:
-                        logger.warn("{} took {} seconds to execute.".format(alarm, end_time - start_time))
+                        logger.warning("{} took {} seconds to execute.".format(alarm, end_time - start_time))
 
                     if next_delay is not None and next_delay > 0:
                         next_time = time.time() + next_delay

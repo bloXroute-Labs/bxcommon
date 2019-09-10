@@ -1,10 +1,12 @@
 from typing import List, TypeVar, Generic, Set
 
-from bxcommon.utils import logger
+from bxutils import logging
+
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.expiration_queue import ExpirationQueue
 
 T = TypeVar("T")
+logger = logging.get_logger(__name__)
 
 
 class ExpiringSet(Generic[T]):
@@ -50,7 +52,7 @@ class ExpiringSet(Generic[T]):
             for i in range(count):
                 items.append(next(entries))
         except StopIteration as _e:
-            logger.warn("Attempted to fetch {} entries, but only {} existed.", count, len(items))
+            logger.warning("Attempted to fetch {} entries, but only {} existed.", count, len(items))
 
         return items
 

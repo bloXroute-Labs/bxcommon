@@ -2,8 +2,9 @@ from typing import Any
 from datetime import datetime
 from typing import List
 
+from bxutils import logging
+
 from bxcommon.services.transaction_service import TransactionService
-from bxcommon.utils import logger
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_encoder import ObjectEncoder
 from bxcommon.utils.object_hash import Sha256Hash
@@ -14,6 +15,8 @@ from bxcommon import constants
 from bxcommon.utils.stats import hooks
 
 import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
+
+logger = logging.get_logger(__name__)
 
 
 class ExtensionTransactionService(TransactionService):

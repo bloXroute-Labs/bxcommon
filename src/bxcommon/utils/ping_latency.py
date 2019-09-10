@@ -1,12 +1,14 @@
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
+from collections import namedtuple
+
+from bxutils import logging
 
 from bxcommon import constants
-from bxcommon.utils import logger
-from collections import namedtuple
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 
+logger = logging.get_logger(__name__)
 NodeLatencyInfo = namedtuple("NodeLatencyInfo", ["node", "latency"])
 
 
@@ -25,7 +27,7 @@ def get_ping_latency(outbound_peer: OutboundPeerModel) -> NodeLatencyInfo:
             logger.error("ping {} is empty".format(outbound_peer.ip))
     except subprocess.TimeoutExpired:
         ping_latency = constants.PING_TIMEOUT_S * 1000
-        logger.warn("pinging to {} returned timeout".format(outbound_peer.ip))
+        logger.warning("pinging to {} returned timeout".format(outbound_peer.ip))
     except Exception as ex:
         logger.error("Error getting ping command output for IP:{}, Error:{}".format(outbound_peer.ip, str(ex)))
         ping_latency = constants.PING_TIMEOUT_S * 1000

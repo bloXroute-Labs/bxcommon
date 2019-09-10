@@ -1,11 +1,11 @@
 import struct
 
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants
-from bxcommon.constants import BX_HDR_COMMON_OFF, MSG_NULL_BYTE
+from bxcommon.constants import MSG_NULL_BYTE
 from bxcommon.exceptions import ParseError, UnrecognizedCommandError
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 
 

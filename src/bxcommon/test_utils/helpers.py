@@ -12,7 +12,7 @@ from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
-from bxcommon.utils import config, crypto
+from bxcommon.utils import config, crypto, convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.proxy import task_pool_proxy
 
@@ -83,7 +83,8 @@ def receive_node_message(node, fileno, message):
 
 def get_queued_node_message(node: AbstractNode, fileno: int, message_type: str):
     bytes_to_send = node.get_bytes_to_send(fileno)
-    assert message_type in bytes_to_send.tobytes()
+    assert message_type in bytes_to_send.tobytes(), \
+        f"could not find {message_type} in message bytes {convert.bytes_to_hex(bytes_to_send.tobytes())}"
     node.on_bytes_sent(fileno, len(bytes_to_send))
     return bytes_to_send
 

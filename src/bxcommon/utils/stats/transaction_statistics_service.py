@@ -1,9 +1,13 @@
 import struct
 
+from bxutils import logging
+
 from bxcommon import constants
-from bxcommon.utils import convert, logger
+from bxcommon.utils import convert
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.statistics_event_service import StatisticsEventService
+
+logger = logging.get_logger(__name__)
 
 
 class _TransactionStatisticsService(StatisticsEventService):
@@ -29,7 +33,7 @@ class _TransactionStatisticsService(StatisticsEventService):
             return
 
         if len(short_ids) < 1:
-            logger.warn("Attempted to log message with 0 short ids!")
+            logger.warning("Attempted to log message with 0 short ids!")
             return
 
         if not tx_event_settings:

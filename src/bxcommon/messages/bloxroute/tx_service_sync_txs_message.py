@@ -1,10 +1,11 @@
 import struct
 from typing import Optional, List
 
+from bxutils.logging.log_level import LogLevel
+
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES, CONTROL_FLAGS_LEN, UL_SHORT_SIZE_IN_BYTES
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
-from bxcommon.utils.log_level import LogLevel
 from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 

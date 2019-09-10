@@ -1,6 +1,10 @@
 import uuid
+
+from bxutils import logging
+
 from bxcommon import constants
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
 def to_bytes(string_input):

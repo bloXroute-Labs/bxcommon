@@ -1,3 +1,4 @@
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
@@ -24,7 +25,6 @@ from bxcommon.messages.bloxroute.v4.tx_message_v4 import TxMessageV4
 from bxcommon.messages.bloxroute.v4.txs_message_v4 import TxsMessageV4
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.test_utils import helpers
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils import crypto
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash

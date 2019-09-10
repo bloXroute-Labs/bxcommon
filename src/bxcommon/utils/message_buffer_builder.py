@@ -1,5 +1,8 @@
 import struct
-from bxcommon.utils import logger
+
+from bxutils import logging
+
+logger = logging.get_logger(__name__)
 
 
 class PayloadElement(object):

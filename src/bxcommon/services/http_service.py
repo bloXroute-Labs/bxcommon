@@ -2,8 +2,12 @@ import requests
 from requests import HTTPError, RequestException
 from typing import Optional, Dict, Any, Union, List
 
+from bxutils import logging
+
 from bxcommon import constants
-from bxcommon.utils import logger, json_utils
+from bxcommon.utils import json_utils
+
+logger = logging.get_logger(__name__)
 
 # recursive types are not supported: https://github.com/python/typing/issues/182
 jsonT = Union[Dict[str, Any], List[Any]]

@@ -1,11 +1,11 @@
 import uuid
 from enum import Flag, auto
 
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import LOCALHOST
 from bxcommon.test_utils import helpers
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection

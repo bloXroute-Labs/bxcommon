@@ -1,10 +1,13 @@
 import errno
 import select
 
+from bxutils import logging
+
 from bxcommon.network.abstract_network_event_loop import AbstractNetworkEventLoop
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.socket_connection_state import SocketConnectionState
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
 class EpollNetworkEventLoop(AbstractNetworkEventLoop):
