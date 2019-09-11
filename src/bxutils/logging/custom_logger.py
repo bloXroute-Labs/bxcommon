@@ -39,9 +39,9 @@ class CustomLogger(logger_class):
     def log(self, level, msg, *args, **kwargs):
         super(CustomLogger, self).log(level, msg, *args, **kwargs)
 
-    def fatal(self, msg, *args, **kwargs):
+    def fatal(self, msg, *args, exc_info=True, **kwargs):
         if self.isEnabledFor(LogLevel.FATAL):
-            self.exception(msg, *args, exc_info=True, **kwargs)
+            self.exception(msg, *args, exc_info=exc_info, **kwargs)
 
     def stats(self, msg, *args, **kwargs):
         if self.isEnabledFor(LogLevel.STATS):

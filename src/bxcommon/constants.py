@@ -231,7 +231,6 @@ ALARM_QUEUE_INIT_EVENT = 1
 MAX_ALLOCATION_POINTER_COUNT = 10
 MAX_COUNT_PER_ALLOCATION = 10
 
-
 # </editor-fold>
 
 # keep constants_local.py file to override settings in the constants file

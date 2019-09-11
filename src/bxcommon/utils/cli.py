@@ -2,6 +2,7 @@ import argparse
 
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
+from bxutils import logging
 from bxutils import constants as utils_constants
 
 from bxcommon import constants
@@ -9,9 +10,12 @@ from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import ALL_NETWORK_NUM
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.services import sdn_http_service
+from bxcommon.services import http_service
 from bxcommon.utils import config, ip_resolver
 from bxcommon.utils import convert
 from bxcommon.utils.node_start_args import NodeStartArgs
+
+logger = logging.get_logger(__name__)
 
 
 def get_argument_parser() -> argparse.ArgumentParser:
@@ -137,7 +141,7 @@ def parse_arguments(arg_parser: argparse.ArgumentParser) -> argparse.Namespace:
         opts.external_ip = ip_resolver.get_node_public_ip()
     assert opts.external_ip is not None
     opts.external_ip = ip_resolver.blocking_resolve_ip(opts.external_ip)
-    constants.SDN_ROOT_URL = opts.sdn_url
+    http_service.set_sdn_url(opts.sdn_url)
     config.append_manifest_args(opts.__dict__)
     return opts
 
@@ -190,10 +194,10 @@ def _get_blockchain_network_info(opts) -> BlockchainNetworkModel:
             map(lambda n: "{} - {}".format(n.protocol, n.network), opts.blockchain_networks))
         error_msg = "Network number does not exist for blockchain protocol {} and network {}.\nValid options:\n{}" \
             .format(opts.blockchain_protocol, opts.blockchain_network, all_networks_names)
-        logger.fatal(error_msg, include_stack_trace=False)
+        logger.fatal(error_msg, exc_info=False)
     else:
         logger.fatal("Could not reach the SDN to fetch network information. Check that {} is the actual address "
-                     "you are trying to reach.", opts.sdn_url, include_stack_trace=False)
+                     "you are trying to reach.", opts.sdn_url, exc_info=False)
     exit(1)
 
 

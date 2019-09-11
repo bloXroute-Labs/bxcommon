@@ -13,10 +13,18 @@ logger = logging.get_logger(__name__)
 jsonT = Union[Dict[str, Any], List[Any]]
 
 
+_sdn_url = constants.SDN_ROOT_URL
+
+
+def set_sdn_url(sdn_url: str):
+    global _sdn_url
+    _sdn_url = sdn_url
+
+
 def build_url(endpoint: str) -> str:
     if not endpoint or not isinstance(endpoint, str):
         raise ValueError("Missing or invalid URL")
-    return constants.SDN_ROOT_URL + endpoint
+    return _sdn_url + endpoint
 
 
 def _http_request(method: str, endpoint: str, **kwargs) -> Optional[jsonT]:

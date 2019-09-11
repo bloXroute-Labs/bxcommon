@@ -2,7 +2,7 @@ import time
 import traceback
 from abc import ABCMeta
 from collections import defaultdict
-from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Set, Optional, Tuple
+from typing import ClassVar, Generic, TypeVar, Optional, TYPE_CHECKING, Set, Optional
 
 from bxutils import logging
 from bxutils.logging.log_level import LogLevel
@@ -22,6 +22,7 @@ from bxcommon.utils.memory_utils import ObjectSize, SpecialMemoryProperties, Spe
 from bxcommon.utils import memory_utils
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.direction import Direction
+from bxcommon.models.outbound_peer_model import OutboundPeerModel
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
@@ -49,7 +50,7 @@ class AbstractConnection(Generic[Node], SpecialMemoryProperties):
         # If the version/hello message contains a different port (i.e. connection is not from me), this will
         # be updated to the one in the message.
         self.peer_ip, self.peer_port = address
-        self.peer_id = None
+        self.peer_id: Optional[str] = None
         self.external_ip = node.opts.external_ip
         self.external_port = node.opts.external_port
 
@@ -88,6 +89,7 @@ class AbstractConnection(Generic[Node], SpecialMemoryProperties):
         self._trace_message_tracker = defaultdict(int)
         self._last_trace_message_log_time = time.time()
         self.ping_interval_s: int = constants.PING_INTERVAL_S
+        self.peer_model: Optional[OutboundPeerModel] = None
         logger.info("Initialized new connection: {}", self)
 
     def __repr__(self):
@@ -324,7 +326,7 @@ class AbstractConnection(Generic[Node], SpecialMemoryProperties):
     def msg_hello(self, msg):
         self.state |= ConnectionState.HELLO_RECVD
         if msg.node_id() is None:
-            logger.warn("Hello message without peer_id received from {}".format(self))
+            logger.warning("Hello message without peer_id received from {}".format(self))
         self.peer_id = msg.node_id()
         self.node.connection_pool.index_conn_node_id(self.peer_id, self)
 
@@ -393,6 +395,10 @@ class AbstractConnection(Generic[Node], SpecialMemoryProperties):
             "output_buffer",
             ObjectSize("output_buffer", memory_utils.get_special_size(self.outputbuf).size, is_actual_size=True)
         )
+
+    def update_model(self, model: OutboundPeerModel):
+        logger.info("updated connection peer module {}", model)
+        self.peer_model = model
 
     def _report_bad_message(self):
         """

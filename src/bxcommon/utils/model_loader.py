@@ -7,6 +7,7 @@ NOTE: A similar model loader exists in BXAPI - if making changes, check both for
 
 import json
 import inspect
+from enum import Flag
 from typing import Dict, Type, TypeVar, Any, List, Optional, Union
 
 from bxutils import logging
@@ -81,6 +82,8 @@ def _load_attribute(attribute_type: Type[T], attribute_value: Any, cast_basic_va
         else:
             raise NotImplementedError("Model loader is not capable of loading a {} type. Please implement a handler."
                                       .format(attribute_type.__origin__))
+    elif issubclass(attribute_type, Flag):
+        return attribute_type[attribute_value]
     else:
         if cast_basic_values:
             return attribute_type(attribute_value)

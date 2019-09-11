@@ -20,4 +20,4 @@ logging.addLevelName(LogLevel.TRACE, "TRACE")
 
 
 def from_string(level: str) -> LogLevel:
-    return LogLevel(level.upper())
+    return LogLevel[level.upper()]

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
-
+from bxcommon.connections.node_type import NodeType
 
 @dataclass
 class OutboundPeerModel(object):
@@ -8,10 +8,12 @@ class OutboundPeerModel(object):
     port: int
     node_id: Optional[str]
     is_internal_gateway: bool
+    node_type:  Optional[NodeType]
     attributes: Dict[Any, Any]
 
     def __init__(self, ip: str = None, port: int = None, node_id: Optional[str] = None,
-                 is_internal_gateway: bool = False, attributes: Dict[Any, Any] = None):
+                 is_internal_gateway: bool = False, attributes: Dict[Any, Any] = None,
+                 node_type: Optional[NodeType] = None):
         if attributes is None:
             attributes = {}
 
@@ -19,6 +21,7 @@ class OutboundPeerModel(object):
         self.port = port
         self.node_id = node_id
         self.is_internal_gateway = is_internal_gateway
+        self.node_type = node_type
         self.attributes = attributes
 
     def __str__(self):
