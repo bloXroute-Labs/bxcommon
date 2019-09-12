@@ -178,13 +178,6 @@ class AbstractNode:
             peer_port = peer.port
             if not self.connection_pool.has_connection(peer_ip, peer_port):
                 self.enqueue_connection(peer_ip, peer_port)
-            else:
-                conn = self.connection_pool.get_by_ipport(peer_ip, peer_port)
-                conn.update_model(peer)
-                if conn.peer_id is None and peer.node_id is not None:
-                    logger.warning("connection without peer_id {}", peer)
-                    conn.peer_id = peer.node_id
-                    self.connection_pool.index_conn_node_id(peer.node_id, conn)
         self.outbound_peers = outbound_peer_models
 
     def on_updated_sid_space(self, sid_start, sid_end):
