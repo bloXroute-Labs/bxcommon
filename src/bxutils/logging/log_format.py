@@ -41,6 +41,15 @@ class LogFormat(Enum):
 
 
 class AbstractFormatter(Formatter):
+    FORMATTERS = {
+        "%": lambda msg, args: str(msg) % args,
+        "{": lambda msg, args: str(msg).format(*args)
+    }
+
+    def __init__(self, fmt=None, datefmt=None, style="{"):
+        super().__init__(fmt=fmt, datefmt=datefmt)
+        self._formatter = self.FORMATTERS[style]
+
     NO_INSTANCE: str = "[Unassigned]"
     instance: str = NO_INSTANCE
 
@@ -50,7 +59,7 @@ class JSONFormatter(AbstractFormatter):
     def format(self, record) -> str:
         log_record = {k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS}
         if record.args:
-            log_record["msg"] = str(record.msg).format(*record.args)
+            log_record["msg"] = self._formatter(record.msg, record.args)
         else:
             log_record["msg"] = record.msg
         if "timestamp" not in log_record:
@@ -70,7 +79,7 @@ class CustomFormatter(AbstractFormatter):
     def format(self, record) -> str:
         log_record = {k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS}
         if record.args and not hasattr(record.msg, "__dict__"):
-            log_record["msg"] = str(record.msg).format(*record.args)
+            log_record["msg"] = self._formatter(record.msg, record.args)
         else:
             log_record["msg"] = record.msg
         if self.instance != self.NO_INSTANCE:

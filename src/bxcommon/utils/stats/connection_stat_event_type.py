@@ -8,5 +8,6 @@ class ConnectionStateEventType:
     TIMED_OUT = StatEventTypeSettings("ConnectionTimedOut")
     RE_REGISTERED = StatEventTypeSettings("ConnectionReRegistered")
     GROUP_CHANGED = StatEventTypeSettings("ConnectionDDoSGroupChanged")
+    CONNECTION_DISCONNECTED = StatEventTypeSettings("ConnectionDisconnected")
 
 

@@ -14,7 +14,8 @@ def create_logger(
         global_logger_name: Optional[str],
         log_level: int = constants.DEFAULT_LOG_LEVEL,
         log_format: LogFormat = constants.DEFAULT_LOG_FORMAT,
-        folder_path: Optional[str] = None
+        folder_path: Optional[str] = None,
+        style: str = "{"
 ) -> None:
     """
     Installs a log configuration under the provided name.
@@ -22,11 +23,12 @@ def create_logger(
     :param log_level: the log level
     :param log_format: the logger format
     :param folder_path: optional file path (if specified - will write to the logs to files instead stdout)
+    :param style: the logger formatting style
     """
     if log_format == LogFormat.PLAIN:
-        formatter = CustomFormatter(fmt=constants.LOG_FORMAT_PATTERN)
+        formatter = CustomFormatter(fmt=constants.LOG_FORMAT_PATTERN, style=style)
     elif log_format == LogFormat.JSON:
-        formatter = JSONFormatter()
+        formatter = JSONFormatter(style=style)
     else:
         raise ValueError("LOG_FORMAT was not set correctly: {}".format(log_format))
 

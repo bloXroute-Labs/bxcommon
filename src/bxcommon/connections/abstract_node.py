@@ -133,7 +133,6 @@ class AbstractNode:
         # to determine next retry
         self.num_retries_by_ip[(conn.peer_ip, conn.peer_port)] = 0
 
-
     def on_connection_closed(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)
 
