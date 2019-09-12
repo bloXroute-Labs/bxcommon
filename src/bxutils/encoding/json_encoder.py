@@ -4,7 +4,7 @@ import traceback
 from datetime import date, time, datetime
 from enum import Enum
 from inspect import istraceback
-from typing import Union, Any, Iterable, Collection, Optional
+from typing import Union, Any, Iterable, Collection, Optional, Dict
 
 from bxutils import logging
 
@@ -27,6 +27,10 @@ def to_json(obj: Any, remove_nulls: bool = False) -> str:
         return json.dumps(clean_dict, cls=EnhancedJSONEncoder)
 
     return json.dumps(obj, cls=EnhancedJSONEncoder)
+
+
+def to_dict(obj: Any) -> Dict[str, Any]:
+    return EnhancedJSONEncoder().as_dict(obj)
 
 
 def load_json_from_file(json_file_path: str) -> Optional[Union[list, dict]]:
@@ -85,3 +89,6 @@ class EnhancedJSONEncoder(json.JSONEncoder):
 
     def encode(self, o) -> str:
         return super(EnhancedJSONEncoder, self).encode(self._encode(o))
+
+    def as_dict(self, obj) -> Dict[str, Any]:
+        return self._encode(obj)

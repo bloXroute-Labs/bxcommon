@@ -1,8 +1,10 @@
 # An enum that stores the different log levels
+import os
 from enum import Enum
 from logging import Formatter
 import json
 from datetime import datetime
+
 from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 
 
@@ -58,16 +60,17 @@ class JSONFormatter(AbstractFormatter):
 
     def format(self, record) -> str:
         log_record = {k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS}
+        if "timestamp" not in log_record:
+            log_record["timestamp"] = datetime.utcnow()
+        log_record["pid"] = os.getpid()
+        log_record["name"] = record.name
+        log_record["level"] = record.levelname
         if record.args:
             log_record["msg"] = self._formatter(record.msg, record.args)
         else:
             log_record["msg"] = record.msg
-        if "timestamp" not in log_record:
-            log_record["timestamp"] = datetime.utcnow()
         if record.exc_info:
             log_record["exc_info"] = self.formatException(record.exc_info)
-        log_record["level"] = record.levelname
-        log_record["name"] = record.name
         if self.instance != self.NO_INSTANCE:
             log_record["instance"] = self.instance
         return json.dumps(log_record, cls=EnhancedJSONEncoder)
