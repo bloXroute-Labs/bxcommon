@@ -468,6 +468,10 @@ class AbstractNode:
         else:
             self.enqueue_disconnect(socket_connection.fileno())
 
+    def on_fully_updated_tx_service(self):
+        self.opts.has_fully_updated_tx_service = True
+        sdn_http_service.submit_sync_txs_event(self.opts.node_id)
+
     def _connection_timeout(self, conn):
         """
         Check if the connection is established.

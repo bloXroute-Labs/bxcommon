@@ -168,6 +168,7 @@ def get_common_opts(port,
         "tx_mem_pool_bucket_size": constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
         "throughput_stats_interval": constants.THROUGHPUT_STATS_INTERVAL_S,
         "info_stats_interval": constants.INFO_STATS_INTERVAL_S,
+        "sync_tx_service": True,
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val
@@ -245,6 +246,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "blockchain_message_ttl": 10,
         "remote_blockchain_message_ttl": 10,
         "stay_alive_duration": stay_alive_duration,
+        "has_fully_updated_tx_service": False,
     })
 
     if include_default_btc_args:

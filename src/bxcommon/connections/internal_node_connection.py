@@ -1,5 +1,7 @@
 from abc import ABCMeta
 from datetime import datetime
+from typing import List
+import time
 
 from bxutils import logging
 
@@ -12,11 +14,19 @@ from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_vers
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
+from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
+from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
+from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
+from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
+from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
+from bxcommon.messages.bloxroute.blocks_short_ids_serializer import BlockShortIds
+from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.utils import nonce_generator
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
+from bxcommon.utils.object_hash import Sha256Hash
 
 logger = logging.get_logger(__name__)
 
@@ -168,3 +178,83 @@ class InternalNodeConnection(AbstractConnection[Node]):
         elif nonce is not None:
             logger.warning("Received pong message from {} {} with nonce {}, ping request was not found in cache"
                         .format(self.peer_desc, self.CONNECTION_TYPE, nonce))
+
+    def msg_tx_service_sync_txs(self, msg: TxServiceSyncTxsMessage):
+        """
+        Transaction service sync message receive txs data
+        """
+        network_num = msg.network_num()
+        tx_service = self.node.get_tx_service(network_num)
+        txs_content_short_ids = msg.txs_content_short_ids()
+
+        for tx_content_short_ids in txs_content_short_ids:
+            tx_hash = tx_content_short_ids.tx_hash
+            tx_service.set_transaction_contents(tx_hash, tx_content_short_ids.tx_content)
+            for short_id in tx_content_short_ids.short_ids:
+                tx_service.assign_short_id(tx_hash, short_id)
+
+    def _create_txs_service_msg(self, network_num: int, tx_service_snap: List[Sha256Hash]) -> List[TxContentShortIds]:
+        txs_content_short_ids: List[TxContentShortIds] = []
+        txs_msg_len = 0
+
+        while tx_service_snap:
+            tx_hash = tx_service_snap.pop()
+            tx_content_short_ids = TxContentShortIds(
+                tx_hash,
+                self.node.get_tx_service(network_num).get_transaction_by_hash(tx_hash),
+                self.node.get_tx_service(network_num).get_short_ids(tx_hash)
+            )
+
+            txs_msg_len += txs_serializer.get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids)
+
+            txs_content_short_ids.append(tx_content_short_ids)
+            if txs_msg_len >= constants.TXS_MSG_SIZE:
+                break
+
+        return txs_content_short_ids
+
+    def send_tx_service_sync_req(self, network_num: int):
+        """
+        sending transaction service sync request
+        """
+        self.enqueue_msg(TxServiceSyncReqMessage(network_num))
+
+    def send_tx_service_sync_complete(self, network_num: int):
+        self.enqueue_msg(TxServiceSyncCompleteMessage(network_num))
+
+    def send_tx_service_sync_blocks_short_ids(self, network_num: int):
+        blocks_short_ids: List[BlockShortIds] = []
+        start_time = time.time()
+        for block_hash, short_ids in self.node.get_tx_service(network_num).iter_short_ids_seen_in_block():
+            blocks_short_ids.append(BlockShortIds(block_hash, short_ids))
+
+        block_short_ids_msg = TxServiceSyncBlocksShortIdsMessage(network_num, blocks_short_ids)
+        duration = time.time() - start_time
+        logger.info("BlockShortIds in network {}, {} blocks took {} ms ".format(network_num, len(blocks_short_ids), duration))
+        self.enqueue_msg(block_short_ids_msg)
+
+    def send_tx_service_sync_txs(self, network_num: int, tx_service_snap: List[Sha256Hash], duration: float = 0, msgs_count: int = 0, total_tx_count: int = 0, sending_tx_msgs_start_time: float = 0):
+        if (time.time() - sending_tx_msgs_start_time) < constants.SENDING_TX_MSGS_TIMEOUT_MS:
+            if tx_service_snap:
+                start = time.time()
+                txs_content_short_ids = self._create_txs_service_msg(network_num, tx_service_snap)
+                self.enqueue_msg(TxServiceSyncTxsMessage(network_num, txs_content_short_ids))
+                duration += time.time() - start
+                msgs_count += 1
+                total_tx_count += len(txs_content_short_ids)
+            if tx_service_snap:     # checks again if tx_snap in case we still have msgs to send, else no need to wait TX_SERVICE_SYNC_TXS_S seconds
+                self.node.alarm_queue.register_alarm(
+                    constants.TX_SERVICE_SYNC_TXS_S, self.send_tx_service_sync_txs, network_num, tx_service_snap, duration, msgs_count, total_tx_count, sending_tx_msgs_start_time
+                )
+            else:   # if all txs were sent, send complete msg
+                logger.info(
+                    "Sending TxServiceSyncTxsMessage in network {}, {} transactions and {} messages took {} ms ".
+                    format(network_num, total_tx_count, msgs_count, duration * 1000))
+                self.send_tx_service_sync_complete(network_num)
+        else:   # if time is up - upgrade this node as synced - giving up
+            logger.info("Sending TxServiceSyncTxsMessage in network {}, {} transactions and {} messages took more than {} ms ".
+                        format(network_num, total_tx_count, msgs_count, constants.SENDING_TX_MSGS_TIMEOUT_MS))
+            self.send_tx_service_sync_complete(network_num)
+
+    def msg_tx_service_sync_complete(self, _msg: TxServiceSyncCompleteMessage):
+        self.node.on_fully_updated_tx_service()
