@@ -5,6 +5,8 @@ from bxcommon import constants
 from bxcommon.utils import memory_utils
 from bxcommon.utils.stats.class_mem_stats import ClassMemStats
 from bxcommon.utils.stats.statistics_service import StatsIntervalData, ThreadedStatisticsService
+from bxutils.logging.log_record_type import LogRecordType
+from bxutils import logging
 
 
 class MemoryStatsIntervalData(StatsIntervalData):
@@ -19,7 +21,8 @@ class MemoryStatsService(ThreadedStatisticsService):
     INTERVAL_DATA_CLASS = MemoryStatsIntervalData
 
     def __init__(self, interval=0):
-        super(MemoryStatsService, self).__init__("MemoryStats", interval=interval, look_back=5, reset=False)
+        super(MemoryStatsService, self).__init__("MemoryStats", interval=interval, look_back=5, reset=False,
+                                                 logger=logging.get_logger(LogRecordType.Memory))
 
     def set_node(self, node):
         super(MemoryStatsService, self).set_node(node)

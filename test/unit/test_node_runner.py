@@ -54,8 +54,9 @@ class TestNodeRunner(unittest.TestCase):
             "log_flush_immediately": True,
             "use_extensions": True,
             "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
-                str(constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE)
-            )
+                str(constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE),
+            ),
+            "log_level_overrides": {}
         }
         self.opts = Namespace()
         self.opts.__dict__ = opts

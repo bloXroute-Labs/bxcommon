@@ -6,6 +6,7 @@ from bxcommon import constants
 from bxcommon.utils import convert
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.statistics_event_service import StatisticsEventService
+from bxutils.logging.log_record_type import LogRecordType
 
 logger = logging.get_logger(__name__)
 
@@ -14,6 +15,7 @@ class _TransactionStatisticsService(StatisticsEventService):
     def __init__(self):
         super(_TransactionStatisticsService, self).__init__()
         self.name = "TransactionInfo"
+        self.logger = logging.get_logger(LogRecordType.TransactionInfo)
 
     def add_tx_by_hash_event(self, tx_hash, tx_event_settings, start_date_time=None, end_date_time=None, **kwargs):
         if not tx_hash:

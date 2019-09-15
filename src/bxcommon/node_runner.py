@@ -13,10 +13,13 @@ from bxcommon.exceptions import TerminationError
 
 logger = logging.get_logger(__name__)
 
-LOGGER_NAMES = ["bxcommon", "bxutils"]
+LOGGER_NAMES = ["bxcommon", "bxutils", "stats", "bx"]
 
 
 def run_node(process_id_file_path, opts, node_class, node_type=None, logger_names: List[Optional[str]] = LOGGER_NAMES):
+    opts.logger_names = logger_names
+    log_config.setup_logging(opts.log_format, opts.log_level, logger_names, opts.log_level_overrides)
+
     if node_type is None:
         node_type = node_class.NODE_TYPE
 

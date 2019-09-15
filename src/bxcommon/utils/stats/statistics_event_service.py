@@ -1,14 +1,19 @@
 import datetime
 from typing import Optional
 
-from bxcommon.utils import publish_stats
 from bxcommon.utils.stats.stat_event import StatEvent
 from bxcommon.utils.stats.stat_event_type_settings import StatEventTypeSettings
+from bxutils.logging.log_level import LogLevel
+from bxutils import logging
+
+# TODO: change default log level from STATS to info
 
 
 class StatisticsEventService(object):
     def __init__(self):
         self.name = None
+        self.log_level = LogLevel.STATS
+        self.logger = logging.get_logger(__name__)
         self.node = None
         self.node_id = None
 
@@ -26,4 +31,5 @@ class StatisticsEventService(object):
             end_date_time = start_date_time
 
         stat_event = StatEvent(event_settings, object_id, self.node_id, start_date_time, end_date_time, **kwargs)
-        publish_stats.publish_stats(self.name, stat_event)
+        self.logger.log(self.log_level, {"data": stat_event, "type": self.name})
+

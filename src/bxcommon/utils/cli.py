@@ -2,6 +2,7 @@ import argparse
 
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
+from bxutils.logging import log_config
 from bxutils import logging
 from bxutils import constants as utils_constants
 
@@ -61,6 +62,12 @@ def get_argument_parser() -> argparse.ArgumentParser:
         help="Enables immediate flush for logs",
         type=convert.str_to_bool,
         default=False
+    )
+    arg_parser.add_argument(
+        "--log-level-overrides",
+        help="override log level for namespace stats=INFO,bxcommon.connections=WARNING",
+        default={"stats": "INFO"},
+        type=log_config.str_to_log_options
     )
     arg_parser.add_argument(
         "--node-id",

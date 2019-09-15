@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List
 
 from bxutils import logging
+from bxutils.logging.log_record_type import LogRecordType
 
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils.memory_utils import ObjectSize
@@ -17,6 +18,7 @@ from bxcommon.utils.stats import hooks
 import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
 logger = logging.get_logger(__name__)
+logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup)
 
 
 class ExtensionTransactionService(TransactionService):
@@ -55,7 +57,7 @@ class ExtensionTransactionService(TransactionService):
         self._total_tx_contents_size -= removed_contents_size
         for dup_sid in dup_sids:
             self._tx_assignment_expire_queue.remove(dup_sid)
-        logger.statistics(
+        logger_memory_cleanup.statistics(
             {
                 "type": "MemoryCleanup",
                 "event": "ExtensionTransactionServiceTrackSeenSummary",

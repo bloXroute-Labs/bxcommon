@@ -5,7 +5,7 @@ from mock import MagicMock
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils import helpers
-from bxcommon.utils import publish_stats, crypto
+from bxcommon.utils import crypto
 from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 
@@ -29,12 +29,12 @@ class TransactionStatisticsServiceTest(AbstractTestCase):
 
     def _test_should_log_event(self, last_byte_value, expected_to_log):
 
-        publish_stats.publish_stats = MagicMock()
+        tx_stats.logger.log = MagicMock()
 
         tx_hash = helpers.generate_bytearray(crypto.SHA256_HASH_LEN)
         struct.pack_into("<B", tx_hash, crypto.SHA256_HASH_LEN - 1, last_byte_value)
         tx_stats.add_tx_by_hash_event(tx_hash, TransactionStatEventType.TX_SENT_FROM_GATEWAY_TO_PEERS)
         if expected_to_log:
-            publish_stats.publish_stats.assert_called_once()
+            tx_stats.logger.log.assert_called_once()
         else:
-            publish_stats.publish_stats.assert_not_called()
+            tx_stats.logger.log.assert_not_called()

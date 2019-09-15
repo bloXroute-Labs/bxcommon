@@ -53,3 +53,9 @@ class CustomLogger(logger_class):
     def trace(self, msg, *args, **kwargs):
         if self.isEnabledFor(LogLevel.TRACE):
             self._log(LogLevel.TRACE, msg, args, kwargs)
+
+    def set_level(self, level):
+        self.setLevel(level)
+
+    def set_immediate_flush(self, flush_immediately: bool):
+        pass

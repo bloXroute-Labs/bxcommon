@@ -6,9 +6,11 @@ from datetime import datetime
 from threading import Thread, Lock
 
 from bxutils import logging
+from bxutils.logging.log_level import LogLevel
+from bxutils.logging.log_record_type import LogRecordType
 
 from bxcommon import constants
-from bxcommon.utils.publish_stats import publish_stats
+
 
 logger = logging.get_logger(__name__)
 
@@ -24,6 +26,9 @@ class StatsIntervalData(object):
         self.end_time = end_time
 
 
+# TODO: change default log level from STATS to info
+
+
 class StatisticsService(metaclass=ABCMeta):
     """
     Abstract class of statistics services.
@@ -31,10 +36,12 @@ class StatisticsService(metaclass=ABCMeta):
 
     INTERVAL_DATA_CLASS = StatsIntervalData
 
-    def __init__(self, name, interval=0, look_back=1, reset=False):
+    def __init__(self, name, interval=0, look_back=1, reset=False, logger=logger, log_level=LogLevel.STATS):
         self.history = deque(maxlen=look_back)
         self.node = None
         self.name = name
+        self.log_level = log_level
+        self.logger = logger
         self.interval_data = None
         self.interval = interval
         self.reset = reset
@@ -60,7 +67,7 @@ class StatisticsService(metaclass=ABCMeta):
 
     def flush_info(self):
         self.close_interval_data()
-        publish_stats(stats_name=self.name, stats_payload=self.get_info())
+        self.logger.log(self.log_level, {"data": self.get_info(), "type": self.name})
 
         # Start a new interval data if non cumulative
         if self.reset:
@@ -73,8 +80,8 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
     Abstract class for stats service that may take a long time to execute.
     """
 
-    def __init__(self, name, interval=0, look_back=1, reset=False):
-        super(ThreadedStatisticsService, self).__init__(name, interval, look_back, reset)
+    def __init__(self, name, interval=0, look_back=1, reset=False, logger=None):
+        super(ThreadedStatisticsService, self).__init__(name, interval, look_back, reset, logger=logger)
         self._thread = None
         self._alive = True
         self._lock = Lock()

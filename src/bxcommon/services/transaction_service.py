@@ -3,6 +3,7 @@ from collections import defaultdict, OrderedDict
 from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator
 
 from bxutils import logging
+from bxutils.logging.log_record_type import LogRecordType
 
 from bxcommon import constants
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
@@ -14,7 +15,7 @@ from bxcommon.utils.stats import hooks
 from bxcommon.connections.abstract_node import AbstractNode
 
 logger = logging.get_logger(__name__)
-
+logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup)
 
 def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash]) -> Sha256Hash:
     if isinstance(transaction_hash, Sha256Hash):
@@ -360,7 +361,7 @@ class TransactionService:
             for short_id in final_short_ids:
                 self.remove_transaction_by_short_id(short_id, remove_related_short_ids=True)
 
-        logger.statistics(
+        logger_memory_cleanup.statistics(
             {
                 "type": "MemoryCleanup",
                 "event": "TransactionServiceTrackSeenSummary",

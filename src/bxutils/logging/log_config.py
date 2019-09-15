@@ -2,12 +2,14 @@ import logging
 import sys
 import os
 import time
-from typing import Optional, List
+from typing import Optional, List, Dict, Union
 from logging import StreamHandler, FileHandler
 
 from bxutils import constants
 from bxutils.logging.log_format import LogFormat, JSONFormatter, CustomFormatter
 from bxutils.logging.log_level import LogLevel
+
+from bxutils.logging import log_level
 
 
 def create_logger(
@@ -57,6 +59,13 @@ def set_level(logger_names: List[Optional[str]], level: LogLevel) -> None:
         logger.setLevel(level)
 
 
+def set_log_levels(log_config: Dict[str, Union[LogLevel, str]]):
+    for log_name, custom_log_level in log_config.items():
+        if isinstance(custom_log_level, str):
+            custom_log_level = log_level.from_string(custom_log_level)
+        logging.getLogger(log_name).setLevel(custom_log_level)
+
+
 def set_instance(logger_names: List[Optional[str]], instance: str):
     for logger_name in logger_names:
         logger = logging.getLogger(logger_name)
@@ -64,3 +73,29 @@ def set_instance(logger_names: List[Optional[str]], instance: str):
             formatter = handler.formatter
             if hasattr(formatter, "instance"):
                 formatter.instance = instance
+
+
+def str_to_log_options(value: str) -> Dict[str, LogLevel]:
+    d = {}
+    pairs = value.split(",")
+    for pair in pairs:
+        name, level = pair.split("=", 1)
+        d[name] = log_level.from_string(level)
+    return d
+
+
+def setup_logging(
+        log_format: LogFormat,
+        default_log_level: LogLevel,
+        default_logger_names: List[str],
+        log_level_overrides: Dict[str, LogLevel],
+        root_log_level: LogLevel = LogLevel.WARNING,
+        root_log_style: str = "{"):
+    create_logger(None, log_level=root_log_level, log_format=log_format, style=root_log_style)
+    log_level_config = {}
+    for logger_name in default_logger_names:
+        log_level_config[logger_name] = default_log_level
+    log_level_config.update(log_level_overrides)
+    set_log_levels(log_level_overrides)
+
+
