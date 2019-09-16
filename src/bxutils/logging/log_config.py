@@ -71,9 +71,10 @@ def set_log_levels(log_config: Dict[str, Union[LogLevel, str]]):
 
 
 def set_instance(logger_names: List[Optional[str]], instance: str):
+    logger_names.append(None)  # make sure we also set the instance on the root logger
     for logger_name in logger_names:
-        logger = logging.getLogger(logger_name)
-        for handler in logger.handlers:
+        custom_logger = logging.getLogger(logger_name)
+        for handler in custom_logger.handlers:
             formatter = handler.formatter
             if hasattr(formatter, "instance"):
                 formatter.instance = instance
