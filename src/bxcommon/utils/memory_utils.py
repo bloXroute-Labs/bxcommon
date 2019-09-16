@@ -112,7 +112,7 @@ def _get_special_size_helper(obj: Union[Deque, Set[Any], memoryview, List], ids:
         # The size of deques and memoryviews are not properly recorded using get_object_size
         elif isinstance(obj, Deque):
             total_size += getsizeof(obj, default_size)
-            for elem in obj:
+            for elem in list(obj):
                 if isinstance(elem, (Deque, Set, memoryview, List)):
                     curr_size, ids = _get_special_size_helper(elem, ids)
                     total_size += curr_size
@@ -120,7 +120,7 @@ def _get_special_size_helper(obj: Union[Deque, Set[Any], memoryview, List], ids:
                     total_size += get_object_size(elem).size
                 ids.add(id(elem))
         else:
-            for elem in obj:
+            for elem in list(obj):
                 if isinstance(elem, (Deque, Set, memoryview, List)):
                     curr_size, ids = _get_special_size_helper(elem, ids)
                     total_size += curr_size
