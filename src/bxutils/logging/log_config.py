@@ -11,6 +11,8 @@ from bxutils.logging.log_level import LogLevel
 
 from bxutils.logging import log_level
 
+logger = logging.getLogger(__name__)
+
 
 def create_logger(
         global_logger_name: Optional[str],
@@ -55,15 +57,17 @@ def create_logger(
 
 def set_level(logger_names: List[Optional[str]], level: LogLevel) -> None:
     for logger_name in logger_names:
-        logger = logging.getLogger(logger_name)
-        logger.setLevel(level)
+        logging.getLogger(logger_name).setLevel(level)
 
 
 def set_log_levels(log_config: Dict[str, Union[LogLevel, str]]):
     for log_name, custom_log_level in log_config.items():
-        if isinstance(custom_log_level, str):
-            custom_log_level = log_level.from_string(custom_log_level)
-        logging.getLogger(log_name).setLevel(custom_log_level)
+        try:
+            if isinstance(custom_log_level, str):
+                custom_log_level = log_level.from_string(custom_log_level)
+            logging.getLogger(log_name).setLevel(custom_log_level)
+        except (KeyError, AttributeError):
+            logger.error("Invalid Log Level Provided Ignore for path {}: {}", log_name, custom_log_level)
 
 
 def set_instance(logger_names: List[Optional[str]], instance: str):
@@ -96,6 +100,6 @@ def setup_logging(
     for logger_name in default_logger_names:
         log_level_config[logger_name] = default_log_level
     log_level_config.update(log_level_overrides)
-    set_log_levels(log_level_overrides)
+    set_log_levels(log_level_config)
 
 
