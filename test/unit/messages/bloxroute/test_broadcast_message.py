@@ -14,7 +14,7 @@ class BroadcastMessageTest(AbstractTestCase):
         msg_hash = Sha256Hash(hash_bytes)
         block_bytes = helpers.generate_bytearray(1234)
 
-        broadcast_msg = BroadcastMessage(msg_hash=msg_hash, network_num=network_num, blob=block_bytes)
+        broadcast_msg = BroadcastMessage(message_hash=msg_hash, network_num=network_num, source_id="", blob=block_bytes)
 
         msg_bytes = broadcast_msg.rawbytes()
         input_buffer = InputBuffer()

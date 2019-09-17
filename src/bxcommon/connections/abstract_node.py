@@ -16,6 +16,7 @@ from bxcommon.exceptions import TerminationError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_http_service
+from bxcommon.services.broadcast_service import BroadcastService, BroadcastOptions
 from bxcommon.utils import memory_utils, json_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.stats.block_statistics_service import block_stats
@@ -71,6 +72,7 @@ class AbstractNode:
                                                self.flush_all_send_buffers)
 
         self.network_num = opts.blockchain_network_num
+        self.broadcast_service = self.get_broadcast_service()
 
         # converting setting in MB to bytes
         self.next_report_mem_usage_bytes = self.opts.dump_detailed_report_at_memory_usage * 1024 * 1024
@@ -91,6 +93,10 @@ class AbstractNode:
 
     @abstractmethod
     def get_outbound_peer_addresses(self):
+        pass
+
+    @abstractmethod
+    def get_broadcast_service(self) -> BroadcastService:
         pass
 
     def connection_exists(self, ip, port):
@@ -277,40 +283,15 @@ class AbstractNode:
         self.cleanup_memory_stats_logging()
 
     def broadcast(self, msg: AbstractMessage, broadcasting_conn: Optional[AbstractConnection] = None,
-                  prepend_to_queue: bool = False, network_num: Optional[int] = None,
-                  connection_types: Optional[List[ConnectionType]] = None, exclude_relays: bool = False) \
+                  prepend_to_queue: bool = False, connection_types: Optional[List[ConnectionType]] = None) \
             -> List[AbstractConnection]:
         """
         Broadcasts message msg to connections of the specified type except requester.
         """
         if connection_types is None:
             connection_types = [ConnectionType.RELAY_ALL]
-
-        if broadcasting_conn is not None:
-            logger.log(msg.log_level(), "Broadcasting {} to [{}] connections from {}.",
-                       msg, ",".join(map(str, connection_types)), broadcasting_conn)
-        else:
-            logger.log(msg.log_level(), "Broadcasting {} to [{}] connections.", msg,
-                       ",".join(map(str, connection_types)))
-
-        if network_num is None:
-            broadcast_net_num = self.network_num
-        else:
-            broadcast_net_num = network_num
-
-        connections_by_types = set()
-        for connection_type in connection_types:
-            connections_by_types.update(self.connection_pool.get_by_connection_type(connection_type))
-
-        broadcast_connections = []
-        for conn in connections_by_types:
-            is_matching_network_num = (not exclude_relays and conn.network_num == constants.ALL_NETWORK_NUM) or \
-                                      conn.network_num == broadcast_net_num
-            if conn.is_active() and conn != broadcasting_conn and is_matching_network_num:
-                conn.enqueue_msg(msg, prepend_to_queue)
-                broadcast_connections.append(conn)
-
-        return broadcast_connections
+        options = BroadcastOptions(broadcasting_conn, prepend_to_queue, connection_types)
+        return self.broadcast_service.broadcast(msg, options)
 
     @abstractmethod
     def build_connection(self, socket_connection: SocketConnection, ip: str, port: int, from_me: bool = False) \

@@ -7,13 +7,14 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import DEFAULT_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES, FIRST_STATS_INTERVAL_S
 from bxcommon.exceptions import TerminationError
+from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.mocks.mock_connection import MockConnection, MockConnectionType
-from bxcommon.test_utils.mocks.mock_message import MockMessage
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils import memory_utils
+from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 
 
@@ -124,34 +125,6 @@ class AbstractNodeTest(AbstractTestCase):
         self.assertIn(self.connection, self.local_node.connection_pool.by_fileno)
         self.local_node.close()
         self.assertNotIn(self.connection, self.local_node.connection_pool.by_fileno)
-
-    def test_broadcast(self):
-        self.connection.state = ConnectionState.ESTABLISHED
-
-        fileno2 = 3
-        ip2 = "2.2.2.2"
-        port2 = 12345
-        connection2 = helpers.create_connection(MockConnection, fileno=fileno2, ip=ip2, port=port2)
-        connection2.state = ConnectionState.ESTABLISHED
-        connection2.enqueue_msg = MagicMock()
-
-        fileno3 = 4
-        ip3 = "3.3.3.3"
-        port3 = 12346
-        connection3 = helpers.create_connection(MockConnection, fileno=fileno3, ip=ip3, port=port3)
-        connection3.state = ConnectionState.ESTABLISHED
-        connection3.enqueue_msg = MagicMock()
-        connection3.CONNECTION_TYPE = MockConnectionType.NOT_MOCK
-
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node.connection_pool.add(fileno2, ip2, port2, connection2)
-        self.local_node.connection_pool.add(fileno3, ip3, port3, connection3)
-
-        msg = MockMessage(payload_len=32, buf=self.to_31)
-        self.local_node.broadcast(msg, self.connection, network_num=self.connection.network_num,
-                                  connection_types=[MockConnection.CONNECTION_TYPE])
-        connection2.enqueue_msg.assert_called_with(msg, False)
-        connection3.enqueue_msg.assert_not_called()
 
     def test_enqueue_connection(self):
         self.assertNotIn((self.remote_ip, self.remote_port), self.local_node.connection_queue)

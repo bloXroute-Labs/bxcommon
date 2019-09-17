@@ -1,10 +1,20 @@
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
+
+from typing import Tuple, Optional, NamedTuple, Dict, Type
 
 from bxcommon.exceptions import ParseError, UnrecognizedCommandError
+from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.utils import convert
+from bxcommon.utils.buffers.input_buffer import InputBuffer
 
 
-class AbstractMessageFactory(object):
+class MessagePreview(NamedTuple):
+    is_full_message: bool
+    command: Optional[bytes]
+    payload_length: Optional[int]
+
+
+class AbstractMessageFactory:
     """
     Message factory abstract base class.
 
@@ -15,22 +25,26 @@ class AbstractMessageFactory(object):
     __metaclass__ = ABCMeta
 
     def __init__(self):
-        self.base_message_type = None
-        self.message_type_mapping = {}
+        self.base_message_type = self.get_base_message_type()
+        self.message_type_mapping: Dict[bytes, Type[AbstractMessage]] = {}
 
-    def get_message_header_preview_from_input_buffer(self, input_buffer):
+    @abstractmethod
+    def get_base_message_type(self) -> Type[AbstractMessage]:
+        pass
+
+    def get_message_header_preview_from_input_buffer(self, input_buffer: InputBuffer) -> MessagePreview:
         """
         Peeks at a message on the input buffer, determining if its full.
         Returns (is_full_message, command, payload_length)
         """
         if input_buffer.length < self.base_message_type.HEADER_LENGTH:
-            return False, None, None
+            return MessagePreview(False, None, None)
         else:
             unpacked_args = self.base_message_type.unpack(input_buffer[:self.base_message_type.HEADER_LENGTH])
             command = unpacked_args[0]
             payload_length = unpacked_args[-1]
             is_full_message = input_buffer.length >= payload_length + self.base_message_type.HEADER_LENGTH
-            return is_full_message, command, payload_length
+            return MessagePreview(is_full_message, command, payload_length)
 
     def create_message_from_buffer(self, buf):
         """

@@ -1,6 +1,6 @@
-from bxcommon.models.serializeable_enum import SerializableEnum
+from bxcommon.models.serializeable_enum import SerializeableEnum
 
 
-class BlockchainNetworkType(SerializableEnum):
+class BlockchainNetworkType(SerializeableEnum):
     PERMISSIONED = "PERMISSIONED"
     PUBLIC = "PUBLIC"

@@ -58,8 +58,9 @@ class AbstractVersionManagerTest(AbstractTestCase):
 
     def test_get_connection_protocol_version__wrong_message(self):
         wrong_message = BroadcastMessage(
-            msg_hash=Sha256Hash(crypto.double_sha256(b"hello")),
+            message_hash=Sha256Hash(crypto.double_sha256(b"hello")),
             network_num=1,
+            source_id="",
             blob=bytearray(1))
         input_buffer = InputBuffer()
         input_buffer.add_bytes(wrong_message.rawbytes())

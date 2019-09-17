@@ -1,6 +1,7 @@
 import struct
 
 from bxcommon import constants
+from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
@@ -55,11 +56,11 @@ class _CommonMessageConverterV4(AbstractMessageConverter):
         BloxrouteMessageType.BLOCK_HOLDING: BlockHoldingMessage
     }
 
-    def convert_to_older_version(self, msg):
+    def convert_to_older_version(self, msg: AbstractInternalMessage) -> AbstractInternalMessage:
         msg_type = msg.MESSAGE_TYPE
 
         if msg_type not in self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING:
-            return None
+            raise ValueError(f"Unexpected got message of type {msg_type}. Could not convert to version 4.")
 
         old_version_msg_class = self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING[msg_type]
         old_version_payload_len = msg.payload_len() - constants.CONTROL_FLAGS_LEN
@@ -69,11 +70,11 @@ class _CommonMessageConverterV4(AbstractMessageConverter):
         return MessageV4.initialize_class(old_version_msg_class, old_version_msg_bytes,
                                           (msg_type, old_version_payload_len))
 
-    def convert_from_older_version(self, msg):
+    def convert_from_older_version(self, msg: AbstractInternalMessage) -> AbstractInternalMessage:
         msg_type = msg.MESSAGE_TYPE
 
         if msg_type not in self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING:
-            return None
+            raise ValueError(f"Unexpected got message of type {msg_type}. Could not convert to current version.")
 
         new_msg_class = self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING[msg_type]
         new_payload_len = msg.payload_len() + constants.CONTROL_FLAGS_LEN

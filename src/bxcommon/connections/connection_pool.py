@@ -1,16 +1,14 @@
-from collections import defaultdict, deque
+from collections import defaultdict
+from typing import Iterable
 from typing import List, Dict, Set, Optional, Tuple, ClassVar
-
-from bxcommon.utils.stats import hooks
-from bxcommon import constants
-from bxcommon.utils import memory_utils
-from bxcommon.utils import logger
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_type import ConnectionType
+from bxcommon.utils import memory_utils
+from bxcommon.utils.stats import hooks
 
 
-class ConnectionPool(object):
+class ConnectionPool:
     """
     A group of connections with active sockets.
     """
@@ -33,7 +31,7 @@ class ConnectionPool(object):
         self.count_conn_by_ip = defaultdict(lambda: 0)
         self.num_peer_conn = 0
 
-    def add(self, fileno, ip, port, conn):
+    def add(self, fileno: int, ip: str, port: int, conn: AbstractConnection):
         """
         Adds a connection for a tracking.
         Throws an AssertionError if there already exists a connection to the same (ip, port) pair.
@@ -73,10 +71,17 @@ class ConnectionPool(object):
         """
         Returns list of connections that match the connection type.
         """
-        matching_types = [stored_type for stored_type in self.by_connection_type.keys() if stored_type & connection_type]
+        matching_types = [stored_type for stored_type in self.by_connection_type.keys() if
+                          stored_type & connection_type]
         return [connection
                 for matching_type in matching_types
                 for connection in self.by_connection_type[matching_type]]
+
+    def get_by_connection_types(self, connection_types: Iterable[ConnectionType]) -> Set[AbstractConnection]:
+        connections = set()
+        for connection_type in connection_types:
+            connections.update(self.get_by_connection_type(connection_type))
+        return connections
 
     def get_by_ipport(self, ip, port):
         return self.by_ipport[(ip, port)]

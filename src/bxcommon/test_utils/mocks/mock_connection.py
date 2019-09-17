@@ -1,9 +1,12 @@
 from enum import IntFlag
 
+from bxcommon import constants
+from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import PING_INTERVAL_S
 from bxcommon.network.socket_connection import SocketConnection
+from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from typing import Optional, Set
@@ -45,6 +48,12 @@ class MockConnection(SpecialMemoryProperties):
         self.message_handlers = None
         self.network_num = node.opts.blockchain_network_num
 
+        self.enqueued_messages = []
+
+    def __repr__(self):
+        return f"MockConnection<fileno: {self.fileno}, address: ({self.peer_ip}, {self.peer_port}), " \
+               f"network_num: {self.network_num}>"
+
     def is_active(self):
         return self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED and \
                not self.state & ConnectionState.MARK_FOR_CLOSE
@@ -71,6 +80,7 @@ class MockConnection(SpecialMemoryProperties):
             return
 
         self.outputbuf.enqueue_msgbytes(msg.rawbytes())
+        self.enqueued_messages.append(msg)
 
     def enqueue_msg_bytes(self, msg_bytes, prepend=False):
 
@@ -78,6 +88,7 @@ class MockConnection(SpecialMemoryProperties):
             return
 
         self.outputbuf.enqueue_msgbytes(msg_bytes)
+        self.enqueued_messages.append(msg_bytes)
 
     def process_message(self):
         pass

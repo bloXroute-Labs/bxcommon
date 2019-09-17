@@ -12,7 +12,7 @@ from bxcommon.utils.buffers.input_buffer import InputBuffer
 logger = logging.get_logger(__name__)
 
 
-class AbstractVersionManager(object):
+class AbstractVersionManager:
     __metaclass__ = ABCMeta
 
     CURRENT_PROTOCOL_VERSION = 1

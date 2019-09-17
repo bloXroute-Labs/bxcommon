@@ -9,7 +9,7 @@ class NodeModel:
                  is_internal_gateway=None, source_version=None, protocol_version=None, blockchain_network_num=None,
                  blockchain_ip=None, blockchain_port=None, node_public_key=None, hostname=None, sdn_id=None,
                  os_version=None, continent=None, country=None, split_relays=None, idx: int = None,
-                 has_fully_updated_tx_service=False, node_start_time=None):
+                 has_fully_updated_tx_service=False, node_start_time=None, baseline_route_redundancy: int = 0):
         self.external_port = external_port
         self.network = network
         self.online = online
@@ -42,3 +42,4 @@ class NodeModel:
 
         # Ethereum remote blockchain attribute
         self.node_public_key = node_public_key
+        self.baseline_route_redundancy = baseline_route_redundancy

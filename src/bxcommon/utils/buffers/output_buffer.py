@@ -1,9 +1,10 @@
 import time
 from collections import deque
+from typing import Set, Optional
+
+from bxcommon import constants
 from bxcommon.utils import memory_utils
 from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
-from typing import Set, Optional
-from bxcommon import constants
 
 
 class OutputBuffer(SpecialMemoryProperties):
@@ -38,10 +39,13 @@ class OutputBuffer(SpecialMemoryProperties):
         # how long we hold onto messages for batching in seconds
         self.max_hold_time = max_hold_time
         self.last_memview = None
-        self.last_bytearray = None
+        self.last_bytearray: Optional[bytearray] = None
         # size of the last valid memoryview
         self.valid_len = 0
         self.last_bytearray_create_time = None
+
+    def __len__(self):
+        return self.length
 
     def get_buffer(self):
         """
@@ -60,8 +64,8 @@ class OutputBuffer(SpecialMemoryProperties):
 
         return self.output_msgs[0][self.index:]
 
-    def advance_buffer(self, num_bytes):
-        if not isinstance(num_bytes, int) or num_bytes < 0:
+    def advance_buffer(self, num_bytes: int):
+        if num_bytes < 0:
             raise ValueError("Num_bytes must be a positive integer.")
 
         if (not self.output_msgs and num_bytes > 0) or (self.index + num_bytes) > len(self.output_msgs[0]):
@@ -135,6 +139,20 @@ class OutputBuffer(SpecialMemoryProperties):
         self.last_bytearray = None
         self.last_memview = None
         self.valid_len = 0
+
+    def safe_empty(self):
+        """
+        Removes all bytes in OutputBuffer that are not in the current message boundary.
+        """
+        self.flush()
+        if self.output_msgs and self.index:
+            first = self.output_msgs.popleft()
+            self.output_msgs.clear()
+            self.output_msgs.append(first)
+            self.length = len(first) - self.index
+        else:
+            self.output_msgs.clear()
+            self.length = 0
 
     def special_memory_size(self, ids: Optional[Set[int]] = None) -> SpecialTuple:
         return memory_utils.get_special_size(self.output_msgs, ids=ids)

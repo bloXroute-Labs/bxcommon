@@ -1,4 +1,4 @@
-from abc import ABCMeta
+from abc import ABC
 
 from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
@@ -6,10 +6,7 @@ from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
 
 
-class BlockHashMessage(AbstractBloxrouteMessage):
-    __metaclass__ = ABCMeta
-
-    MESSAGE_TYPE = b""
+class BlockHashMessage(AbstractBloxrouteMessage, ABC):
     PAYLOAD_LENGTH = crypto.SHA256_HASH_LEN + constants.CONTROL_FLAGS_LEN
 
     def __init__(self, block_hash=None, buf=None):

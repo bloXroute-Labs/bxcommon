@@ -174,6 +174,7 @@ class AbstractConnection(Generic[Node], SpecialMemoryProperties):
             self.inputbuf)
 
         self.message_validator.validate(is_full_msg, msg_type, self.header_size, payload_len, self.inputbuf)
+        # TODO: message validator does not pass on the new is_full_msg type onward to the stacktrace for recovery
 
         return is_full_msg, msg_type, payload_len
 

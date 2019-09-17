@@ -23,8 +23,7 @@ class MockNode(AbstractNode):
         self._tx_service = TransactionService(self, self.network_num)
         self._tx_services = {}
 
-    def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, network_num=None,
-                  connection_types=None, exclude_relays=False) -> List[AbstractConnection]:
+    def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, connection_types=None) -> List[AbstractConnection]:
         self.broadcast_messages.append(msg)
         return []
 

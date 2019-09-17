@@ -1,8 +1,8 @@
 import platform
 import socket
 
-from bxutils.logging.log_level import LogLevel
 from bxutils.logging.log_format import LogFormat
+from bxutils.logging.log_level import LogLevel
 
 PLATFORM_LINUX = "linux"
 PLATFORM_MAC = "darwin"
@@ -121,7 +121,6 @@ USE_EXTENSION_MODULES = True
 # Should support compact block message
 ACCEPT_COMPACT_BLOCK = True
 
-
 DUMP_MISSING_SHORT_IDS_PATH = "/app/bxrelay/debug/missing-short-ids"
 
 
@@ -230,6 +229,8 @@ ALARM_QUEUE_INIT_EVENT = 1
 # extensions memory management params
 MAX_ALLOCATION_POINTER_COUNT = 10
 MAX_COUNT_PER_ALLOCATION = 10
+
+EMPTY_SOURCE_ID = MSG_NULL_BYTE * 16
 
 # </editor-fold>
 
