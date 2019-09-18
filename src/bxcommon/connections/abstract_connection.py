@@ -1,11 +1,14 @@
 import time
 import traceback
+import sys
 from abc import ABCMeta
 from collections import defaultdict
-from typing import ClassVar, Generic, TypeVar, Optional, TYPE_CHECKING, Set, Optional
+from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Set, Optional
 
+from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxutils import logging
 from bxutils.logging.log_level import LogLevel
+from bxutils.logging.log_record_type import LogRecordType
 
 from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
@@ -29,6 +32,7 @@ if TYPE_CHECKING:
     from bxcommon.connections.abstract_node import AbstractNode
 
 logger = logging.get_logger(__name__)
+memory_logger = logging.get_logger(LogRecordType.BxMemory)
 Node = TypeVar("Node", bound="AbstractNode")
 
 
@@ -250,6 +254,31 @@ class AbstractConnection(Generic[Node], SpecialMemoryProperties):
                     msg_handler(msg)
 
                 messages_processed[msg_type] += 1
+                
+                # TODO: only for debugging memory issues, should be removed!
+                if memory_logger.isEnabledFor(LogLevel.INFO) and hasattr(msg, "buf"):
+                    ref_count = sys.getrefcount(msg.buf)
+                    if ref_count > 2:
+                        extra_data = {}
+                        if isinstance(msg, AbstractBroadcastMessage):
+                            extra_data.update(
+                                {
+                                    "message_hash": msg.message_hash(),
+                                    "message_id": msg.message_id(),
+                                    "source_id": msg.source_id(),
+                                    "network_num": msg.network_num()
+                                }
+                            )
+                        memory_logger.info(
+                            {
+                                "type": "MessageBufferRefCountMismatch",
+                                "ref_count": ref_count,
+                                "msg_type": msg_type,
+                                "buffer_len": len(msg.buf),
+                                "payload_len": payload_len,
+                                "extra_data": extra_data
+                            }
+                        )
 
             # TODO: Investigate possible solutions to recover from PayloadLenError errors
             except PayloadLenError as e:
