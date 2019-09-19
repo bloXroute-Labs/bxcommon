@@ -26,12 +26,11 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
         self._txs_content_short_ids: List[TxContentShortIds] = txs_content_short_ids
 
         if txs_content_short_ids is not None and buf is None:
-            self.buf = bytearray(self.HEADER_LENGTH + UL_INT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES)
+            self.buf = bytearray(self.HEADER_LENGTH + UL_INT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES + CONTROL_FLAGS_LEN)
             self._parse()
         elif buf is not None:
             self.buf = buf
 
-        self.buf.extend(bytearray(CONTROL_FLAGS_LEN))
         super(TxServiceSyncTxsMessage, self).__init__(
             self.MESSAGE_TYPE,
             len(self.buf) - self.HEADER_LENGTH,

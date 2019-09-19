@@ -67,9 +67,11 @@ def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxCon
                 off += UL_INT_SIZE_IN_BYTES
         else:
             logger.warning(
-                "Transaction {} in netwrok {} is missing either content or short ids",
+                "Transaction {} in network {} is missing either content or short ids. short id is None: {}, tx content is None: {}",
                 tx_content_short_ids.tx_hash,
-                network_num
+                network_num,
+                tx_content_short_ids.short_ids is None,
+                tx_content_short_ids.tx_content is None
             )
 
     return buffer
