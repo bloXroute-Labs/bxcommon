@@ -28,8 +28,9 @@ class TxServiceSyncBlocksShortIdsMessage(AbstractBloxrouteMessage):
 
         if blocks_short_ids is not None and buf is None:
             self.buf = bytearray(self.HEADER_LENGTH + 2 * UL_INT_SIZE_IN_BYTES + CONTROL_FLAGS_LEN)
-
             self._parse()
+        elif buf is not None:
+            self.buf.extend(bytearray(CONTROL_FLAGS_LEN))
 
         super(TxServiceSyncBlocksShortIdsMessage, self).__init__(
             self.MESSAGE_TYPE,
