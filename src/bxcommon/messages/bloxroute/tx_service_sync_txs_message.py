@@ -21,7 +21,7 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
             txs_content_short_ids: Optional[List[TxContentShortIds]] = None,
             buf: Optional[bytearray] = None
     ):
-        self.buf = buf
+        self.buf: bytearray = buf
         self._network_num: int = network_num
         self._tx_count: int = len(txs_content_short_ids) if txs_content_short_ids is not None else None
         self._txs_content_short_ids: List[TxContentShortIds] = txs_content_short_ids
