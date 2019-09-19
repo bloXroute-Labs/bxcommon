@@ -71,4 +71,5 @@ class BroadcastMessage(AbstractBroadcastMessage):
 
     def __repr__(self):
         return "BroadcastMessage<network_num: {}, block_id: {}, blob_length: {}, is_encrypted: {}, source_id: {}>" \
-            .format(self.network_num(), self.message_id(), len(self.blob()), self.is_encrypted(), self.source_id())
+            .format(self.network_num(), self.message_id(), len(self.blob()), self.is_encrypted(),
+                    self.source_id_as_str())

@@ -51,6 +51,10 @@ class AlarmId:
         self.alarm = alarm
         self.is_active = True
 
+    def __repr__(self):
+        return f"AlarmId<fire_time: {self.fire_time}, count: {self.count}, active: {self.is_active}, " \
+               f"alarm: {self.alarm}>"
+
     def __lt__(self, other):
         if not isinstance(other, AlarmId):
             raise TypeError("< not supported between instances of 'AlarmId' and {}".format(other))

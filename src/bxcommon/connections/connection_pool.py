@@ -67,21 +67,18 @@ class ConnectionPool:
     def has_connection(self, ip, port):
         return (ip, port) in self.by_ipport
 
-    def get_by_connection_type(self, connection_type: ConnectionType) -> List[AbstractConnection]:
+    def get_by_connection_type(self, connection_type: ConnectionType) -> Set[AbstractConnection]:
         """
         Returns list of connections that match the connection type.
         """
-        matching_types = [stored_type for stored_type in self.by_connection_type.keys() if
-                          stored_type & connection_type]
-        return [connection
-                for matching_type in matching_types
-                for connection in self.by_connection_type[matching_type]]
+        return self.get_by_connection_types({connection_type})
 
     def get_by_connection_types(self, connection_types: Iterable[ConnectionType]) -> Set[AbstractConnection]:
-        connections = set()
-        for connection_type in connection_types:
-            connections.update(self.get_by_connection_type(connection_type))
-        return connections
+        matching_types = [stored_type for stored_type in self.by_connection_type.keys() if
+                          any(stored_type & connection_type for connection_type in connection_types)]
+        return {connection
+                for matching_type in matching_types
+                for connection in self.by_connection_type[matching_type]}
 
     def get_by_ipport(self, ip, port):
         return self.by_ipport[(ip, port)]

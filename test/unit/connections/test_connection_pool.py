@@ -77,12 +77,25 @@ class ConnectionPoolTest(AbstractTestCase):
 
         gateway_connections = self.conn_pool1.get_by_connection_type(ConnectionType.GATEWAY)
         self.assertEqual(1, len(gateway_connections))
-        self.assertEqual(self.conn1, gateway_connections[0])
+        self.assertIn(self.conn1, gateway_connections)
 
         relay_connections = self.conn_pool1.get_by_connection_type(ConnectionType.RELAY_BLOCK)
         self.assertEqual(2, len(relay_connections))
         self.assertIn(self.conn2, relay_connections)
         self.assertIn(self.conn3, relay_connections)
+
+    def test_get_by_connection_types(self):
+        self.conn1.CONNECTION_TYPE = ConnectionType.GATEWAY
+        self.conn2.CONNECTION_TYPE = ConnectionType.RELAY_BLOCK
+        self.conn3.CONNECTION_TYPE = ConnectionType.RELAY_ALL
+        self._add_connections()
+
+        gateway_and_relay_block_connections = self.conn_pool1.get_by_connection_types([
+            ConnectionType.GATEWAY, ConnectionType.RELAY_TRANSACTION
+        ])
+        self.assertEqual(2, len(gateway_and_relay_block_connections))
+        self.assertIn(self.conn1, gateway_and_relay_block_connections)
+        self.assertIn(self.conn3, gateway_and_relay_block_connections)
 
     def test_get_by_fileno(self):
         self._add_connections()

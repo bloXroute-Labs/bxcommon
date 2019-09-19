@@ -62,4 +62,4 @@ class TxMessage(AbstractBroadcastMessage):
     def __repr__(self):
         return ("TxMessage<tx_hash: {}, short_id: {}, network_num: {}, compact: {}, source_id: {}>"
                 .format(self.tx_hash(), self.short_id(), self.network_num(), self.tx_val() == self.EMPTY_TX_VAL,
-                        self.source_id()))
+                        self.source_id_as_str()))

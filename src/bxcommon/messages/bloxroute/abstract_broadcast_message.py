@@ -77,6 +77,12 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
 
         return self._source_id
 
+    def source_id_as_str(self) -> str:
+        if self.source_id() == constants.EMPTY_SOURCE_ID:
+            return "None"
+        else:
+            return self.source_id()
+
     def set_source_id(self, source_id: str):
         self._source_id = source_id
         off = self.HEADER_LENGTH + crypto.SHA256_HASH_LEN + constants.NETWORK_NUM_LEN
