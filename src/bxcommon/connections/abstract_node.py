@@ -349,7 +349,7 @@ class AbstractNode:
 
         peer_ip, peer_port = conn.peer_ip, conn.peer_port
         if retry_connection:
-            if self.is_outbound_peer(peer_ip, peer_port) or \
+            if conn.from_me or \
                     conn.CONNECTION_TYPE == ConnectionType.BLOCKCHAIN_NODE or \
                     conn.CONNECTION_TYPE == ConnectionType.REMOTE_BLOCKCHAIN_NODE or \
                     conn.CONNECTION_TYPE == ConnectionType.SDN:
@@ -360,9 +360,6 @@ class AbstractNode:
             self.on_failed_connection_retry(peer_ip, peer_port, conn.CONNECTION_TYPE)
 
         self.enqueue_disconnect(conn.fileno)
-
-    def is_outbound_peer(self, ip, port):
-        return any(peer.ip == ip and peer.port == port for peer in self.outbound_peers)
 
     def should_retry_connection(self, ip: str, port: int, connection_type: ConnectionType) -> bool:
         is_sdn = bool(connection_type & ConnectionType.SDN)

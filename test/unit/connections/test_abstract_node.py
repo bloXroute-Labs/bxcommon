@@ -219,17 +219,6 @@ class AbstractNodeTest(AbstractTestCase):
         mocked_register_alarm.assert_called_with(1, self.local_node._retry_init_client_socket,
                                                  self.remote_ip, self.remote_port, self.connection.CONNECTION_TYPE)
 
-    def test_is_outbound_peer(self):
-        self.assertFalse(self.local_node.is_outbound_peer(self.remote_ip, self.remote_port))
-        ip = "111.111.111.111"
-        port = 1000
-        self.local_node.outbound_peers = [OutboundPeerModel(ip, port),
-                                          OutboundPeerModel("222.222.222.222", 2000),
-                                          OutboundPeerModel("0.0.0.0", 1234)]
-
-        self.assertFalse(self.local_node.is_outbound_peer(self.remote_ip, self.remote_port))
-        self.assertTrue(self.local_node.is_outbound_peer(ip, port))
-
     @patch("bxcommon.connections.abstract_node.sdn_http_service.submit_peer_connection_error_event")
     def test_retry_init_client_socket(self, mocked_submit_peer):
         self.assertEqual(0, self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port,
