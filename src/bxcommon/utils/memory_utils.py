@@ -1,12 +1,12 @@
-import resource
-import sys
+from psutil import Process
 from abc import ABC, abstractmethod
 from pympler import asizeof
 from pympler.asizeof import Asized
 from sys import getsizeof
-from bxcommon import constants
 from typing import Union, Deque, Set, Any, List, Optional, NamedTuple
 DEFAULT_DETAILED_MEMORY_BREAKDOWN_LIMIT = 50 * 1024
+
+_process: Optional[Process] = None
 
 
 class SpecialTuple(NamedTuple):
@@ -45,13 +45,10 @@ def get_app_memory_usage():
     Provides total application memory usage in bytes
     :return: int
     """
-    mem_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-
-    # resource.getrusage provides memory usage in bytes on OSX but in kilo bytes for other platforms
-    if sys.platform != constants.PLATFORM_MAC:
-        mem_usage *= 1024
-
-    return mem_usage
+    global _process
+    if _process is None:
+        _process = Process()
+    return _process.memory_info().rss
 
 
 def get_object_size(obj):
