@@ -3,7 +3,7 @@ import traceback
 import sys
 from abc import ABCMeta
 from collections import defaultdict
-from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Set, Optional
+from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Optional
 
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxutils import logging
@@ -21,7 +21,7 @@ from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.log_level import LogLevel
-from bxcommon.utils.memory_utils import ObjectSize, SpecialMemoryProperties, SpecialTuple
+from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils import memory_utils
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.direction import Direction
@@ -36,7 +36,7 @@ memory_logger = logging.get_logger(LogRecordType.BxMemory)
 Node = TypeVar("Node", bound="AbstractNode")
 
 
-class AbstractConnection(Generic[Node], SpecialMemoryProperties):
+class AbstractConnection(Generic[Node]):
     __metaclass__ = ABCMeta
 
     CONNECTION_TYPE: ClassVar[ConnectionType] = ConnectionType.NONE
@@ -454,6 +454,3 @@ class AbstractConnection(Generic[Node], SpecialMemoryProperties):
                 self.inputbuf.peek_message(min(self.header_size + payload_len, constants.MAX_LOGGED_BYTES_LEN)))
 
         return "<not available>"
-
-    def special_memory_size(self, ids: Optional[Set[int]] = None) -> SpecialTuple:
-        return memory_utils.add_special_objects(self.inputbuf, self.outputbuf, ids=ids)

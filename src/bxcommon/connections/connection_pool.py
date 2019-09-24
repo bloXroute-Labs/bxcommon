@@ -177,22 +177,12 @@ class ConnectionPool:
         """
 
         class_name = self.__class__.__name__
-        total_special_size_connection_pool = 0
-        seen_ids = set()
-        for conn in self.by_fileno:
-            special_tuple = memory_utils.get_special_size(conn, seen_ids)
-            seen_ids.update(special_tuple.seen_ids)
-            total_special_size_connection_pool += special_tuple.size
-
-        by_fileno_object_size = memory_utils.get_object_size(self.by_fileno)
-        by_fileno_object_size.size += total_special_size_connection_pool
-
         hooks.add_obj_mem_stats(
             class_name,
             0,
             self.by_fileno,
             "connection_pool_by_fileno",
-            by_fileno_object_size,
+            memory_utils.get_object_size(self.by_fileno),
             len(self.by_fileno)
         )
 
