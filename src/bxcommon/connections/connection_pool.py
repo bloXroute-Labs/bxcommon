@@ -225,7 +225,13 @@ class ConnectionPool:
         self._log_connections_mem_stats()
 
     def _log_connections_mem_stats(self):
-        for connection in self.by_ipport.values():
-            hooks.reset_class_mem_stats(connection.__class__.__name__)
-        for connection in self.by_ipport.values():
-            connection.log_connection_mem_stats()
+        by_fileno_size = len(self.by_fileno)
+        for conn_index in range(by_fileno_size):
+            conn = self.by_fileno[conn_index]
+            if conn is not None:
+                hooks.reset_class_mem_stats(conn.__class__.__name__)
+
+        for conn_index in range(by_fileno_size):
+            conn = self.by_fileno[conn_index]
+            if conn is not None:
+                conn.log_connection_mem_stats()
