@@ -1,21 +1,22 @@
 import time
 from collections import defaultdict, OrderedDict
+from dataclasses import dataclass
 from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator
 
-from bxutils import logging
-from bxutils.logging.log_record_type import LogRecordType
-
 from bxcommon import constants
+from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import memory_utils, convert, json_utils
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
-from bxcommon.connections.abstract_node import AbstractNode
+from bxutils import logging
+from bxutils.logging.log_record_type import LogRecordType
 
 logger = logging.get_logger(__name__)
 logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup)
+
 
 def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash]) -> Sha256Hash:
     if isinstance(transaction_hash, Sha256Hash):
@@ -25,6 +26,25 @@ def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash
         return Sha256Hash(binary=transaction_hash)
 
     return Sha256Hash(binary=convert.hex_to_bytes(transaction_hash))
+
+
+@dataclass
+class TransactionServiceStats:
+    short_id_count: int = 0
+    transaction_content_count: int = 0
+    transactions_removed_by_memory_limit: int = 0
+    transaction_contents_size: int = 0
+
+    def __sub__(self, other):
+        if not isinstance(other, TransactionServiceStats):
+            raise TypeError(f"Cannot subtract object of type {type(other)} from TransactionServiceStats.")
+
+        return TransactionServiceStats(
+            self.short_id_count - other.short_id_count,
+            self.transaction_content_count - other.transaction_content_count,
+            self.transactions_removed_by_memory_limit - other.transactions_removed_by_memory_limit,
+            self.transaction_contents_size - other.transaction_contents_size
+        )
 
 
 class TransactionService:
@@ -99,6 +119,7 @@ class TransactionService:
         self._total_tx_contents_size = 0
         self._total_tx_removed_by_memory_limit = 0
 
+        self._last_transaction_stats = TransactionServiceStats()
         self._removed_short_ids = set()
         if node.opts.dump_removed_short_ids:
             self.node.alarm_queue.register_alarm(
@@ -141,7 +162,8 @@ class TransactionService:
         )
         return short_ids
 
-    def set_transaction_contents(self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]):
+    def set_transaction_contents(self, transaction_hash: Sha256Hash,
+                                 transaction_contents: Union[bytearray, memoryview]):
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
 
@@ -457,7 +479,7 @@ class TransactionService:
             self.get_collection_mem_stats(self._removed_short_ids),
         )
 
-    def get_tx_service_aggregate_stats(self):
+    def get_aggregate_stats(self):
         """
         Returns dictionary with aggregated statistics of transactions service
 
@@ -472,13 +494,21 @@ class TransactionService:
             if oldest_transaction_sid in self._short_id_to_tx_cache_key:
                 oldest_transaction_hash = self._short_id_to_tx_cache_key[oldest_transaction_sid]
 
+        current_stats = TransactionServiceStats(
+            len(self._short_id_to_tx_cache_key),
+            len(self._tx_cache_key_to_contents),
+            self._total_tx_removed_by_memory_limit,
+            self._total_tx_contents_size
+        )
+
+        difference = current_stats - self._last_transaction_stats
+        self._last_transaction_stats = current_stats
+
         return {
-            "short_id_mapping_count_gauge": len(self._short_id_to_tx_cache_key),
-            "unique_transaction_content_gauge": len(self._tx_cache_key_to_contents),
             "oldest_transaction_date": oldest_transaction_date,
             "oldest_transaction_hash": oldest_transaction_hash,
-            "transactions_removed_by_memory_limit": self._total_tx_removed_by_memory_limit,
-            "total_tx_contents_size": self._total_tx_contents_size
+            "aggregate": current_stats.__dict__,
+            "delta": difference.__dict__
         }
 
     def get_collection_mem_stats(self, collection_obj: Any, estimated_size: int = 0) -> ObjectSize:
@@ -605,8 +635,9 @@ class TransactionService:
             if blockchain_network.network_num == self.network_num:
                 return blockchain_network.final_tx_confirmations_count
 
-        logger.warning("Tx service could not determine final confirmations count for network number {}. Using default {}."
-                    .format(self.network_num, self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT))
+        logger.warning(
+            "Tx service could not determine final confirmations count for network number {}. Using default {}."
+                .format(self.network_num, self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT))
 
         return self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT
 
@@ -628,8 +659,9 @@ class TransactionService:
                 else:
                     return blockchain_network.tx_contents_memory_limit_bytes
 
-        logger.warning("Tx service could not determine transactions memory limit for network number {}. Using default {}."
-                    .format(self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES))
+        logger.warning(
+            "Tx service could not determine transactions memory limit for network number {}. Using default {}."
+                .format(self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES))
         return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
 
     def _tx_hash_to_cache_key(self, transaction_hash: Union[Sha256Hash, bytes, bytearray, memoryview, str]) \

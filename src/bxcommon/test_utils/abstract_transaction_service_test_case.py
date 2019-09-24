@@ -291,16 +291,16 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         transactions_set_1 = self._add_transactions(tx_count_set_1, tx_size)
 
         self.assertEqual(memory_limit_bytes, self.transaction_service._total_tx_contents_size)
-        stats = self.transaction_service.get_tx_service_aggregate_stats()
-        self.assertEqual(0, stats["transactions_removed_by_memory_limit"])
+        stats = self.transaction_service.get_aggregate_stats()
+        self.assertEqual(0, stats["aggregate"]["transactions_removed_by_memory_limit"])
         self.assertEqual(tx_count_set_1, len(self.transaction_service._tx_cache_key_to_contents))
 
         # adding transactions that does not fit into memory limit
         tx_count_set_2 = tx_count_set_1 / 2
         transactions_set_2 = self._add_transactions(tx_count_set_2, tx_size, short_id_offset=100)
         self.assertEqual(memory_limit_bytes, self.transaction_service._total_tx_contents_size)
-        stats = self.transaction_service.get_tx_service_aggregate_stats()
-        self.assertEqual(tx_count_set_2, stats["transactions_removed_by_memory_limit"])
+        stats = self.transaction_service.get_aggregate_stats()
+        self.assertEqual(tx_count_set_2, stats["aggregate"]["transactions_removed_by_memory_limit"])
         self.assertEqual(tx_count_set_1, len(self.transaction_service._tx_cache_key_to_contents))
 
         # verify that first half of transactions from set 1 no longer in cache and second half still cached
@@ -328,8 +328,8 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
 
         # add transaction that is twice longer
         self._add_transactions(1, tx_size * 2)
-        stats = self.transaction_service.get_tx_service_aggregate_stats()
-        self.assertEqual(tx_count_set_2 + 2, stats["transactions_removed_by_memory_limit"])
+        stats = self.transaction_service.get_aggregate_stats()
+        self.assertEqual(tx_count_set_2 + 2, stats["aggregate"]["transactions_removed_by_memory_limit"])
         self.assertEqual(tx_count_set_1 - 1, len(self.transaction_service._tx_cache_key_to_contents))
 
     def _test_get_missing_transactions(self):
