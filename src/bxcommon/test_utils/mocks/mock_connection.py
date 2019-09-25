@@ -58,6 +58,9 @@ class MockConnection(SpecialMemoryProperties):
         return self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED and \
                not self.state & ConnectionState.MARK_FOR_CLOSE
 
+    def is_sendable(self):
+        return self.is_active()
+
     def mark_for_close(self, force_destroy_now=False):
         self.state |= ConnectionState.MARK_FOR_CLOSE
 

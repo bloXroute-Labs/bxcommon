@@ -109,6 +109,12 @@ class AbstractConnection(Generic[Node]):
         return self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED and \
                not self.state & ConnectionState.MARK_FOR_CLOSE
 
+    def is_sendable(self):
+        """
+        Indicates whether the connection should send bytes on broadcast.
+        """
+        return self.is_active()
+
     def add_received_bytes(self, bytes_received):
         """
         Adds bytes received from socket connection to input buffer

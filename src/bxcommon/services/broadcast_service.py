@@ -48,7 +48,7 @@ class BroadcastService(Generic[MT, CT], ABC):
                                   options: BroadcastOptions) -> List[CT]:
         broadcast_connections = []
         for connection in connections:
-            if connection.is_active():
+            if connection.is_sendable():
                 connection.enqueue_msg(message, options.prepend_to_queue)
                 broadcast_connections.append(connection)
         return broadcast_connections
