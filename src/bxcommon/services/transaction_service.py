@@ -710,6 +710,9 @@ class TransactionService:
             "network_num": self.network_num
         }
 
+    def get_tx_hash_to_contents_len(self):
+        return len(self._tx_cache_key_to_contents)
+
     def _iter_block_seen_by_time(self, skip_start: int, skip_end: int) -> Iterator[Sha256Hash]:
         to = len(self._short_ids_seen_in_block) - skip_end
         for idx, block_hash in enumerate(self._short_ids_seen_in_block.keys()):
