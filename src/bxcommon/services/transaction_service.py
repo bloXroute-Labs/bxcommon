@@ -408,6 +408,18 @@ class TransactionService:
             short_ids
         )
 
+    def log_block_transaction_cleanup_stats(self, block_hash: Sha256Hash, tx_count: int, tx_before_cleanup: int,
+                                            tx_after_cleanup: int):
+        logger_memory_cleanup.statistics(
+            {
+                "type": "BlockTransactionsCleanup",
+                "block_hash": block_hash,
+                "block_transactions_count": tx_count,
+                "tx_hash_to_contents_len_before_cleanup": tx_before_cleanup,
+                "tx_hash_to_contents_len_after_cleanup": tx_after_cleanup,
+            }
+        )
+
     def log_tx_service_mem_stats(self):
         """
         Logs transactions service memory statistics
