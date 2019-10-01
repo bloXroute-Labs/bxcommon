@@ -413,7 +413,7 @@ class TransactionService:
         logger_memory_cleanup.statistics(
             {
                 "type": "BlockTransactionsCleanup",
-                "block_hash": block_hash,
+                "block_hash": repr(block_hash),
                 "block_transactions_count": tx_count,
                 "tx_hash_to_contents_len_before_cleanup": tx_before_cleanup,
                 "tx_hash_to_contents_len_after_cleanup": tx_after_cleanup,
