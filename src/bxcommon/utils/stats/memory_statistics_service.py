@@ -1,8 +1,8 @@
 from collections import defaultdict
 from datetime import datetime
-
 from bxcommon import constants
 from bxcommon.utils import memory_utils
+from bxcommon.utils.sizer import Sizer
 from bxcommon.utils.stats.class_mem_stats import ClassMemStats
 from bxcommon.utils.stats.statistics_service import StatsIntervalData, ThreadedStatisticsService
 from bxutils.logging.log_record_type import LogRecordType
@@ -21,14 +21,16 @@ class MemoryStatsService(ThreadedStatisticsService):
     INTERVAL_DATA_CLASS = MemoryStatsIntervalData
 
     def __init__(self, interval=0):
+        self.sizer_obj = Sizer()
         super(MemoryStatsService, self).__init__("MemoryStats", interval=interval, look_back=5, reset=False,
                                                  logger=logging.get_logger(LogRecordType.Memory))
 
     def set_node(self, node):
         super(MemoryStatsService, self).set_node(node)
         self.interval = node.opts.memory_stats_interval
+        self.sizer_obj = Sizer(node)
 
-    def add_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info, object_item_count=None):
+    def add_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info, object_type=None, size_type=None, object_item_count=None):
         mem_stats = self.interval_data.class_mem_stats[class_name]
         mem_stats.timestamp = datetime.utcnow()
 
@@ -40,6 +42,8 @@ class MemoryStatsService(ThreadedStatisticsService):
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_size = obj_mem_info.size
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_flat_size = obj_mem_info.flat_size
         mem_stats.networks[network_num].analyzed_objects[obj_name].is_actual_size = obj_mem_info.is_actual_size
+        mem_stats.networks[network_num].analyzed_objects[obj_name].object_type = object_type
+        mem_stats.networks[network_num].analyzed_objects[obj_name].size_type = size_type
 
     def get_info(self):
         # total_mem_usage is the peak mem usage fo the process (kilobytes on Linux, bytes on OS X)
@@ -61,17 +65,19 @@ class MemoryStatsService(ThreadedStatisticsService):
         self.node.dump_memory_usage()
         return super(MemoryStatsService, self).flush_info()
 
-    def increment_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info, object_item_count=None):
+    def increment_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info, object_type=None, size_type=None, object_item_count=None):
         mem_stats = self.interval_data.class_mem_stats[class_name]
 
         # If the object being analyzed doesn't have a length property
         if object_item_count is None:
-            object_item_count = len(obj) if hasattr(obj, "__len__") else 0
+            object_item_count = len(obj) if hasattr(obj, "__len__") else 1
 
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_item_count += object_item_count
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_size += obj_mem_info.size
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_flat_size += obj_mem_info.flat_size
         mem_stats.networks[network_num].analyzed_objects[obj_name].is_actual_size = obj_mem_info.is_actual_size
+        mem_stats.networks[network_num].analyzed_objects[obj_name].object_type = object_type
+        mem_stats.networks[network_num].analyzed_objects[obj_name].size_type = size_type
 
     def reset_class_mem_stats(self, class_name):
         mem_stats = ClassMemStats()

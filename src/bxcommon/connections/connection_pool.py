@@ -1,11 +1,15 @@
 from collections import defaultdict
 from typing import Iterable
 from typing import List, Dict, Set, Optional, Tuple, ClassVar
-
+import time
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.utils import memory_utils
+from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats import hooks
+from bxutils import logging
+
+logger = logging.get_logger(__name__)
 
 
 class ConnectionPool:
@@ -176,14 +180,25 @@ class ConnectionPool:
         Logs Connection Pool memory statistics
         """
 
+        sizer_obj = memory_statistics.sizer_obj
+        sizer = sizer_obj.sizer
+        logger.info("MemoryStats excluded classes: {}".format(sizer_obj.excluded))
+
+        by_fileno_obj_size = self._log_detailed_object_size(self.by_fileno, "by_fileno", sizer=sizer)
+        by_ipport_obj_size = self._log_detailed_object_size(self.by_ipport, "by_ipport", sizer=sizer)
+        by_conn_type_obj_size = self._log_detailed_object_size(self.by_connection_type, "by_conn_type", sizer=sizer)
+        by_node_id_obj_size = self._log_detailed_object_size(self.by_node_id, "by_node_id", sizer=sizer)
+
         class_name = self.__class__.__name__
         hooks.add_obj_mem_stats(
             class_name,
             0,
             self.by_fileno,
             "connection_pool_by_fileno",
-            memory_utils.get_object_size(self.by_fileno),
-            len(self.by_fileno)
+            by_fileno_obj_size,
+            object_item_count=sum([1 for i in self.by_fileno if i is not None]),
+            object_type=memory_utils.ObjectType.META,
+            size_type=memory_utils.SizeType.OBJECT
         )
 
         hooks.add_obj_mem_stats(
@@ -191,8 +206,21 @@ class ConnectionPool:
             0,
             self.by_ipport,
             "connection_pool_by_ipport",
-            memory_utils.get_object_size(self.by_ipport),
-            len(self.by_ipport)
+            by_ipport_obj_size,
+            object_item_count=len(self.by_ipport),
+            object_type=memory_utils.ObjectType.META,
+            size_type=memory_utils.SizeType.OBJECT
+        )
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            0,
+            self.by_node_id,
+            "connection_pool_by_node_id",
+            by_node_id_obj_size,
+            object_item_count=len(self.by_node_id),
+            object_type=memory_utils.ObjectType.META,
+            size_type=memory_utils.SizeType.OBJECT
         )
 
         hooks.add_obj_mem_stats(
@@ -200,8 +228,10 @@ class ConnectionPool:
             0,
             self.by_connection_type,
             "connection_pool_by_connection_type",
-            memory_utils.get_object_size(self.by_connection_type),
-            len(self.by_connection_type)
+            by_conn_type_obj_size,
+            object_item_count=len(self.by_connection_type),
+            object_type=memory_utils.ObjectType.META,
+            size_type=memory_utils.SizeType.OBJECT
         )
 
         hooks.add_obj_mem_stats(
@@ -210,9 +240,18 @@ class ConnectionPool:
             self.count_conn_by_ip,
             "connection_pool_count_conn_by_ip",
             memory_utils.get_object_size(self.count_conn_by_ip),
-            len(self.count_conn_by_ip)
+            object_item_count=len(self.count_conn_by_ip),
+            object_type=memory_utils.ObjectType.BASE,
+            size_type=memory_utils.SizeType.TRUE
         )
         self._log_connections_mem_stats()
+
+    def _log_detailed_object_size(self, obj, stat_name, sizer):
+        class_name = self.__class__.__name__
+        start_time = time.time()
+        obj_size = memory_utils.get_detailed_object_size(obj, sizer=sizer)
+        logger.info("(MemoryStats) ({}) {} took: {} seconds".format(class_name, stat_name, round(time.time() - start_time, 3)))
+        return obj_size
 
     def _log_connections_mem_stats(self):
         by_fileno_size = len(self.by_fileno)
@@ -225,3 +264,7 @@ class ConnectionPool:
             conn = self.by_fileno[conn_index]
             if conn is not None:
                 conn.log_connection_mem_stats()
+
+    # Not used right now but is helpful for debugging
+    def _get_ref_info(self, parent_obj):
+        return [(obj.name, obj.size, self._get_ref_info(obj)) for obj in parent_obj.references]

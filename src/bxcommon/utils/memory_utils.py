@@ -4,6 +4,7 @@ from pympler import asizeof
 from pympler.asizeof import Asized
 from sys import getsizeof
 from typing import Union, Deque, Set, Any, List, Optional, NamedTuple
+from enum import Enum
 DEFAULT_DETAILED_MEMORY_BREAKDOWN_LIMIT = 50 * 1024
 
 _process: Optional[Process] = None
@@ -51,27 +52,29 @@ def get_app_memory_usage():
     return _process.memory_info().rss
 
 
-def get_object_size(obj):
-    # type: (object) -> ObjectSize
+def get_object_size(obj, sizer=asizeof):
+    # type: (object, Any) -> ObjectSize
     """
     Calculates total size memory consumed by objects and all objects that it references
     :param obj: object to calculate size
+    :param sizer: sizer object
     :return: object representing memory usage breakdown for the object
     """
-    obj_size = asizeof.asized(obj)
+    obj_size = sizer.asized(obj)
     return _to_size_obj(obj_size, DEFAULT_DETAILED_MEMORY_BREAKDOWN_LIMIT)
 
 
-def get_detailed_object_size(obj, detailed_if_greater_than=DEFAULT_DETAILED_MEMORY_BREAKDOWN_LIMIT):
-    # type: (object, int) -> ObjectSize
+def get_detailed_object_size(obj, detailed_if_greater_than=DEFAULT_DETAILED_MEMORY_BREAKDOWN_LIMIT, sizer=asizeof):
+    # type: (object, int, Any) -> ObjectSize
     """
     Calculates total size memory consumed by objects and all objects that it references.
     Generates breakdown by reference.
     :param obj: object to calculate size
+    :param sizer: sizer object
     :param detailed_if_greater_than: break down memory by fields of object if it is size is greater than provided value
     :return: object representing memory usage breakdown for the object
     """
-    obj_size = asizeof.asized(obj, detail=10)
+    obj_size = sizer.asized(obj, detail=10)
     return _to_size_obj(obj_size, detailed_if_greater_than)
 
 
@@ -166,3 +169,26 @@ def add_special_objects(*args, ids: Optional[Set[int]] = None) -> SpecialTuple:
         curr_size, ids = get_special_size(obj, ids=ids)
         total_size += curr_size
     return SpecialTuple(size=total_size, seen_ids=ids)
+
+
+class ObjectType(Enum):
+
+    BASE = "Base"
+    META = "Meta"
+    MAP_PROXY = "MapProxy"
+    DEFAULT_MAP_PROXY = "DefaultMapProxy"
+    MAIN_TASK_BASE = "MainTaskBase"
+    TASK_QUEUE_PROXY = "TaskQueueProxy"
+
+    def __str__(self):
+        return self.value
+
+
+class SizeType(Enum):
+    SPECIAL = "Special"
+    OBJECT = "Object"
+    TRUE = "True"
+    ESTIMATE = "Estimate"
+
+    def __str__(self):
+        return self.value

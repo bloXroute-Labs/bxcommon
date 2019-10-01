@@ -21,7 +21,6 @@ from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.log_level import LogLevel
-from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils import memory_utils
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.direction import Direction
@@ -417,20 +416,27 @@ class AbstractConnection(Generic[Node]):
         logs the connection's memory stats
         """
         class_name = self.__class__.__name__
-        hooks.increment_obj_mem_stats(
+        hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self.inputbuf,
             "input_buffer",
-            ObjectSize("input_buffer", memory_utils.get_special_size(self.inputbuf).size, is_actual_size=True)
+            memory_utils.ObjectSize("input_buffer", memory_utils.get_special_size(self.inputbuf).size, is_actual_size=True),
+            object_item_count=len(self.inputbuf.input_list),
+            object_type=memory_utils.ObjectType.BASE,
+            size_type=memory_utils.SizeType.TRUE
         )
-        hooks.increment_obj_mem_stats(
+        hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
             self.outputbuf,
             "output_buffer",
-            ObjectSize("output_buffer", memory_utils.get_special_size(self.outputbuf).size, is_actual_size=True)
+            memory_utils.ObjectSize("output_buffer", memory_utils.get_special_size(self.outputbuf).size, is_actual_size=True),
+            object_item_count=len(self.outputbuf.output_msgs),
+            object_type=memory_utils.ObjectType.BASE,
+            size_type=memory_utils.SizeType.TRUE
         )
+
 
     def update_model(self, model: OutboundPeerModel):
         logger.info("updated connection peer module {}", model)

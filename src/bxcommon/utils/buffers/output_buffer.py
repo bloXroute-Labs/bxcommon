@@ -83,7 +83,7 @@ class OutputBuffer(SpecialMemoryProperties):
 
     def enqueue_msgbytes(self, msg_bytes):
         if not isinstance(msg_bytes, bytearray) and not isinstance(msg_bytes, memoryview):
-            raise ValueError("Msg_bytes must be a bytearray.")
+            raise ValueError("Msg_bytes must be a bytearray. The type given was a {}".format(type(msg_bytes)))
 
         length = len(msg_bytes)
 

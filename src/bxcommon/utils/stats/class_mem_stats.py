@@ -14,6 +14,9 @@ class ClassMemNetworks(object):
 
 class ClassMemObjects(object):
     def __init__(self):
-        self.object_item_count = 0
+        self.object_item_count = 1
         self.object_size = 0
         self.object_flat_size = 0
+        self.object_type = None
+        self.size_type = None
+

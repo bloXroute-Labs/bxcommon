@@ -402,7 +402,6 @@ class AbstractNode:
         When overridden, records identified memory stats and flushes them to std out
         :returns memory stats flush interval
         """
-
         self.connection_pool.log_connection_pool_mem_stats()
         return memory_statistics.flush_info()
 
