@@ -18,6 +18,7 @@ from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.object_hash import Sha256Hash
 
 NEW_VERSION_SOURCE_ID = uuid_pack.from_bytes(b"\x01" * 16)
+EMPTY_SOURCE_ID_STR = EMPTY_SOURCE_ID.decode()
 
 
 class BloxrouteVersionManagerV5Test(AbstractTestCase):
@@ -81,7 +82,7 @@ class BloxrouteVersionManagerV5Test(AbstractTestCase):
             (msg_type, payload_length)
         )
         self._validate_messages_match(old_message, new_msg)
-        self.assertEqual(EMPTY_SOURCE_ID, new_msg.source_id())
+        self.assertEqual(EMPTY_SOURCE_ID_STR, new_msg.source_id())
 
     def test_key_message(self):
         block_hash = Sha256Hash(helpers.generate_bytes(crypto.SHA256_HASH_LEN))
@@ -106,7 +107,7 @@ class BloxrouteVersionManagerV5Test(AbstractTestCase):
         new_version_msg: AbstractBroadcastMessage = \
             bloxroute_version_manager.convert_message_from_older_version(5, old_version_msg)
         self._validate_messages_match(old_version_msg, new_version_msg)
-        self.assertEqual(EMPTY_SOURCE_ID, new_version_msg.source_id())
+        self.assertEqual(EMPTY_SOURCE_ID_STR, new_version_msg.source_id())
 
     def _validate_messages_match(self, old_version_msg, new_version_msg):
         self.assertEqual(old_version_msg.msg_type(), new_version_msg.msg_type())

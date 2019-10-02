@@ -32,6 +32,7 @@ from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash
 
 NEW_VERSION_SOURCE_ID = uuid_pack.from_bytes(b"\x01" * 16)
+EMPTY_SOURCE_ID_STR = EMPTY_SOURCE_ID.decode()
 
 
 def _get_random_hash():
@@ -121,7 +122,7 @@ class BloxrouteVersionManagerV4Test(AbstractTestCase):
             (msg_type, payload_len)
         )
         self._validate_messages_match_broadcast_message(old_message, new_msg)
-        self.assertEqual(EMPTY_SOURCE_ID, new_msg.source_id())
+        self.assertEqual(EMPTY_SOURCE_ID_STR, new_msg.source_id())
 
     def test_get_txs_message(self):
         self._test_to_old_version(GetTxsMessage(short_ids=[1, 2, 3]))
@@ -173,7 +174,7 @@ class BloxrouteVersionManagerV4Test(AbstractTestCase):
     def _test_to_new_version_broadcast_message(self, old_version_msg):
         new_version_msg = bloxroute_version_manager.convert_message_from_older_version(4, old_version_msg)
         self._validate_messages_match_broadcast_message(old_version_msg, new_version_msg)
-        self.assertEqual(EMPTY_SOURCE_ID, new_version_msg.source_id())
+        self.assertEqual(EMPTY_SOURCE_ID_STR, new_version_msg.source_id())
 
     def _validate_messages_match_broadcast_message(self, old_version_msg, new_version_msg):
         self.assertEqual(old_version_msg.msg_type(), new_version_msg.msg_type())

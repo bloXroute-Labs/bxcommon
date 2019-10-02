@@ -73,7 +73,7 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
             off = self.SOURCE_ID_OFFSET
             self._source_id = uuid_pack.from_bytes(struct.unpack_from("<16s", self.buf, off)[0])
             if self._source_id is None:
-                self._source_id = constants.EMPTY_SOURCE_ID
+                self._source_id = constants.EMPTY_SOURCE_ID.decode()
 
         return self._source_id
 
