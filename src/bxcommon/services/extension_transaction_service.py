@@ -75,10 +75,6 @@ class ExtensionTransactionService(TransactionService):
         super(ExtensionTransactionService, self).set_final_tx_confirmations_count(val)
         self.proxy.set_final_tx_confirmations_count(val)
 
-    def get_expiration_time_by_short_id(self, short_id: int) -> float:
-        # TODO find a way to find expiration by short id
-        return super(ExtensionTransactionService, self).get_expiration_time_by_short_id(short_id)
-
     def on_block_cleaned_up(self, block_hash: Sha256Hash) -> None:
         super(ExtensionTransactionService, self).on_block_cleaned_up(block_hash)
         wrapped_block_hash = tpe.Sha256(tpe.InputBytes(block_hash.binary))

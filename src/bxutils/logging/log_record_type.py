@@ -13,6 +13,7 @@ class LogRecordType(Enum):
     NetworkInfo = "stats.network.info"
     ConnectionState = "stats.connection_state"
     BlockCleanup = "bx.cleanup.block"
+    TransactionCleanup = "bx.cleanup.transaction"
     BxMemory = "bx.memory"
 
 

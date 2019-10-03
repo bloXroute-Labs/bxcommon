@@ -1,20 +1,20 @@
 import time
 from abc import abstractmethod, ABCMeta
+
 from mock import MagicMock
 
-from bxutils.logging import log_config
-from bxutils.logging.log_level import LogLevel
-
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants
 from bxcommon.connections.node_type import NodeType
-from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.constants import NULL_TX_SID
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils import helpers
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
+from bxcommon.utils.stats.memory_statistics_service import memory_statistics
+from bxutils.logging import log_config
+from bxutils.logging.log_level import LogLevel
 
 
 def get_sha(data: bytes) -> Sha256Hash:
@@ -49,7 +49,8 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.assertEqual(short_ids[i], self.transaction_service.get_short_id(transaction_hash))
 
         for i, short_id in enumerate(short_ids):
-            transaction_hash, transaction_content, assigned_short_id = self.transaction_service.get_transaction(short_id)
+            transaction_hash, transaction_content, assigned_short_id = self.transaction_service.get_transaction(
+                short_id)
             self.assertEqual(transaction_hashes[i], transaction_hash.binary)
             self.assertEqual(transaction_contents[i], transaction_content)
             self.assertEqual(short_id, assigned_short_id)
@@ -209,7 +210,6 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
         self._verify_txs_in_tx_service([1, 2, 3, 4, 5], [])
 
-
         # 5th block with short ids arrives
         block_hash = bytearray(helpers.generate_bytearray(32))
         self.transaction_service.track_seen_short_ids(Sha256Hash(block_hash), [])
@@ -266,7 +266,6 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.assertFalse(self.transaction_service.has_transaction_contents(transaction_hashes[0]))
         self.assertFalse(self.transaction_service.has_transaction_contents(transaction_hashes[1]))
         self.assertTrue(self.transaction_service.has_transaction_contents(transaction_hashes[2]))
-
 
         # 3rd block with short ids arrives
         block_hash = bytearray(helpers.generate_bytearray(32))
@@ -371,6 +370,17 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self._add_transactions(1000, 100)
         self.transaction_service.log_tx_service_mem_stats()
         memory_statistics.flush_info()
+
+    def _test_iter_timestamped_transaction_hashes_from_oldest(self):
+        transactions = self._add_transactions(30, 250)
+
+        result = [tx for tx in self.transaction_service.iter_timestamped_transaction_hashes_from_oldest()]
+        last_timestamp = 0
+        for i, transaction_info in enumerate(result):
+            result_tx, timestamp = transaction_info
+            self.assertEqual(transactions[i][0], result_tx)
+            self.assertLessEqual(last_timestamp, timestamp)
+            last_timestamp = timestamp
 
     def _add_transactions(self, tx_count, tx_size, short_id_offset=0):
         transactions = []

@@ -37,5 +37,8 @@ class TransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_memory_stats(self):
         self._test_memory_stats()
 
+    def test_iter_timestamped_transaction_hashes_from_oldest(self):
+        self._test_iter_timestamped_transaction_hashes_from_oldest()
+
     def _get_transaction_service(self) -> TransactionService:
         return TransactionService(self.mock_node, 0)

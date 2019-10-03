@@ -56,8 +56,6 @@ class AbstractNode:
         # Event handling queue for delayed events
         self.alarm_queue = AlarmQueue()
 
-        self.tx_service = None
-
         self.init_throughput_logging()
         self.init_node_info_logging()
         self.init_memory_stats_logging()

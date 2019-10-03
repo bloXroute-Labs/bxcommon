@@ -14,6 +14,7 @@ from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils import config, crypto, convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
+from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
 
 if TYPE_CHECKING:
@@ -38,6 +39,10 @@ def generate_bytearray(size):
 
 def generate_hash() -> bytearray:
     return generate_bytearray(crypto.SHA256_HASH_LEN)
+
+
+def generate_object_hash() -> Sha256Hash:
+    return Sha256Hash(generate_hash())
 
 
 Connection = TypeVar("Connection", bound="AbstractConnection")
@@ -184,7 +189,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
                      is_internal_gateway=False, is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
                      parallelism_degree=1, cookie_file_path=COOKIE_FILE_PATH, blockchain_block_hold_timeout_s=30,
                      blockchain_block_recovery_timeout_s=30, stay_alive_duration=30 * 60, source_version="v1.1.1.1",
-                     initial_liveliness_check=30, **kwargs) -> Namespace:
+                     initial_liveliness_check=30, block_interval=600, **kwargs) -> Namespace:
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -203,6 +208,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         remote_blockchain_peer = None
 
     partial_apply_args = locals().copy()
+    for kwarg, arg in partial_apply_args["kwargs"].items():
+        partial_apply_args[kwarg] = arg
 
     partial_apply_args["outbound_peers"] = peer_gateways + peer_relays
 
@@ -221,7 +228,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "peer_transaction_relays": peer_transaction_relays,
         "split_relays": split_relays,
         "protocol_version": protocol_version,
-        "blockchain_block_interval": 600,
+        "blockchain_block_interval": block_interval,
         "blockchain_ignore_block_interval_count": 3,
         "blockchain_block_recovery_timeout_s": blockchain_block_recovery_timeout_s,
         "blockchain_block_hold_timeout_s": blockchain_block_hold_timeout_s,
@@ -271,5 +278,4 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         })
     for key, val in kwargs.items():
         opts.__dict__[key] = val
-
     return opts

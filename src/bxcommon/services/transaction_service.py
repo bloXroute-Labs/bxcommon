@@ -107,7 +107,7 @@ class TransactionService:
         self._tx_cache_key_to_short_ids = defaultdict(set)
         self._short_id_to_tx_cache_key = {}
         self._tx_cache_key_to_contents = {}
-        self._tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
+        self._tx_assignment_expire_queue: ExpirationQueue[int] = ExpirationQueue(node.opts.sid_expire_time)
 
         self._final_tx_confirmations_count = self._get_final_tx_confirmations_count()
         self._tx_content_memory_limit = self._get_tx_contents_memory_limit()
@@ -126,106 +126,6 @@ class TransactionService:
                 constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S,
                 self._dump_removed_short_ids
             )
-
-    def set_final_tx_confirmations_count(self, val: int):
-        self._final_tx_confirmations_count = val
-
-    def remove_transaction_by_tx_hash(self, transaction_hash: Sha256Hash) -> Set[int]:
-        """
-        Clean up mapping. Removes transaction contents and mapping.
-        :param transaction_hash: tx hash to clean up
-        """
-        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
-        removed_sids = 0
-        removed_txns = 0
-
-        if transaction_cache_key in self._tx_cache_key_to_short_ids:
-            short_ids = self._tx_cache_key_to_short_ids.pop(transaction_cache_key)
-            for short_id in short_ids:
-                removed_sids += 1
-                if short_id in self._short_id_to_tx_cache_key:
-                    del self._short_id_to_tx_cache_key[short_id]
-                self._tx_assignment_expire_queue.remove(short_id)
-                self._removed_short_ids.add(short_id)
-        else:
-            short_ids = {constants.NULL_TX_SID}
-
-        if transaction_cache_key in self._tx_cache_key_to_contents:
-            self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
-            del self._tx_cache_key_to_contents[transaction_cache_key]
-            removed_txns += 1
-        logger.debug(
-            "cleanup transaction service removed Hash:{} SID#:{}  TXNS#:{}",
-            transaction_hash,
-            removed_sids,
-            removed_txns
-        )
-        return short_ids
-
-    def set_transaction_contents(self, transaction_hash: Sha256Hash,
-                                 transaction_contents: Union[bytearray, memoryview]):
-        """
-        Adds transaction contents to transaction service cache with lookup key by transaction hash
-
-        :param transaction_hash: transaction hash
-        :param transaction_contents: transaction contents bytes
-        """
-        previous_size = 0
-        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
-
-        if transaction_cache_key in self._tx_cache_key_to_contents:
-            previous_size = len(self._tx_cache_key_to_contents[transaction_cache_key])
-
-        self._tx_cache_key_to_contents[transaction_cache_key] = transaction_contents
-        self._total_tx_contents_size += len(transaction_contents) - previous_size
-
-        self._memory_limit_clean_up()
-
-    def has_transaction_contents(self, transaction_hash: Sha256Hash) -> bool:
-        """
-        Checks if transaction contents is available in transaction service cache
-
-        :param transaction_hash: transaction hash
-        :return: Boolean indicating if transaction contents exists
-        """
-        return self._tx_hash_to_cache_key(transaction_hash) in self._tx_cache_key_to_contents
-
-    def has_transaction_short_id(self, transaction_hash: Sha256Hash) -> bool:
-        """
-        Checks if transaction short id is available in transaction service cache
-
-        :param transaction_hash: transaction hash
-        :return: Boolean indicating if transaction short id exists
-        """
-        return self._tx_hash_to_cache_key(transaction_hash) in self._tx_cache_key_to_short_ids
-
-    def has_short_id(self, short_id: int) -> bool:
-        """
-        Checks if short id is stored in transaction service cache
-        :param short_id: transaction short id
-        :return: Boolean indicating if short id is found in cache
-        """
-        return short_id in self._short_id_to_tx_cache_key
-
-    def assign_short_id(self, transaction_hash: Sha256Hash, short_id: int):
-        """
-        Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
-        :param transaction_hash: transaction long hash
-        :param short_id: short id to be mapped to transaction
-        """
-        if short_id == constants.NULL_TX_SID:
-            logger.warning("Attempt to assign null SID to transaction hash {}. Ignoring.", transaction_hash)
-            return
-        logger.debug("Assigning sid {} to transaction {}", short_id, transaction_hash)
-
-        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
-        self._tx_cache_key_to_short_ids[transaction_cache_key].add(short_id)
-        self._short_id_to_tx_cache_key[short_id] = transaction_cache_key
-        self._tx_assignment_expire_queue.add(short_id)
-
-        if not self.tx_assign_alarm_scheduled:
-            self.node.alarm_queue.register_alarm(self.node.opts.sid_expire_time, self.expire_old_assignments)
-            self.tx_assign_alarm_scheduled = True
 
     def get_short_id(self, transaction_hash: Sha256Hash) -> int:
         """
@@ -325,6 +225,145 @@ class TransactionService:
 
         return TransactionSearchResult(found, missing)
 
+    def get_tx_hash_to_contents_len(self):
+        return len(self._tx_cache_key_to_contents)
+
+    def has_transaction_contents(self, transaction_hash: Sha256Hash) -> bool:
+        """
+        Checks if transaction contents is available in transaction service cache
+
+        :param transaction_hash: transaction hash
+        :return: Boolean indicating if transaction contents exists
+        """
+        return self._tx_hash_to_cache_key(transaction_hash) in self._tx_cache_key_to_contents
+
+    def has_transaction_short_id(self, transaction_hash: Sha256Hash) -> bool:
+        """
+        Checks if transaction short id is available in transaction service cache
+
+        :param transaction_hash: transaction hash
+        :return: Boolean indicating if transaction short id exists
+        """
+        return self._tx_hash_to_cache_key(transaction_hash) in self._tx_cache_key_to_short_ids
+
+    def has_short_id(self, short_id: int) -> bool:
+        """
+        Checks if short id is stored in transaction service cache
+        :param short_id: transaction short id
+        :return: Boolean indicating if short id is found in cache
+        """
+        return short_id in self._short_id_to_tx_cache_key
+
+    def assign_short_id(self, transaction_hash: Sha256Hash, short_id: int):
+        """
+        Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
+        :param transaction_hash: transaction long hash
+        :param short_id: short id to be mapped to transaction
+        """
+        if short_id == constants.NULL_TX_SID:
+            logger.warning("Attempt to assign null SID to transaction hash {}. Ignoring.", transaction_hash)
+            return
+        logger.debug("Assigning sid {} to transaction {}", short_id, transaction_hash)
+
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        self._tx_cache_key_to_short_ids[transaction_cache_key].add(short_id)
+        self._short_id_to_tx_cache_key[short_id] = transaction_cache_key
+        self._tx_assignment_expire_queue.add(short_id)
+
+        if not self.tx_assign_alarm_scheduled:
+            self.node.alarm_queue.register_alarm(self.node.opts.sid_expire_time, self.expire_old_assignments)
+            self.tx_assign_alarm_scheduled = True
+
+    def set_final_tx_confirmations_count(self, val: int):
+        self._final_tx_confirmations_count = val
+
+    def set_transaction_contents(self, transaction_hash: Sha256Hash,
+                                 transaction_contents: Union[bytearray, memoryview]):
+        """
+        Adds transaction contents to transaction service cache with lookup key by transaction hash
+
+        :param transaction_hash: transaction hash
+        :param transaction_contents: transaction contents bytes
+        """
+        previous_size = 0
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+
+        if transaction_cache_key in self._tx_cache_key_to_contents:
+            previous_size = len(self._tx_cache_key_to_contents[transaction_cache_key])
+
+        self._tx_cache_key_to_contents[transaction_cache_key] = transaction_contents
+        self._total_tx_contents_size += len(transaction_contents) - previous_size
+
+        self._memory_limit_clean_up()
+
+    def remove_transaction_by_tx_hash(self, transaction_hash: Sha256Hash) -> Set[int]:
+        """
+        Clean up mapping. Removes transaction contents and mapping.
+        :param transaction_hash: tx hash to clean up
+        """
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        removed_sids = 0
+        removed_txns = 0
+
+        if transaction_cache_key in self._tx_cache_key_to_short_ids:
+            short_ids = self._tx_cache_key_to_short_ids.pop(transaction_cache_key)
+            for short_id in short_ids:
+                removed_sids += 1
+                if short_id in self._short_id_to_tx_cache_key:
+                    del self._short_id_to_tx_cache_key[short_id]
+                self._tx_assignment_expire_queue.remove(short_id)
+                self._removed_short_ids.add(short_id)
+        else:
+            short_ids = {constants.NULL_TX_SID}
+
+        if transaction_cache_key in self._tx_cache_key_to_contents:
+            self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
+            del self._tx_cache_key_to_contents[transaction_cache_key]
+            removed_txns += 1
+        logger.debug(
+            "cleanup transaction service removed Hash:{} SID#:{}  TXNS#:{}",
+            transaction_hash,
+            removed_sids,
+            removed_txns
+        )
+        return short_ids
+
+    def remove_transaction_by_short_id(self, short_id: int, remove_related_short_ids: bool = False):
+        """
+        Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
+        :param short_id: short id to clean up
+        """
+        if short_id in self._short_id_to_tx_cache_key:
+            if self.node.opts.dump_removed_short_ids:
+                self._removed_short_ids.add(short_id)
+
+            transaction_cache_key = self._short_id_to_tx_cache_key.pop(short_id)
+            if transaction_cache_key in self._tx_cache_key_to_short_ids:
+                short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
+
+                # Only clear mapping and txhash_to_contents if last SID assignment
+                if len(short_ids) == 1 or remove_related_short_ids:
+                    for dup_short_id in short_ids:
+                        if dup_short_id != short_id:
+                            if dup_short_id in self._short_id_to_tx_cache_key:
+                                del self._short_id_to_tx_cache_key[dup_short_id]
+                            self._tx_assignment_expire_queue.remove(dup_short_id)
+                            self._removed_short_ids.add(dup_short_id)
+
+                    if transaction_cache_key in self._tx_cache_key_to_contents:
+                        self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
+                        del self._tx_cache_key_to_contents[transaction_cache_key]
+
+                    # Delete short ids from _tx_cache_key_to_short_ids after iterating short_ids.
+                    # Otherwise extension implementation disposes short_ids list after this line
+                    del self._tx_cache_key_to_short_ids[transaction_cache_key]
+                    if not remove_related_short_ids:  # TODO : remove this after creating AbstractTransactionService
+                        self._track_seen_transaction(transaction_cache_key)
+                else:
+                    short_ids.remove(short_id)
+
+        self._tx_assignment_expire_queue.remove(short_id)
+
     def iter_transaction_hashes(self) -> Generator[Sha256Hash, None, None]:
         for tx_cache_key in self._tx_cache_key_to_contents:
             yield self._tx_cache_key_to_hash(tx_cache_key)
@@ -332,6 +371,20 @@ class TransactionService:
     def iter_short_ids_seen_in_block(self) -> Generator[Tuple[Sha256Hash, List[int]], None, None]:
         for block_hash, short_ids in self._short_ids_seen_in_block.items():
             yield block_hash, short_ids
+
+    def iter_timestamped_transaction_hashes_from_oldest(self) -> Generator[Tuple[Sha256Hash, float], None, None]:
+        for short_id, timestamp in self._tx_assignment_expire_queue.queue.items():
+            transaction_hash = self.get_transaction(short_id).hash
+            assert transaction_hash is not None
+            yield transaction_hash, timestamp
+
+    def on_block_cleaned_up(self, block_hash: Sha256Hash) -> None:
+        """
+        notify the transaction service about a block transactions cleaned from the pool
+        :param block_hash: the block sha
+        """
+        if block_hash in self._short_ids_seen_in_block:
+            del self._short_ids_seen_in_block[block_hash]
 
     def get_short_ids_seen_in_block_count_info(self) -> Tuple[int, int]:
         """
@@ -342,6 +395,31 @@ class TransactionService:
             total_short_ids_seen_in_blocks += len(seen_short_ids_in_block)
 
         return self.get_tracked_seen_block_count(), total_short_ids_seen_in_blocks
+
+    def get_snapshot(self) -> List[Sha256Hash]:
+        return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in self._tx_cache_key_to_contents]
+
+    def get_tracked_blocks(self, skip_start: int = 0, skip_end: int = 0) -> Dict[Sha256Hash, int]:
+        """
+        get a dictionary of tracked seen blocks from start until the reaching a certain number from the end,
+        since we want to clear the oldest blocks we already seen.
+        :param skip_start: the amount of blocks to skip from start
+        :param skip_end: the amount of blocks to skip from the end
+        :return: a dictionary of seen blocks mapped to their index relative to the start
+        """
+        tracked_blocks = {}
+        for idx, block in enumerate(self._iter_block_seen_by_time(skip_start, skip_end)):
+            tracked_blocks[block] = idx
+        return tracked_blocks
+
+    def get_oldest_tracked_block(self, skip_block_count: int) -> List[Sha256Hash]:
+        """
+        get a list of tracked seen blocks from start until the reaching a certain number from the end,
+        since we want to clear the oldest blocks we already seen.
+        :param skip_block_count: the amount of blocks to skip from the end (the newest block)
+        :return: a list of seen blocks from oldest to latest
+        """
+        return list(self._iter_block_seen_by_time(0, skip_block_count))
 
     def get_tracked_seen_block_count(self) -> int:
         return len(self._short_ids_seen_in_block)
@@ -408,7 +486,6 @@ class TransactionService:
             short_ids
         )
 
-
     def log_block_transaction_cleanup_stats(self, block_hash: Sha256Hash, tx_count: int, tx_before_cleanup: int,
                                             tx_after_cleanup: int):
         logger_memory_cleanup.statistics(
@@ -432,21 +509,21 @@ class TransactionService:
 
         class_name = self.__class__.__name__
         tx_cache_key_to_short_ids_mem_stats = self.get_collection_mem_stats(
-                self._tx_cache_key_to_short_ids,
-                self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._tx_cache_key_to_short_ids)
-            )
+            self._tx_cache_key_to_short_ids,
+            self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._tx_cache_key_to_short_ids)
+        )
         tx_cache_key_to_contents_mem_stats = self.get_collection_mem_stats(
-                self._tx_cache_key_to_contents,
-                self.ESTIMATED_TX_HASH_ITEM_SIZE * len(self._tx_cache_key_to_contents) + self._total_tx_contents_size
-            )
+            self._tx_cache_key_to_contents,
+            self.ESTIMATED_TX_HASH_ITEM_SIZE * len(self._tx_cache_key_to_contents) + self._total_tx_contents_size
+        )
         short_id_to_tx_cache_key_mem_stats = self.get_collection_mem_stats(
-                self._short_id_to_tx_cache_key,
-                self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._short_id_to_tx_cache_key)
-            )
+            self._short_id_to_tx_cache_key,
+            self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._short_id_to_tx_cache_key)
+        )
         short_ids_seen_in_block_mem_stats = self.get_collection_mem_stats(
-                self._short_ids_seen_in_block,
-                self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._short_ids_seen_in_block)
-            )
+            self._short_ids_seen_in_block,
+            self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._short_ids_seen_in_block)
+        )
 
         hooks.add_obj_mem_stats(
             class_name,
@@ -558,46 +635,18 @@ class TransactionService:
         else:
             return ObjectSize(size=estimated_size, flat_size=0, is_actual_size=False)
 
-    def get_snapshot(self) -> List[Sha256Hash]:
-        return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in self._tx_cache_key_to_contents]
+    def get_cache_state_json(self):
+        return {
+            "tx_hash_to_short_ids_len": len(self._tx_cache_key_to_short_ids),
+            "short_id_to_tx_hash_len": len(self._short_id_to_tx_cache_key),
+            "tx_hash_to_contents_len": len(self._tx_cache_key_to_contents),
+            "short_ids_seen_in_block_len": len(self._short_ids_seen_in_block),
+            "total_tx_contents_size": self._total_tx_contents_size,
+            "network_num": self.network_num
+        }
 
-    def get_tracked_blocks(self, skip_start: int = 0, skip_end: int = 0) -> Dict[Sha256Hash, int]:
-        """
-        get a dictionary of tracked seen blocks from start until the reaching a certain number from the end,
-        since we want to clear the oldest blocks we already seen.
-        :param skip_start: the amount of blocks to skip from start
-        :param skip_end: the amount of blocks to skip from the end
-        :return: a dictionary of seen blocks mapped to their index relative to the start
-        """
-        tracked_blocks = {}
-        for idx, block in enumerate(self._iter_block_seen_by_time(skip_start, skip_end)):
-            tracked_blocks[block] = idx
-        return tracked_blocks
-
-    def get_oldest_tracked_block(self, skip_block_count: int) -> List[Sha256Hash]:
-        """
-        get a list of tracked seen blocks from start until the reaching a certain number from the end,
-        since we want to clear the oldest blocks we already seen.
-        :param skip_block_count: the amount of blocks to skip from the end (the newest block)
-        :return: a list of seen blocks from oldest to latest
-        """
-        return list(self._iter_block_seen_by_time(0, skip_block_count))
-
-    def on_block_cleaned_up(self, block_hash: Sha256Hash) -> None:
-        """
-        notify the transaction service about a block transactions cleaned from the pool
-        :param block_hash: the block sha
-        """
-        if block_hash in self._short_ids_seen_in_block:
-            del self._short_ids_seen_in_block[block_hash]
-
-    def get_expiration_time_by_short_id(self, short_id: int) -> float:
-        """
-        get the original expiration time (since epoch) for a given short id
-        :param short_id: the transaction short id
-        :return: original expiration time
-        """
-        raise NotImplementedError("Expiration time has not yet been implemented when handling tx service msgs")
+    def get_cache_state_str(self):
+        return json_utils.serialize(self.get_cache_state_json())
 
     def _dump_removed_short_ids(self) -> int:
         if self._removed_short_ids:
@@ -605,42 +654,6 @@ class TransactionService:
                 f.write(str(self._removed_short_ids))
             self._removed_short_ids.clear()
         return constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S
-
-    def remove_transaction_by_short_id(self, short_id: int, remove_related_short_ids: bool = False):
-        """
-        Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
-        :param short_id: short id to clean up
-        """
-        if short_id in self._short_id_to_tx_cache_key:
-            if self.node.opts.dump_removed_short_ids:
-                self._removed_short_ids.add(short_id)
-
-            transaction_cache_key = self._short_id_to_tx_cache_key.pop(short_id)
-            if transaction_cache_key in self._tx_cache_key_to_short_ids:
-                short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
-
-                # Only clear mapping and txhash_to_contents if last SID assignment
-                if len(short_ids) == 1 or remove_related_short_ids:
-                    for dup_short_id in short_ids:
-                        if dup_short_id != short_id:
-                            if dup_short_id in self._short_id_to_tx_cache_key:
-                                del self._short_id_to_tx_cache_key[dup_short_id]
-                            self._tx_assignment_expire_queue.remove(dup_short_id)
-                            self._removed_short_ids.add(dup_short_id)
-
-                    if transaction_cache_key in self._tx_cache_key_to_contents:
-                        self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
-                        del self._tx_cache_key_to_contents[transaction_cache_key]
-
-                    # Delete short ids from _tx_cache_key_to_short_ids after iterating short_ids.
-                    # Otherwise extension implementation disposes short_ids list after this line
-                    del self._tx_cache_key_to_short_ids[transaction_cache_key]
-                    if not remove_related_short_ids:  # TODO : remove this after creating AbstractTransactionService
-                        self._track_seen_transaction(transaction_cache_key)
-                else:
-                    short_ids.remove(short_id)
-
-        self._tx_assignment_expire_queue.remove(short_id)
 
     def _memory_limit_clean_up(self):
         """
@@ -741,27 +754,11 @@ class TransactionService:
     def _track_seen_transaction(self, transaction_cache_key):
         pass
 
-    def get_cache_state_json(self):
-        return {
-            "tx_hash_to_short_ids_len": len(self._tx_cache_key_to_short_ids),
-            "short_id_to_tx_hash_len": len(self._short_id_to_tx_cache_key),
-            "tx_hash_to_contents_len": len(self._tx_cache_key_to_contents),
-            "short_ids_seen_in_block_len": len(self._short_ids_seen_in_block),
-            "total_tx_contents_size": self._total_tx_contents_size,
-            "network_num": self.network_num
-        }
-
-    def get_tx_hash_to_contents_len(self):
-        return len(self._tx_cache_key_to_contents)
-
     def _iter_block_seen_by_time(self, skip_start: int, skip_end: int) -> Iterator[Sha256Hash]:
         to = len(self._short_ids_seen_in_block) - skip_end
         for idx, block_hash in enumerate(self._short_ids_seen_in_block.keys()):
             if skip_start <= idx <= to:
                 yield block_hash
-
-    def get_cache_state_str(self):
-        return json_utils.serialize(self.get_cache_state_json())
 
     def _is_exceeding_memory_limit(self) -> bool:
         return self._total_tx_contents_size > self._tx_content_memory_limit
