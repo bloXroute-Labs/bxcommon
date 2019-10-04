@@ -26,7 +26,7 @@ class TransactionCleanupMessage(AbstractCleanupMessage):
     def __repr__(self):
         return "TransactionCleanupMessage <message_hash: {} :{}> <num_sids: {}> <num_tx_hashes: {}>".format(
             self.message_hash(),
-            self._network_num,
-            self._sids_count,
-            self._tx_hashes_count
+            self.network_num(),
+            len(self.short_ids()),
+            len(self.transaction_hashes())
         )

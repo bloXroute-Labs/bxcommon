@@ -372,11 +372,25 @@ class TransactionService:
         for block_hash, short_ids in self._short_ids_seen_in_block.items():
             yield block_hash, short_ids
 
-    def iter_timestamped_transaction_hashes_from_oldest(self) -> Generator[Tuple[Sha256Hash, float], None, None]:
+    def iter_timestamped_transaction_hashes_from_oldest(self, newest_time: float = float("inf")) -> \
+            Generator[Tuple[Sha256Hash, float], None, None]:
         for short_id, timestamp in self._tx_assignment_expire_queue.queue.items():
+            if timestamp > newest_time:
+                break
+
             transaction_hash = self.get_transaction(short_id).hash
             assert transaction_hash is not None
             yield transaction_hash, timestamp
+
+    def threadsafe_iter_timestamped_transaction_hashes_from_oldest(self, newest_time: float = float("inf")) -> \
+            Generator[Tuple[Sha256Hash, float], None, None]:
+        for short_id, timestamp in list(self._tx_assignment_expire_queue.queue.items()):
+            if timestamp > newest_time:
+                break
+
+            transaction_hash = self.get_transaction(short_id).hash
+            if transaction_hash is not None:
+                yield transaction_hash, timestamp
 
     def on_block_cleaned_up(self, block_hash: Sha256Hash) -> None:
         """

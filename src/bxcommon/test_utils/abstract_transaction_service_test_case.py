@@ -6,6 +6,7 @@ from mock import MagicMock
 from bxcommon import constants
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import NULL_TX_SID
+from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -373,13 +374,24 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
 
     def _test_iter_timestamped_transaction_hashes_from_oldest(self):
         transactions = self._add_transactions(30, 250)
+        self.transaction_service = self._get_transaction_service()
 
-        result = [tx for tx in self.transaction_service.iter_timestamped_transaction_hashes_from_oldest()]
-        last_timestamp = 0
+        time.time = MagicMock(return_value=time.time())
+        original_time = time.time()
+        for transaction in transactions:
+            self.transaction_service.set_transaction_contents(transaction.hash, transaction.contents)
+            self.transaction_service.assign_short_id(transaction.hash, transaction.short_id)
+            time.time = MagicMock(return_value=time.time() + 10)
+
+        result = [tx for tx in
+                  self.transaction_service.iter_timestamped_transaction_hashes_from_oldest(original_time + 100 - 1)]
+
+        self.assertEqual(10, len(result))
+        last_timestamp = original_time - 10
         for i, transaction_info in enumerate(result):
-            result_tx, timestamp = transaction_info
-            self.assertEqual(transactions[i][0], result_tx)
-            self.assertLessEqual(last_timestamp, timestamp)
+            result_hash, timestamp = transaction_info
+            self.assertEqual(transactions[i].hash, result_hash)
+            self.assertEqual(last_timestamp + 10, timestamp)
             last_timestamp = timestamp
 
     def _add_transactions(self, tx_count, tx_size, short_id_offset=0):
@@ -393,7 +405,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.transaction_service.set_transaction_contents(tx_hash, tx_content)
             self.transaction_service.assign_short_id(tx_hash, short_id)
 
-            transactions.append((tx_hash, tx_content, short_id))
+            transactions.append(TransactionInfo(tx_hash, tx_content, short_id))
 
         return transactions
 
