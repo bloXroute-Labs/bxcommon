@@ -16,3 +16,4 @@ class BloxrouteMessageType(object):
     TX_SERVICE_SYNC_TXS = b"txtxs"
     TX_SERVICE_SYNC_COMPLETE = b"txdone"
     BLOCK_CONFIRMATION = b"blkcnfrm"
+    TRANSACTION_CLEANUP = b"txclnup"

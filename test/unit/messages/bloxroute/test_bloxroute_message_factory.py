@@ -7,6 +7,7 @@ from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, NODE_ID_SI
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
+from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
@@ -240,5 +241,26 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(tx_hashes, rebuilt_msg.transaction_hashes())
         self.assertEqual(self.NETWORK_NUM, rebuilt_msg.network_num())
         self.assertEqual(self.NODE_ID, rebuilt_msg.source_id())
+
+    def test_transaction_cleanup_msg(self):
+        short_ids = [23, 99, 192, 1089, 3000500]
+        tx_hashes = [
+            Sha256Hash(helpers.generate_bytes(crypto.SHA256_HASH_LEN)),
+            Sha256Hash(helpers.generate_bytes(crypto.SHA256_HASH_LEN))
+        ]
+        message = TransactionCleanupMessage(self.NETWORK_NUM, self.NODE_ID, sids=short_ids, tx_hashes=tx_hashes)
+        self.get_message_preview_successfully(message,
+                                              TransactionCleanupMessage.MESSAGE_TYPE,
+                                              SHA256_HASH_LEN * len(tx_hashes) +
+                                              constants.UL_INT_SIZE_IN_BYTES * len(short_ids) +
+                                              AbstractBroadcastMessage.PAYLOAD_LENGTH +
+                                              constants.UL_INT_SIZE_IN_BYTES * 2)
+
+        rebuilt_msg = self.create_message_successfully(message, TransactionCleanupMessage)
+        self.assertEqual(short_ids, rebuilt_msg.short_ids())
+        self.assertEqual(tx_hashes, rebuilt_msg.transaction_hashes())
+        self.assertEqual(self.NETWORK_NUM, rebuilt_msg.network_num())
+        self.assertEqual(self.NODE_ID, rebuilt_msg.source_id())
+        print(rebuilt_msg.message_hash())
 
 

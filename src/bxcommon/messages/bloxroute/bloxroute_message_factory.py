@@ -8,6 +8,7 @@ from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxr
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
+from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
@@ -53,7 +54,8 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         BloxrouteMessageType.TX_SERVICE_SYNC_BLOCKS_SHORT_IDS: TxServiceSyncBlocksShortIdsMessage,
         BloxrouteMessageType.TX_SERVICE_SYNC_TXS: TxServiceSyncTxsMessage,
         BloxrouteMessageType.TX_SERVICE_SYNC_COMPLETE: TxServiceSyncCompleteMessage,
-        BloxrouteMessageType.BLOCK_CONFIRMATION: BlockConfirmationMessage
+        BloxrouteMessageType.BLOCK_CONFIRMATION: BlockConfirmationMessage,
+        BloxrouteMessageType.TRANSACTION_CLEANUP: TransactionCleanupMessage
     }
 
     def __init__(self):
