@@ -232,6 +232,10 @@ MAX_COUNT_PER_ALLOCATION = 10
 
 EMPTY_SOURCE_ID = MSG_NULL_BYTE * 16
 
+TRANSACTION_SERVICE_LOG_TRANSACTIONS_HISTOGRAM = True
+TRANSACTION_SERVICE_TRANSACTIONS_HISTOGRAM_BUCKETS = 36
+
+
 # </editor-fold>
 
 # keep constants_local.py file to override settings in the constants file

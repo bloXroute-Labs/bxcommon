@@ -1,5 +1,5 @@
 import time
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, Counter
 from dataclasses import dataclass
 from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator
 
@@ -516,6 +516,8 @@ class TransactionService:
         """
         Logs transactions service memory statistics
         """
+        if constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_HISTOGRAM:
+            self._log_transaction_service_histogram()
         if self.node.opts.stats_calculate_actual_size:
             size_type = memory_utils.SizeType.OBJECT
         else:
@@ -640,7 +642,8 @@ class TransactionService:
             "oldest_transaction_date": oldest_transaction_date,
             "oldest_transaction_hash": oldest_transaction_hash,
             "aggregate": current_stats.__dict__,
-            "delta": difference.__dict__
+            "delta": difference.__dict__,
+            "age_histogram": self._log_transaction_service_histogram()
         }
 
     def get_collection_mem_stats(self, collection_obj: Any, estimated_size: int = 0) -> ObjectSize:
@@ -783,3 +786,28 @@ class TransactionService:
         self._short_id_to_tx_cache_key.clear()
         self._short_ids_seen_in_block.clear()
         self._total_tx_contents_size = 0
+
+    def _log_transaction_service_histogram(self):
+        """
+        logs a histogram of the tracked transactions age,
+        buckets are named as according to the age in hours from now
+        bucket is named according the the range start
+
+        """
+        bucket_count = constants.TRANSACTION_SERVICE_TRANSACTIONS_HISTOGRAM_BUCKETS
+        cell_size = self.node.opts.sid_expire_time / bucket_count
+        cell_size_hours = cell_size / (60 * 60)
+        histogram = Counter()
+        current_time = time.time()
+        timestamps = self._tx_assignment_expire_queue.queue.values()
+        for timestamp in timestamps:
+            histogram[int((current_time - timestamp) / cell_size)] += 1
+        logger.statistics(
+            {"type": "TransactionAgeHistogram",
+             "data": {k * cell_size_hours: v for (k, v) in histogram.items()},
+             "duration": time.time() - current_time,
+             "cell_size_s": cell_size,
+             "cell_size_h": cell_size_hours,
+             "network_num": self.network_num
+             }
+        )
