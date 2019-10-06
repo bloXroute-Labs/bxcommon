@@ -126,6 +126,11 @@ class TransactionService:
                 constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S,
                 self._dump_removed_short_ids
             )
+        if constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S > 0:
+            self.node.alarm_queue.register_alarm(
+                constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S,
+                self._log_transaction_service_histogram
+            )
 
     def get_short_id(self, transaction_hash: Sha256Hash) -> int:
         """
@@ -516,8 +521,6 @@ class TransactionService:
         """
         Logs transactions service memory statistics
         """
-        if constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_HISTOGRAM:
-            self._log_transaction_service_histogram()
         if self.node.opts.stats_calculate_actual_size:
             size_type = memory_utils.SizeType.OBJECT
         else:
@@ -642,8 +645,7 @@ class TransactionService:
             "oldest_transaction_date": oldest_transaction_date,
             "oldest_transaction_hash": oldest_transaction_hash,
             "aggregate": current_stats.__dict__,
-            "delta": difference.__dict__,
-            "age_histogram": self._log_transaction_service_histogram()
+            "delta": difference.__dict__
         }
 
     def get_collection_mem_stats(self, collection_obj: Any, estimated_size: int = 0) -> ObjectSize:
@@ -811,3 +813,5 @@ class TransactionService:
              "network_num": self.network_num
              }
         )
+        return constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S
+
