@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from collections import defaultdict, OrderedDict, Counter
 from dataclasses import dataclass
 from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator
@@ -803,10 +804,11 @@ class TransactionService:
         current_time = time.time()
         timestamps = self._tx_assignment_expire_queue.queue.values()
         for timestamp in timestamps:
-            histogram[int((current_time - timestamp) / cell_size)] += 1
+            histogram[int((timestamp // cell_size) * cell_size)] += 1
         logger.statistics(
-            {"type": "TransactionAgeHistogram",
-             "data": {k * cell_size_hours: v for (k, v) in histogram.items()},
+            {"type": "TransactionHistogram",
+             "data": {datetime.fromtimestamp(k): v for (k, v) in histogram.items()},
+             "start_time": datetime.utcnow(),
              "duration": time.time() - current_time,
              "cell_size_s": cell_size,
              "cell_size_h": cell_size_hours,
