@@ -11,6 +11,7 @@ def byte_count(num_bytes: float) -> str:
     i = 0
     while num_bytes > 1024 and i < len(SUFFIXES):
         num_bytes /= 1024
+        i += 1
 
     return f"{int(num_bytes)} {SUFFIXES[i]}"
 
