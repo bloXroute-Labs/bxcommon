@@ -304,18 +304,27 @@ class AbstractConnection(Generic[Node]):
                 # Attempt to recover connection by removing bad full message
                 if is_full_msg:
                     logger.error(
-                        "Message processing error. Trying to recover. Error: {}. Message bytes: {}. Trace: {}, Connection: {}",
-                        e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
-                        traceback.format_exc(), self)
+                        "Message processing error. Trying to recover. Error: {}. Message bytes: {}. Trace: {}, "
+                        "Connection: {}",
+                        e,
+                        self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
+                        traceback.format_exc(),
+                        self
+                    )
 
                     # give connection a chance to restore its state and get ready to process next message
                     self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
 
                 # Connection is unable to recover from message processing error if incomplete message is received
                 else:
-                    logger.error("Message processing error. Unable to recover. Error: {}. Message bytes: {}. Trace: {}",
-                                 e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
-                                 traceback.format_exc())
+                    logger.error(
+                        "Message processing error. Unable to recover. Error: {}. Message bytes: {}. Trace: {}, "
+                        "Connection: {}",
+                        e,
+                        self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
+                        traceback.format_exc(),
+                        self
+                    )
                     self.mark_for_close(force_destroy_now=True)
                     return
 
