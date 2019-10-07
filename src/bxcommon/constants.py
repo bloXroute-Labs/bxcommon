@@ -235,6 +235,10 @@ EMPTY_SOURCE_ID = MSG_NULL_BYTE * 16
 TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S = 60 * 15
 TRANSACTION_SERVICE_TRANSACTIONS_HISTOGRAM_BUCKETS = 36
 
+# https://urllib3.readthedocs.io/en/latest/reference/urllib3.util.html#module-urllib3.util.retry
+HTTP_REQUEST_RETRIES_COUNT: int = 3
+HTTP_REQUEST_BACKOFF_FACTOR: float = 0.5
+
 
 # </editor-fold>
 
