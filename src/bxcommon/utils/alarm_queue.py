@@ -1,9 +1,10 @@
 import time
 from heapq import heappop, heappush
+from threading import RLock
 from typing import List
 
-from bxutils import logging
 from bxcommon import constants
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -53,7 +54,7 @@ class AlarmId:
 
     def __repr__(self):
         return f"AlarmId<fire_time: {self.fire_time}, count: {self.count}, active: {self.is_active}, " \
-               f"alarm: {self.alarm}>"
+            f"alarm: {self.alarm}>"
 
     def __lt__(self, other):
         if not isinstance(other, AlarmId):
@@ -88,6 +89,7 @@ class AlarmQueue(object):
         self.alarms: List[AlarmId] = []
         self.uniq_count = 0
         self.approx_alarms_scheduled = {}
+        self.lock = RLock()
 
     def register_alarm(self, fire_delay, fn, *args):
         """
@@ -105,8 +107,9 @@ class AlarmQueue(object):
 
         alarm = Alarm(fn, time.time() + fire_delay, *args)
         alarm_id = AlarmId(time.time() + fire_delay, self.uniq_count, alarm)
-        heappush(self.alarms, alarm_id)
-        self.uniq_count += 1
+        with self.lock:
+            heappush(self.alarms, alarm_id)
+            self.uniq_count += 1
         return alarm_id
 
     def register_approx_alarm(self, fire_delay, slop, fn, *args):
@@ -125,18 +128,18 @@ class AlarmQueue(object):
         elif slop < 0:
             raise ValueError("Invalid negative slop.")
 
-        if fn not in self.approx_alarms_scheduled:
-            new_alarm_id = self.register_alarm(fire_delay, fn, *args)
-            self.approx_alarms_scheduled[fn] = []
-            heappush(self.approx_alarms_scheduled[fn], new_alarm_id)
-        else:
-            now = time.time()
-            late_time, early_time = fire_delay + now + slop, fire_delay + now - slop
-            for alarm_id in self.approx_alarms_scheduled[fn]:
-                if early_time <= alarm_id.fire_time <= late_time:
-                    return
-
-            heappush(self.approx_alarms_scheduled[fn], self.register_alarm(fire_delay, fn, *args))
+        with self.lock:
+            if fn not in self.approx_alarms_scheduled:
+                new_alarm_id = self.register_alarm(fire_delay, fn, *args)
+                self.approx_alarms_scheduled[fn] = []
+                heappush(self.approx_alarms_scheduled[fn], new_alarm_id)
+            else:
+                now = time.time()
+                late_time, early_time = fire_delay + now + slop, fire_delay + now - slop
+                for alarm_id in self.approx_alarms_scheduled[fn]:
+                    if early_time <= alarm_id.fire_time <= late_time:
+                        return
+                heappush(self.approx_alarms_scheduled[fn], self.register_alarm(fire_delay, fn, *args))
 
     def unregister_alarm(self, alarm_id: AlarmId):
         """
@@ -147,8 +150,10 @@ class AlarmQueue(object):
             raise ValueError("Alarm id cannot be none.")
 
         alarm_id.is_active = False
-        while self.alarms and not self.alarms[0].is_active:
-            heappop(self.alarms)
+
+        with self.lock:
+            while self.alarms and not self.alarms[0].is_active:
+                heappop(self.alarms)
 
     def fire_alarms(self):
         """
@@ -159,36 +164,38 @@ class AlarmQueue(object):
             return
 
         curr_time = time.time()
-        while self.alarms and self.alarms[0].fire_time <= curr_time:
-            alarm_id: AlarmId = heappop(self.alarms)
-            alarm = alarm_id.alarm
 
-            if alarm_id.is_active:
-                try:
-                    start_time = time.time()
-                    next_delay = alarm.fire()
-                    end_time = time.time()
-                except Exception as e:
-                    logger.error("Alarm {} could not fire and failed with exception: {}", alarm, e)
-                else:
-                    if end_time - start_time > constants.WARN_ALARM_EXECUTION_DURATION:
-                        logger.warning("{} took {} seconds to execute.".format(alarm, end_time - start_time))
+        with self.lock:
+            while self.alarms and self.alarms[0].fire_time <= curr_time:
+                alarm_id: AlarmId = heappop(self.alarms)
+                alarm = alarm_id.alarm
 
-                    if next_delay is not None and next_delay > 0:
-                        next_time = time.time() + next_delay
-                        alarm_id.fire_time = next_time
-                        alarm_id.alarm.fire_time = next_time
-                        heappush(self.alarms, alarm_id)
-                    # Delete alarm from approx_alarms_scheduled if applicable
-                    elif alarm.fn in self.approx_alarms_scheduled:
-                        alarm_heap = self.approx_alarms_scheduled[alarm.fn]
+                if alarm_id.is_active:
+                    try:
+                        start_time = time.time()
+                        next_delay = alarm.fire()
+                        end_time = time.time()
+                    except Exception as e:
+                        logger.error("Alarm {} could not fire and failed with exception: {}", alarm, e)
+                    else:
+                        if end_time - start_time > constants.WARN_ALARM_EXECUTION_DURATION:
+                            logger.warning("{} took {} seconds to execute.".format(alarm, end_time - start_time))
 
-                        # alarm that was just fired must be the first one in the list
-                        assert alarm_heap[0].count == alarm_id.count
-                        heappop(alarm_heap)
+                        if next_delay is not None and next_delay > 0:
+                            next_time = time.time() + next_delay
+                            alarm_id.fire_time = next_time
+                            alarm_id.alarm.fire_time = next_time
+                            heappush(self.alarms, alarm_id)
+                        # Delete alarm from approx_alarms_scheduled if applicable
+                        elif alarm.fn in self.approx_alarms_scheduled:
+                            alarm_heap = self.approx_alarms_scheduled[alarm.fn]
 
-                        if not alarm_heap:
-                            del self.approx_alarms_scheduled[alarm.fn]
+                            # alarm that was just fired must be the first one in the list
+                            assert alarm_heap[0].count == alarm_id.count
+                            heappop(alarm_heap)
+
+                            if not alarm_heap:
+                                del self.approx_alarms_scheduled[alarm.fn]
 
     def fire_ready_alarms(self, has_alarm):
         """
