@@ -37,7 +37,7 @@ class BroadcastMessage(AbstractBroadcastMessage):
             self.buf[off:off + len(blob)] = blob
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG
 
     def is_encrypted(self) -> bool:
         if self._is_encrypted is None:

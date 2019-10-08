@@ -43,7 +43,7 @@ class BroadcastMessageV4(MessageV4):
         self._payload_len = None
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG
 
     def block_hash(self):
         """

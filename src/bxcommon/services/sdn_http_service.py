@@ -18,7 +18,7 @@ def fetch_node_attributes(node_id: str) -> Optional[NodeModel]:
     # Should only be used for test networks.
     node_url = SdnRoutes.node.format(node_id)
     opts = cast(Dict[str, Any], http_service.get_json(node_url))
-    logger.debug("Retrieved config for id {0} : {1}".format(node_id, opts))
+    logger.trace("Retrieved config for id {0} : {1}", node_id, opts)
 
     if opts:
         return model_loader.load_model(NodeModel, opts)
@@ -28,7 +28,7 @@ def fetch_node_attributes(node_id: str) -> Optional[NodeModel]:
 
 def _fetch_peers(node_url: str, node_id=None) -> List[OutboundPeerModel]:
     outbound_peers_response = cast(List[Dict[str, Any]], http_service.get_json(node_url))
-    logger.trace(
+    logger.debug(
         "Retrieved outbound peers for node {0} from endpoint {1}: {2}",
         node_id,
         node_url,
@@ -36,7 +36,7 @@ def _fetch_peers(node_url: str, node_id=None) -> List[OutboundPeerModel]:
     )
 
     if not outbound_peers_response:
-        logger.warning("Got no outbound peers for endpoint: {}".format(node_url))
+        logger.warning("BDN returned no peers at endpoint: {}", node_url)
         return []
 
     outbound_peers = [model_loader.load_model(OutboundPeerModel, o) for o in outbound_peers_response]
@@ -63,7 +63,7 @@ def fetch_remote_blockchain_peer(network_num: int) -> Optional[OutboundPeerModel
     node_url = SdnRoutes.node_remote_blockchain.format(network_num)
     peers = _fetch_peers(node_url)
     if len(peers) != 1:
-        logger.warning("Did not get expected number of peers from SDN.")
+        logger.warning("BDN did not send the expected number of remote blockchain peers.")
         return None
     else:
         return peers[0]
@@ -86,7 +86,7 @@ def fetch_blockchain_networks() -> List[BlockchainNetworkModel]:
     blockchain_networks = http_service.get_json(node_url)
 
     if not blockchain_networks:
-        logger.warning("There are no blockchain networks configured in SDN")
+        logger.warning("BDN does not seem to contain any configured networks.")
         return []
 
     blockchain_networks = [model_loader.load_model(BlockchainNetworkModel, b) for b in blockchain_networks]
@@ -134,8 +134,7 @@ def delete_gateway_inbound_connection(node_id: str, peer_id: str):
 
 def submit_node_event(node_event_model: NodeEventModel):
     node_event_model.timestamp = str(time.time())
-    logger.debug("Submitting event for node {0} {1}"
-                 .format(node_event_model.node_id, json_utils.serialize(node_event_model)))
+    logger.trace("Submitting event for node {0} {1}", node_event_model.node_id, json_utils.serialize(node_event_model))
     url = SdnRoutes.node_event.format(node_event_model.node_id)
     http_service.post_json(url, node_event_model)
 
@@ -148,7 +147,7 @@ def register_node(node_model: NodeModel) -> NodeModel:
     # SDN determines peers and returns full config.
     node_config = cast(Dict[str, Any], http_service.post_json(SdnRoutes.nodes, node_model))
 
-    logger.debug("Registered node. Response: {}".format(json_utils.serialize(node_config)))
+    logger.trace("Registered node. Response: {}", json_utils.serialize(node_config))
 
     if not node_config:
         raise EnvironmentError("Unable to reach SDN and register this node. Please check connection.")

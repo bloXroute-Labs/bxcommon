@@ -1,5 +1,5 @@
 import struct
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta
 
 from bxcommon.utils import convert
 from bxcommon.utils.crypto import SHA256_HASH_LEN
@@ -51,6 +51,9 @@ class Sha256Hash(AbstractObjectHash):
     def __repr__(self):
         return "Sha256Hash<binary: {}>".format(convert.bytes_to_hex(self.binary))
 
+    def __str__(self):
+        return convert.bytes_to_hex(self.binary)
+
 
 class ConcatHash(AbstractObjectHash):
     """
@@ -66,6 +69,9 @@ class ConcatHash(AbstractObjectHash):
 
     def __repr__(self):
         return "ConcatHash<binary: {}>".format(convert.bytes_to_hex(self.binary))
+
+    def __str__(self):
+        return convert.bytes_to_hex(self.binary)
 
 
 NULL_SHA256_HASH = Sha256Hash(binary=bytearray(SHA256_HASH_LEN))

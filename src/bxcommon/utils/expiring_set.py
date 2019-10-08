@@ -52,7 +52,7 @@ class ExpiringSet(Generic[T]):
             for i in range(count):
                 items.append(next(entries))
         except StopIteration as _e:
-            logger.warning("Attempted to fetch {} entries, but only {} existed.", count, len(items))
+            logger.debug("Attempted to fetch {} entries, but only {} existed.", count, len(items))
 
         return items
 
@@ -62,6 +62,6 @@ class ExpiringSet(Generic[T]):
 
     def _safe_remove_item(self, item: T):
         if self._log_removal:
-            logger.info("Removing {} from expiring set.", item)
+            logger.debug("Removing {} from expiring set.", item)
         if item in self.contents:
             self.contents.remove(item)

@@ -58,21 +58,6 @@ PING_INTERVAL_S = 60
 # </editor-fold>
 
 # <editor-fold desc="Logging">
-ENABLE_LOGGING = True
-
-# set default log level use either enum values
-# LogLevel.DEBUG
-# LogLevel.INFO
-# LogLevel.STATS
-# LogLevel.WARN
-# LogLevel.ERROR
-# LogLevel.FATAL
-# or their corresponding numbers
-DEFAULT_LOG_LEVEL = LogLevel.DEBUG
-DEFAULT_LOG_FORMAT = LogFormat.PLAIN
-
-# set to True to always flush logs to stdout
-FLUSH_LOG = True
 
 MAX_LOGGED_BYTES_LEN = 500 * 1024
 

@@ -40,9 +40,6 @@ class TestNode(AbstractNode):
     def send_request_for_relay_peers(self):
         pass
 
-    def set_node_type(self):
-        self.node_type = NodeType.RELAY
-
     def get_outbound_peer_addresses(self):
         peer_addresses = []
 
@@ -191,12 +188,12 @@ class MultiplexingTest(AbstractTestCase):
         receiver_port = helpers.get_free_port()
         receiver_node = TestNode(receiver_port, [], 0.01)
         receiver_event_loop = create_event_loop(receiver_node)
-        receiver_thread = Thread(target=receiver_event_loop.run)
+        receiver_thread = Thread(name="receiver", target=receiver_event_loop.run)
 
         sender_port = helpers.get_free_port()
         sender_node = TestNode(sender_port, [receiver_port], 0.01)
         sender_event_loop = create_event_loop(sender_node)
-        sender_thread = Thread(target=sender_event_loop.run)
+        sender_thread = Thread(name="sender", target=sender_event_loop.run)
 
         try:
             print("Starting event loop on receiver")

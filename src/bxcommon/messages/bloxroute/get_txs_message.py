@@ -38,7 +38,7 @@ class GetTxsMessage(AbstractBloxrouteMessage):
             self._payload = None
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG
 
     def get_short_ids(self):
         if self._short_ids is None:

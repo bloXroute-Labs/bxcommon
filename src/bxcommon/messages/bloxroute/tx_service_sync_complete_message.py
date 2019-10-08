@@ -34,7 +34,7 @@ class TxServiceSyncCompleteMessage(AbstractBloxrouteMessage):
         )
 
     def log_level(self) -> int:
-        return LogLevel.INFO
+        return LogLevel.DEBUG
 
     def network_num(self) -> Optional[int]:
         if self._network_num is None:

@@ -44,7 +44,7 @@ class TxsMessage(AbstractBloxrouteMessage):
         self._txs = None
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG
 
     def get_txs(self) -> List[TransactionInfo]:
         if self._txs is None:

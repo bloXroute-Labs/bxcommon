@@ -232,7 +232,7 @@ class AbstractNodeTest(AbstractTestCase):
         self.local_node.init_throughput_logging()
         mocked_alarm_queue.assert_called_once_with(FIRST_STATS_INTERVAL_S, throughput_statistics.flush_info)
 
-    @patch("bxcommon.connections.abstract_node.logger")
+    @patch("bxcommon.connections.abstract_node.memory_logger")
     def test_dump_memory_usage(self, logger_mock):
         # set to dump memory at 10 MB
         self.local_node.next_report_mem_usage_bytes = 10 * 1024 * 1024

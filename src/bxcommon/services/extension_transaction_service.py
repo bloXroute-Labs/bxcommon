@@ -17,7 +17,6 @@ from bxcommon.utils.stats import hooks
 
 import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
-logger = logging.get_logger(__name__)
 logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup)
 
 
@@ -164,6 +163,6 @@ class ExtensionTransactionService(TransactionService):
         else:
             super(ExtensionTransactionService, self).remove_transaction_by_short_id(short_id)
 
-    def _clear_mem_pool(self):
-        super(ExtensionTransactionService, self)._clear_mem_pool()
+    def _clear(self):
+        super(ExtensionTransactionService, self)._clear()
         self.proxy.clear_short_ids_seen_in_block()

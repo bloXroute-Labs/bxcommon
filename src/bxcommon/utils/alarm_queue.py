@@ -25,7 +25,7 @@ class Alarm:
     def fire(self):
         time_from_expected = time.time() - self.fire_time
         if time_from_expected > constants.WARN_ALARM_EXECUTION_OFFSET:
-            logger.warning("{} executed {} seconds later than expected.".format(self, time_from_expected))
+            logger.debug("{} executed {} seconds later than expected.", self, time_from_expected)
         return self.fn(*self.args, **self.kwargs)
 
     def get_function_name(self):

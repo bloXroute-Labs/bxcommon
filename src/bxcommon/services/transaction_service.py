@@ -1,7 +1,7 @@
 import time
-from datetime import datetime
 from collections import defaultdict, OrderedDict, Counter
 from dataclasses import dataclass
+from datetime import datetime
 from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator
 
 from bxcommon import constants
@@ -112,8 +112,8 @@ class TransactionService:
 
         self._final_tx_confirmations_count = self._get_final_tx_confirmations_count()
         self._tx_content_memory_limit = self._get_tx_contents_memory_limit()
-        logger.info("Memory limit for transaction service by network number {} is {} bytes.".format(self.network_num,
-                                                                                                    self._tx_content_memory_limit))
+        logger.debug("Memory limit for transaction service by network number {} is {} bytes.",
+                     self.network_num, self._tx_content_memory_limit)
 
         # short ids seen in block ordered by them block hash
         self._short_ids_seen_in_block: OrderedDict[Sha256Hash, List[int]] = OrderedDict()
@@ -224,10 +224,10 @@ class TransactionService:
                                                  short_id))
                 else:
                     missing.append(TransactionInfo(None, None, short_id))
-                    logger.debug("Short id {} was requested but is unknown.", short_id)
+                    logger.trace("Short id {} was requested but is unknown.", short_id)
             else:
                 missing.append(TransactionInfo(None, None, short_id))
-                logger.debug("Short id {} was requested but is unknown.", short_id)
+                logger.trace("Short id {} was requested but is unknown.", short_id)
 
         return TransactionSearchResult(found, missing)
 
@@ -267,9 +267,10 @@ class TransactionService:
         :param short_id: short id to be mapped to transaction
         """
         if short_id == constants.NULL_TX_SID:
-            logger.warning("Attempt to assign null SID to transaction hash {}. Ignoring.", transaction_hash)
+            # TODO: this should be an assertion; requires testing
+            logger.warning("Attempted to assign null short id to transaction hash {}. Ignoring.", transaction_hash)
             return
-        logger.debug("Assigning sid {} to transaction {}", short_id, transaction_hash)
+        logger.trace("Assigning sid {} to transaction {}", short_id, transaction_hash)
 
         transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
         self._tx_cache_key_to_short_ids[transaction_cache_key].add(short_id)
@@ -326,12 +327,8 @@ class TransactionService:
             self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
             del self._tx_cache_key_to_contents[transaction_cache_key]
             removed_txns += 1
-        logger.debug(
-            "cleanup transaction service removed Hash:{} SID#:{}  TXNS#:{}",
-            transaction_hash,
-            removed_sids,
-            removed_txns
-        )
+        logger.trace("Removed transaction: {}, with {} associated short ids and {} contents.", transaction_hash,
+                     removed_sids, removed_txns)
         return short_ids
 
     def remove_transaction_by_short_id(self, short_id: int, remove_related_short_ids: bool = False):
@@ -448,11 +445,11 @@ class TransactionService:
         """
         Clean up expired short ids.
         """
-        logger.info(
-            "Expiring old short id assignments. Total entries: {}".format(len(self._tx_assignment_expire_queue)))
+        logger.debug("Expiring old short id assignments. Total entries: {}",
+                     len(self._tx_assignment_expire_queue))
         self._tx_assignment_expire_queue.remove_expired(remove_callback=self.remove_transaction_by_short_id)
-        logger.info(
-            "Finished cleaning up short ids. Entries remaining: {}".format(len(self._tx_assignment_expire_queue)))
+        logger.debug("Finished cleaning up short ids. Entries remaining: {}",
+                     len(self._tx_assignment_expire_queue))
         if len(self._tx_assignment_expire_queue) > 0:
             oldest_tx_timestamp = self._tx_assignment_expire_queue.get_oldest_item_timestamp()
             assert oldest_tx_timestamp is not None
@@ -682,24 +679,22 @@ class TransactionService:
         if self._total_tx_contents_size <= self._tx_content_memory_limit:
             return
 
-        logger.debug("Transaction service exceeds memory limit for transaction contents. Limit: {}. Current size: {}."
-                     .format(self._tx_content_memory_limit, self._total_tx_contents_size))
+        logger.trace("Transaction service exceeds memory limit for transaction contents. Limit: {}. Current size: {}.",
+                     self._tx_content_memory_limit, self._total_tx_contents_size)
         removed_tx_count = 0
 
         while self._is_exceeding_memory_limit() and self._tx_assignment_expire_queue:
             self._tx_assignment_expire_queue.remove_oldest(remove_callback=self.remove_transaction_by_short_id)
             removed_tx_count += 1
         if self._is_exceeding_memory_limit() and not self._tx_assignment_expire_queue:
-            logger.warning(
-                "failed to decrease memory consumption due to lack of short ids, clearing the mem pool!\n{}",
-                self.get_cache_state_json()
-            )
+            logger.warning("Memory management failure. There appears to be a lack of short ids in the node."
+                           "Clearing all transaction data: {}", self.get_cache_state_json())
             removed_tx_count += len(self._tx_cache_key_to_contents)
-            self._clear_mem_pool()
+            self._clear()
 
         self._total_tx_removed_by_memory_limit += removed_tx_count
-        logger.debug("Removed {} oldest transactions from transaction service cache. Size after clean up: {}".format(
-            removed_tx_count, self._total_tx_contents_size))
+        logger.trace("Removed {} oldest transactions from transaction service cache. Size after clean up: {}",
+                     removed_tx_count, self._total_tx_contents_size)
 
     def _get_final_tx_confirmations_count(self) -> int:
         """
@@ -709,9 +704,8 @@ class TransactionService:
             if blockchain_network.network_num == self.network_num:
                 return blockchain_network.final_tx_confirmations_count
 
-        logger.warning(
-            "Tx service could not determine final confirmations count for network number {}. Using default {}."
-                .format(self.network_num, self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT))
+        logger.warning("Could not determine final confirmations count for network number {}. Using default {}.",
+                       self.network_num, self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT)
 
         return self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT
 
@@ -727,15 +721,15 @@ class TransactionService:
             if blockchain_network.network_num == self.network_num:
                 if blockchain_network.tx_contents_memory_limit_bytes is None:
                     logger.warning(
-                        "Blockchain network by number {} does not have tx cache size limit configured. Using default {}."
-                            .format(self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES))
+                        "Blockchain network {} does not have tx cache size limit configured. Using default {}.",
+                        self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
+                    )
                     return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
                 else:
                     return blockchain_network.tx_contents_memory_limit_bytes
 
-        logger.warning(
-            "Tx service could not determine transactions memory limit for network number {}. Using default {}."
-                .format(self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES))
+        logger.warning("Could not determine transactions memory limit for network number {}. Using default {}.",
+                       self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES)
         return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
 
     def _tx_hash_to_cache_key(self, transaction_hash: Union[Sha256Hash, bytes, bytearray, memoryview, str]) \
@@ -783,7 +777,7 @@ class TransactionService:
     def _is_exceeding_memory_limit(self) -> bool:
         return self._total_tx_contents_size > self._tx_content_memory_limit
 
-    def _clear_mem_pool(self):
+    def _clear(self):
         self._tx_cache_key_to_contents.clear()
         self._tx_cache_key_to_short_ids.clear()
         self._short_id_to_tx_cache_key.clear()

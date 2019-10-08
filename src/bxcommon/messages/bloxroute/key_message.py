@@ -27,7 +27,7 @@ class KeyMessage(AbstractBroadcastMessage):
             self.buf[off:off + crypto.KEY_SIZE] = key
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG
     
     def block_hash(self) -> Sha256Hash:
         return self.message_hash()

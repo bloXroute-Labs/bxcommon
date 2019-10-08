@@ -30,7 +30,10 @@ def create_logger(
     :param style: the logger formatting style
     """
     if log_format == LogFormat.PLAIN:
-        formatter = CustomFormatter(fmt=constants.LOG_FORMAT_PATTERN, style=style)
+        if log_level <= LogLevel.DEBUG:
+            formatter = CustomFormatter(fmt=constants.DEBUG_LOG_FORMAT_PATTERN, style=style)
+        else:
+            formatter = CustomFormatter(fmt=constants.INFO_LOG_FORMAT_PATTERN, style=style)
     elif log_format == LogFormat.JSON:
         formatter = JSONFormatter(style=style)
     else:
@@ -74,10 +77,11 @@ def set_instance(logger_names: List[Optional[str]], instance: str):
     logger_names.append(None)  # make sure we also set the instance on the root logger
     for logger_name in logger_names:
         custom_logger = logging.getLogger(logger_name)
-        for handler in custom_logger.handlers:
-            formatter = handler.formatter
-            if hasattr(formatter, "instance"):
-                formatter.instance = instance
+        if custom_logger.isEnabledFor(LogLevel.DEBUG):
+            for handler in custom_logger.handlers:
+                formatter = handler.formatter
+                if hasattr(formatter, "instance"):
+                    formatter.instance = instance
 
 
 def str_to_log_options(value: str) -> Dict[str, LogLevel]:

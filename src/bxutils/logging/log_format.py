@@ -87,6 +87,7 @@ class CustomFormatter(AbstractFormatter):
             log_record["msg"] = record.msg
         if self.instance != self.NO_INSTANCE:
             log_record["instance"] = self.instance
+
         record.msg = "{}{}".format(self.encoder.encode(record.msg),
                                    ",".join({" {}={}".format(k, self.encoder.encode(v)) for (k, v)
                                              in log_record.items() if k != "msg"}))

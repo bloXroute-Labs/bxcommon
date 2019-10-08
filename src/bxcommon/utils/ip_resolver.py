@@ -1,13 +1,13 @@
 import re
 import socket
 import time
-import requests
 from typing import List, Optional
 
-from bxutils import logging
+import requests
 
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -23,7 +23,7 @@ def blocking_resolve_ip(net_address: str) -> str:
             resolved_ip = None
             tries += 1
 
-            logger.warning("Unable to connect to address {0}. Retried {1}", net_address, tries)
+            logger.debug("Unable to resolve address {0}. Retried {1}", net_address, tries)
             if tries >= constants.NET_ADDR_INIT_CONNECT_TRIES:
                 raise EnvironmentError("Unable to resolve address {}.".format(net_address))
     assert resolved_ip is not None
@@ -35,10 +35,10 @@ def blocking_resolve_peers(peer_models: List[OutboundPeerModel]):
         resolved_ip = blocking_resolve_ip(peer.ip)
 
         if peer.ip != resolved_ip:
-            logger.debug("Resolved peer {0} to {1}".format(peer.ip, resolved_ip))
+            logger.trace("Resolved peer {0} to {1}".format(peer.ip, resolved_ip))
             peer.ip = resolved_ip
 
-    logger.debug("Resolved peers successfully.")
+    logger.trace("Resolved peers successfully.")
 
 
 def get_node_public_ip() -> Optional[str]:
@@ -56,7 +56,7 @@ def get_node_public_ip() -> Optional[str]:
 
         raise ConnectionError("Unable to parse IP from response - response was [{}]".format(get_response))
     except Exception as ex:
-        # logger might not yet be initialized
-        print("Unable to determine public IP address, please specify one manually via the '--external-ip' command line "
-              "argument.\n\nDetailed error message:\n\t{}".format(ex))
+        logger.error(
+            "Unable to determine public IP address, please specify one manually via the '--external-ip' command line "
+            "argument.\n\nDetailed error message:\n\t{}", ex)
         exit(1)

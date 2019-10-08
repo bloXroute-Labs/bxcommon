@@ -4,8 +4,8 @@ from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.utils import crypto
-from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.object_hash import Sha256Hash, ConcatHash
+from bxutils.logging.log_level import LogLevel
 
 
 class KeyMessageV5(AbstractBloxrouteMessage):
@@ -42,7 +42,7 @@ class KeyMessageV5(AbstractBloxrouteMessage):
         self._payload = None
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG
 
     def block_hash(self):
         """

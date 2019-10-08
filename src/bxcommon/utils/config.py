@@ -5,12 +5,8 @@ import os
 import re
 from typing import Dict, Any
 
-from bxutils import logging
-
 from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
-
-logger = logging.get_logger(__name__)
 
 _working_directory = ""
 
@@ -22,13 +18,6 @@ def set_working_directory(working_directory: str):
 
 def get_relative_file(file_path: str) -> str:
     return os.path.join(_working_directory, file_path)
-
-
-def init_logging(log_path, to_stdout=True):
-    """
-    Configure global logger.
-    """
-    logger.log_init(log_path, to_stdout)
 
 
 def log_pid(file_name):

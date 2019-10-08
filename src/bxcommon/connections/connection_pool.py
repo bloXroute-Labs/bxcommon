@@ -182,7 +182,7 @@ class ConnectionPool:
 
         sizer_obj = memory_statistics.sizer_obj
         sizer = sizer_obj.sizer
-        logger.info("MemoryStats excluded classes: {}".format(sizer_obj.excluded))
+        logger.trace("MemoryStats excluded classes: {}", sizer_obj.excluded)
 
         by_fileno_obj_size = self._log_detailed_object_size(self.by_fileno, "by_fileno", sizer=sizer)
         by_ipport_obj_size = self._log_detailed_object_size(self.by_ipport, "by_ipport", sizer=sizer)
@@ -250,7 +250,7 @@ class ConnectionPool:
         class_name = self.__class__.__name__
         start_time = time.time()
         obj_size = memory_utils.get_detailed_object_size(obj, sizer=sizer)
-        logger.info("(MemoryStats) ({}) {} took: {} seconds".format(class_name, stat_name, round(time.time() - start_time, 3)))
+        logger.debug("(MemoryStats) ({}) {} took: {:.3f} seconds", class_name, stat_name, time.time() - start_time)
         return obj_size
 
     def _log_connections_mem_stats(self):

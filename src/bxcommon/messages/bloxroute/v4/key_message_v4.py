@@ -39,7 +39,7 @@ class KeyMessageV4(MessageV4):
         self._payload = None
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG
 
     def block_hash(self):
         """

@@ -5,8 +5,8 @@ from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxr
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.crypto import SHA256_HASH_LEN
-from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.object_hash import Sha256Hash, ConcatHash
+from bxutils.logging.log_level import LogLevel
 
 
 class BroadcastMessageV5(AbstractBloxrouteMessage):
@@ -47,7 +47,7 @@ class BroadcastMessageV5(AbstractBloxrouteMessage):
         self._payload_len = None
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG
 
     def block_hash(self):
         """

@@ -29,8 +29,8 @@ def run_node(process_id_file_path, opts, node_class, node_type=None, logger_name
         if opts.use_extensions:
             from bxcommon.utils.proxy import task_pool_proxy
             task_pool_proxy.init(opts.thread_pool_parallelism_degree)
-            logger.info(
-                "initialized task thread pool parallelism degree to {}.",
+            logger.debug(
+                "Initialized task thread pool parallelism degree to {}.",
                 task_pool_proxy.get_pool_size()
             )
         _run_node(opts, node_class, node_type, logger_names)
@@ -63,12 +63,12 @@ def _run_node(opts, node_class, node_type, logger_names: List[Optional[str]]):
     if not hasattr(opts, "outbound_peers"):
         opts.__dict__["outbound_peers"] = []
 
-    logger.info({"type": "node_init", "Data": opts})
+    logger.debug({"type": "node_init", "Data": opts})
 
     # Start main loop
     node = node_class(opts)
     log_config.set_instance(logger_names, node.opts.node_id)
     event_loop = network_event_loop_factory.create_event_loop(node)
 
-    logger.debug("Running node")
+    logger.trace("Running node...")
     event_loop.run()

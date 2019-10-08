@@ -1,10 +1,9 @@
 from typing import List
 
-from bxutils import logging
-
-from bxcommon.utils import ping_latency
-from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon import constants
+from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.utils import ping_latency
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -16,7 +15,7 @@ def get_best_relay_by_ping_latency(relays: List[OutboundPeerModel]) -> OutboundP
     :return:
     """
     if len(relays) == 1:
-        logger.info("First (and only) recommended relay from api is: {}".format(relays[0]))
+        logger.debug("First (and only) recommended relay from api is: {}".format(relays[0]))
         return relays[0]
 
     relays_ping_latency = ping_latency.get_ping_latencies(relays)
@@ -26,13 +25,13 @@ def get_best_relay_by_ping_latency(relays: List[OutboundPeerModel]) -> OutboundP
     # if best_relay_by_latency's latency is less than RELAY_LATENCY_THRESHOLD_MS, select api's relay
     best_relay_node = relays[0] if best_relay_by_latency.latency < constants.NODE_LATENCY_THRESHOLD_MS else best_relay_by_latency.node
 
-    logger.info(
+    logger.debug(
         "First recommended relay from api is: {} with latency {} ms, "
-        "fastest ping latency relay is: {} with latency {} ms, selected relay is: {}".format(
-            relays[0].node_id, "".join([str(relay.latency) for relay in relays_ping_latency if relay.node == relays[0]]),
-            sorted_ping_latencies[0].node.node_id, sorted_ping_latencies[0].latency,
-            best_relay_node.node_id
-        )
+        "fastest ping latency relay is: {} with latency {} ms, selected relay is: {}",
+        relays[0].node_id, "".join([str(relay.latency) for relay in relays_ping_latency if relay.node == relays[0]]),
+        sorted_ping_latencies[0].node.node_id, sorted_ping_latencies[0].latency,
+        best_relay_node.node_id
+
     )
 
     return best_relay_node

@@ -10,8 +10,8 @@ class LogLevel(IntEnum):
     WARN = WARNING
     STATS = 25
     INFO = 20
-    TRACE = 15
     DEBUG = 10
+    TRACE = 5
     NOTSET = 0
 
 

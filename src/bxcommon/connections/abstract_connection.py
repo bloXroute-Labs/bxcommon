@@ -1,30 +1,27 @@
-import time
-import traceback
 import sys
+import time
 from abc import ABCMeta
 from collections import defaultdict
 from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Optional
-
-from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
-from bxutils import logging
-from bxutils.logging.log_level import LogLevel
-from bxutils.logging.log_record_type import LogRecordType
 
 from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import PayloadLenError
+from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
+from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.utils import convert
+from bxcommon.utils import memory_utils
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.utils.log_level import LogLevel
-from bxcommon.utils import memory_utils
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.direction import Direction
-from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxutils import logging
+from bxutils.logging.log_level import LogLevel
+from bxutils.logging.log_record_type import LogRecordType
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
@@ -89,17 +86,38 @@ class AbstractConnection(Generic[Node]):
 
         self.message_validator = DefaultMessageValidator()
 
-        self._trace_message_tracker = defaultdict(int)
-        self._last_trace_message_log_time = time.time()
+        self._debug_message_tracker = defaultdict(int)
+        self._last_debug_message_log_time = time.time()
         self.ping_interval_s: int = constants.PING_INTERVAL_S
         self.peer_model: Optional[OutboundPeerModel] = None
-        logger.info("Initialized new connection: {}", self)
+
+        self.log_debug("Connection initialized.")
 
     def __repr__(self):
-        return "Connection<type: {}, fileno: {}, address: {}, network_num: {}>".format(self.CONNECTION_TYPE,
-                                                                                       self.fileno,
-                                                                                       self.peer_desc,
-                                                                                       self.network_num)
+        if logger.isEnabledFor(LogLevel.DEBUG):
+            details = f"fileno: {self.fileno}, address: {self.peer_desc}, network_num: {self.network_num}"
+        else:
+            details = f"fileno: {self.fileno}, address: {self.peer_desc}"
+
+        return f"{self.CONNECTION_TYPE}({details})"
+
+    def _log_message(self, level: LogLevel, message: str, *args, **kwargs):
+        logger.log(level, f"[{self}] {message}", *args, **kwargs)
+
+    def log_trace(self, message: str, *args, **kwargs):
+        self._log_message(LogLevel.TRACE, message, *args, **kwargs)
+
+    def log_debug(self, message: str, *args, **kwargs):
+        self._log_message(LogLevel.DEBUG, message, *args, **kwargs)
+
+    def log_info(self, message: str, *args, **kwargs):
+        self._log_message(LogLevel.INFO, message, *args, **kwargs)
+
+    def log_warning(self, message: str, *args, **kwargs):
+        self._log_message(LogLevel.WARNING, message, *args, **kwargs)
+
+    def log_error(self, message: str, *args, **kwargs):
+        self._log_message(LogLevel.ERROR, message, *args, **kwargs)
 
     def is_active(self):
         """
@@ -113,6 +131,10 @@ class AbstractConnection(Generic[Node]):
         Indicates whether the connection should send bytes on broadcast.
         """
         return self.is_active()
+
+    def on_connection_established(self):
+        self.state |= ConnectionState.ESTABLISHED
+        self.log_info("Connection established.")
 
     def add_received_bytes(self, bytes_received):
         """
@@ -142,7 +164,7 @@ class AbstractConnection(Generic[Node]):
         :param msg: message
         :param prepend: if the message should be bumped to the front of the outputbuf
         """
-        logger.log(msg.log_level(), "Enqueued message: {} on connection: {}", msg, self)
+        self._log_message(msg.log_level(), "Enqueued message: {}", msg)
 
         if self.message_tracker:
             full_message = msg
@@ -165,7 +187,7 @@ class AbstractConnection(Generic[Node]):
 
         size = len(msg_bytes)
 
-        logger.debug("Enqueuing {} bytes on connection: {}", size, self)
+        self.log_trace("Enqueued {} bytes.", size)
 
         if prepend:
             self.outputbuf.prepend_msgbytes(msg_bytes)
@@ -236,8 +258,8 @@ class AbstractConnection(Generic[Node]):
                 # Full messages must be one of the handshake messages if the connection isn't established yet.
                 if not (self.is_active()) \
                         and msg_type not in self.hello_messages:
-                    logger.warning("Connection to {0} not established and got {1} message!  Closing.", self.peer_desc,
-                                 msg_type)
+                    self.log_warning("Received unexpected message ({}) before handshake completed. Closing.",
+                                     msg_type)
                     self.mark_for_close()
                     return
 
@@ -245,21 +267,21 @@ class AbstractConnection(Generic[Node]):
                     hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
 
                 if not logger.isEnabledFor(msg.log_level()) and logger.isEnabledFor(LogLevel.INFO):
-                    self._trace_message_tracker[msg_type] += 1
-                elif len(self._trace_message_tracker) > 0:
-                    logger.info("Processed the following message types: {} on connection {} over {:.2f} seconds.",
-                                self._trace_message_tracker, self, time.time() - self._last_trace_message_log_time)
-                    self._trace_message_tracker.clear()
-                    self._last_trace_message_log_time = time.time()
+                    self._debug_message_tracker[msg_type] += 1
+                elif len(self._debug_message_tracker) > 0:
+                    self.log_debug("Processed the following messages types: {} over {:.2f} seconds.",
+                                   self._debug_message_tracker, time.time() - self._last_debug_message_log_time)
+                    self._debug_message_tracker.clear()
+                    self._last_debug_message_log_time = time.time()
 
-                logger.log(msg.log_level(), "Processing message: {} on connection: {}", msg, self)
+                self._log_message(msg.log_level(), "Processing message: {}", msg)
 
                 if msg_type in self.message_handlers:
                     msg_handler = self.message_handlers[msg_type]
                     msg_handler(msg)
 
                 messages_processed[msg_type] += 1
-                
+
                 # TODO: only for debugging memory issues, should be removed!
                 if memory_logger.isEnabledFor(LogLevel.INFO) and hasattr(msg, "buf"):
                     ref_count = sys.getrefcount(msg.buf)
@@ -274,7 +296,7 @@ class AbstractConnection(Generic[Node]):
                                     "network_num": msg.network_num()
                                 }
                             )
-                        memory_logger.info(
+                        memory_logger.statistics(
                             {
                                 "type": "MessageBufferRefCountMismatch",
                                 "ref_count": ref_count,
@@ -287,15 +309,16 @@ class AbstractConnection(Generic[Node]):
 
             # TODO: Investigate possible solutions to recover from PayloadLenError errors
             except PayloadLenError as e:
-                logger.error("ParseError on connection {}. Error: {}.", self, e.msg)
+                self.log_error("Could not parse message. Error: {}", e.msg)
                 self.mark_for_close()
                 return
 
             except MemoryError as e:
-                logger.error(
-                    "Out of memory error occurred during message processing. Error: {}. Message bytes: {}. Trace: {}",
+                self.log_error(
+                    "Out of memory error occurred during message processing. Error: {}. "
+                    "Message bytes: {}.",
                     e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
-                    traceback.format_exc())
+                    exc_info=True)
                 raise
 
             # TODO: Throw custom exception for any errors that come from input that has not been validated and only catch that subclass of exceptions
@@ -303,28 +326,20 @@ class AbstractConnection(Generic[Node]):
 
                 # Attempt to recover connection by removing bad full message
                 if is_full_msg:
-                    logger.error(
-                        "Message processing error. Trying to recover. Error: {}. Message bytes: {}. Trace: {}, "
-                        "Connection: {}",
-                        e,
-                        self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
-                        traceback.format_exc(),
-                        self
-                    )
+                    self.log_error(
+                        "Message processing error; trying to recover. Error: {}. Message bytes: {}",
+                        e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
+                        exc_info=True)
 
                     # give connection a chance to restore its state and get ready to process next message
                     self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
 
                 # Connection is unable to recover from message processing error if incomplete message is received
                 else:
-                    logger.error(
-                        "Message processing error. Unable to recover. Error: {}. Message bytes: {}. Trace: {}, "
-                        "Connection: {}",
-                        e,
-                        self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
-                        traceback.format_exc(),
-                        self
-                    )
+                    self.log_error(
+                        "Message processing error; unable to recover. Error: {}. Message bytes: {}",
+                        e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
+                        exc_info=True)
                     self.mark_for_close(force_destroy_now=True)
                     return
 
@@ -334,12 +349,7 @@ class AbstractConnection(Generic[Node]):
                 self.num_bad_messages = 0
 
         time_elapsed = time.time() - start_time
-        if time_elapsed > constants.WARN_MESSAGE_PROCESSING_S:
-            logger.info("Took {:.2f} seconds to process the following messages: {}. Connection: {}", time_elapsed,
-                        messages_processed, self)
-
-        logger.debug("Processed {} messages in {:.2f} seconds on connection: {}.", messages_processed, time_elapsed,
-                     self)
+        self.log_debug("Processed {} messages in {:.2f} seconds", messages_processed, time_elapsed)
 
     def pop_next_message(self, payload_len):
         """
@@ -373,23 +383,27 @@ class AbstractConnection(Generic[Node]):
     def msg_hello(self, msg):
         self.state |= ConnectionState.HELLO_RECVD
         if msg.node_id() is None:
-            logger.warning("Hello message without peer_id received from {}".format(self))
+            self.log_debug("Received hello message without peer id.")
         self.peer_id = msg.node_id()
         self.node.connection_pool.index_conn_node_id(self.peer_id, self)
 
         if len(self.node.connection_pool.get_by_node_id(self.peer_id)) > 1:
             if self.from_me:
-                logger.info("Connection already exists for node id: {}. Closing connection: {}", self.peer_id, self)
+                self.log_info("Received duplicate connection from: {}. Closing.", self.peer_id)
                 self.node.destroy_conn(self)
             return
 
         self.enqueue_msg(self.ack_message)
+        if self.is_active():
+            self.on_connection_established()
 
     def msg_ack(self, _msg):
         """
         Handle an Ack Message
         """
         self.state |= ConnectionState.HELLO_ACKD
+        if self.is_active():
+            self.on_connection_established()
 
     def msg_ping(self, msg):
         self.enqueue_msg(self.pong_message)
@@ -433,7 +447,8 @@ class AbstractConnection(Generic[Node]):
             self.network_num,
             self.inputbuf,
             "input_buffer",
-            memory_utils.ObjectSize("input_buffer", memory_utils.get_special_size(self.inputbuf).size, is_actual_size=True),
+            memory_utils.ObjectSize("input_buffer", memory_utils.get_special_size(self.inputbuf).size,
+                                    is_actual_size=True),
             object_item_count=len(self.inputbuf.input_list),
             object_type=memory_utils.ObjectType.BASE,
             size_type=memory_utils.SizeType.TRUE
@@ -443,15 +458,15 @@ class AbstractConnection(Generic[Node]):
             self.network_num,
             self.outputbuf,
             "output_buffer",
-            memory_utils.ObjectSize("output_buffer", memory_utils.get_special_size(self.outputbuf).size, is_actual_size=True),
+            memory_utils.ObjectSize("output_buffer", memory_utils.get_special_size(self.outputbuf).size,
+                                    is_actual_size=True),
             object_item_count=len(self.outputbuf.output_msgs),
             object_type=memory_utils.ObjectType.BASE,
             size_type=memory_utils.SizeType.TRUE
         )
 
-
     def update_model(self, model: OutboundPeerModel):
-        logger.info("updated connection peer module {}", model)
+        self.log_trace("Updated connection model: {}", model)
         self.peer_model = model
 
     def _report_bad_message(self):
@@ -460,7 +475,7 @@ class AbstractConnection(Generic[Node]):
         :return: if connection should be closed
         """
         if self.num_bad_messages == constants.MAX_BAD_MESSAGES:
-            logger.warning("Received too many bad messages. Closing connection: {}", self)
+            self.log_warning("Received too many bad messages. Closing.")
             self.mark_for_close()
             return True
         else:

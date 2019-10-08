@@ -2,11 +2,10 @@ import time
 from collections import deque
 from typing import Deque, Optional, TYPE_CHECKING
 
-from bxutils import logging
-from bxutils.logging.log_level import LogLevel
-
 from bxcommon.messages.abstract_block_message import AbstractBlockMessage
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxutils import logging
+from bxutils.logging.log_level import LogLevel
 
 logger = logging.get_logger(__name__)
 
@@ -70,9 +69,9 @@ class MessageTracker:
         while bytes_left > 0:
 
             if not self.messages:
-                logger.error("Message tracker somehow got out of sync on connection: {}. Attempted to send {} bytes"
-                             "when none left in tracker. Disabling further tracking."
-                             .format(self.connection, bytes_left))
+                logger.debug("Message tracker somehow got out of sync on connection: {}. Attempted to send {} bytes"
+                             "when none left in tracker. Disabling further tracking.",
+                             self.connection, bytes_left)
                 self.is_working = False
 
             if bytes_left >= (self.messages[0].length - self.messages[0].sent_bytes):

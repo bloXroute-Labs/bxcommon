@@ -29,5 +29,6 @@ DEFAULT_LOG_LEVEL = LogLevel.INFO
 #   %(process)d         Process ID (if available)
 #   %(message)s         The result of record.getMessage(), computed just as
 #                       the record is emitted
-LOG_FORMAT_PATTERN = "%(asctime)s - %(process)d - %(name)s - %(levelname)s - %(message)s"
-DEFAULT_LOG_FORMAT = LogFormat.JSON
+DEBUG_LOG_FORMAT_PATTERN = "%(asctime)s - %(process)d - %(name)s - %(levelname)s - %(message)s"
+INFO_LOG_FORMAT_PATTERN = "%(asctime)s - %(levelname)s - %(message)s"
+DEFAULT_LOG_FORMAT = LogFormat.PLAIN

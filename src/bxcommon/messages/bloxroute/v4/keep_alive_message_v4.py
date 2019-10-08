@@ -42,6 +42,3 @@ class KeepAliveMessageV4(MessageV4):
         if self._nonce is None:
             self.__unpack()
         return self._nonce
-
-    def log_level(self):
-        return LogLevel.DEBUG

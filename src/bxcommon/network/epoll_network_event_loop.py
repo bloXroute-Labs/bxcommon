@@ -35,7 +35,7 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
             events = self._epoll.poll(timeout)
         except IOError as ioe:
             if ioe.errno == errno.EINTR:
-                logger.info("got interrupted in epoll")
+                logger.debug("epoll was interrupted. Skipping to next iteration of event loop.")
                 return 0
             raise ioe
 
@@ -51,10 +51,10 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
                     self._handle_incoming_connections(socket_connection)
                 else:
                     # Mark this connection for close if we received a POLLHUP. No other functions will be called
-                    #   on this connection.
+                    # on this connection.
                     if event & select.EPOLLHUP:
                         socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                        logger.info("Received EPOLLHUP. Closing connection on fileno: {}, event: {}".format(fileno, event))
+                        logger.info("Received close from fileno: {}. Closing connection.", fileno)
                         self._node.on_connection_closed(fileno)
 
                     if event & select.EPOLLOUT and \
