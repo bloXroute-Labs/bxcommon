@@ -101,22 +101,22 @@ class AbstractConnection(Generic[Node]):
 
         return f"{self.CONNECTION_TYPE}({details})"
 
-    def _log_message(self, level: LogLevel, message: str, *args, **kwargs):
+    def _log_message(self, level: LogLevel, message, *args, **kwargs):
         logger.log(level, f"[{self}] {message}", *args, **kwargs)
 
-    def log_trace(self, message: str, *args, **kwargs):
+    def log_trace(self, message, *args, **kwargs):
         self._log_message(LogLevel.TRACE, message, *args, **kwargs)
 
-    def log_debug(self, message: str, *args, **kwargs):
+    def log_debug(self, message, *args, **kwargs):
         self._log_message(LogLevel.DEBUG, message, *args, **kwargs)
 
-    def log_info(self, message: str, *args, **kwargs):
+    def log_info(self, message, *args, **kwargs):
         self._log_message(LogLevel.INFO, message, *args, **kwargs)
 
-    def log_warning(self, message: str, *args, **kwargs):
+    def log_warning(self, message, *args, **kwargs):
         self._log_message(LogLevel.WARNING, message, *args, **kwargs)
 
-    def log_error(self, message: str, *args, **kwargs):
+    def log_error(self, message, *args, **kwargs):
         self._log_message(LogLevel.ERROR, message, *args, **kwargs)
 
     def is_active(self):
