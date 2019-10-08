@@ -356,7 +356,10 @@ class AbstractConnection(Generic[Node]):
 
     def advance_bytes_on_buffer(self, buf, bytes_written):
         hooks.add_throughput_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc)
-        buf.advance_buffer(bytes_written)
+        try:
+            buf.advance_buffer(bytes_written)
+        except ValueError as e:
+            raise RuntimeError("Connection: {}, Failed to advance buffer".format(self)) from e
 
     def send_ping(self):
         """
