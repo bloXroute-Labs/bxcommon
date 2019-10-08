@@ -85,12 +85,11 @@ class CustomFormatter(AbstractFormatter):
             log_record["msg"] = self._formatter(record.msg, record.args)
         else:
             log_record["msg"] = record.msg
-        if self.instance != self.NO_INSTANCE:
-            log_record["instance"] = self.instance
 
         record.msg = "{}{}".format(self.encoder.encode(record.msg),
                                    ",".join({" {}={}".format(k, self.encoder.encode(v)) for (k, v)
                                              in log_record.items() if k != "msg"}))
+        record.instance = self.instance
         return super(CustomFormatter, self).format(record)
 
     def formatTime(self, record, datefmt=None) -> str:
