@@ -7,14 +7,12 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import DEFAULT_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES, FIRST_STATS_INTERVAL_S
 from bxcommon.exceptions import TerminationError
-from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.mocks.mock_connection import MockConnection, MockConnectionType
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils import memory_utils
-from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 
 
@@ -151,10 +149,10 @@ class AbstractNodeTest(AbstractTestCase):
     @patch("bxcommon.connections.abstract_node.SocketConnection.fileno", return_value=5)
     def test_initialize_connection(self, mock_fileno):
         socket_connection = MockSocketConnection(self.remote_fileno, self.remote_node)
-        self.assertEqual(3, self.local_node.alarm_queue.uniq_count)
+        self.assertEqual(6, self.local_node.alarm_queue.uniq_count)
         self.assertIsNone(self.local_node.connection_pool.by_fileno[self.remote_fileno])
         self.local_node._initialize_connection(socket_connection, self.remote_ip, self.remote_port, True)
-        self.assertEqual(4, self.local_node.alarm_queue.uniq_count)
+        self.assertEqual(7, self.local_node.alarm_queue.uniq_count)
         self.assertEqual(self.connection.fileno,
                          self.local_node.connection_pool.by_fileno[self.remote_fileno].fileno)
 

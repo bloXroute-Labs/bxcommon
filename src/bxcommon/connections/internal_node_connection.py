@@ -1,5 +1,4 @@
 from abc import ABCMeta
-from datetime import datetime
 from typing import List
 import time
 
@@ -183,6 +182,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         Transaction service sync message receive txs data
         """
         network_num = msg.network_num()
+        self.node.last_sync_message_received_by_network[network_num] = time.time()
         tx_service = self.node.get_tx_service(network_num)
         txs_content_short_ids = msg.txs_content_short_ids()
 
@@ -251,9 +251,11 @@ class InternalNodeConnection(AbstractConnection[Node]):
                     format(network_num, total_tx_count, msgs_count, duration * 1000))
                 self.send_tx_service_sync_complete(network_num)
         else:   # if time is up - upgrade this node as synced - giving up
-            logger.info("Sending TxServiceSyncTxsMessage in network {}, {} transactions and {} messages took more than {} ms ".
-                        format(network_num, total_tx_count, msgs_count, constants.SENDING_TX_MSGS_TIMEOUT_MS))
+            logger.info("Sending TxServiceSyncTxsMessage in network {}, {} transactions and {} messages took more than {} ms ",
+                        network_num, total_tx_count, msgs_count, constants.SENDING_TX_MSGS_TIMEOUT_MS)
             self.send_tx_service_sync_complete(network_num)
 
-    def msg_tx_service_sync_complete(self, _msg: TxServiceSyncCompleteMessage):
+    def msg_tx_service_sync_complete(self, msg: TxServiceSyncCompleteMessage):
+        network_num = msg.network_num()
+        self.node.last_sync_message_received_by_network.pop(network_num, None)
         self.node.on_fully_updated_tx_service()

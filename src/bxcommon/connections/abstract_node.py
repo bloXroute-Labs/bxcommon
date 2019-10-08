@@ -78,6 +78,16 @@ class AbstractNode:
         if opts.dump_removed_short_ids:
             os.makedirs(opts.dump_removed_short_ids_path, exist_ok=True)
 
+        # each time a network has an update regarding txs, blocks, etc. register in a dict,
+        # this way can verify if node lost connection to requested relay.
+
+        self.last_sync_message_received_by_network: Dict[int, float] = {}
+
+        opts.has_fully_updated_tx_service = False
+        self.alarm_queue.register_alarm(constants.TX_SERVICE_SYNC_PROGRESS_S, self._sync_tx_services)
+        self._check_sync_relay_connections_alarm_id = self.alarm_queue.register_alarm(constants.LAST_MSG_FROM_RELAY_THRESHOLD_S, self._check_sync_relay_connections)
+        self._transaction_sync_timeout_alarm_id = self.alarm_queue.register_alarm(constants.TX_SERVICE_CHECK_NETWORKS_SYNCED_S, self._transaction_sync_timeout)
+
     def get_sdn_address(self):
         """
         Placeholder for net event loop to get the sdn address (relay only).
@@ -499,3 +509,15 @@ class AbstractNode:
             self.on_failed_connection_retry(ip, port, connection_type)
 
         return 0
+
+    @abstractmethod
+    def _sync_tx_services(self):
+        pass
+
+    @abstractmethod
+    def _transaction_sync_timeout(self):
+        pass
+
+    @abstractmethod
+    def _check_sync_relay_connections(self):
+        pass
