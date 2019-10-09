@@ -57,7 +57,8 @@ class ThroughputStatistics(StatisticsService):
             else:
                 peer_stats.ping_max = max(peer_stats.ping_max, measure_value)
         else:
-            logger.error("{} {}".format(measure_type, measure_value))
+            # TODO: should be assertion that this should not happen
+            logger.error("Unexpected throughput measurement: {}={}".format(measure_type, measure_value))
 
     def get_info(self):
         if self.node is None:

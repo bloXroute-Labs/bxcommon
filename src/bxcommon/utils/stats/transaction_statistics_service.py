@@ -1,11 +1,10 @@
 import struct
 
-from bxutils import logging
-
 from bxcommon import constants
 from bxcommon.utils import convert
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.statistics_event_service import StatisticsEventService
+from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 
 logger = logging.get_logger(__name__)
@@ -35,14 +34,15 @@ class _TransactionStatisticsService(StatisticsEventService):
             return
 
         if len(short_ids) < 1:
-            logger.warning("Attempted to log message with 0 short ids!")
+            # TODO: should be an assertion
+            logger.debug("Attempted to log message with 0 short ids!")
             return
 
         if not tx_event_settings:
             raise ValueError("tx_event_name is required")
 
         if constants.TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR >= 0:
-             self.log_event(tx_event_settings, short_ids, start_date_time, end_date_time, **kwargs)
+            self.log_event(tx_event_settings, short_ids, start_date_time, end_date_time, **kwargs)
 
     def _should_log_event_for_tx(self, tx_hash_bytes):
         if constants.TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR <= 0:
