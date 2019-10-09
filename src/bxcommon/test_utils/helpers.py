@@ -256,7 +256,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "stay_alive_duration": stay_alive_duration,
         "initial_liveliness_check": initial_liveliness_check,
         "has_fully_updated_tx_service": False,
-        "source_version": source_version
+        "source_version": source_version,
+        "require_blockchain_connection": True
     })
 
     if include_default_btc_args:
