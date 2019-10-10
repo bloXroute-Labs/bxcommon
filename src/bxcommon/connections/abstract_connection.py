@@ -282,31 +282,6 @@ class AbstractConnection(Generic[Node]):
 
                 messages_processed[msg_type] += 1
 
-                # TODO: only for debugging memory issues, should be removed!
-                if memory_logger.isEnabledFor(LogLevel.INFO) and hasattr(msg, "buf"):
-                    ref_count = sys.getrefcount(msg.buf)
-                    if ref_count > 2:
-                        extra_data = {}
-                        if isinstance(msg, AbstractBroadcastMessage):
-                            extra_data.update(
-                                {
-                                    "message_hash": msg.message_hash(),
-                                    "message_id": msg.message_id(),
-                                    "source_id": msg.source_id(),
-                                    "network_num": msg.network_num()
-                                }
-                            )
-                        memory_logger.statistics(
-                            {
-                                "type": "MessageBufferRefCountMismatch",
-                                "ref_count": ref_count,
-                                "msg_type": msg_type,
-                                "buffer_len": len(msg.buf),
-                                "payload_len": payload_len,
-                                "extra_data": extra_data
-                            }
-                        )
-
             # TODO: Investigate possible solutions to recover from PayloadLenError errors
             except PayloadLenError as e:
                 self.log_error("Could not parse message. Error: {}", e.msg)
