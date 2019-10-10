@@ -385,15 +385,14 @@ class TransactionService:
             assert transaction_hash is not None
             yield transaction_hash, timestamp
 
-    def threadsafe_iter_timestamped_transaction_hashes_from_oldest(self, newest_time: float = float("inf")) -> \
-            Generator[Tuple[Sha256Hash, float], None, None]:
+    def thread_safe_iter_timestamped_transactions_from_oldest(self, newest_time: float = float("inf")) -> \
+            Generator[Tuple[int, Sha256Hash, float], None, None]:
         for short_id, timestamp in list(self._tx_assignment_expire_queue.queue.items()):
             if timestamp > newest_time:
                 break
-
-            transaction_hash = self.get_transaction(short_id).hash
-            if transaction_hash is not None:
-                yield transaction_hash, timestamp
+            tx_cache_key = self._short_id_to_tx_cache_key[short_id]
+            tx_hash = self._tx_cache_key_to_hash(tx_cache_key)
+            yield short_id, tx_hash, timestamp
 
     def on_block_cleaned_up(self, block_hash: Sha256Hash) -> None:
         """
