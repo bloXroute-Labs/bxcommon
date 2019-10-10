@@ -29,9 +29,9 @@ def contents_cleanup(transaction_service: TransactionService,
     short_ids = cleanup_task.short_ids()
     total_content_removed = cleanup_task.total_content_removed()
     tx_count = cleanup_task.tx_count()
-    block_hash = block_confirmation_message.block_hash()
+    message_hash = block_confirmation_message.message_hash()
     tx_service.update_removed_transactions(total_content_removed, short_ids)
-    transaction_service.on_block_cleaned_up(block_hash)
+    transaction_service.on_block_cleaned_up(message_hash)
     end_datetime = datetime.utcnow()
     end_time = time.time()
     duration = end_time - start_time
@@ -46,7 +46,7 @@ def contents_cleanup(transaction_service: TransactionService,
             "total_content_removed": total_content_removed,
             "tx_count": tx_count,
             "short_ids_count": len(short_ids),
-            "block_hash": repr(block_hash),
+            "message_hash": repr(message_hash),
         }
     )
     cleanup_tasks.return_task(cleanup_task)
