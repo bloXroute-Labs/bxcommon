@@ -25,7 +25,7 @@ from bxcommon.test_utils.helpers import create_input_buffer_with_bytes
 from bxcommon.test_utils.message_factory_test_case import MessageFactoryTestCase
 from bxcommon.utils import crypto
 from bxcommon.utils.crypto import SHA256_HASH_LEN, KEY_SIZE
-from bxcommon.utils.object_hash import Sha256Hash
+from bxcommon.utils.object_hash import Sha256Hash, NULL_SHA256_HASH
 
 
 class BloxrouteMessageFactory(MessageFactoryTestCase):
@@ -261,6 +261,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(tx_hashes, rebuilt_msg.transaction_hashes())
         self.assertEqual(self.NETWORK_NUM, rebuilt_msg.network_num())
         self.assertEqual(self.NODE_ID, rebuilt_msg.source_id())
+        self.assertNotEqual(NULL_SHA256_HASH, rebuilt_msg.message_hash())
         print(rebuilt_msg.message_hash())
 
 

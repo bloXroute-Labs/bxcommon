@@ -4,7 +4,7 @@ from bxutils.logging.log_record_type import LogRecordType
 from bxcommon.messages.bloxroute.abstract_cleanup_message import AbstractCleanupMessage
 from bxcommon.services.transaction_service import TransactionService
 
-logger = logging.get_logger(LogRecordType.BlockCleanup)
+logger = logging.get_logger(LogRecordType.TransactionCleanup)
 
 
 def contents_cleanup(transaction_service: TransactionService,

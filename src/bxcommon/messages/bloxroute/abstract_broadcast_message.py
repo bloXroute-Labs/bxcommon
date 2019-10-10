@@ -41,6 +41,11 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
             struct.pack_into("<16s", self.buf, off, uuid_pack.to_bytes(source_id))
             off += constants.NODE_ID_SIZE_IN_BYTES
 
+    def set_message_hash(self, message_hash: Sha256Hash):
+        assert self.buf is not None
+        off = AbstractBloxrouteMessage.HEADER_LENGTH
+        self.buf[off:off + crypto.SHA256_HASH_LEN] = message_hash.binary
+
     def message_hash(self) -> Sha256Hash:
         if self._message_hash is None:
             off = self.HEADER_LENGTH

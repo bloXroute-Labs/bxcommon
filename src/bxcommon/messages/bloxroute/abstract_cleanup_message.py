@@ -11,6 +11,9 @@ from bxutils.logging.log_level import LogLevel
 
 class AbstractCleanupMessage(AbstractBroadcastMessage):
     MESSAGE_TYPE = None
+    PAYLOAD_START_OFFSET = AbstractBroadcastMessage.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH - \
+        constants.CONTROL_FLAGS_LEN
+
     """
     Message with sids numbers for cleanup.
     """
@@ -35,7 +38,7 @@ class AbstractCleanupMessage(AbstractBroadcastMessage):
         if buf is None:
             sid_count = len(sids)
             hashes_count = len(tx_hashes)
-            off = self.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH - constants.CONTROL_FLAGS_LEN
+            off = self.PAYLOAD_START_OFFSET
 
             struct.pack_into("<L", self.buf, off, sid_count)
             off += constants.UL_INT_SIZE_IN_BYTES
@@ -53,9 +56,6 @@ class AbstractCleanupMessage(AbstractBroadcastMessage):
 
     def log_level(self):
         return LogLevel.DEBUG
-
-    def block_hash(self) -> Sha256Hash:
-        return self.message_hash()
 
     def short_ids(self) -> List[int]:
         if self._sids is None:

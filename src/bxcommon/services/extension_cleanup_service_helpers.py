@@ -13,7 +13,7 @@ from bxcommon.messages.bloxroute.abstract_cleanup_message import AbstractCleanup
 
 import task_pool_executor as tpe   # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
-logger = logging.get_logger(LogRecordType.BlockCleanup)
+logger = logging.get_logger(LogRecordType.TransactionCleanup)
 
 
 def contents_cleanup(transaction_service: TransactionService,
