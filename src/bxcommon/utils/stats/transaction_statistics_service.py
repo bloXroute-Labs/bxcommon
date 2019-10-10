@@ -1,5 +1,7 @@
 import struct
+from typing import Optional, List
 
+from bxcommon.utils.stats.stat_event_type_settings import StatEventTypeSettings
 from bxcommon import constants
 from bxcommon.utils import convert
 from bxcommon.utils.object_hash import Sha256Hash
@@ -16,7 +18,8 @@ class _TransactionStatisticsService(StatisticsEventService):
         self.name = "TransactionInfo"
         self.logger = logging.get_logger(LogRecordType.TransactionInfo)
 
-    def add_tx_by_hash_event(self, tx_hash, tx_event_settings, start_date_time=None, end_date_time=None, **kwargs):
+    def add_tx_by_hash_event(self, tx_hash, tx_event_settings: StatEventTypeSettings,
+                             start_date_time: Optional[float] = None, end_date_time: Optional[float] = None, **kwargs):
         if not tx_hash:
             raise ValueError("tx_hash is required")
 
@@ -29,7 +32,8 @@ class _TransactionStatisticsService(StatisticsEventService):
         if self._should_log_event_for_tx(tx_hash):
             self.log_event(tx_event_settings, convert.bytes_to_hex(tx_hash), start_date_time, end_date_time, **kwargs)
 
-    def add_txs_by_short_ids_event(self, short_ids, tx_event_settings, start_date_time=None, end_date_time=None, **kwargs):
+    def add_txs_by_short_ids_event(self, short_ids, tx_event_settings: StatEventTypeSettings,
+                                   start_date_time: Optional[float] = None, end_date_time: Optional[float] = None, **kwargs):
         if not constants.ENABLE_TRANSACTIONS_STATS_BY_SHORT_IDS:
             return
 
@@ -43,6 +47,21 @@ class _TransactionStatisticsService(StatisticsEventService):
 
         if constants.TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR >= 0:
             self.log_event(tx_event_settings, short_ids, start_date_time, end_date_time, **kwargs)
+
+    def add_recovery_stats_by_request_hash_event(self, request_hash: str, tx_event_settings: StatEventTypeSettings,
+                                                 start_date_time: Optional[float] = None,
+                                                 end_date_time: Optional[float] = None, **kwargs):
+        if not constants.ENABLE_TRANSACTIONS_STATS_BY_TX_REQUEST_HASH:
+            return
+
+        if not request_hash:
+            logger.warning("Attempted to log tx stat without request hash")
+            return
+
+        if not tx_event_settings:
+            raise ValueError("tx_event_name is required")
+
+        self.log_event(tx_event_settings, request_hash, start_date_time, end_date_time, **kwargs)
 
     def _should_log_event_for_tx(self, tx_hash_bytes):
         if constants.TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR <= 0:
