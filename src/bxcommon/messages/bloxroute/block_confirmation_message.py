@@ -8,7 +8,7 @@ from bxcommon.utils.object_hash import Sha256Hash
 class BlockConfirmationMessage(AbstractCleanupMessage):
     MESSAGE_TYPE = BloxrouteMessageType.BLOCK_CONFIRMATION
     """
-    Message with sids numbers for cleanup.
+    Message with short ids for cleanup for cleanup.
     """
 
     def __init__(self, message_hash: Optional[Sha256Hash] = None, network_num: Optional[int] = None,
@@ -23,7 +23,7 @@ class BlockConfirmationMessage(AbstractCleanupMessage):
     def __repr__(self):
         return "BlockConfirmationMessage <block_hash: {} :{}> <num_sids: {}> <num_tx_hashes: {}>".format(
             self.block_hash(),
-            self._network_num,
-            self._sids_count,
-            self._tx_hashes_count
+            self.network_num(),
+            len(self.short_ids()),
+            len(self.transaction_hashes())
         )

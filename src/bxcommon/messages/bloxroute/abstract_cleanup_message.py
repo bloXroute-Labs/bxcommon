@@ -97,9 +97,9 @@ class AbstractCleanupMessage(AbstractBroadcastMessage):
         self._tx_hashes = tx_hashes
 
     def __repr__(self):
-        return "{} <block_hash: {} :{}> <num_sids: {}> <num_tx_hashes: {}>".format(
+        return "{} <message: {} :{}> <num_sids: {}> <num_tx_hashes: {}>".format(
             self.MESSAGE_TYPE.name,
-            self.block_hash(),
+            self.message_hash(),
             self._network_num,
             self._sids_count,
             self._tx_hashes_count

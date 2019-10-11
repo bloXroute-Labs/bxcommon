@@ -1,4 +1,3 @@
-import sys
 import time
 from abc import ABCMeta
 from collections import defaultdict
@@ -8,7 +7,6 @@ from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import PayloadLenError
-from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.socket_connection import SocketConnection

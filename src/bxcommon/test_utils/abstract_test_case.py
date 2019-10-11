@@ -13,7 +13,7 @@ class AbstractTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         log_config.create_logger(None)
-        log_config.set_level(["bxcommon", "bxgateway", "bxrelay"], LogLevel.DEBUG)
+        log_config.set_level(["bxcommon", "bxgateway", "bxrelay", "bxgateway_internal"], LogLevel.DEBUG)
         http_service.get_json = MagicMock()
         http_service.post_json = MagicMock()
         http_service.patch_json = MagicMock()

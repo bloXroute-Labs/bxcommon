@@ -10,7 +10,7 @@ from bxutils import logging
 
 MT = TypeVar("MT", bound=AbstractMessage)
 CT = TypeVar("CT", bound=AbstractConnection)
-logger = logging.get_logger()
+logger = logging.get_logger(__name__)
 
 
 @dataclass

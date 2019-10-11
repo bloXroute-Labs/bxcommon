@@ -64,6 +64,11 @@ class ConnectionPool:
 
         self.by_ipport[(conn.peer_ip, new_port)] = conn
 
+    def update_connection_type(self, conn: AbstractConnection, connection_type: ConnectionType):
+        self.delete(conn)
+        conn.CONNECTION_TYPE = connection_type
+        self.add(conn.fileno, conn.peer_ip, conn.peer_port, conn)
+
     def index_conn_node_id(self, node_id: str, conn: AbstractConnection) -> None:
         if node_id:
             self.by_node_id[node_id].add(conn)

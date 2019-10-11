@@ -56,6 +56,24 @@ class ConnectionPoolTest(AbstractTestCase):
         self.assertEqual(self.conn1, self.conn_pool1.get_by_ipport(self.ip1, self.port2))
         self.assertFalse(self.conn_pool1.has_connection(self.ip1, self.port1))
 
+    def test_update_connnection_type(self):
+        self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
+        self.conn_pool1.add(self.fileno2, self.ip2, self.port2, self.conn2)
+
+        mock_connections = self.conn_pool1.get_by_connection_type(self.conn1.CONNECTION_TYPE)
+        self.assertIn(self.conn1, mock_connections)
+        self.assertIn(self.conn2, mock_connections)
+
+        self.conn_pool1.update_connection_type(self.conn1, ConnectionType.RELAY_TRANSACTION)
+
+        mock_connections = self.conn_pool1.get_by_connection_type(self.conn2.CONNECTION_TYPE)
+        self.assertNotIn(self.conn1, mock_connections)
+        self.assertIn(self.conn2, mock_connections)
+
+        relay_connections = self.conn_pool1.get_by_connection_type(self.conn1.CONNECTION_TYPE)
+        self.assertIn(self.conn1, relay_connections)
+        self.assertNotIn(self.conn2, relay_connections)
+
     def test_has_connection(self):
         self._add_connections()
         self.assertTrue(self.conn_pool1.has_connection(self.ip1, self.port1))
