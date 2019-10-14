@@ -28,7 +28,7 @@ class MessageTrackerEntry:
         if self.message:
             return self.message.log_level()
         else:
-            return LogLevel.INFO
+            return LogLevel.DEBUG
 
     def __repr__(self):
         return "MessageTrackerEntry<message: {}, sent_bytes: {}, length: {}>".format(self.message, self.sent_bytes,
