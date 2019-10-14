@@ -390,9 +390,17 @@ class TransactionService:
         for short_id, timestamp in list(self._tx_assignment_expire_queue.queue.items()):
             if timestamp > newest_time:
                 break
-            tx_cache_key = self._short_id_to_tx_cache_key[short_id]
-            tx_hash = self._tx_cache_key_to_hash(tx_cache_key)
-            yield short_id, tx_hash, timestamp
+
+            if short_id in self._short_id_to_tx_cache_key:
+                tx_cache_key = self._short_id_to_tx_cache_key[short_id]
+                tx_hash = self._tx_cache_key_to_hash(tx_cache_key)
+                yield short_id, tx_hash, timestamp
+            else:
+                # temporary to debug a strange error message
+                logger.error("Unexpectedly could not find short id from expiration queue in _short_id_to_tx_cache_key."
+                             "Skipping. short_id: {}, timestamp: {}",
+                             short_id, timestamp)
+                continue
 
     def on_block_cleaned_up(self, block_hash: Sha256Hash) -> None:
         """
