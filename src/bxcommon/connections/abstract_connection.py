@@ -1,12 +1,13 @@
 import time
 from abc import ABCMeta
 from collections import defaultdict
-from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Optional
+from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Optional, Union
 
 from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import PayloadLenError
+from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.socket_connection import SocketConnection
@@ -154,7 +155,7 @@ class AbstractConnection(Generic[Node]):
         if self.message_tracker:
             self.message_tracker.advance_bytes(bytes_sent)
 
-    def enqueue_msg(self, msg, prepend=False):
+    def enqueue_msg(self, msg: AbstractMessage, prepend: bool = False):
         """
         Enqueues the contents of a Message instance, msg, to our outputbuf and attempts to send it if the underlying
         socket has room in the send buffer.
@@ -170,7 +171,8 @@ class AbstractConnection(Generic[Node]):
             full_message = None
         self.enqueue_msg_bytes(msg.rawbytes(), prepend, full_message)
 
-    def enqueue_msg_bytes(self, msg_bytes, prepend=False, full_message=None):
+    def enqueue_msg_bytes(self, msg_bytes: Union[bytearray, memoryview], prepend: bool = False,
+                          full_message: Optional[AbstractMessage] = None):
         """
         Enqueues the raw bytes of a message, msg_bytes, to our outputbuf and attempts to send it if the
         underlying socket has room in the send buffer.
