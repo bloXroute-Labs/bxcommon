@@ -6,7 +6,7 @@ from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Optional, Union
 from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
-from bxcommon.exceptions import PayloadLenError
+from bxcommon.exceptions import PayloadLenError, UnauthorizedMessageError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
@@ -291,10 +291,20 @@ class AbstractConnection(Generic[Node]):
             except MemoryError as e:
                 self.log_error(
                     "Out of memory error occurred during message processing. Error: {}. "
-                    "Message bytes: {}.",
+                    "Message bytes: {}",
                     e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
                     exc_info=True)
                 raise
+
+            except UnauthorizedMessageError as e:
+                self.log_error("Unauthorized message {} from {}. Message bytes: {}", e.msg.MESSAGE_TYPE, self.peer_desc,
+                               self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
+
+                # give connection a chance to restore its state and get ready to process next message
+                self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
+
+                if self._report_bad_message():
+                    return
 
             # TODO: Throw custom exception for any errors that come from input that has not been validated and only catch that subclass of exceptions
             except Exception as e:

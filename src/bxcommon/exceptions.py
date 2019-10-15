@@ -24,6 +24,11 @@ class PayloadLenError(ParseError):
     pass
 
 
+class UnauthorizedMessageError(ParseError):
+    def __init__(self, msg):
+        super(UnauthorizedMessageError, self).__init__(msg)
+
+
 class ChecksumError(ParseError):
     def __init__(self, msg, raw_data):
         super(ChecksumError, self).__init__(msg)
