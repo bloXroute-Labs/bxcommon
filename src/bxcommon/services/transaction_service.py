@@ -387,7 +387,23 @@ class TransactionService:
 
     def thread_safe_iter_timestamped_transactions_from_oldest(self, newest_time: float = float("inf")) -> \
             Generator[Tuple[int, Sha256Hash, float], None, None]:
-        for short_id, timestamp in list(self._tx_assignment_expire_queue.queue.items()):
+
+        tries = 0
+        items = None
+
+        while tries < 10:
+            try:
+                items = list(self._tx_assignment_expire_queue.queue.items())
+                break
+            except RuntimeError:
+                tries += 1
+
+        if items is None:
+            raise RuntimeError("The expiration queue changed size during iteration every time")
+
+        logger.debug("Attempted to freeze assignment queue {} times".format(tries))
+
+        for short_id, timestamp in items:
             if timestamp > newest_time:
                 break
 
