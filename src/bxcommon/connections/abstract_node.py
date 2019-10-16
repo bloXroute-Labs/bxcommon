@@ -12,6 +12,7 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import TerminationError
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.services import sdn_http_service
 from bxcommon.services.broadcast_service import BroadcastService, BroadcastOptions
@@ -416,6 +417,10 @@ class AbstractNode:
         # TODO: currently hard-coding configuration values
         opts.stats_calculate_actual_size = False
         opts.log_detailed_block_stats = False
+
+        blockchain_networks: List[BlockchainNetworkModel] = opts.blockchain_networks
+        for blockchain_network in blockchain_networks:
+            tx_stats.configure_network(blockchain_network.network_num, blockchain_network.tx_percent_to_log)
 
     def dump_memory_usage(self):
         total_mem_usage = memory_utils.get_app_memory_usage()

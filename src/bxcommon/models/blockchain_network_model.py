@@ -23,3 +23,4 @@ class BlockchainNetworkModel:
     max_block_size_bytes: int = constants.DEFAULT_MAX_PAYLOAD_LEN_BYTES
     max_tx_size_bytes: int = constants.DEFAULT_MAX_PAYLOAD_LEN_BYTES
     block_confirmations_count: int = constants.BLOCK_CONFIRMATIONS_COUNT
+    tx_percent_to_log: int = constants.TRANSACTIONS_PERCENTAGE_TO_LOG_STATS_FOR
