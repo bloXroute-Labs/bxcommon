@@ -27,9 +27,6 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
         self._epoll.close()
 
     def _process_events(self, timeout):
-        if timeout is None:
-            timeout = -1
-
         # Grab all events.
         try:
             events = self._epoll.poll(timeout)

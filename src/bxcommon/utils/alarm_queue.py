@@ -217,8 +217,9 @@ class AlarmQueue(object):
         Indicates if there's not an alarm on the queue and the timeout to the next one if there is.
         :return: (if alarm queue is empty, timeout to next alarm)
         """
-        if not self.alarms:
-            return True, None
+        with self.lock:
+            if not self.alarms:
+                return True, None
 
-        time_to_alarm = self.alarms[0].fire_time - time.time()
-        return False, time_to_alarm
+            time_to_alarm = self.alarms[0].fire_time - time.time()
+            return False, time_to_alarm

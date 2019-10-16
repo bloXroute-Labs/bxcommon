@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod
 from bxutils import logging
 
 from bxcommon.connections.abstract_node import AbstractNode
-from bxcommon.constants import LISTEN_ON_IP_ADDRESS
+from bxcommon import constants
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
 from bxcommon.network.socket_connection_state import SocketConnectionState
@@ -46,6 +46,11 @@ class AbstractNetworkEventLoop(object):
             timeout = self._node.get_sleep_timeout(triggered_by_timeout=False, first_call=True)
 
             while True:
+                # since alarms can be registered from multiple threads we need to occasionally check for new alarms.
+                if timeout is None or timeout < 0:
+                    timeout = constants.MAX_EVENT_LOOP_TIMEOUT_S
+                else:
+                    timeout = min(timeout, constants.MAX_EVENT_LOOP_TIMEOUT_S)
                 events_count = self._process_events(timeout)
 
                 self._process_disconnect_requests()
@@ -83,13 +88,13 @@ class AbstractNetworkEventLoop(object):
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-        logger.info("Binding to a socket on {0}:{1}.", LISTEN_ON_IP_ADDRESS, external_port)
+        logger.info("Binding to a socket on {0}:{1}.", constants.LISTEN_ON_IP_ADDRESS, external_port)
         try:
-            server_socket.bind((LISTEN_ON_IP_ADDRESS, external_port))
+            server_socket.bind((constants.LISTEN_ON_IP_ADDRESS, external_port))
             server_socket.listen(50)
             server_socket.setblocking(False)
 
-            self._register_socket(server_socket, (LISTEN_ON_IP_ADDRESS, external_port), is_server=True)
+            self._register_socket(server_socket, (constants.LISTEN_ON_IP_ADDRESS, external_port), is_server=True)
 
             logger.debug("Server socket creation successful.")
             return server_socket
