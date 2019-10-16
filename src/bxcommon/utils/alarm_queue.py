@@ -176,7 +176,7 @@ class AlarmQueue(object):
                         next_delay = alarm.fire()
                         end_time = time.time()
                     except Exception as e:
-                        logger.error("Alarm {} could not fire and failed with exception: {}", alarm, e)
+                        logger.exception("Alarm {} could not fire and failed with exception: {}", alarm, e)
                     else:
                         if end_time - start_time > constants.WARN_ALARM_EXECUTION_DURATION:
                             logger.debug("{} took {} seconds to execute.", alarm, end_time - start_time)
