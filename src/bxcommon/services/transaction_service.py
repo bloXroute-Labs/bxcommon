@@ -396,10 +396,7 @@ class TransactionService:
                 tx_hash = self._tx_cache_key_to_hash(tx_cache_key)
                 yield short_id, tx_hash, timestamp
             else:
-                # temporary to debug a strange error message
-                logger.error("Unexpectedly could not find short id from expiration queue in _short_id_to_tx_cache_key."
-                             "Skipping. short_id: {}, timestamp: {}",
-                             short_id, timestamp)
+                # ignore, probably a concurrency problem removing transactions from a different thread
                 continue
 
     def on_block_cleaned_up(self, block_hash: Sha256Hash) -> None:
