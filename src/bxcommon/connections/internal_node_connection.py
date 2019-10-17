@@ -227,7 +227,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
         block_short_ids_msg = TxServiceSyncBlocksShortIdsMessage(network_num, blocks_short_ids)
         duration = time.time() - start_time
-        self.log_trace("Sending {} block short ids took {:.3f} seconds.", len(blocks_short_ids), duration)
+        self.log_trace("Sending {} block short ids took {:.3f} seconds in connection: {}.", len(blocks_short_ids), duration, self)
         self.enqueue_msg(block_short_ids_msg)
 
     def send_tx_service_sync_txs(self, network_num: int, tx_service_snap: List[Sha256Hash], duration: float = 0, msgs_count: int = 0, total_tx_count: int = 0, sending_tx_msgs_start_time: float = 0):
@@ -246,12 +246,12 @@ class InternalNodeConnection(AbstractConnection[Node]):
                     constants.TX_SERVICE_SYNC_TXS_S, self.send_tx_service_sync_txs, network_num, tx_service_snap, duration, msgs_count, total_tx_count, sending_tx_msgs_start_time
                 )
             else:   # if all txs were sent, send complete msg
-                self.log_trace("Sending {} transactions and {} messages took {:.3f} seconds.",
-                               total_tx_count, msgs_count, duration)
+                self.log_trace("Sending {} transactions and {} messages took {:.3f} seconds in connection: {}.",
+                               total_tx_count, msgs_count, duration, self)
                 self.send_tx_service_sync_complete(network_num)
         else:   # if time is up - upgrade this node as synced - giving up
-            self.log_trace("Sending {} transactions and {} messages took more than {} seconds. Giving up.",
-                           total_tx_count, msgs_count, constants.SENDING_TX_MSGS_TIMEOUT_MS)
+            self.log_trace("Sending {} transactions and {} messages took more than {} seconds in connection: {}. Giving up.",
+                           total_tx_count, msgs_count, constants.SENDING_TX_MSGS_TIMEOUT_MS, self)
             self.send_tx_service_sync_complete(network_num)
 
     def msg_tx_service_sync_complete(self, msg: TxServiceSyncCompleteMessage):
