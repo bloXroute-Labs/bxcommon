@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.abstract_cleanup_message import AbstractCleanupMessage
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash, NULL_SHA256_HASH
 

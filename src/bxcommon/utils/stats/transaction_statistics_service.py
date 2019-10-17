@@ -30,7 +30,8 @@ class _TransactionStatisticsService(StatisticsEventService):
                              end_date_time: Optional[datetime.datetime] = None, **kwargs):
         tx_hash = tx_hash.binary
         if self._should_log_event_for_tx(tx_hash, network_num, short_id):
-            self.log_event(tx_event_settings, convert.bytes_to_hex(tx_hash), start_date_time, end_date_time, **kwargs)
+            self.log_event(tx_event_settings, convert.bytes_to_hex(tx_hash), start_date_time, end_date_time,
+                           short_id=short_id, network_num=network_num, **kwargs)
 
     def add_txs_by_short_ids_event(self, short_ids, tx_event_settings: StatEventTypeSettings, network_num: int,
                                    start_date_time: Optional[datetime.datetime] = None,
@@ -47,7 +48,8 @@ class _TransactionStatisticsService(StatisticsEventService):
             raise ValueError("tx_event_name is required")
 
         if self.log_percentage_by_network_num[network_num] >= 0:
-            self.log_event(tx_event_settings, short_ids, start_date_time, end_date_time, **kwargs)
+            self.log_event(tx_event_settings, short_ids, start_date_time, end_date_time, network_num=network_num,
+                           **kwargs)
 
     def add_recovery_stats_by_request_hash_event(self, request_hash: str, tx_event_settings: StatEventTypeSettings,
                                                  start_date_time: Optional[datetime.datetime] = None,
