@@ -319,7 +319,8 @@ class TransactionService:
                 if short_id in self._short_id_to_tx_cache_key:
                     del self._short_id_to_tx_cache_key[short_id]
                 self._tx_assignment_expire_queue.remove(short_id)
-                self._removed_short_ids.add(short_id)
+                if self.node.opts.dump_removed_short_ids:
+                    self._removed_short_ids.add(short_id)
         else:
             short_ids = {constants.NULL_TX_SID}
 
@@ -351,7 +352,8 @@ class TransactionService:
                             if dup_short_id in self._short_id_to_tx_cache_key:
                                 del self._short_id_to_tx_cache_key[dup_short_id]
                             self._tx_assignment_expire_queue.remove(dup_short_id)
-                            self._removed_short_ids.add(dup_short_id)
+                            if self.node.opts.dump_removed_short_ids:
+                                self._removed_short_ids.add(dup_short_id)
 
                     if transaction_cache_key in self._tx_cache_key_to_contents:
                         self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
