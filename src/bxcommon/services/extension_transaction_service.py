@@ -2,6 +2,8 @@ from typing import Any
 from datetime import datetime
 from typing import List
 
+from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
+from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 
@@ -53,9 +55,7 @@ class ExtensionTransactionService(TransactionService):
         # TODO when refactoring add `block_hash` to proxy.track_seen_short_ids as first parameter and change ds type in cpp
         result = self.proxy.track_seen_short_ids(wrapped_block_hash, tpe.UIntList(short_ids))
         removed_contents_size, dup_sids = result
-        self._total_tx_contents_size -= removed_contents_size
-        for dup_sid in dup_sids:
-            self._tx_assignment_expire_queue.remove(dup_sid)
+        self.update_removed_transactions(removed_contents_size, dup_sids)
         logger_memory_cleanup.statistics(
             {
                 "type": "MemoryCleanup",
@@ -82,6 +82,10 @@ class ExtensionTransactionService(TransactionService):
     def update_removed_transactions(self, removed_content_size: int, short_ids: List[int]) -> None:
         self._total_tx_contents_size -= removed_content_size
         for short_id in short_ids:
+            tx_stats.add_tx_by_hash_event(
+                constants.UNKNOWN_TRANSACTION_HASH, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
+                self.network_num, short_id, reason="ExtensionsTrackSeenShortId"
+            )
             self._tx_assignment_expire_queue.remove(short_id)
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
@@ -158,6 +162,10 @@ class ExtensionTransactionService(TransactionService):
         # this is only a temporary fix and the whole class hierarchy requires some refactoring!
         if remove_related_short_ids:
             self._tx_assignment_expire_queue.remove(short_id)
+            tx_stats.add_tx_by_hash_event(
+                constants.UNKNOWN_TRANSACTION_HASH, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
+                self.network_num, short_id, event="ExtensionRemoveShortId"
+            )
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
         else:

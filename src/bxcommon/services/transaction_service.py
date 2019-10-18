@@ -12,6 +12,8 @@ from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
+from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
+from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 
@@ -315,6 +317,10 @@ class TransactionService:
         if transaction_cache_key in self._tx_cache_key_to_short_ids:
             short_ids = self._tx_cache_key_to_short_ids.pop(transaction_cache_key)
             for short_id in short_ids:
+                tx_stats.add_tx_by_hash_event(
+                    transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
+                    self.network_num, short_id, reason="RemoveByTransactionHash"
+                )
                 removed_sids += 1
                 if short_id in self._short_id_to_tx_cache_key:
                     del self._short_id_to_tx_cache_key[short_id]
@@ -342,6 +348,11 @@ class TransactionService:
                 self._removed_short_ids.add(short_id)
 
             transaction_cache_key = self._short_id_to_tx_cache_key.pop(short_id)
+            transaction_hash = self._tx_cache_key_to_hash(transaction_cache_key)
+            tx_stats.add_tx_by_hash_event(
+                transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
+                self.network_num, short_id, reason="RemoveByShortId"
+            )
             if transaction_cache_key in self._tx_cache_key_to_short_ids:
                 short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
 
@@ -349,6 +360,10 @@ class TransactionService:
                 if len(short_ids) == 1 or remove_related_short_ids:
                     for dup_short_id in short_ids:
                         if dup_short_id != short_id:
+                            tx_stats.add_tx_by_hash_event(
+                                transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
+                                self.network_num, dup_short_id, reason="RemoveRelatedShortId"
+                            )
                             if dup_short_id in self._short_id_to_tx_cache_key:
                                 del self._short_id_to_tx_cache_key[dup_short_id]
                             self._tx_assignment_expire_queue.remove(dup_short_id)

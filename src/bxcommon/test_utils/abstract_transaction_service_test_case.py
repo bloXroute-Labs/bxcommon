@@ -354,8 +354,8 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
 
     def _test_verify_tx_removal_by_hash(self):
         short_ids = [1, 2, 3, 4]
-        transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
-        transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
+        transaction_hashes = list(map(Sha256Hash, map(crypto.double_sha256, map(bytes, short_ids))))
+        transaction_contents = list(map(lambda _: helpers.generate_bytearray(250), short_ids))
 
         for i in range(len(short_ids)):
             self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
