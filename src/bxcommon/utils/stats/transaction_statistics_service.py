@@ -51,21 +51,6 @@ class _TransactionStatisticsService(StatisticsEventService):
             self.log_event(tx_event_settings, short_ids, start_date_time, end_date_time, network_num=network_num,
                            **kwargs)
 
-    def add_recovery_stats_by_request_hash_event(self, request_hash: str, tx_event_settings: StatEventTypeSettings,
-                                                 start_date_time: Optional[datetime.datetime] = None,
-                                                 end_date_time: Optional[datetime.datetime] = None, **kwargs):
-        if not constants.ENABLE_TRANSACTIONS_STATS_BY_TX_REQUEST_HASH:
-            return
-
-        if not request_hash:
-            logger.warning("Attempted to log tx stat without request hash")
-            return
-
-        if not tx_event_settings:
-            raise ValueError("tx_event_name is required")
-
-        self.log_event(tx_event_settings, request_hash, start_date_time, end_date_time, **kwargs)
-
     def _should_log_event_for_tx(self, tx_hash_bytes: bytearray, network_num: int, short_id: Optional[int]):
         percent_to_log = self.log_percentage_by_network_num[network_num]
         if percent_to_log <= 0:
