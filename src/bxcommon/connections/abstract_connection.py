@@ -334,7 +334,7 @@ class AbstractConnection(Generic[Node]):
                 self.num_bad_messages = 0
 
         time_elapsed = time.time() - start_time
-        self.log_debug("Processed {} messages in {:.2f} seconds", messages_processed, time_elapsed)
+        self.log_trace("Processed {} messages in {:.2f} seconds", messages_processed, time_elapsed)
 
     def pop_next_message(self, payload_len):
         """
