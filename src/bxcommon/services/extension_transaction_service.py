@@ -164,7 +164,7 @@ class ExtensionTransactionService(TransactionService):
             self._tx_assignment_expire_queue.remove(short_id)
             tx_stats.add_tx_by_hash_event(
                 constants.UNKNOWN_TRANSACTION_HASH, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
-                self.network_num, short_id, event="ExtensionRemoveShortId"
+                self.network_num, short_id, reason="ExtensionRemoveShortId"
             )
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)

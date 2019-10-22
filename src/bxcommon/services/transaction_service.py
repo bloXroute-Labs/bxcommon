@@ -19,6 +19,7 @@ from bxutils.logging.log_record_type import LogRecordType
 
 logger = logging.get_logger(__name__)
 logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup)
+logger_tx_histogram = logging.get_logger(LogRecordType.TransactionHistogram)
 
 
 def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash]) -> Sha256Hash:
@@ -840,7 +841,7 @@ class TransactionService:
         timestamps = self._tx_assignment_expire_queue.queue.values()
         for timestamp in timestamps:
             histogram[int((timestamp // cell_size) * cell_size)] += 1
-        logger.statistics(
+        logger_tx_histogram.statistics(
             {"type": "TransactionHistogram",
              "data": {datetime.fromtimestamp(k): v for (k, v) in histogram.items()},
              "start_time": datetime.utcnow(),

@@ -85,7 +85,7 @@ class MessageTracker:
                 in_progress_message = self.messages[0]
                 in_progress_message.sent_bytes += bytes_left
                 logger.log(in_progress_message.message_log_level(),
-                           "Sent {} out of {} bytes of {} to socket on connection: {}. Elapsed time: {:.2f}ms."
+                           "Sent {} out of {} bytes of {} to socket on connection: {}. Elapsed time: {:.2f}ms. "
                            "{} bytes remaining on buffer.",
                            in_progress_message.sent_bytes, in_progress_message.length, in_progress_message.message,
                            self.connection, 1000 * (time.time() - in_progress_message.queued_time),
