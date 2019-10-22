@@ -425,7 +425,11 @@ class TransactionService:
                 break
 
             if short_id in self._short_id_to_tx_cache_key:
-                tx_cache_key = self._short_id_to_tx_cache_key[short_id]
+                try:
+                    tx_cache_key = self._short_id_to_tx_cache_key[short_id]
+                except KeyError:
+                    # ignore, probably a concurrency problem removing transactions from a different thread
+                    continue
                 tx_hash = self._tx_cache_key_to_hash(tx_cache_key)
                 yield short_id, tx_hash, timestamp
             else:
