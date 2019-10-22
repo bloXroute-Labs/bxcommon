@@ -120,10 +120,12 @@ def submit_gateway_inbound_connection(node_id: str, peer_id: str):
 
 
 def submit_sync_txs_event(node_id: str):
+    # TODO: Send these events over socket connection instead of HTTP
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_FULLY_SYNCED))
 
 
 def submit_node_txs_sync_in_network(node_id: str, networks: List[int]):
+    # TODO: Send these events over socket connection instead of HTTP
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_SYNCED_IN_NETWORK,
                                      tx_sync_networks=networks))
 
