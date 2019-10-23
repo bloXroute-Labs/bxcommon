@@ -6,7 +6,7 @@ from bxutils import logging
 
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash
-from bxcommon.constants import UL_INT_SIZE_IN_BYTES, UL_SHORT_SIZE_IN_BYTES
+from bxcommon.constants import UL_INT_SIZE_IN_BYTES, UL_SHORT_SIZE_IN_BYTES, NULL_TX_SID
 
 logger = logging.get_logger(__name__)
 TxContentShortIds = namedtuple("TxContentAndShortIds", ["tx_hash", "tx_content", "short_ids"])
@@ -46,7 +46,7 @@ def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxCon
     buffer = bytearray(get_serialized_txs_content_short_ids_bytes_len(txs_content_short_ids))
     off = 0
     for tx_content_short_ids in txs_content_short_ids:
-        if tx_content_short_ids.tx_content is not None and tx_content_short_ids.short_ids is not None:
+        if tx_content_short_ids.tx_content is not None and NULL_TX_SID not in tx_content_short_ids.short_ids:
             buffer[off: off + SHA256_HASH_LEN] = tx_content_short_ids.tx_hash
             off += SHA256_HASH_LEN
 
