@@ -237,6 +237,9 @@ class TransactionService:
     def get_tx_hash_to_contents_len(self):
         return len(self._tx_cache_key_to_contents)
 
+    def get_short_id_count(self):
+        return len(self._short_id_to_tx_cache_key)
+
     def has_transaction_contents(self, transaction_hash: Sha256Hash) -> bool:
         """
         Checks if transaction contents is available in transaction service cache
@@ -306,7 +309,7 @@ class TransactionService:
 
         self._memory_limit_clean_up()
 
-    def remove_transaction_by_tx_hash(self, transaction_hash: Sha256Hash) -> Set[int]:
+    def remove_transaction_by_tx_hash(self, transaction_hash: Sha256Hash) -> Optional[Set[int]]:
         """
         Clean up mapping. Removes transaction contents and mapping.
         :param transaction_hash: tx hash to clean up
@@ -329,7 +332,7 @@ class TransactionService:
                 if self.node.opts.dump_removed_short_ids:
                     self._removed_short_ids.add(short_id)
         else:
-            short_ids = {constants.NULL_TX_SID}
+            short_ids = None
 
         if transaction_cache_key in self._tx_cache_key_to_contents:
             self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
@@ -546,7 +549,8 @@ class TransactionService:
         )
 
     def log_block_transaction_cleanup_stats(self, block_hash: Sha256Hash, tx_count: int, tx_before_cleanup: int,
-                                            tx_after_cleanup: int):
+                                            tx_after_cleanup: int, short_id_count_before_cleanup: int,
+                                            short_id_count_after_cleanup: int):
         logger_memory_cleanup.statistics(
             {
                 "type": "BlockTransactionsCleanup",
@@ -554,6 +558,8 @@ class TransactionService:
                 "block_transactions_count": tx_count,
                 "tx_hash_to_contents_len_before_cleanup": tx_before_cleanup,
                 "tx_hash_to_contents_len_after_cleanup": tx_after_cleanup,
+                "short_id_count_before_cleanup": short_id_count_before_cleanup,
+                "short_id_count_after_cleanup": short_id_count_after_cleanup,
             }
         )
 

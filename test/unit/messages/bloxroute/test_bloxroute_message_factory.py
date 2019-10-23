@@ -1,3 +1,5 @@
+import random
+
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
 
@@ -221,10 +223,10 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         msg = bloxroute_message_factory.create_message_from_buffer(pong.buf)
 
     def test_block_confirmation_msg(self):
-        short_ids = [23, 99, 192, 1089, 3000500]
+        short_ids = [random.randint(0, 1000000) for _ in range(150)]
         tx_hashes = [
-            Sha256Hash(helpers.generate_bytes(crypto.SHA256_HASH_LEN)),
             Sha256Hash(helpers.generate_bytes(crypto.SHA256_HASH_LEN))
+            for _ in range(10)
         ]
         message = BlockConfirmationMessage(self.HASH, self.NETWORK_NUM, self.NODE_ID, sids=short_ids,
                                            tx_hashes=tx_hashes)
