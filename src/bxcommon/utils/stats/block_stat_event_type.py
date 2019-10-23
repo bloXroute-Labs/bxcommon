@@ -66,6 +66,7 @@ class BlockStatEventType:
     BLOCK_RECOVERY_STARTED = StatEventTypeSettings("BlockRecoveryStarted")
     BLOCK_RECOVERY_REPEATED = StatEventTypeSettings("BlockRecoveryRepeated")
     BLOCK_RECOVERY_COMPLETED = StatEventTypeSettings("BlockRecoveryCompleted")
+    BLOCK_RECOVERY_CANCELED = StatEventTypeSettings("BlockRecoveryCanceled")
     BLOCK_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockSentToBlockchainNode",
                                                           event_logic_flags=StatEventLogicFlags.SUMMARY)
     BLOCK_IGNORE_SEEN_BY_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockIgnoreSeenByBlockchainNode")
