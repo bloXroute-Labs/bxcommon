@@ -10,6 +10,7 @@ from bxcommon.utils.alarm_queue import AlarmQueue
 
 
 class MockNode(AbstractNode):
+
     NODE_TYPE = NodeType.RELAY
 
     def __init__(self, opts: Namespace):

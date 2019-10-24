@@ -183,6 +183,7 @@ class AbstractNode:
                 rem_conn = self.connection_pool.get_by_ipport(rem_peer.ip,
                                                               rem_peer.port)
                 if rem_conn:
+                    rem_conn.mark_for_close()
                     self.destroy_conn(rem_conn)
 
         # Connect to peers not in our known pool
@@ -374,10 +375,9 @@ class AbstractNode:
         is_sdn = bool(connection_type & ConnectionType.SDN)
         return is_sdn or self.num_retries_by_ip[(ip, port)] < constants.MAX_CONNECT_RETRIES
 
+    @abstractmethod
     def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:
-        if connection_type & ConnectionType.RELAY_ALL:
-            sdn_http_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
-            self.send_request_for_relay_peers()
+        pass
 
     def init_throughput_logging(self):
         throughput_statistics.set_node(self)

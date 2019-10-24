@@ -1,3 +1,4 @@
+from bxcommon.services import sdn_http_service
 from mock import patch, MagicMock
 
 from bxcommon import constants
@@ -179,7 +180,7 @@ class AbstractNodeTest(AbstractTestCase):
     def test_connection_timeout_connecting(self, mocked_destroy_conn):
         self.connection.state = ConnectionState.CONNECTING
         self.assertEqual(0, self.local_node._connection_timeout(self.connection))
-        mocked_destroy_conn.assert_called_with(self.connection, retry_connection=True)
+        mocked_destroy_conn.assert_called_with(self.connection, retry_connection=True, force_destroy=True)
 
     def test_kill_node(self):
         with self.assertRaises(TerminationError):
@@ -290,3 +291,6 @@ class TestNode(AbstractNode):
 
     def build_connection(self, socket_connection, ip, port, from_me=False):
         return MockConnection(socket_connection, (ip, port), self, from_me)
+
+    def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:
+        sdn_http_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
