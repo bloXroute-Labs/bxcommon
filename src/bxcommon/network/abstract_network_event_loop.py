@@ -1,6 +1,7 @@
 import errno
 import socket
 from abc import ABCMeta, abstractmethod
+from typing import Dict
 
 from bxutils import logging
 
@@ -13,7 +14,7 @@ from bxcommon.network.socket_connection_state import SocketConnectionState
 logger = logging.get_logger(__name__)
 
 
-class AbstractNetworkEventLoop(object):
+class AbstractNetworkEventLoop:
     __metaclass__ = ABCMeta
 
     """
@@ -23,11 +24,9 @@ class AbstractNetworkEventLoop(object):
     send, receive, connect or disconnect.
     """
 
-    def __init__(self, node):
-        assert isinstance(node, AbstractNode)
-
-        self._node = node
-        self._socket_connections = {}
+    def __init__(self, node: AbstractNode):
+        self._node: AbstractNode = node
+        self._socket_connections: Dict[int, SocketConnection] = {}
 
     def run(self):
         """
@@ -75,7 +74,7 @@ class AbstractNetworkEventLoop(object):
         self._node.close()
 
         for _, socket_connection in self._socket_connections.items():
-            socket_connection.close()
+            socket_connection.close(force_destroy=True)
 
     @abstractmethod
     def _process_events(self, timeout):
@@ -133,22 +132,19 @@ class AbstractNetworkEventLoop(object):
             address = self._node.pop_next_connection_address()
 
     def _process_disconnect_requests(self):
-        fileno = self._node.pop_next_disconnect_connection()
-
-        while fileno is not None:
+        disconnect_request = self._node.pop_next_disconnect_connection()
+        while disconnect_request is not None:
+            fileno, should_retry = disconnect_request
             if fileno in self._socket_connections:
                 logger.debug("Closing connection to {0}, total_connections: {1}", fileno, len(self._socket_connections))
                 socket_connection = self._socket_connections.pop(fileno)
                 socket_connection.close()
 
-                self._node.on_connection_closed(fileno)
-
-                if not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-                    raise AssertionError("Attempted to close connection that's not marked for close.")
+                self._node.on_connection_closed(fileno, should_retry)
             else:
                 logger.debug("Fileno {0} could not be closed", fileno)
 
-            fileno = self._node.pop_next_disconnect_connection()
+            disconnect_request = self._node.pop_next_disconnect_connection()
 
     def _connect_to_server(self, ip, port, protocol=TransportLayerProtocol.TCP):
         if self._node.connection_exists(ip, port):

@@ -43,8 +43,6 @@ def receive_on_connection(connection):
         if connection.inputbuf.length > 1:
             process_message_called.is_called = True
             old_process_message()
-            if connection.state & ConnectionState.MARK_FOR_CLOSE:
-                connection.node.destroy_conn(connection)
 
     process_message_called.is_called = False
 

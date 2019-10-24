@@ -11,6 +11,7 @@ from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.socket_connection import SocketConnection
+from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.utils import convert
 from bxcommon.utils import memory_utils
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -403,7 +404,16 @@ class AbstractConnection(Generic[Node]):
         AbstractConnection#destroy_conn, as this allows a cleaner showdown and finish processing messages.
         """
         self.state |= ConnectionState.MARK_FOR_CLOSE
+        self.socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
         self.log_debug("Marking connection for close.")
+
+    def close(self):
+        """
+        Cleans up connection state after socket has been terminated.
+
+        Do not call this directly from connection event handlers.
+        """
+        assert self.state & ConnectionState.MARK_FOR_CLOSE
 
     def clean_up_current_msg(self, payload_len: int, msg_is_in_input_buffer: bool) -> None:
         """

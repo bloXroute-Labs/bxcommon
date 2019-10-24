@@ -3,7 +3,7 @@ import signal
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from collections import defaultdict, deque
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Tuple, Dict, Deque, NamedTuple
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
@@ -30,6 +30,11 @@ logger = logging.get_logger(__name__)
 memory_logger = logging.get_logger(LogRecordType.BxMemory)
 
 
+class DisconnectRequest(NamedTuple):
+    fileno: int
+    should_retry: bool
+
+
 class AbstractNode:
     __meta__ = ABCMeta
     FLUSH_SEND_BUFFERS_INTERVAL = constants.OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME * 2
@@ -40,8 +45,8 @@ class AbstractNode:
 
         self.set_node_config_opts_from_sdn(opts)
         self.opts = opts
-        self.connection_queue = deque()
-        self.disconnect_queue = deque()
+        self.connection_queue: Deque[Tuple[str, int]] = deque()
+        self.disconnect_queue: Deque[DisconnectRequest] = deque()
         self.outbound_peers = opts.outbound_peers[:]
 
         self.connection_pool = ConnectionPool()
@@ -87,8 +92,10 @@ class AbstractNode:
 
         opts.has_fully_updated_tx_service = False
         self.alarm_queue.register_alarm(constants.TX_SERVICE_SYNC_PROGRESS_S, self._sync_tx_services)
-        self._check_sync_relay_connections_alarm_id = self.alarm_queue.register_alarm(constants.LAST_MSG_FROM_RELAY_THRESHOLD_S, self._check_sync_relay_connections)
-        self._transaction_sync_timeout_alarm_id = self.alarm_queue.register_alarm(constants.TX_SERVICE_CHECK_NETWORKS_SYNCED_S, self._transaction_sync_timeout)
+        self._check_sync_relay_connections_alarm_id = self.alarm_queue.register_alarm(
+            constants.LAST_MSG_FROM_RELAY_THRESHOLD_S, self._check_sync_relay_connections)
+        self._transaction_sync_timeout_alarm_id = self.alarm_queue.register_alarm(
+            constants.TX_SERVICE_CHECK_NETWORKS_SYNCED_S, self._transaction_sync_timeout)
 
     def get_sdn_address(self):
         """
@@ -112,15 +119,10 @@ class AbstractNode:
     def connection_exists(self, ip, port):
         return self.connection_pool.has_connection(ip, port)
 
-    def on_connection_added(self, socket_connection, ip, port, from_me):
+    def on_connection_added(self, socket_connection: SocketConnection, ip: str, port: int, from_me: bool):
         """
         Notifies the node that a connection is coming in.
         """
-
-        if not isinstance(socket_connection, SocketConnection):
-            raise ValueError("Type SocketConnection is expected for socket_connection argument but was {0}"
-                             .format(socket_connection))
-
         fileno = socket_connection.fileno()
 
         # If we're already connected to the remote peer, log the event and request disconnect.
@@ -128,7 +130,7 @@ class AbstractNode:
             logger.debug("Duplicate connection attempted to: {0}:{1}. Dropping.", ip, port)
 
             # Schedule dropping the added connection and keep the old one.
-            self.enqueue_disconnect(fileno)
+            self.enqueue_disconnect(fileno, False)
         else:
             self._initialize_connection(socket_connection, ip, port, from_me)
 
@@ -146,7 +148,7 @@ class AbstractNode:
         # to determine next retry
         self.num_retries_by_ip[(conn.peer_ip, conn.peer_port)] = 0
 
-    def on_connection_closed(self, fileno: int):
+    def on_connection_closed(self, fileno: int, retry_conn: bool):
         conn = self.connection_pool.get_by_fileno(fileno)
 
         if conn is None:
@@ -154,8 +156,7 @@ class AbstractNode:
             return
 
         logger.info("Closed connection: {}", conn)
-        # Only retry for connections that are from me
-        self.destroy_conn(conn, retry_connection=conn.from_me, force_destroy=True)
+        self._destroy_conn(conn, retry_connection=retry_conn)
 
     @abstractmethod
     def send_request_for_relay_peers(self):
@@ -180,11 +181,10 @@ class AbstractNode:
 
         for rem_peer in remove_peers:
             if self.connection_pool.has_connection(rem_peer.ip, rem_peer.port):
-                rem_conn = self.connection_pool.get_by_ipport(rem_peer.ip,
-                                                              rem_peer.port)
+                rem_conn = self.connection_pool.get_by_ipport(rem_peer.ip, rem_peer.port)
                 if rem_conn:
                     rem_conn.mark_for_close()
-                    self.destroy_conn(rem_conn)
+                    self.enqueue_disconnect(rem_conn.fileno, False)
 
         # Connect to peers not in our known pool
         for peer in outbound_peer_models:
@@ -225,7 +225,7 @@ class AbstractNode:
         conn.process_message()
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            self.destroy_conn(conn)
+            self.enqueue_disconnect(conn.fileno, conn.from_me)
 
     def get_bytes_to_send(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)
@@ -281,7 +281,7 @@ class AbstractNode:
         logger.error("Node is closing! Closing everything.")
 
         for _fileno, conn in self.connection_pool.items():
-            self.destroy_conn(conn, force_destroy=True)
+            self._destroy_conn(conn, force_destroy=True)
         self.cleanup_memory_stats_logging()
 
     def broadcast(self, msg: AbstractMessage, broadcasting_conn: Optional[AbstractConnection] = None,
@@ -300,76 +300,88 @@ class AbstractNode:
             -> Optional[AbstractConnection]:
         pass
 
-    def enqueue_connection(self, ip, port):
+    def enqueue_connection(self, ip: str, port: int):
         """
-        Add address to the queue of outbound connections
+        Queues a connection up for the event loop to open a socket for.
         """
         logger.trace("Enqueuing connection to {}:{}", ip, port)
         self.connection_queue.append((ip, port))
 
-    def enqueue_disconnect(self, fileno):
+    def enqueue_disconnect(self, fileno: int, should_retry: Optional[bool] = None):
         """
-        Add address to the queue of connections to disconnect
+        Queues up a disconnect for the event loop to close the socket and destroy the connection object for.
+
+        This should always be called with a value provided for `should_retry`, unless the connection object is unknown
+        (e.g. from the event loop or SocketConnection classes).
         """
         logger.trace("Enqueuing disconnect from {}", fileno)
-        self.disconnect_queue.append(fileno)
+        if should_retry is None:
+            conn = self.connection_pool.get_by_fileno(fileno)
 
-    def pop_next_connection_address(self):
+            if conn is None:
+                logger.debug("Unexpectedly tried to enqueue a disconnect without a connection object on fileno: {}",
+                             fileno)
+                should_retry = False
+            else:
+                conn.log_debug("Connection close triggered by socket layer or event loop.")
+                conn.mark_for_close()
+                should_retry = conn.from_me
+
+        self.disconnect_queue.append(DisconnectRequest(fileno, should_retry))
+
+    def pop_next_connection_address(self) -> Optional[Tuple[str, int]]:
         """
-        Get next address from the queue of outbound connections
-
-        :return: tuple (ip, port)
+        Returns the next connection address for the event loop to initiate a socket connection to.
         """
-
         if self.connection_queue:
             return self.connection_queue.popleft()
 
         return
 
-    def pop_next_disconnect_connection(self):
+    def pop_next_disconnect_connection(self) -> Optional[DisconnectRequest]:
         """
-        Get next Fileno from the queue of disconnect connections
+        Returns the next connection address for the event loop to destroy the socket connection for.
 
-        :return: int (fileno)
+        The event loop is expected to call `on_connection_closed` afterward.
         """
-
         if self.disconnect_queue:
             return self.disconnect_queue.popleft()
 
         return
 
-    def destroy_conn(self, conn, retry_connection: bool = False, force_destroy: bool = False):
+    def _destroy_conn(self, conn, retry_connection: bool = False, force_destroy: bool = False):
         """
         Clean up the associated connection and update all data structures tracking it.
-        We also retry trusted connections since they can never be destroyed.
 
-        Avoid calling this function directly to close a connection. Use AbstractConnection#mark_for_close instead,
-        for a cleaner shutdown.
+        Do not call this function directly to close a connection, unless circumstances do not allow cleaning shutting
+        down the node via event loop lifecycle hooks (e.g. immediate shutdown).
+
+        In connection handlers, use `AbstractConnection#mark_for_close`, and the connection will be cleaned up as part
+        of event handling.
+        In other node lifecycle events, use `enqueue_disconnect` to allow the event loop to trigger connection cleanup.
 
         :param conn connection to destroy
         :param retry_connection if connection should be retried
         :param force_destroy ignore connection state and force close. Avoid setting this except for fatal errors or
                              socket errors.
         """
-        if not force_destroy and not conn.state & ConnectionState.MARK_FOR_CLOSE:
+        if force_destroy:
+            conn.mark_for_close()
+
+        if not conn.state & ConnectionState.MARK_FOR_CLOSE:
             raise ValueError("Attempted to close connection that was not MARK_FOR_CLOSE.")
 
         logger.debug("Breaking connection to {}. Attempting retry: {}", conn, retry_connection)
+        conn.close()
         self.connection_pool.delete(conn)
 
         peer_ip, peer_port = conn.peer_ip, conn.peer_port
         if retry_connection:
-            if conn.from_me or \
-                    conn.CONNECTION_TYPE == ConnectionType.BLOCKCHAIN_NODE or \
-                    conn.CONNECTION_TYPE == ConnectionType.REMOTE_BLOCKCHAIN_NODE or \
-                    conn.CONNECTION_TYPE == ConnectionType.SDN:
-                self.alarm_queue.register_alarm(self._get_next_retry_timeout(peer_ip, peer_port),
-                                                self._retry_init_client_socket,
-                                                peer_ip, peer_port, conn.CONNECTION_TYPE)
+            self.alarm_queue.register_alarm(self._get_next_retry_timeout(peer_ip, peer_port),
+                                            self._retry_init_client_socket,
+                                            peer_ip, peer_port, conn.CONNECTION_TYPE)
         else:
             self.on_failed_connection_retry(peer_ip, peer_port, conn.CONNECTION_TYPE)
-
-        self.enqueue_disconnect(conn.fileno)
 
     def should_retry_connection(self, ip: str, port: int, connection_type: ConnectionType) -> bool:
         is_sdn = bool(connection_type & ConnectionType.SDN)
@@ -456,14 +468,16 @@ class AbstractNode:
             if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
                 self.sdn_connection = conn_obj
         else:
-            self.enqueue_disconnect(socket_connection.fileno())
+            logger.warning("Could not determine expected connection type for {}:{}. Disconnecting...",
+                           ip, port)
+            self.enqueue_disconnect(socket_connection.fileno(), from_me)
 
     def on_fully_updated_tx_service(self):
         logger.info("Synced transaction state with BDN.")
         self.opts.has_fully_updated_tx_service = True
         sdn_http_service.submit_sync_txs_event(self.opts.node_id)
 
-    def _connection_timeout(self, conn):
+    def _connection_timeout(self, conn: AbstractConnection):
         """
         Check if the connection is established.
         If it is not established, we give up for untrusted connections and try again for trusted connections.
@@ -482,7 +496,8 @@ class AbstractNode:
 
         # Clean up the old connection and retry it if it is trusted
         logger.trace("Connection has timed out: {}", conn)
-        self.destroy_conn(conn, retry_connection=True, force_destroy=True)
+        conn.mark_for_close()
+        self.enqueue_disconnect(conn.fileno, conn.from_me)
 
         # It is connect_to_address's job to schedule this function.
         return constants.CANCEL_ALARMS
@@ -498,7 +513,7 @@ class AbstractNode:
         """
         Returns Fibonnaci(n), where n is the number of retry attempts + 1, up to max of Fibonacci(8) == 13.
         """
-        golden_ratio = (1 + 5**.5) / 2
+        golden_ratio = (1 + 5 ** .5) / 2
         sequence_number = min(self.num_retries_by_ip[(ip, port)] + 1, constants.MAX_CONNECT_TIMEOUT_INCREASE)
         return int((golden_ratio ** sequence_number - (1 - golden_ratio) ** sequence_number) / 5 ** .5)
 

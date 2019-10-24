@@ -74,7 +74,7 @@ class SocketConnection:
             if bytes_read == 0:
                 logger.info("Received close from fileno: {}. Closing connection.", self.fileno())
                 self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                self._node.on_connection_closed(fileno)
+                self._node.enqueue_disconnect(fileno)
                 return
             else:
                 self._node.on_bytes_received(fileno, piece)
@@ -137,12 +137,9 @@ class SocketConnection:
     def fileno(self):
         return self.socket_instance.fileno()
 
-    def close(self):
-        # TODO: There should either be no state change here or
-        # the state change should be to the CLOSED state.
-        # A socket should have the state MARK_FOR_CLOSE *before* close()
-        # is called on it.
-        self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
+    def close(self, force_destroy: bool = False):
+        if not force_destroy and not self.state & SocketConnectionState.MARK_FOR_CLOSE:
+            raise ValueError("Attempted to close socket that was not MARK_FOR_CLOSE.")
         try:
             self.socket_instance.shutdown(socket.SHUT_RDWR)
         except OSError:

@@ -1,6 +1,7 @@
 from enum import IntFlag
 
 from bxcommon import constants
+from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
@@ -19,7 +20,7 @@ class MockConnectionType(IntFlag):
     NOT_MOCK = max(ConnectionType) << 2
 
 
-class MockConnection(SpecialMemoryProperties):
+class MockConnection(AbstractConnection, SpecialMemoryProperties):
     CONNECTION_TYPE = MockConnectionType.MOCK
 
     def __init__(self, sock: SocketConnection, address, node, from_me=False):

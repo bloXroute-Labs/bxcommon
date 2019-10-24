@@ -42,7 +42,6 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
 
             if fileno in self._socket_connections:
                 socket_connection = self._socket_connections[fileno]
-                assert isinstance(socket_connection, SocketConnection)
 
                 if socket_connection.is_server:
                     self._handle_incoming_connections(socket_connection)
@@ -50,9 +49,9 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
                     # Mark this connection for close if we received a POLLHUP. No other functions will be called
                     # on this connection.
                     if event & select.EPOLLHUP:
-                        socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
                         logger.info("Received close from fileno: {}. Closing connection.", fileno)
-                        self._node.on_connection_closed(fileno)
+                        socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
+                        self._node.enqueue_disconnect(fileno)
 
                     if event & select.EPOLLOUT and \
                             not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
