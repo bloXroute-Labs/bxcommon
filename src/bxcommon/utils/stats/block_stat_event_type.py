@@ -43,6 +43,7 @@ class BlockStatEventType:
                                                                 event_logic_flags=StatEventLogicFlags.SUMMARY)
     ENC_BLOCK_CUT_THROUGH_RECEIVE_END = StatEventTypeSettings("EncBlockCutThroughReceiveEnd")
     ENC_BLOCK_CUT_THROUGH_IGNORE_SEEN_BLOCK = StatEventTypeSettings("EncBlockCutThroughIgnoreSeenBlock")
+    ENC_BLOCK_CUT_THROUGH_SOURCE_CANCELLED = StatEventTypeSettings("EncBlockCutThroughCancelled")
     ENC_BLOCK_RECEIVED_BY_GATEWAY_FROM_NETWORK = StatEventTypeSettings("EncBlockReceivedByGatewayFromNetwork")
     ENC_BLOCK_DECRYPTED_SUCCESS = StatEventTypeSettings("EncBlockDecryptedSuccess")
     ENC_BLOCK_DECRYPTION_ERROR = StatEventTypeSettings("EncBlockDecryptionError")
