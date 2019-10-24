@@ -231,15 +231,16 @@ class AbstractConnection(Generic[Node]):
         start_time = time.time()
         messages_processed = defaultdict(int)
         while True:
-            if self.state & ConnectionState.MARK_FOR_CLOSE:
-                return
-
             input_buffer_len_before = self.inputbuf.length
             is_full_msg = False
             payload_len = 0
             msg = None
 
             try:
+                # abort message processing if connection has been closed
+                if self.state & ConnectionState.MARK_FOR_CLOSE:
+                    return
+
                 is_full_msg, msg_type, payload_len = self.pre_process_msg()
 
                 self.process_msg_type(msg_type, is_full_msg, payload_len)
@@ -256,7 +257,7 @@ class AbstractConnection(Generic[Node]):
                     continue
 
                 # Full messages must be one of the handshake messages if the connection isn't established yet.
-                if not (self.is_active()) \
+                if not (self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED) \
                         and msg_type not in self.hello_messages:
                     self.log_warning("Received unexpected message ({}) before handshake completed. Closing.",
                                      msg_type)
@@ -325,7 +326,7 @@ class AbstractConnection(Generic[Node]):
                         "Message processing error; unable to recover. Error: {}. Message bytes: {}",
                         e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
                         exc_info=True)
-                    self.mark_for_close(force_destroy_now=True)
+                    self.mark_for_close()
                     return
 
                 if self._report_bad_message():
@@ -375,7 +376,7 @@ class AbstractConnection(Generic[Node]):
         if len(self.node.connection_pool.get_by_node_id(self.peer_id)) > 1:
             if self.from_me:
                 self.log_info("Received duplicate connection from: {}. Closing.", self.peer_id)
-                self.node.destroy_conn(self)
+                self.mark_for_close()
             return
 
         self.enqueue_msg(self.ack_message)
@@ -396,11 +397,13 @@ class AbstractConnection(Generic[Node]):
     def msg_pong(self, _msg):
         pass
 
-    def mark_for_close(self, force_destroy_now=False):
+    def mark_for_close(self):
+        """
+        Marks a connection for close. Prefer using this method to close a connection over
+        AbstractConnection#destroy_conn, as this allows a cleaner showdown and finish processing messages.
+        """
         self.state |= ConnectionState.MARK_FOR_CLOSE
-
-        if force_destroy_now:
-            self.node.destroy_conn(self, retry_connection=True)
+        self.log_debug("Marking connection for close.")
 
     def clean_up_current_msg(self, payload_len: int, msg_is_in_input_buffer: bool) -> None:
         """

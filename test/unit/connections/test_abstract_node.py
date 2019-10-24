@@ -1,6 +1,5 @@
 from mock import patch, MagicMock
 
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
@@ -9,7 +8,8 @@ from bxcommon.constants import DEFAULT_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES, FIRST
 from bxcommon.exceptions import TerminationError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.test_utils import helpers
-from bxcommon.test_utils.mocks.mock_connection import MockConnection, MockConnectionType
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils import memory_utils
@@ -28,7 +28,7 @@ class AbstractNodeTest(AbstractTestCase):
                                          self.remote_node)
         self.local_node = TestNode(helpers.get_common_opts(8888))
         self.socket_connection = MockSocketConnection(node=self.remote_node)
-        self.to_31 = bytearray([i for i in range(32)])
+        self.data = bytearray([i for i in range(32)])
 
     def test_connection_exists(self):
         self.assertFalse(self.local_node.connection_exists(self.remote_ip, self.remote_port))
@@ -74,34 +74,45 @@ class AbstractNodeTest(AbstractTestCase):
 
     def test_on_bytes_received(self):
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node.on_bytes_received(self.remote_fileno, self.to_31)
-        self.assertEqual(self.to_31, self.connection.inputbuf.input_list[0])
+        self.local_node.on_bytes_received(self.remote_fileno, self.data)
+        self.assertEqual(self.data, self.connection.inputbuf.input_list[0])
 
-    @patch("bxcommon.connections.abstract_node.AbstractNode.destroy_conn")
-    def test_on_bytes_received_connection_destroyed(self, mocked_destroy):
+    def test_on_bytes_received_connection_marked_for_close(self):
+        self.local_node.destroy_conn = MagicMock()
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node.on_bytes_received(self.remote_fileno, self.to_31)
-        mocked_destroy.assert_called_with(self.connection)
+        self.connection.mark_for_close()
+        self.local_node.on_bytes_received(self.remote_fileno, self.data)
+        self.local_node.destroy_conn.assert_not_called()
 
-    @patch("bxcommon.test_utils.mocks.mock_connection.MockConnection.process_message")
-    def test_on_finished_receiving(self, mocked_conn):
-        self.local_node.on_finished_receiving(1)
-        mocked_conn.assert_not_called()
+    def test_on_finished_receiving(self):
+        self.connection.process_message = MagicMock()
+        self.local_node.destroy_conn = MagicMock()
+
+        some_other_fileno = 1
+        self.local_node.on_finished_receiving(some_other_fileno)
+        self.connection.process_message.assert_not_called()
+
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.connection.state = ConnectionState.MARK_FOR_CLOSE
-        mocked_conn.assert_not_called()
-        self.connection.state = ConnectionState.CONNECTING
+        self.connection.state = ConnectionState.INITIALIZED
+
         self.local_node.on_finished_receiving(self.remote_fileno)
-        mocked_conn.assert_called_with()
+        self.connection.process_message.assert_called_once()
+        self.local_node.destroy_conn.assert_not_called()
+        self.connection.process_message.reset_mock()
+
+        self.connection.process_message.side_effect = lambda: self.connection.mark_for_close()
+        self.local_node.on_finished_receiving(self.remote_fileno)
+        self.connection.process_message.assert_called_once()
+        self.local_node.destroy_conn.assert_called_once()
 
     def test_get_bytes_to_send(self):
-        self.connection.outputbuf.output_msgs.append(self.to_31)
+        self.connection.outputbuf.output_msgs.append(self.data)
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.assertEqual(self.to_31, self.local_node.get_bytes_to_send(self.remote_fileno))
+        self.assertEqual(self.data, self.local_node.get_bytes_to_send(self.remote_fileno))
 
     def test_on_bytes_sent(self):
-        self.connection.outputbuf.output_msgs.append(self.to_31)
-        self.connection.outputbuf.output_msgs.append(self.to_31)
+        self.connection.outputbuf.output_msgs.append(self.data)
+        self.connection.outputbuf.output_msgs.append(self.data)
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         advance_by = 8
         self.local_node.on_bytes_sent(self.remote_fileno, advance_by)
@@ -208,6 +219,7 @@ class AbstractNodeTest(AbstractTestCase):
     @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
     def test_destroy_conn(self, mocked_register_alarm):
         self.connection.CONNECTION_TYPE = ConnectionType.BLOCKCHAIN_NODE
+        self.connection.state = ConnectionState.MARK_FOR_CLOSE
         self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
         self.local_node.destroy_conn(self.connection)
         mocked_register_alarm.assert_not_called()

@@ -43,6 +43,8 @@ def receive_on_connection(connection):
         if connection.inputbuf.length > 1:
             process_message_called.is_called = True
             old_process_message()
+            if connection.state & ConnectionState.MARK_FOR_CLOSE:
+                connection.node.destroy_conn(connection)
 
     process_message_called.is_called = False
 
@@ -75,7 +77,7 @@ def get_server_socket(event_loop):
     ipports = event_loop._node.connection_pool.by_ipport.keys()
     outbound_filenos = [event_loop._node.connection_pool.by_ipport[ipport].fileno for ipport in ipports]
     server_initiated_connection_fileno = next(filter(lambda fileno: fileno not in outbound_filenos,
-                                                event_loop._socket_connections.keys()))
+                                                     event_loop._socket_connections.keys()))
     return event_loop._socket_connections[server_initiated_connection_fileno]
 
 

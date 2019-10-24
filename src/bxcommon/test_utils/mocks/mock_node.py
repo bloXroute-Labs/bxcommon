@@ -15,7 +15,6 @@ class MockNode(AbstractNode):
     def __init__(self, opts: Namespace):
         super(MockNode, self).__init__(opts)
         self.alarm_queue = AlarmQueue()
-        self.connection_pool = []
         self.network_num = DEFAULT_NETWORK_NUM
 
         self.broadcast_messages = []

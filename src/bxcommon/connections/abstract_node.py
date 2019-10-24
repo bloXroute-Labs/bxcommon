@@ -155,7 +155,7 @@ class AbstractNode:
 
         logger.info("Closed connection: {}", conn)
         # Only retry for connections that are from me
-        self.destroy_conn(conn, retry_connection=conn.from_me)
+        self.destroy_conn(conn, retry_connection=conn.from_me, force_destroy=True)
 
     @abstractmethod
     def send_request_for_relay_peers(self):
@@ -212,13 +212,7 @@ class AbstractNode:
             logger.debug("Received bytes for connection not in pool. Fileno: {0}", fileno)
             return
 
-        if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            return
-
         conn.add_received_bytes(bytes_received)
-
-        if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            self.destroy_conn(conn)
 
     def on_finished_receiving(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)
@@ -227,10 +221,10 @@ class AbstractNode:
             logger.debug("Received bytes for connection not in pool. Fileno: {0}", fileno)
             return
 
-        if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            return
-
         conn.process_message()
+
+        if conn.state & ConnectionState.MARK_FOR_CLOSE:
+            self.destroy_conn(conn)
 
     def get_bytes_to_send(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)
@@ -286,7 +280,7 @@ class AbstractNode:
         logger.error("Node is closing! Closing everything.")
 
         for _fileno, conn in self.connection_pool.items():
-            self.destroy_conn(conn)
+            self.destroy_conn(conn, force_destroy=True)
         self.cleanup_memory_stats_logging()
 
     def broadcast(self, msg: AbstractMessage, broadcasting_conn: Optional[AbstractConnection] = None,
@@ -343,16 +337,24 @@ class AbstractNode:
 
         return
 
-    def destroy_conn(self, conn, retry_connection=False):
+    def destroy_conn(self, conn, retry_connection: bool = False, force_destroy: bool = False):
         """
         Clean up the associated connection and update all data structures tracking it.
         We also retry trusted connections since they can never be destroyed.
+
+        Avoid calling this function directly to close a connection. Use AbstractConnection#mark_for_close instead,
+        for a cleaner shutdown.
+
+        :param conn connection to destroy
+        :param retry_connection if connection should be retried
+        :param force_destroy ignore connection state and force close. Avoid setting this except for fatal errors or
+                             socket errors.
         """
+        if not force_destroy and not conn.state & ConnectionState.MARK_FOR_CLOSE:
+            raise ValueError("Attempted to close connection that was not MARK_FOR_CLOSE.")
 
         logger.debug("Breaking connection to {}. Attempting retry: {}", conn, retry_connection)
-
         self.connection_pool.delete(conn)
-        conn.mark_for_close()
 
         peer_ip, peer_port = conn.peer_ip, conn.peer_port
         if retry_connection:
@@ -480,7 +482,7 @@ class AbstractNode:
 
         # Clean up the old connection and retry it if it is trusted
         logger.trace("Connection has timed out: {}", conn)
-        self.destroy_conn(conn, retry_connection=True)
+        self.destroy_conn(conn, retry_connection=True, force_destroy=True)
 
         # It is connect_to_address's job to schedule this function.
         return constants.CANCEL_ALARMS

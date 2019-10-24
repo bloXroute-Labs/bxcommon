@@ -59,8 +59,9 @@ class AbstractConnectionTest(AbstractTestCase):
 
         self.connection.process_message()
         self.connection.msg_pong.assert_not_called()
+        self.assertTrue(self.connection.state & ConnectionState.MARK_FOR_CLOSE)
 
-    def test_process_message_handler_(self):
+    def test_process_message_handler(self):
         mock_pong = MagicMock()
         self.connection.message_handlers = {
             b"hello": self.connection.msg_hello,
@@ -72,6 +73,21 @@ class AbstractConnectionTest(AbstractTestCase):
 
         self.connection.process_message()
         mock_pong.assert_called_once()
+
+    def test_process_message_handler_abort_in_between_messages(self):
+        mock_pong = MagicMock()
+        self.connection.message_handlers = {
+            b"hello": self.connection.msg_hello,
+            b"ack": lambda _msg: self.connection.mark_for_close(),
+            b"pong": mock_pong
+        }
+        self.connection.state = ConnectionState.ESTABLISHED
+        self.connection.inputbuf.add_bytes(HelloMessage(protocol_version=1, network_num=2).rawbytes())
+        self.connection.inputbuf.add_bytes(AckMessage().rawbytes())
+        self.connection.inputbuf.add_bytes(PongMessage().rawbytes())
+
+        self.connection.process_message()
+        mock_pong.assert_not_called()
 
     def test_msg_ping(self):
         self.connection.msg_ping(PingMessage())
