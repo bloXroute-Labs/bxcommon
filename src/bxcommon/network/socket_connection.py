@@ -34,7 +34,7 @@ class SocketConnection:
         logger.trace("Collecting input from fileno {0}.", fileno)
         collect_input = True
 
-        while collect_input:
+        while collect_input and not self.state & SocketConnectionState.MARK_FOR_CLOSE:
             # Read from the socket and store it into the receive buffer.
             try:
                 bytes_read = self.socket_instance.recv_into(self._receive_buf, constants.RECV_BUFSIZE)
