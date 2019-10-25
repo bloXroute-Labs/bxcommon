@@ -404,7 +404,6 @@ class AbstractConnection(Generic[Node]):
         AbstractConnection#destroy_conn, as this allows a cleaner showdown and finish processing messages.
         """
         self.state |= ConnectionState.MARK_FOR_CLOSE
-        self.socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
         self.log_debug("Marking connection for close.")
 
     def close(self):

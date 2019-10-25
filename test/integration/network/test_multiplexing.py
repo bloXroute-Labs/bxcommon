@@ -54,13 +54,13 @@ class TestNode(AbstractNode):
     def on_connection_added(self, socket_connection, port, ip, from_me):
         fileno = socket_connection.fileno()
         print("Node {0}: Add_connection call. Fileno {1}".format(self.port, fileno))
-        self.connections.append((fileno, port, ip, from_me))
+        self.connections.append((socket_connection, socket_connection.fileno(), port, ip, from_me))
         self.receive_buffers[fileno] = bytearray(0)
 
     def on_connection_initialized(self, fileno):
         self.initialized = True
 
-    def on_connection_closed(self, fileno):
+    def on_connection_closed(self, fileno, should_retry):
         print("Node {0}: on_connection_closed call. Fileno {1}".format(self.port, fileno))
         self.ready_to_close = True
 
@@ -227,16 +227,16 @@ class MultiplexingTest(AbstractTestCase):
 
         self.assertTrue(len(sender_node.connections), 1)
         self.assertTrue(len(sender_event_loop._socket_connections), 1)
-        self.assertEqual(sender_node.connections[0][1], '0.0.0.0')
-        self.assertEqual(sender_node.connections[0][2], receiver_node.port)
-        self.assertEqual(sender_node.connections[0][3], True)
+        self.assertEqual(sender_node.connections[0][2], '0.0.0.0')
+        self.assertEqual(sender_node.connections[0][3], receiver_node.port)
+        self.assertEqual(sender_node.connections[0][4], True)
 
         self.assertTrue(len(receiver_node.connections), 1)
         self.assertTrue(len(receiver_event_loop._socket_connections), 1)
-        self.assertEqual(receiver_node.connections[0][1], '127.0.0.1')
-        self.assertEqual(receiver_node.connections[0][3], False)
+        self.assertEqual(receiver_node.connections[0][2], '127.0.0.1')
+        self.assertEqual(receiver_node.connections[0][4], False)
 
-        bytes_received = receiver_node.receive_buffers[receiver_node.connections[0][0]]
+        bytes_received = receiver_node.receive_buffers[receiver_node.connections[0][1]]
         self.assertEqual(bytes_received, send_bytes)
 
         self.assertTrue(sender_node.force_exit())

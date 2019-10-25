@@ -24,8 +24,11 @@ class SocketConnection:
         self._receive_buf = bytearray(constants.RECV_BUFSIZE)
         self.can_send = False
 
-    def set_state(self, state):
+    def set_state(self, state: SocketConnectionState):
         self.state |= state
+
+    def mark_for_close(self):
+        self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
 
     def receive(self):
 
@@ -53,11 +56,11 @@ class SocketConnection:
                     logger.trace("Received errno {0} with message '{1}', receive on {2} failed. "
                                  "Closing connection and retrying...",
                                  e.errno, e.strerror, fileno)
-                    self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
+                    self._node.enqueue_disconnect(self)
                     return
                 elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
                     # Perform orderly shutdown
-                    self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
+                    self._node.enqueue_disconnect(self)
                     return
                 elif e.errno in [errno.EFAULT, errno.EINVAL, errno.ENOTCONN, errno.ENOMEM]:
                     # Should never happen errors
@@ -73,8 +76,7 @@ class SocketConnection:
 
             if bytes_read == 0:
                 logger.info("Received close from fileno: {}. Closing connection.", self.fileno())
-                self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                self._node.enqueue_disconnect(fileno)
+                self._node.enqueue_disconnect(self)
                 return
             else:
                 self._node.on_bytes_received(fileno, piece)
@@ -113,7 +115,7 @@ class SocketConnection:
                 elif e.errno in [errno.EACCES, errno.ECONNRESET, errno.EPIPE, errno.EHOSTUNREACH,
                                  errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
                     logger.trace("Got {0}, send to {1} failed, closing connection.", e.strerror, fileno)
-                    self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
+                    self._node.enqueue_disconnect(self)
                     return 0
                 elif e.errno in [errno.EDESTADDRREQ, errno.EFAULT, errno.EINVAL,
                                  errno.EISCONN, errno.EMSGSIZE, errno.ENOTCONN, errno.ENOTSOCK]:

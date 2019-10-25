@@ -176,11 +176,11 @@ class AbstractNodeTest(AbstractTestCase):
 
     def test_enqueue_disconnect(self):
         self.assertNotIn((self.fileno, False), self.node.disconnect_queue)
-        self.node.enqueue_disconnect(self.fileno, False)
+        self.node.enqueue_disconnect(self.socket_connection, False)
         self.assertIn((self.fileno, False), self.node.disconnect_queue)
 
     def test_enqueue_disconnect_unknown_connection(self):
-        self.node.enqueue_disconnect(self.fileno)
+        self.node.enqueue_disconnect(self.socket_connection)
         self.assertIn((self.fileno, False), self.node.disconnect_queue)
         self.node.on_connection_closed(self.fileno, False)
         self.assertNotIn(self.connection, self.node.connection_pool.by_fileno)

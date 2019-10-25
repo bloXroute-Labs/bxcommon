@@ -130,7 +130,7 @@ class AbstractNode:
             logger.debug("Duplicate connection attempted to: {0}:{1}. Dropping.", ip, port)
 
             # Schedule dropping the added connection and keep the old one.
-            self.enqueue_disconnect(fileno, False)
+            self.enqueue_disconnect(socket_connection, False)
         else:
             self._initialize_connection(socket_connection, ip, port, from_me)
 
@@ -183,8 +183,7 @@ class AbstractNode:
             if self.connection_pool.has_connection(rem_peer.ip, rem_peer.port):
                 rem_conn = self.connection_pool.get_by_ipport(rem_peer.ip, rem_peer.port)
                 if rem_conn:
-                    rem_conn.mark_for_close()
-                    self.enqueue_disconnect(rem_conn.fileno, False)
+                    self.mark_connection_for_close(rem_conn, False)
 
         # Connect to peers not in our known pool
         for peer in outbound_peer_models:
@@ -229,7 +228,7 @@ class AbstractNode:
         conn.process_message()
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
-            self.enqueue_disconnect(conn.fileno, conn.from_me)
+            self.enqueue_disconnect(conn.socket_connection, conn.from_me)
 
     def get_bytes_to_send(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)
@@ -312,14 +311,16 @@ class AbstractNode:
         logger.trace("Enqueuing connection to {}:{}", ip, port)
         self.connection_queue.append((ip, port))
 
-    def enqueue_disconnect(self, fileno: int, should_retry: Optional[bool] = None):
+    def enqueue_disconnect(self, socket_connection: SocketConnection, should_retry: Optional[bool] = None):
         """
         Queues up a disconnect for the event loop to close the socket and destroy the connection object for.
 
         This should always be called with a value provided for `should_retry`, unless the connection object is unknown
         (e.g. from the event loop or SocketConnection classes).
         """
+        fileno = socket_connection.fileno()
         logger.trace("Enqueuing disconnect from {}", fileno)
+
         if should_retry is None:
             conn = self.connection_pool.get_by_fileno(fileno)
 
@@ -332,7 +333,14 @@ class AbstractNode:
                 conn.mark_for_close()
                 should_retry = conn.from_me
 
+        socket_connection.mark_for_close()
         self.disconnect_queue.append(DisconnectRequest(fileno, should_retry))
+
+    def mark_connection_for_close(self, connection: AbstractConnection, should_retry: Optional[bool] = None):
+        if should_retry is None:
+            should_retry = connection.from_me
+        connection.mark_for_close()
+        self.enqueue_disconnect(connection.socket_connection, should_retry)
 
     def pop_next_connection_address(self) -> Optional[Tuple[str, int]]:
         """
@@ -475,7 +483,7 @@ class AbstractNode:
         else:
             logger.warning("Could not determine expected connection type for {}:{}. Disconnecting...",
                            ip, port)
-            self.enqueue_disconnect(socket_connection.fileno(), from_me)
+            self.enqueue_disconnect(socket_connection, from_me)
 
     def on_fully_updated_tx_service(self):
         logger.info("Synced transaction state with BDN.")
@@ -501,8 +509,7 @@ class AbstractNode:
 
         # Clean up the old connection and retry it if it is trusted
         logger.trace("Connection has timed out: {}", conn)
-        conn.mark_for_close()
-        self.enqueue_disconnect(conn.fileno, conn.from_me)
+        self.mark_connection_for_close(conn)
 
         # It is connect_to_address's job to schedule this function.
         return constants.CANCEL_ALARMS
