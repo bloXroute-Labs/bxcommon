@@ -213,6 +213,10 @@ class AbstractNode:
             logger.debug("Received bytes for connection not in pool. Fileno: {0}", fileno)
             return
 
+        if conn.state & ConnectionState.MARK_FOR_CLOSE:
+            conn.log_trace("Skipping receiving bytes for closed connection.")
+            return
+
         conn.add_received_bytes(bytes_received)
 
     def on_finished_receiving(self, fileno):
@@ -235,6 +239,7 @@ class AbstractNode:
             return
 
         if conn.state & ConnectionState.MARK_FOR_CLOSE:
+            conn.log_trace("Skipping sending bytes for closed connection.")
             return
 
         return conn.get_bytes_to_send()

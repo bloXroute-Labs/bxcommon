@@ -136,7 +136,7 @@ class AbstractConnection(Generic[Node]):
         self.state |= ConnectionState.ESTABLISHED
         self.log_info("Connection established.")
 
-    def add_received_bytes(self, bytes_received):
+    def add_received_bytes(self, bytes_received: int):
         """
         Adds bytes received from socket connection to input buffer
 
