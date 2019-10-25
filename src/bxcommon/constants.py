@@ -4,9 +4,6 @@ import socket
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
 
-from bxutils.logging.log_format import LogFormat
-from bxutils.logging.log_level import LogLevel
-
 PLATFORM_LINUX = "linux"
 PLATFORM_MAC = "darwin"
 DEFAULT_TEXT_ENCODING = "utf-8"
@@ -161,9 +158,6 @@ CANCEL_ALARMS = 0
 DEFAULT_SLEEP_TIMEOUT = 0.1
 
 REQUEST_EXPIRATION_TIME = 15 * 60  # TODO: Return this value to 1 minute
-
-# Expiration time for block broadcast message if services info is missing
-MISSING_BLOCK_EXPIRE_TIME = 60
 
 # Expiration time for encrypted blocks in cache on relays and gateways
 BLOCK_CACHE_TIMEOUT_S = 60 * 60
