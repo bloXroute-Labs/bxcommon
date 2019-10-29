@@ -1,3 +1,4 @@
+from typing import Optional, Union
 from collections import defaultdict
 
 from bxutils import logging
@@ -28,9 +29,16 @@ class ThroughputStatistics(StatisticsService):
     def __init__(self, interval=constants.THROUGHPUT_STATS_INTERVAL_S, look_back=constants.THROUGHPUT_STATS_LOOK_BACK):
         super(ThroughputStatistics, self).__init__("ThroughputStats", interval, look_back, reset=True, logger=logger)
 
-    def add_event(self, direction, msg_type, msg_size, peer_desc):
+    def add_event(self,
+                  direction: Direction,
+                  msg_type: str,
+                  msg_size: int,
+                  peer_desc: str,
+                  peer_id: Optional[str] = None):
         peer_stats = self.interval_data.peer_to_stats[peer_desc]
         peer_stats.address = peer_desc
+        if peer_id is not None:
+            peer_stats.peer_id = peer_id
 
         if direction is Direction.INBOUND:
             peer_stats.messages_received[msg_type].bytes += msg_size
@@ -47,9 +55,16 @@ class ThroughputStatistics(StatisticsService):
         return self.add_event(direction=throughput_event.direction, msg_type=throughput_event.msg_type,
                               msg_size=throughput_event.msg_size, peer_desc=throughput_event.peer_desc)
 
-    def add_measurement(self, peer_desc, measure_type, measure_value):
+    def add_measurement(self,
+                        peer_desc: str,
+                        measure_type: MeasurementType,
+                        measure_value: Union[int, float],
+                        peer_id: Optional[str] = None
+                        ):
         peer_stats = self.interval_data.peer_to_stats[peer_desc]
         peer_stats.address = peer_desc
+        if peer_id is not None:
+            peer_stats.peer_id = peer_id
 
         if measure_type is MeasurementType.PING:
             if peer_stats.ping_max is None:

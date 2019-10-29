@@ -1,9 +1,10 @@
 from collections import defaultdict
 
 
-class PeerStats(object):
+class PeerStats:
     def __init__(self):
         self.address = ""
+        self.peer_id = None
         self.messages_received = defaultdict(PeerStatsMessage)
         self.messages_sent = PeerStatsMessage()
         self.peer_total_received = 0
@@ -11,7 +12,7 @@ class PeerStats(object):
         self.ping_max = 0
 
 
-class PeerStatsMessage(object):
+class PeerStatsMessage:
     def __init__(self):
         self.bytes = 0
         self.count = 0
