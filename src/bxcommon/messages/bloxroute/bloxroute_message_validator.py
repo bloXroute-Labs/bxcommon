@@ -1,9 +1,11 @@
+from typing import Optional
+
 from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_control_flags import BloxrouteMessageControlFlags
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.validation.abstract_message_validator import AbstractMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
-from bxcommon.messages.validation.message_validation_settings import MessageValidationSettings
+from bxcommon.messages.validation.message_size_validation_settings import MessageSizeValidationSettings
 from bxcommon.utils import convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 
@@ -12,8 +14,8 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
 
     STARTING_SEQUENCE_CONTROL_FLAGS_FIRST_VERSION = 4
 
-    def __init__(self, validation_settings: MessageValidationSettings, connection_protocol_version: int):
-        self._validation_settings = validation_settings
+    def __init__(self, size_validation_settings: Optional[MessageSizeValidationSettings], connection_protocol_version: int):
+        self._size_validation_settings = size_validation_settings
         self._connection_protocol_version = connection_protocol_version
 
     def validate(self, is_full_msg: bool, msg_type: str, header_len: int, payload_len: int,
@@ -32,7 +34,8 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
         if self._connection_protocol_version > self.STARTING_SEQUENCE_CONTROL_FLAGS_FIRST_VERSION:
             self._validate_starting_sequence(input_buffer)
 
-        self._validate_payload_length(msg_type, payload_len)
+        if self._size_validation_settings is not None:
+            self._validate_payload_length(msg_type, payload_len)
 
         if self._connection_protocol_version > self.STARTING_SEQUENCE_CONTROL_FLAGS_FIRST_VERSION:
             self._validate_control_flags(is_full_msg, header_len, payload_len, input_buffer)
@@ -52,21 +55,21 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
             return
 
         if msg_type == BloxrouteMessageType.TRANSACTION:
-            if payload_len > self._validation_settings.max_tx_size_bytes:
+            if payload_len > self._size_validation_settings.max_tx_size_bytes:
                 raise MessageValidationError(
                     "Transaction message size exceeds expected max size. Expected: {}. Actual: {}."
-                        .format(self._validation_settings.max_tx_size_bytes, payload_len))
+                        .format(self._size_validation_settings.max_tx_size_bytes, payload_len))
 
         elif msg_type == BloxrouteMessageType.BROADCAST:
-            if payload_len > self._validation_settings.max_block_size_bytes:
+            if payload_len > self._size_validation_settings.max_block_size_bytes:
                 raise MessageValidationError("Block message size exceeds expected max size. Expected: {}. Actual: {}."
-                                             .format(self._validation_settings.max_block_size_bytes, payload_len))
+                                             .format(self._size_validation_settings.max_block_size_bytes, payload_len))
 
         elif msg_type == BloxrouteMessageType.TRANSACTIONS:
-            if payload_len > self._validation_settings.max_block_size_bytes:
+            if payload_len > self._size_validation_settings.max_block_size_bytes:
                 raise MessageValidationError(
                     "Transactions message size exceeds expected max size. Expected: {}. Actual: {}."
-                        .format(self._validation_settings.max_block_size_bytes, payload_len))
+                        .format(self._size_validation_settings.max_block_size_bytes, payload_len))
 
         elif payload_len > constants.DEFAULT_MAX_PAYLOAD_LEN_BYTES:
             raise MessageValidationError("Message by type '{}' exceeds expected payload len. Expected: {}. Actual: {}."

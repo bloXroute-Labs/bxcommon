@@ -9,6 +9,7 @@ from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.blocks_short_ids_serializer import BlockShortIds
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
+from bxcommon.messages.bloxroute.bloxroute_message_validator import BloxrouteMessageValidator
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
@@ -52,6 +53,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
         self.can_send_pings = True
         self.ping_message_timestamps = ExpiringDict(self.node.alarm_queue, constants.REQUEST_EXPIRATION_TIME)
+        self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)
 
     def disable_buffering(self):
         """

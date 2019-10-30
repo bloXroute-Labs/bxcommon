@@ -9,9 +9,9 @@ from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import PayloadLenError, UnauthorizedMessageError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
+from bxcommon.messages.validation.message_validation_error import MessageValidationError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.socket_connection import SocketConnection
-from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.utils import convert
 from bxcommon.utils import memory_utils
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -205,9 +205,6 @@ class AbstractConnection(Generic[Node]):
         is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview_from_input_buffer(
             self.inputbuf)
 
-        self.message_validator.validate(is_full_msg, msg_type, self.header_size, payload_len, self.inputbuf)
-        # TODO: message validator does not pass on the new is_full_msg type onward to the stacktrace for recovery
-
         return is_full_msg, msg_type, payload_len
 
     def process_msg_type(self, message_type, is_full_msg, payload_len):
@@ -231,11 +228,13 @@ class AbstractConnection(Generic[Node]):
 
         start_time = time.time()
         messages_processed = defaultdict(int)
+
         while True:
             input_buffer_len_before = self.inputbuf.length
             is_full_msg = False
             payload_len = 0
             msg = None
+            msg_type = None
 
             try:
                 # abort message processing if connection has been closed
@@ -243,6 +242,8 @@ class AbstractConnection(Generic[Node]):
                     return
 
                 is_full_msg, msg_type, payload_len = self.pre_process_msg()
+
+                self.message_validator.validate(is_full_msg, msg_type, self.header_size, payload_len, self.inputbuf)
 
                 self.process_msg_type(msg_type, is_full_msg, payload_len)
 
@@ -304,6 +305,19 @@ class AbstractConnection(Generic[Node]):
 
                 # give connection a chance to restore its state and get ready to process next message
                 self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
+
+                if self._report_bad_message():
+                    return
+
+            except MessageValidationError as e:
+                self.log_warning("Message validation failed for {} message: {} Message bytes {}.", msg_type, e.msg,
+                                 self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
+                if is_full_msg:
+                    self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
+                else:
+                    self.log_error("Unable to recover after message that failed validation. Closing connection.")
+                    self.mark_for_close()
+                    return
 
                 if self._report_bad_message():
                     return
@@ -485,7 +499,7 @@ class AbstractConnection(Generic[Node]):
             return convert.bytes_to_hex(msg.rawbytes()[:constants.MAX_LOGGED_BYTES_LEN])
 
         # bytes still available on input buffer
-        if input_buffer_len_before == self.inputbuf.length:
+        if input_buffer_len_before == self.inputbuf.length and payload_len is not None:
             return convert.bytes_to_hex(
                 self.inputbuf.peek_message(min(self.header_size + payload_len, constants.MAX_LOGGED_BYTES_LEN)))
 
