@@ -33,6 +33,9 @@ def connection(conn: AbstractConnection) -> str:
     :return: formatted string
     """
 
+    if conn is None:
+        return "<None>"
+
     return "{} - {}".format(conn.peer_desc, _format_connection_type(conn))
 
 
