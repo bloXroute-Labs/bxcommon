@@ -163,7 +163,7 @@ REQUEST_EXPIRATION_TIME = 15 * 60  # TODO: Return this value to 1 minute
 BLOCK_CACHE_TIMEOUT_S = 60 * 60
 
 # Duration to warn on if alarm doesn't execute
-WARN_ALARM_EXECUTION_DURATION = 5
+WARN_ALARM_EXECUTION_DURATION = 1
 
 # Timeout to warn on if alarm executed later than expected
 WARN_ALARM_EXECUTION_OFFSET = 5
