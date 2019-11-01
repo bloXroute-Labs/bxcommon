@@ -9,6 +9,8 @@ from bxcommon.utils import logger
 
 logger = logging.get_logger(__name__)
 
+logger = logging.get_logger(__name__)
+
 
 class NetworkThread(object):
     """

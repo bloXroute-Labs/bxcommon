@@ -65,16 +65,6 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.outputbuf.enable_buffering = False
         self.socket_connection.send()
 
-    def disable_buffering(self):
-        """
-        Disable buffering on this particular connection.
-        :return:
-        """
-        self.enable_buffered_send = False
-        self.outputbuf.flush()
-        self.outputbuf.enable_buffering = False
-        self.socket_connection.send()
-
     def set_protocol_version_and_message_factory(self):
         """
         Gets protocol version from the first bytes of hello message if not known.

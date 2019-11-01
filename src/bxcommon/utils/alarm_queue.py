@@ -69,64 +69,6 @@ class AlarmId:
                and self.is_active == other.is_active
 
 
-class Alarm:
-    """
-    Alarm object. Encapsulates function and arguments.
-    """
-
-    def __init__(self, fn, fire_time, *args, **kwargs):
-        if fn is None:
-            raise ValueError("Alarm callback cannot be none.")
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-        self.fire_time = fire_time
-
-    def fire(self):
-        time_from_expected = time.time() - self.fire_time
-        if time_from_expected > constants.WARN_ALARM_EXECUTION_OFFSET:
-            logger.warn("{} executed {} seconds later than expected.".format(self, time_from_expected))
-        return self.fn(*self.args, **self.kwargs)
-
-    def get_function_name(self):
-        if hasattr(self.fn, "im_class"):
-            return "{}#{}".format(self.fn.im_class.__name__, self.fn.__name__)
-
-        else:
-            return self.fn.__name__
-
-    def __repr__(self):
-        return "Alarm<function: {}, fire_time: {}".format(self.get_function_name(),
-                                                          self.fire_time)
-
-
-class AlarmId:
-    fire_time: float
-    count: int
-    alarm: Alarm
-    is_active: bool
-
-    def __init__(self, fire_time, count, alarm):
-        self.fire_time = fire_time
-        self.count = count
-        self.alarm = alarm
-        self.is_active = True
-
-    def __lt__(self, other):
-        if not isinstance(other, AlarmId):
-            raise TypeError("< not supported between instances of 'AlarmId' and {}".format(other))
-
-        return self.fire_time < other.fire_time or (self.fire_time == other.fire_time and self.count < other.count)
-
-    def __eq__(self, other):
-        if not isinstance(other, AlarmId):
-            return False
-        return self.fire_time == other.fire_time and self.count == other.count and self.alarm == other.alarm \
-               and self.is_active == other.is_active
-
-
-
-
 class AlarmQueue(object):
     """
     Queue for events that take place some time in the future.

@@ -62,8 +62,6 @@ PING_INTERVAL_S = 60
 
 MAX_LOGGED_BYTES_LEN = 500 * 1024
 
-MAX_LOGGED_BYTES_LEN = 500 * 1024
-
 # </editor-fold>
 
 # <editor-fold desc="Message Packing Constants">
@@ -136,9 +134,6 @@ THROUGHPUT_STATS_INTERVAL_S = 15
 THROUGHPUT_STATS_LOOK_BACK = 5
 
 INFO_STATS_INTERVAL_S = 60 * 60
-
-# how often the threaded stats services check for termination
-THREADED_STAT_SLEEP_INTERVAL = 1
 
 # how often the threaded stats services check for termination
 THREADED_STAT_SLEEP_INTERVAL = 1

@@ -220,9 +220,6 @@ class AbstractNode:
 
         continue_receiving = conn.add_received_bytes(bytes_received)
 
-        if not continue_receiving:
-            self.receivable_connections.append(conn.socket_connection)
-
     def on_finished_receiving(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)
 
