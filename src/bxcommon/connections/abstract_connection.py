@@ -293,14 +293,14 @@ class AbstractConnection(Generic[Node]):
 
             except MemoryError as e:
                 self.log_error(
-                    "Out of memory error occurred during message processing. Error: {}. "
-                    "Message bytes: {}",
-                    e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
-                    exc_info=True)
+                    "Out of memory error occurred during message processing. Error: {}. ", e, exc_info=True)
+                self.log_debug("Failed message bytes: {}",
+                               self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
                 raise
 
             except UnauthorizedMessageError as e:
-                self.log_error("Unauthorized message {} from {}. Message bytes: {}", e.msg.MESSAGE_TYPE, self.peer_desc,
+                self.log_error("Unauthorized message {} from {}.", e.msg.MESSAGE_TYPE, self.peer_desc)
+                self.log_debug("Failed message bytes: {}",
                                self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
 
                 # give connection a chance to restore its state and get ready to process next message
@@ -310,8 +310,10 @@ class AbstractConnection(Generic[Node]):
                     return
 
             except MessageValidationError as e:
-                self.log_warning("Message validation failed for {} message: {} Message bytes {}.", msg_type, e.msg,
-                                 self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
+                self.log_warning("Message validation failed for {} message: {}.", msg_type, e.msg)
+                self.log_debug("Failed message bytes: {}",
+                               self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
+
                 if is_full_msg:
                     self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
                 else:
@@ -327,20 +329,19 @@ class AbstractConnection(Generic[Node]):
 
                 # Attempt to recover connection by removing bad full message
                 if is_full_msg:
-                    self.log_error(
-                        "Message processing error; trying to recover. Error: {}. Message bytes: {}",
-                        e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
-                        exc_info=True)
+                    self.log_error("Message processing error; trying to recover. Error: {}.", e,
+                                   exc_info=True)
+                    self.log_debug("Failed message bytes: {}",
+                                   self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
 
                     # give connection a chance to restore its state and get ready to process next message
                     self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
 
                 # Connection is unable to recover from message processing error if incomplete message is received
                 else:
-                    self.log_error(
-                        "Message processing error; unable to recover. Error: {}. Message bytes: {}",
-                        e, self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len),
-                        exc_info=True)
+                    self.log_error("Message processing error; unable to recover. Error: {}.", e, exc_info=True)
+                    self.log_debug("Failed message bytes: {}",
+                                   self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
                     self.mark_for_close()
                     return
 

@@ -15,8 +15,8 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
 
     def __init__(self, size_validation_settings: Optional[MessageSizeValidationSettings],
                  connection_protocol_version: int):
-        self._size_validation_settings = size_validation_settings
-        self._connection_protocol_version = connection_protocol_version
+        self._size_validation_settings: Optional[MessageSizeValidationSettings] = size_validation_settings
+        self._connection_protocol_version: int = connection_protocol_version
 
     def validate(self, is_full_msg: bool, msg_type: str, header_len: int, payload_len: int,
                  input_buffer: InputBuffer) -> None:
