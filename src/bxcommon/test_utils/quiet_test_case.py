@@ -1,8 +1,9 @@
 import unittest
-
 from mock import MagicMock
 
-from bxcommon.utils import logger
+from bxutils.logging import log_config
+from bxutils.logging.log_level import LogLevel
+
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 
 
@@ -16,10 +17,5 @@ class QuietTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        logger._log_level = logger.LogLevel.FATAL
-        logger.log_init("./logs/", False)
+        log_config.create_logger(None, log_level=LogLevel.FATAL, folder_path="./logs/")
         memory_statistics.start_recording = MagicMock()
-
-    @classmethod
-    def tearDownClass(cls):
-        logger.log_close()

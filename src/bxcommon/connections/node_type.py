@@ -1,7 +1,7 @@
-from enum import Flag
+from bxcommon.models.serializeable_flag import SerializeableFlag
 
 
-class NodeType(Flag):
+class NodeType(SerializeableFlag):
     GATEWAY = 1
     RELAY_TRANSACTION = 2
     RELAY_BLOCK = 4

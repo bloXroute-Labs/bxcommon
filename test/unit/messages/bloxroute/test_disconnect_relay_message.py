@@ -1,8 +1,8 @@
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_factory import _BloxrouteMessageFactory
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.disconnect_relay_peer_message import DisconnectRelayPeerMessage
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 
 
 class DisconnectRelayTest(AbstractTestCase):

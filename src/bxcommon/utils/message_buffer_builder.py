@@ -1,5 +1,8 @@
 import struct
-from bxcommon.utils import logger
+
+from bxutils import logging
+
+logger = logging.get_logger(__name__)
 
 
 class PayloadElement(object):
@@ -63,9 +66,9 @@ class PayloadBlock(object):
         for element in self.elements:
             s = kwargs.get(element.name, element.default)
             if element.offset + element.size > len(buf) and s is not None:
-                logger.debug("cannot pack {},{} for {}.{} buffer too small {} {} {}"
-                             .format(s, element.name,element.block_name, element.block_version, len(buf), self.name,
-                                     self.version))
+                logger.trace("cannot pack {},{} for {}.{} buffer too small {} {} {}",
+                             s, element.name, element.block_name, element.block_version, len(buf), self.name,
+                             self.version)
                 continue
             if not s:
                 continue
@@ -74,10 +77,9 @@ class PayloadBlock(object):
             try:
                 struct.pack_into(element.structure, buf, element.offset, s)
             except Exception as e:
-                logger.error("{} cannot pack {} into {} for {} {} {} {}"
-                             .format(repr(e), [s], element.structure, element.name, element.offset, len(buf),
-                                     [w.name for w in self.elements])
-                             )
+                logger.debug("{} cannot pack {} into {} for {} {} {} {}",
+                             repr(e), [s], element.structure, element.name, element.offset, len(buf),
+                             [w.name for w in self.elements])
                 raise Exception
         return buf
 
@@ -86,8 +88,8 @@ class PayloadBlock(object):
         contents = dict()
         for element in self.elements:
             if element.offset + element.size > len(buf):
-                logger.debug("cannot unpack {} for {}.{} buffer too small {}".format(element.name, element.block_name,
-                                                                                     element.block_version, len(buf)))
+                logger.trace("cannot unpack {} for {}.{} buffer too small {}",
+                             element.name, element.block_name, element.block_version, len(buf))
                 contents[element.name] = None
                 continue
             else:

@@ -10,12 +10,12 @@ from bxcommon.utils.alarm_queue import AlarmQueue
 
 
 class MockNode(AbstractNode):
+
     NODE_TYPE = NodeType.RELAY
 
     def __init__(self, opts: Namespace):
         super(MockNode, self).__init__(opts)
         self.alarm_queue = AlarmQueue()
-        self.connection_pool = []
         self.network_num = DEFAULT_NETWORK_NUM
 
         self.broadcast_messages = []
@@ -23,8 +23,7 @@ class MockNode(AbstractNode):
         self._tx_service = TransactionService(self, self.network_num)
         self._tx_services = {}
 
-    def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, network_num=None,
-                  connection_types=None, exclude_relays=False) -> List[AbstractConnection]:
+    def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, connection_types=None) -> List[AbstractConnection]:
         self.broadcast_messages.append(msg)
         return []
 

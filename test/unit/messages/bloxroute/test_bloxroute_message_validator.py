@@ -1,20 +1,20 @@
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants
 from bxcommon.messages.bloxroute import protocol_version
 from bxcommon.messages.bloxroute.bloxroute_message_control_flags import BloxrouteMessageControlFlags
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.bloxroute_message_validator import BloxrouteMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
-from bxcommon.messages.validation.message_validation_settings import MessageValidationSettings
+from bxcommon.messages.validation.message_size_validation_settings import MessageSizeValidationSettings
 from bxcommon.test_utils import helpers
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 
 
 class TestBloxrouteMessageValidator(AbstractTestCase):
 
     def setUp(self) -> None:
-        self.message_validation_settings = MessageValidationSettings(max_block_size_bytes=100000,
-                                                                     max_tx_size_bytes=50000)
+        self.message_validation_settings = MessageSizeValidationSettings(max_block_size_bytes=100000,
+                                                                         max_tx_size_bytes=50000)
         self.message_validator = BloxrouteMessageValidator(self.message_validation_settings,
                                                            protocol_version.PROTOCOL_VERSION)
 

@@ -1,22 +1,33 @@
+import time
 from abc import ABCMeta
-from datetime import datetime
+from typing import List
 
+from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection, Node
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.constants import ALL_NETWORK_NUM, DEFAULT_NETWORK_NUM, PING_INTERVAL_S
-from bxcommon.constants import REQUEST_EXPIRATION_TIME
+from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.messages.bloxroute.ack_message import AckMessage
+from bxcommon.messages.bloxroute.blocks_short_ids_serializer import BlockShortIds
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
+from bxcommon.messages.bloxroute.bloxroute_message_validator import BloxrouteMessageValidator
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
-from bxcommon.utils import logger
+from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
+from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
+from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
+from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
+from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.utils import nonce_generator
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.expiring_dict import ExpiringDict
+from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
+from bxutils import logging
+
+logger = logging.get_logger(__name__)
 
 
 class InternalNodeConnection(AbstractConnection[Node]):
@@ -41,7 +52,18 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.ack_message = AckMessage()
 
         self.can_send_pings = True
-        self.sent_response_messages_timestamps = ExpiringDict(self.node.alarm_queue, REQUEST_EXPIRATION_TIME)
+        self.ping_message_timestamps = ExpiringDict(self.node.alarm_queue, constants.REQUEST_EXPIRATION_TIME)
+        self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)
+
+    def disable_buffering(self):
+        """
+        Disable buffering on this particular connection.
+        :return:
+        """
+        self.enable_buffered_send = False
+        self.outputbuf.flush()
+        self.outputbuf.enable_buffering = False
+        self.socket_connection.send()
 
     def disable_buffering(self):
         """
@@ -69,15 +91,18 @@ class InternalNodeConnection(AbstractConnection[Node]):
             return False
 
         if not self.version_manager.is_protocol_supported(protocol_version):
-            logger.error("Protocol version of remote node '{}' is not supported. Closing connection."
-                         .format(protocol_version))
+            self.log_debug(
+                "Protocol version {} of remote node '{}' is not supported. Closing connection.",
+                protocol_version,
+                self.peer_desc
+            )
             self.mark_for_close()
             return False
 
         self.protocol_version = protocol_version
         self.message_factory = self.version_manager.get_message_factory_for_version(protocol_version)
 
-        logger.debug("Detected incoming connection with protocol version {}".format(protocol_version))
+        self.log_trace("Detected incoming connection with protocol version {}".format(protocol_version))
 
         return True
 
@@ -113,22 +138,26 @@ class InternalNodeConnection(AbstractConnection[Node]):
     def msg_hello(self, msg):
         super(InternalNodeConnection, self).msg_hello(msg)
 
+        if self.state & ConnectionState.MARK_FOR_CLOSE:
+            self.log_trace("Connection has been closed: {}, Ignoring: {} ", self, msg)
+            return
+
         network_num = msg.network_num()
 
-        if self.node.network_num != ALL_NETWORK_NUM and network_num != self.node.network_num:
-            logger.error("Network number mismatch. Current network num {}, remote network num {}. Closing connection."
-                         .format(self.node.network_num, network_num))
+        if self.node.network_num != constants.ALL_NETWORK_NUM and network_num != self.node.network_num:
+            self.log_warning(
+                "Network number mismatch. Current network num {}, remote network num {}. Closing connection.",
+                self.node.network_num, network_num)
             self.mark_for_close()
             return
 
         self.network_num = network_num
-        self.node.alarm_queue.register_alarm(PING_INTERVAL_S, self.send_ping)
-        logger.debug("Received Hello message from peer with network number '{}'.".format(network_num))
+        self.node.alarm_queue.register_alarm(self.ping_interval_s, self.send_ping)
 
     def peek_broadcast_msg_network_num(self, input_buffer):
 
         if self.protocol_version == 1:
-            return DEFAULT_NETWORK_NUM
+            return constants.DEFAULT_NETWORK_NUM
 
         return BroadcastMessage.peek_network_num(input_buffer)
 
@@ -136,25 +165,108 @@ class InternalNodeConnection(AbstractConnection[Node]):
         """
         Send a ping (and reschedule if called from alarm queue)
         """
-        if self.can_send_pings:
+        if self.can_send_pings and not self.state & ConnectionState.MARK_FOR_CLOSE:
             nonce = nonce_generator.get_nonce()
             msg = PingMessage(nonce=nonce)
             self.enqueue_msg(msg)
-            self.sent_response_messages_timestamps.add(nonce, msg.timestamp)
-            return PING_INTERVAL_S
+            self.ping_message_timestamps.add(nonce, time.time())
+            return self.ping_interval_s
+        return constants.CANCEL_ALARMS
 
     def msg_ping(self, msg):
         nonce = msg.nonce()
         self.enqueue_msg(PongMessage(nonce=nonce))
 
-    def msg_pong(self, msg):
+    def msg_pong(self, msg: PongMessage):
         nonce = msg.nonce()
-        if nonce in self.sent_response_messages_timestamps.contents:
-            request_msg_timestamp = self.sent_response_messages_timestamps.contents[nonce]
-            request_response_time = (datetime.utcnow() - request_msg_timestamp).total_seconds()
-            logger.debug("Ping-pong for nonce {} response time: {} on connection: {}"
-                         .format(msg.nonce(), request_response_time, self))
+        if nonce in self.ping_message_timestamps.contents:
+            request_msg_timestamp = self.ping_message_timestamps.contents[nonce]
+            request_response_time = time.time() - request_msg_timestamp
+            self.log_trace("Pong for nonce {} had response time: {}", msg.nonce(), request_response_time)
             hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
         elif nonce is not None:
-            logger.warn("Received pong message from {} {} with nonce {}, ping request was not found in cache"
-                        .format(self.peer_desc, self.CONNECTION_TYPE, nonce))
+            self.log_debug("Pong message had no matching ping request. Nonce: {}", nonce)
+
+    def msg_tx_service_sync_txs(self, msg: TxServiceSyncTxsMessage):
+        """
+        Transaction service sync message receive txs data
+        """
+        network_num = msg.network_num()
+        self.node.last_sync_message_received_by_network[network_num] = time.time()
+        tx_service = self.node.get_tx_service(network_num)
+        txs_content_short_ids = msg.txs_content_short_ids()
+
+        for tx_content_short_ids in txs_content_short_ids:
+            tx_hash = tx_content_short_ids.tx_hash
+            tx_service.set_transaction_contents(tx_hash, tx_content_short_ids.tx_content)
+            for short_id in tx_content_short_ids.short_ids:
+                tx_service.assign_short_id(tx_hash, short_id)
+
+    def _create_txs_service_msg(self, network_num: int, tx_service_snap: List[Sha256Hash]) -> List[TxContentShortIds]:
+        txs_content_short_ids: List[TxContentShortIds] = []
+        txs_msg_len = 0
+
+        while tx_service_snap:
+            tx_hash = tx_service_snap.pop()
+            tx_content_short_ids = TxContentShortIds(
+                tx_hash,
+                self.node.get_tx_service(network_num).get_transaction_by_hash(tx_hash),
+                self.node.get_tx_service(network_num).get_short_ids(tx_hash)
+            )
+
+            txs_msg_len += txs_serializer.get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids)
+
+            txs_content_short_ids.append(tx_content_short_ids)
+            if txs_msg_len >= constants.TXS_MSG_SIZE:
+                break
+
+        return txs_content_short_ids
+
+    def send_tx_service_sync_req(self, network_num: int):
+        """
+        sending transaction service sync request
+        """
+        self.enqueue_msg(TxServiceSyncReqMessage(network_num))
+
+    def send_tx_service_sync_complete(self, network_num: int):
+        self.enqueue_msg(TxServiceSyncCompleteMessage(network_num))
+
+    def send_tx_service_sync_blocks_short_ids(self, network_num: int):
+        blocks_short_ids: List[BlockShortIds] = []
+        start_time = time.time()
+        for block_hash, short_ids in self.node.get_tx_service(network_num).iter_short_ids_seen_in_block():
+            blocks_short_ids.append(BlockShortIds(block_hash, short_ids))
+
+        block_short_ids_msg = TxServiceSyncBlocksShortIdsMessage(network_num, blocks_short_ids)
+        duration = time.time() - start_time
+        self.log_trace("Sending {} block short ids took {:.3f} seconds.", len(blocks_short_ids), duration)
+        self.enqueue_msg(block_short_ids_msg)
+
+    def send_tx_service_sync_txs(self, network_num: int, tx_service_snap: List[Sha256Hash], duration: float = 0, msgs_count: int = 0, total_tx_count: int = 0, sending_tx_msgs_start_time: float = 0):
+        if (time.time() - sending_tx_msgs_start_time) < constants.SENDING_TX_MSGS_TIMEOUT_MS:
+            if tx_service_snap:
+                start = time.time()
+                txs_content_short_ids = self._create_txs_service_msg(network_num, tx_service_snap)
+                self.enqueue_msg(TxServiceSyncTxsMessage(network_num, txs_content_short_ids))
+                duration += time.time() - start
+                msgs_count += 1
+                total_tx_count += len(txs_content_short_ids)
+            # checks again if tx_snap in case we still have msgs to send, else no need to wait
+            # TX_SERVICE_SYNC_TXS_S seconds
+            if tx_service_snap:
+                self.node.alarm_queue.register_alarm(
+                    constants.TX_SERVICE_SYNC_TXS_S, self.send_tx_service_sync_txs, network_num, tx_service_snap, duration, msgs_count, total_tx_count, sending_tx_msgs_start_time
+                )
+            else:   # if all txs were sent, send complete msg
+                self.log_trace("Sending {} transactions and {} messages took {:.3f} seconds.",
+                               total_tx_count, msgs_count, duration)
+                self.send_tx_service_sync_complete(network_num)
+        else:   # if time is up - upgrade this node as synced - giving up
+            self.log_trace("Sending {} transactions and {} messages took more than {} seconds. Giving up.",
+                           total_tx_count, msgs_count, constants.SENDING_TX_MSGS_TIMEOUT_MS)
+            self.send_tx_service_sync_complete(network_num)
+
+    def msg_tx_service_sync_complete(self, msg: TxServiceSyncCompleteMessage):
+        network_num = msg.network_num()
+        self.node.last_sync_message_received_by_network.pop(network_num, None)
+        self.node.on_fully_updated_tx_service()

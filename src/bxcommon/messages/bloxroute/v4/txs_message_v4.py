@@ -1,13 +1,16 @@
 import struct
 from typing import List, Optional
 
+from bxutils import logging
+
 import bxcommon.utils.crypto
 from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.v4.message_v4 import MessageV4
 from bxcommon.models.transaction_info import TransactionInfo
-from bxcommon.utils import logger
 from bxcommon.utils.object_hash import Sha256Hash
+
+logger = logging.get_logger(__name__)
 
 
 class TxsMessageV4(MessageV4):

@@ -1,9 +1,12 @@
 import struct
 
+from bxutils import logging
+
 from bxcommon import constants
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.abstract_message import AbstractMessage
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
 class AbstractInternalMessage(AbstractMessage):
@@ -11,9 +14,9 @@ class AbstractInternalMessage(AbstractMessage):
     HEADER_LENGTH = constants.BX_HDR_COMMON_OFF
     STARTING_BYTES_LEN = 0
 
-    def __init__(self, msg_type: str = None, payload_len: int = None, buf: bytearray = None):
+    def __init__(self, msg_type: str, payload_len: int, buf: bytearray):
 
-        if buf is None or len(buf) < self.HEADER_LENGTH:
+        if len(buf) < self.HEADER_LENGTH:
             raise ValueError("Buffer must be at least {0} in length.".format(self.HEADER_LENGTH))
 
         if payload_len < 0:

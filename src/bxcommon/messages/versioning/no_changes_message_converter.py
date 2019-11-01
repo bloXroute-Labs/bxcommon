@@ -1,12 +1,13 @@
+from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
 from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 
 
 class _NoChangesMessageConverter(AbstractMessageConverter):
 
-    def convert_to_older_version(self, msg):
+    def convert_to_older_version(self, msg: AbstractInternalMessage) -> AbstractInternalMessage:
         return msg
 
-    def convert_from_older_version(self, msg):
+    def convert_from_older_version(self, msg: AbstractInternalMessage) -> AbstractInternalMessage:
         return msg
 
     def convert_first_bytes_to_older_version(self, first_msg_bytes):

@@ -39,9 +39,11 @@ class BlockStatEventType:
                                                                    event_logic_flags=StatEventLogicFlags.SUMMARY)
     ENC_BLOCK_CUT_THROUGH_SEND_START = StatEventTypeSettings("EncBlockCutThroughSendStart")
     ENC_BLOCK_CUT_THROUGH_SEND_END = StatEventTypeSettings("EncBlockCutThroughSendEnd")
-    ENC_BLOCK_CUT_THROUGH_RECEIVE_START = StatEventTypeSettings("EncBlockCutThroughReceiveStart")
+    ENC_BLOCK_CUT_THROUGH_RECEIVE_START = StatEventTypeSettings("EncBlockCutThroughReceiveStart",
+                                                                event_logic_flags=StatEventLogicFlags.SUMMARY)
     ENC_BLOCK_CUT_THROUGH_RECEIVE_END = StatEventTypeSettings("EncBlockCutThroughReceiveEnd")
     ENC_BLOCK_CUT_THROUGH_IGNORE_SEEN_BLOCK = StatEventTypeSettings("EncBlockCutThroughIgnoreSeenBlock")
+    ENC_BLOCK_CUT_THROUGH_SOURCE_CANCELLED = StatEventTypeSettings("EncBlockCutThroughCancelled")
     ENC_BLOCK_RECEIVED_BY_GATEWAY_FROM_NETWORK = StatEventTypeSettings("EncBlockReceivedByGatewayFromNetwork")
     ENC_BLOCK_DECRYPTED_SUCCESS = StatEventTypeSettings("EncBlockDecryptedSuccess")
     ENC_BLOCK_DECRYPTION_ERROR = StatEventTypeSettings("EncBlockDecryptionError")
@@ -55,18 +57,20 @@ class BlockStatEventType:
     BLOCK_TO_ENC_BLOCK_MATCH = StatEventTypeSettings("BlockHashToEncBlockHash",
                                                      event_logic_flags=StatEventLogicFlags.MATCH)
     BLOCK_DECOMPRESSED_IGNORE_SEEN = StatEventTypeSettings("BlockDecompressedIgnoreSeen",
-                                                           event_logic_flags=StatEventLogicFlags.BLOCK_INFO | \
+                                                           event_logic_flags=StatEventLogicFlags.BLOCK_INFO |
                                                                              StatEventLogicFlags.MATCH)
     BLOCK_DECOMPRESSED_SUCCESS = StatEventTypeSettings("BlockDecompressedSuccess",
-                                                       event_logic_flags=StatEventLogicFlags.BLOCK_INFO | \
-                                                                         StatEventLogicFlags.MATCH | \
-                                                                         StatEventLogicFlags.SUMMARY)
+                                                       event_logic_flags=StatEventLogicFlags.BLOCK_INFO |
+                                                                         StatEventLogicFlags.MATCH)
     BLOCK_DECOMPRESSED_WITH_UNKNOWN_TXS = StatEventTypeSettings("BlockDecompressedWithUnknownTxs")
+    BLOCK_CONVERSION_FAILED = StatEventTypeSettings("BlockConversionFailed")
     BLOCK_RECOVERY_STARTED = StatEventTypeSettings("BlockRecoveryStarted")
     BLOCK_RECOVERY_REPEATED = StatEventTypeSettings("BlockRecoveryRepeated")
     BLOCK_RECOVERY_COMPLETED = StatEventTypeSettings("BlockRecoveryCompleted")
+    BLOCK_RECOVERY_CANCELED = StatEventTypeSettings("BlockRecoveryCanceled")
     BLOCK_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockSentToBlockchainNode",
                                                           event_logic_flags=StatEventLogicFlags.SUMMARY)
+    BLOCK_IGNORE_SEEN_BY_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockIgnoreSeenByBlockchainNode")
     ENC_BLOCK_KEY_SENT_FROM_GATEWAY_TO_NETWORK = StatEventTypeSettings("EncBlockKeySentFromGatewayToNetwork",
                                                                        event_logic_flags=StatEventLogicFlags.SUMMARY)
     ENC_BLOCK_KEY_RECEIVED_BY_GATEWAY_FROM_NETWORK = StatEventTypeSettings("EncBlockKeyReceivedByGatewayFromNetwork")

@@ -1,12 +1,13 @@
 from abc import ABCMeta, abstractmethod
 
+from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
 
-class AbstractMessageConverter(object):
 
+class AbstractMessageConverter:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def convert_to_older_version(self, msg):
+    def convert_to_older_version(self, msg: AbstractInternalMessage) -> AbstractInternalMessage:
         """
         Converts message of current protocol version to older version (version of converter)
 
@@ -16,7 +17,7 @@ class AbstractMessageConverter(object):
         pass
 
     @abstractmethod
-    def convert_from_older_version(self, msg):
+    def convert_from_older_version(self, msg: AbstractInternalMessage) -> AbstractInternalMessage:
         """
         Converts message of older version (version of converter) to current protocol version
 

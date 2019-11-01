@@ -1,17 +1,21 @@
 import uuid
+
+from bxutils import logging
+
 from bxcommon import constants
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
 def to_bytes(string_input):
     if not string_input:
-        return constants.MSG_NULL_BYTE * 16
+        return constants.EMPTY_SOURCE_ID
 
     try:
         raw = uuid.UUID(string_input).bytes
-    except ValueError as e:
-        logger.error("invalid node id provided {}".format(string_input))
-        return constants.MSG_NULL_BYTE * 16
+    except ValueError as _e:
+        logger.debug("Invalid node ID: {}", string_input)
+        return constants.EMPTY_SOURCE_ID
     return raw
 
 

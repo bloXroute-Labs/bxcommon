@@ -2,8 +2,12 @@ import socket
 from contextlib import closing
 from threading import Thread
 
+from bxutils import logging
+
 from bxcommon.network import network_event_loop_factory
 from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
 class NetworkThread(object):

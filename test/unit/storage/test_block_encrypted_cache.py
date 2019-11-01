@@ -1,5 +1,5 @@
-from bxcommon.storage.block_encrypted_cache import BlockEncryptedCache
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.storage.block_encrypted_cache import BlockEncryptedCache
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.object_hash import Sha256Hash
 

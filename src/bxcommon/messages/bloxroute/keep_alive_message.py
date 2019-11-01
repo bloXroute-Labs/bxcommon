@@ -1,11 +1,8 @@
-from datetime import datetime
-
 from bxcommon import constants
-from bxcommon.utils.log_level import LogLevel
-from bxcommon.utils.message_buffer_builder import PayloadElement, PayloadBlock
-from bxcommon.constants import BX_HDR_COMMON_OFF
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.protocol_version import PROTOCOL_VERSION
+from bxcommon.utils.message_buffer_builder import PayloadElement, PayloadBlock
+from bxutils.logging.log_level import LogLevel
 
 
 class KeepAliveMessage(AbstractBloxrouteMessage):
@@ -21,7 +18,6 @@ class KeepAliveMessage(AbstractBloxrouteMessage):
     KEEP_ALIVE_MESSAGE_LENGTH = KEEP_ALIVE_MESSAGE_BLOCK.size + constants.CONTROL_FLAGS_LEN
 
     def __init__(self, msg_type, nonce=None, buf=None):
-        self.timestamp = datetime.utcnow()
         if buf is None:
             buf = bytearray(self.HEADER_LENGTH + self.KEEP_ALIVE_MESSAGE_LENGTH)
 
@@ -42,5 +38,3 @@ class KeepAliveMessage(AbstractBloxrouteMessage):
             self.__unpack()
         return self._nonce
 
-    def log_level(self):
-        return LogLevel.INFO

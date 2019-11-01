@@ -1,13 +1,16 @@
 import time
 from threading import Thread
 
+from bxutils import logging
+
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
 from bxcommon.network.network_event_loop_factory import create_event_loop
 from bxcommon.test_utils import helpers
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import generate_bytearray
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
 class TestNode(AbstractNode):
@@ -37,9 +40,6 @@ class TestNode(AbstractNode):
     def send_request_for_relay_peers(self):
         pass
 
-    def set_node_type(self):
-        self.node_type = NodeType.RELAY
-
     def get_outbound_peer_addresses(self):
         peer_addresses = []
 
@@ -54,13 +54,13 @@ class TestNode(AbstractNode):
     def on_connection_added(self, socket_connection, port, ip, from_me):
         fileno = socket_connection.fileno()
         print("Node {0}: Add_connection call. Fileno {1}".format(self.port, fileno))
-        self.connections.append((fileno, port, ip, from_me))
+        self.connections.append((socket_connection, socket_connection.fileno(), port, ip, from_me))
         self.receive_buffers[fileno] = bytearray(0)
 
     def on_connection_initialized(self, fileno):
         self.initialized = True
 
-    def on_connection_closed(self, fileno):
+    def on_connection_closed(self, fileno, should_retry):
         print("Node {0}: on_connection_closed call. Fileno {1}".format(self.port, fileno))
         self.ready_to_close = True
 
@@ -100,6 +100,9 @@ class TestNode(AbstractNode):
     def close(self):
         print("Node {0}: Close call.".format(self.port))
         self.closed = True
+
+    def on_input_received(self, file_no: int) -> bool:
+        return True
 
 
 class MultiplexingTest(AbstractTestCase):
@@ -186,12 +189,12 @@ class MultiplexingTest(AbstractTestCase):
         receiver_port = helpers.get_free_port()
         receiver_node = TestNode(receiver_port, [], 0.01)
         receiver_event_loop = create_event_loop(receiver_node)
-        receiver_thread = Thread(target=receiver_event_loop.run)
+        receiver_thread = Thread(name="receiver", target=receiver_event_loop.run)
 
         sender_port = helpers.get_free_port()
         sender_node = TestNode(sender_port, [receiver_port], 0.01)
         sender_event_loop = create_event_loop(sender_node)
-        sender_thread = Thread(target=sender_event_loop.run)
+        sender_thread = Thread(name="sender", target=sender_event_loop.run)
 
         try:
             print("Starting event loop on receiver")
@@ -205,7 +208,7 @@ class MultiplexingTest(AbstractTestCase):
             self.assertEqual(len(sender_node.connections), 1)
 
             # request disconnect while clients are running
-            sender_node.enqueue_disconnect(sender_node.connections[0][0])
+            sender_node.enqueue_disconnect(sender_node.connections[0][0], False)
 
             # sender and receiver have to disconnect and exit
             receiver_thread.join()
@@ -225,16 +228,16 @@ class MultiplexingTest(AbstractTestCase):
 
         self.assertTrue(len(sender_node.connections), 1)
         self.assertTrue(len(sender_event_loop._socket_connections), 1)
-        self.assertEqual(sender_node.connections[0][1], '0.0.0.0')
-        self.assertEqual(sender_node.connections[0][2], receiver_node.port)
-        self.assertEqual(sender_node.connections[0][3], True)
+        self.assertEqual(sender_node.connections[0][2], '0.0.0.0')
+        self.assertEqual(sender_node.connections[0][3], receiver_node.port)
+        self.assertEqual(sender_node.connections[0][4], True)
 
         self.assertTrue(len(receiver_node.connections), 1)
         self.assertTrue(len(receiver_event_loop._socket_connections), 1)
-        self.assertEqual(receiver_node.connections[0][1], '127.0.0.1')
-        self.assertEqual(receiver_node.connections[0][3], False)
+        self.assertEqual(receiver_node.connections[0][2], '127.0.0.1')
+        self.assertEqual(receiver_node.connections[0][4], False)
 
-        bytes_received = receiver_node.receive_buffers[receiver_node.connections[0][0]]
+        bytes_received = receiver_node.receive_buffers[receiver_node.connections[0][1]]
         self.assertEqual(bytes_received, send_bytes)
 
         self.assertTrue(sender_node.force_exit())

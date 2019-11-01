@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Mapping
+from typing import TypeVar, Generic, Mapping, Dict
 
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.expiration_queue import ExpirationQueue
@@ -16,13 +16,13 @@ class ExpiringDict(Generic[KT, VT]):
     and we're avoiding extra function call overhead.
     """
 
-    contents: Mapping[KT, VT]
+    contents: Dict[KT, VT]
     _alarm_queue: AlarmQueue
-    _expiration_queue: ExpirationQueue
+    _expiration_queue: ExpirationQueue[KT]
     _expiration_time: int
 
     def __init__(self, alarm_queue, expiration_time_s):
-        self.contents = dict()
+        self.contents = {}
         self._alarm_queue = alarm_queue
         self._expiration_queue = ExpirationQueue(expiration_time_s)
         self._expiration_time = expiration_time_s

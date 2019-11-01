@@ -1,9 +1,7 @@
-from collections import deque
-
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.test_utils import helpers
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils.object_hash import Sha256Hash
 
 

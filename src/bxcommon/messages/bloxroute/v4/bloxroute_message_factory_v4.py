@@ -1,8 +1,9 @@
 import struct
+from typing import Type
 
 from bxcommon import constants
+from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
-from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.v4.ack_message_v4 import AckMessageV4
 from bxcommon.messages.bloxroute.v4.block_holding_message_v4 import BlockHoldingMessageV4
@@ -36,14 +37,14 @@ class _BloxrouteMessageFactoryV4(AbstractMessageFactory):
     def __init__(self):
         super(_BloxrouteMessageFactoryV4, self).__init__()
         self.message_type_mapping = self._MESSAGE_TYPE_MAPPING
-        self.base_message_type = MessageV4
+
+    def get_base_message_type(self) -> Type[AbstractMessage]:
+        return MessageV4
 
     def get_hashed_message_preview_from_input_buffer(self, input_buffer):
         """
         Peeks the hash and network number from hashed messages.
         Currently, only Broadcast messages are supported here.
-        TODO: refactor TxMessage + KeyMessage to have network number before content and write message converters
-              https://bloxroute.atlassian.net/browse/BX-581
         :param input_buffer
         :return: is full header, message hash, network number, payload length
         """

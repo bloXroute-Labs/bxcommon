@@ -1,16 +1,20 @@
 import errno
 import socket
 from abc import ABCMeta, abstractmethod
+from typing import Dict
+
+from bxutils import logging
 
 from bxcommon.connections.abstract_node import AbstractNode
-from bxcommon.constants import LISTEN_ON_IP_ADDRESS
+from bxcommon import constants
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
 from bxcommon.network.socket_connection_state import SocketConnectionState
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
-class AbstractNetworkEventLoop(object):
+class AbstractNetworkEventLoop:
     __metaclass__ = ABCMeta
 
     """
@@ -20,18 +24,16 @@ class AbstractNetworkEventLoop(object):
     send, receive, connect or disconnect.
     """
 
-    def __init__(self, node):
-        assert isinstance(node, AbstractNode)
-
-        self._node = node
-        self._socket_connections = {}
+    def __init__(self, node: AbstractNode):
+        self._node: AbstractNode = node
+        self._socket_connections: Dict[int, SocketConnection] = {}
 
     def run(self):
         """
         Starts event_loop
         """
 
-        logger.debug("Start network event loop...")
+        logger.trace("Start network event loop...")
 
         try:
             self._start_server()
@@ -43,6 +45,11 @@ class AbstractNetworkEventLoop(object):
             timeout = self._node.get_sleep_timeout(triggered_by_timeout=False, first_call=True)
 
             while True:
+                # since alarms can be registered from multiple threads we need to occasionally check for new alarms.
+                if timeout is None or timeout < 0:
+                    timeout = constants.MAX_EVENT_LOOP_TIMEOUT_S
+                else:
+                    timeout = min(timeout, constants.MAX_EVENT_LOOP_TIMEOUT_S)
                 events_count = self._process_events(timeout)
 
                 self._process_disconnect_requests()
@@ -67,7 +74,7 @@ class AbstractNetworkEventLoop(object):
         self._node.close()
 
         for _, socket_connection in self._socket_connections.items():
-            socket_connection.close()
+            socket_connection.close(force_destroy=True)
 
     @abstractmethod
     def _process_events(self, timeout):
@@ -79,29 +86,24 @@ class AbstractNetworkEventLoop(object):
 
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        logger.info("Creating a server socket on {0}:{1}...".format(LISTEN_ON_IP_ADDRESS, external_port))
 
+        logger.info("Binding to a socket on {0}:{1}.", constants.LISTEN_ON_IP_ADDRESS, external_port)
         try:
-            server_socket.bind((LISTEN_ON_IP_ADDRESS, external_port))
+            server_socket.bind((constants.LISTEN_ON_IP_ADDRESS, external_port))
             server_socket.listen(50)
             server_socket.setblocking(False)
 
-            self._register_socket(server_socket, (LISTEN_ON_IP_ADDRESS, external_port), is_server=True)
+            self._register_socket(server_socket, (constants.LISTEN_ON_IP_ADDRESS, external_port), is_server=True)
 
-            logger.info("Server socket creation successful.")
+            logger.debug("Server socket creation successful.")
             return server_socket
-
         except socket.error as e:
             if e.errno in [errno.EACCES, errno.EADDRINUSE, errno.EADDRNOTAVAIL, errno.ENOMEM, errno.EOPNOTSUPP]:
-                logger.fatal("Fatal error: " + str(e.errno) + " " + e.strerror +
-                             " Occurred while setting up server socket on {0}:{1}. Exiting..."
-                             .format(LISTEN_ON_IP_ADDRESS, external_port))
+                logger.fatal("Could not bind to socket. Failed with errno: {} and message: {} ", e.errno, e.strerror)
                 exit(1)
             else:
-                logger.fatal("Fatal error: " + str(e.errno) + " " + e.strerror +
-                             " Occurred while setting up server socket on {0}:{1}. Re-raising".format(
-                                 LISTEN_ON_IP_ADDRESS,
-                                 external_port))
+                logger.fatal("Could not bind to socket. Failed with errno: {} and message: {}. Re-raising."
+                             , e.errno, e.strerror)
                 raise e
 
     def _connect_to_sdn(self):
@@ -110,7 +112,7 @@ class AbstractNetworkEventLoop(object):
         if sdn_address:
             self._connect_to_server(sdn_address[0], sdn_address[1])
         else:
-            logger.warn("SDN address not provided, skipping connection. This is expected for gateways.")
+            logger.debug("SDN address not provided, skipping connection. This is expected for gateways.")
 
     def _connect_to_peers(self):
         peers_addresses = self._node.get_outbound_peer_addresses()
@@ -118,7 +120,7 @@ class AbstractNetworkEventLoop(object):
         if peers_addresses:
             for address in peers_addresses:
                 protocol = address[2] if len(address) == 3 else None
-                logger.info("Connecting to node {0}:{1} on protocol: {2}.".format(address[0], address[1], protocol))
+                logger.debug("Connecting to address {0}:{1} on protocol: {2}.", address[0], address[1], protocol)
 
                 self._connect_to_server(address[0], address[1], protocol)
 
@@ -130,30 +132,23 @@ class AbstractNetworkEventLoop(object):
             address = self._node.pop_next_connection_address()
 
     def _process_disconnect_requests(self):
-        fileno = self._node.pop_next_disconnect_connection()
-
-        while fileno is not None:
+        disconnect_request = self._node.pop_next_disconnect_connection()
+        while disconnect_request is not None:
+            fileno, should_retry = disconnect_request
             if fileno in self._socket_connections:
-                logger.trace(
-                    "Closing connection to {0}, total_connections: {1}".format(fileno, len(self._socket_connections)))
+                logger.debug("Closing connection to {0}, total_connections: {1}", fileno, len(self._socket_connections))
                 socket_connection = self._socket_connections.pop(fileno)
                 socket_connection.close()
 
-                # TODO this line should be removed as well. The network layer should not be telling
-                #   the node when a connection is closed.
-                self._node.on_connection_closed(fileno)
-
-                # TODO: This if statement should be removed (i.e. MARK_FOR_CLOSE should be set more carefully)
-                if not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-                    logger.error("Connection on fileno {0} was enqueued for disconnect without being marked for close!".format(fileno))
+                self._node.on_connection_closed(fileno, should_retry)
             else:
-                logger.warn("Fileno {0} could not be closed".format(fileno))
+                logger.debug("Fileno {0} could not be closed", fileno)
 
-            fileno = self._node.pop_next_disconnect_connection()
+            disconnect_request = self._node.pop_next_disconnect_connection()
 
     def _connect_to_server(self, ip, port, protocol=TransportLayerProtocol.TCP):
         if self._node.connection_exists(ip, port):
-            logger.warn("Ignoring repeat connection to {0}:{1}.".format(ip, port))
+            logger.debug("Ignoring repeat connection to {0}:{1}.", ip, port)
             return
 
         sock = None
@@ -172,33 +167,31 @@ class AbstractNetworkEventLoop(object):
             sock.connect((ip, port))
         except socket.error as e:
             if e.errno in [errno.EPERM, errno.EADDRINUSE]:
-                logger.error("Connection to {0}:{1} failed! Got errno {2} with msg {3}."
-                             .format(ip, port, e.errno, e.strerror))
+                logger.error("Connection to {}:{} failed. Got errno: {} message: {}", ip, port, e.errno, e.strerror)
                 return
             elif e.errno in [errno.EAGAIN, errno.ECONNREFUSED, errno.EINTR, errno.EISCONN, errno.ENETUNREACH,
                              errno.ETIMEDOUT]:
-                logger.error("Connection to {0}:{1} failed. Got errno {2} with msg {3}"
-                             .format(ip, port, e.errno, e.strerror))
+                logger.error("Connection to {}:{} failed. Got errno: {} message: {}", ip, port, e.errno, e.strerror)
                 return
             elif e.errno in [errno.EALREADY]:
                 # Can never happen because this thread is the only one using the socket.
-                logger.error("Got EALREADY while connecting to {0}:{1}.".format(ip, port))
+                logger.error("Unexpected EALREADY on connection: {}", ip, port, e.errno, e.strerror)
                 exit(1)
             elif e.errno in [errno.EINPROGRESS]:
-                logger.debug("Got EINPROGRESS on {0}:{1}. Will wait for ready outputbuf.".format(ip, port))
+                logger.trace("Connection in process on {}:{}", ip, port)
                 initialized = False
             else:
                 raise e
 
         self._register_socket(sock, (ip, port), is_server=False, initialized=initialized, from_me=True)
-        logger.info("Connected to {0}:{1}, fileno: {2}.".format(ip, port, sock.fileno()))
+        logger.debug("Established basic connection to {0}:{1} on fileno: {2}.", ip, port, sock.fileno())
 
     def _handle_incoming_connections(self, socket_connection):
-        logger.info("Received incoming request(s) for connection...")
+        logger.debug("Received incoming request(s) for connection...")
         try:
             while True:
                 new_socket, address = socket_connection.socket_instance.accept()
-                logger.info("Accepted new connection from {0}.".format(address))
+                logger.debug("Accepted new connection from {0}.", address)
 
                 new_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 new_socket.setblocking(0)

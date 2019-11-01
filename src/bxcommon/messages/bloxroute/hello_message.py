@@ -1,3 +1,5 @@
+from typing import Optional
+
 from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.protocol_version import PROTOCOL_VERSION
@@ -21,7 +23,8 @@ class HelloMessage(VersionMessage):
                                        )
     HELLO_MESSAGE_LENGTH = VersionMessage.VERSION_MESSAGE_BLOCK.size + HELLO_MESSAGE_BLOCK.size + constants.CONTROL_FLAGS_LEN
 
-    def __init__(self, protocol_version=None, network_num=None, buf=None, node_id=None):
+    def __init__(self, protocol_version: Optional[int] = None, network_num: Optional[int] = None, node_id: str = None,
+                 buf: bytearray = None):
         if buf is None:
             buf = bytearray(self.HEADER_LENGTH + self.HELLO_MESSAGE_LENGTH)
             buf = self.HELLO_MESSAGE_BLOCK.build(buf, node_id=node_id)

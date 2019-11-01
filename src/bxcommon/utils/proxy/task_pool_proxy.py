@@ -19,6 +19,7 @@ def run_task(tsk: tpe.MainTaskBase):
         time.sleep(0)
         continue
     tsk.assert_execution()
+    tsk.cleanup()
 
 
 def get_pool_size() -> int:

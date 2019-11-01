@@ -3,13 +3,15 @@ from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.utils import crypto, convert
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.statistics_event_service import StatisticsEventService
-from bxcommon.utils.stats.block_stat_event_type import BlockStatEventType
-from typing import Any, Optional
-from datetime import datetime
+from bxutils.logging.log_record_type import LogRecordType
+from bxutils import logging
+
 
 class _BlockStatisticsService(StatisticsEventService):
     def __init__(self):
+        super(_BlockStatisticsService, self).__init__()
         self.name = "BlockInfo"
+        self.logger = logging.get_logger(LogRecordType.BlockInfo)
 
     def add_block_event(self, block_msg, block_event_settings, network_num, start_date_time=None, end_date_time=None,
                         **kwargs):

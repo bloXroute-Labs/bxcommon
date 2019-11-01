@@ -1,14 +1,21 @@
 import time
 
 from collections import OrderedDict
+from typing import TypeVar, Generic, Optional, Callable, Dict
+
+T = TypeVar("T")
 
 
-class ExpirationQueue(object):
+class ExpirationQueue(Generic[T]):
     """
     Handles queue of item that need to be expired and removed from the queue over time
     """
 
-    def __init__(self, time_to_live_sec):
+    time_to_live_sec: int
+    # NOTE: this cannot be annotated as an collections.OrderedDict
+    queue: Dict[T, float]
+
+    def __init__(self, time_to_live_sec: int):
 
         if time_to_live_sec < 0:
             raise ValueError("Time to live cannot be negative.")
@@ -16,14 +23,20 @@ class ExpirationQueue(object):
         self.time_to_live_sec = time_to_live_sec
         self.queue = OrderedDict()
 
-    def add(self, item):
+    def __len__(self) -> int:
+        return len(self.queue)
+
+    def __bool__(self) -> bool:
+        return len(self) > 0
+
+    def add(self, item: T):
         """
         Adds item to the queue
         :param item: item
         """
         self.queue[item] = time.time()
 
-    def remove(self, item):
+    def remove(self, item: T):
         """
         Removes item from expiration queue
         :param item: item to remove
@@ -31,7 +44,8 @@ class ExpirationQueue(object):
         if item in self.queue:
             del self.queue[item]
 
-    def remove_expired(self, current_time=None, remove_callback=None):
+    def remove_expired(self, current_time: Optional[float] = None,
+                       remove_callback: Optional[Callable[[T], None]] = None):
         """
         Removes expired items from the queue
         :param current_time: time to use as current time for expiration
@@ -47,7 +61,7 @@ class ExpirationQueue(object):
             if remove_callback is not None:
                 remove_callback(item)
 
-    def get_oldest(self):
+    def get_oldest(self) -> Optional[T]:
         """
         Returns the value of oldest item in the queue
         :return: value of oldest item
@@ -57,18 +71,19 @@ class ExpirationQueue(object):
 
         return next(iter(self.queue.keys()))
 
-    def get_oldest_item_timestamp(self):
+    def get_oldest_item_timestamp(self) -> Optional[float]:
         """
         Returns timestamp of the oldest item
         :return: timestamp of the oldest item
         """
-        if len(self.queue) == 0:
+        if not self.queue:
             return None
 
         oldest_item = self.get_oldest()
+        assert oldest_item is not None
         return self.queue[oldest_item]
 
-    def remove_oldest(self, remove_callback=None):
+    def remove_oldest(self, remove_callback: Optional[Callable[[T], None]] = None):
         """
         Remove one oldest item from the queue
         :param remove_callback: reference to a callback function that is being called when item is removed
@@ -78,6 +93,3 @@ class ExpirationQueue(object):
 
             if remove_callback is not None:
                 remove_callback(item)
-
-    def __len__(self):
-        return len(self.queue)

@@ -1,283 +1,19 @@
 from mock import patch, MagicMock
 
 from bxcommon import constants
-from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.connections.abstract_node import AbstractNode, DisconnectRequest
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
-from bxcommon.constants import DEFAULT_SLEEP_TIMEOUT, PING_INTERVAL_S, \
-    CONNECTION_RETRY_SECONDS, MAX_CONNECT_RETRIES, THROUGHPUT_STATS_INTERVAL
-from bxcommon.exceptions import TerminationError
+from bxcommon.constants import DEFAULT_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.services import sdn_http_service
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-from bxcommon.test_utils.mocks.mock_connection import MockConnection, MockConnectionType
-from bxcommon.test_utils.mocks.mock_message import MockMessage
-from bxcommon.test_utils.mocks.mock_node import MockNode
-from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
+from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.utils import memory_utils
-from bxcommon.utils.stats.throughput_service import throughput_statistics
-
-
-class AbstractNodeTest(AbstractTestCase):
-    def setUp(self):
-        self.remote_node = MockNode(helpers.get_common_opts(4321, external_ip="1.1.1.1"))
-        self.remote_ip = "111.222.111.222"
-        self.remote_port = 1234
-        self.remote_fileno = 5
-        self.connection = helpers.create_connection(MockConnection, self.remote_node, fileno=self.remote_fileno,
-                                                    ip=self.remote_ip, port=self.remote_port)
-        self.connection = MockConnection(MockSocketConnection(self.remote_fileno), (self.remote_ip, self.remote_port),
-                                         self.remote_node)
-        self.local_node = TestNode(helpers.get_common_opts(8888))
-        self.socket_connection = MockSocketConnection(node=self.remote_node)
-        self.to_31 = bytearray([i for i in range(32)])
-
-    def test_connection_exists(self):
-        self.assertFalse(self.local_node.connection_exists(self.remote_ip, self.remote_port))
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.assertTrue(self.local_node.connection_exists(self.remote_ip, self.remote_port))
-
-    @patch("bxcommon.connections.abstract_node.AbstractNode._initialize_connection")
-    def test_on_connection_added_new_connection(self, mocked_initialize_connection):
-        self.local_node.on_connection_added(self.socket_connection, self.remote_ip, self.remote_port, True)
-        mocked_initialize_connection.assert_called_once_with(self.socket_connection, self.remote_ip, self.remote_port,
-                                                             True)
-
-    @patch("bxcommon.connections.abstract_node.AbstractNode.enqueue_disconnect")
-    @patch("bxcommon.connections.abstract_node.AbstractNode.connection_exists", return_value=True)
-    def test_on_connection_added_duplicate(self, mocked_enqueue_disconnect, mocked_connection_exists):
-        self.local_node.on_connection_added(self.socket_connection, self.remote_ip, self.remote_port, True)
-        mocked_enqueue_disconnect.assert_called_once_with(self.remote_ip, self.remote_port)
-
-    def test_on_connection_initialized(self):
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.assertEqual(ConnectionState.CONNECTING, self.connection.state)
-        self.local_node.on_connection_initialized(self.remote_fileno)
-        self.assertEqual(ConnectionState.INITIALIZED, self.connection.state)
-
-    def test_on_connection_closed(self):
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.assertIn(self.connection, self.local_node.connection_pool.by_fileno)
-        self.local_node.on_connection_closed(self.remote_fileno)
-        self.assertNotIn(self.connection, self.local_node.connection_pool.by_fileno)
-
-    @patch("bxcommon.connections.abstract_node.AbstractNode.destroy_conn")
-    def test_on_updated_peers(self, mocked_destroy_conn):
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node.opts.outbound_peers = [OutboundPeerModel("222.222.222.222", 2000)]
-        self.local_node.outbound_peers = [OutboundPeerModel("111.111.111.111", 1000),
-                                          OutboundPeerModel("222.222.222.222", 2000),
-                                          OutboundPeerModel(self.remote_ip, self.remote_port)]
-
-        outbound_peer_models = [OutboundPeerModel("111.111.111.111", 1000)]
-        self.local_node.on_updated_peers(outbound_peer_models)
-        self.assertEqual(outbound_peer_models, self.local_node.outbound_peers)
-        mocked_destroy_conn.assert_called_with(self.connection)
-
-    def test_on_bytes_received(self):
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node.on_bytes_received(self.remote_fileno, self.to_31)
-        self.assertEqual(self.to_31, self.connection.inputbuf.input_list[0])
-
-    @patch("bxcommon.connections.abstract_node.AbstractNode.destroy_conn")
-    def test_on_bytes_received_connection_destroyed(self, mocked_destroy):
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node.on_bytes_received(self.remote_fileno, self.to_31)
-        mocked_destroy.assert_called_with(self.connection)
-
-    @patch("bxcommon.test_utils.mocks.mock_connection.MockConnection.process_message")
-    def test_on_finished_receiving(self, mocked_conn):
-        self.local_node.on_finished_receiving(1)
-        mocked_conn.assert_not_called()
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.connection.state = ConnectionState.MARK_FOR_CLOSE
-        mocked_conn.assert_not_called()
-        self.connection.state = ConnectionState.CONNECTING
-        self.local_node.on_finished_receiving(self.remote_fileno)
-        mocked_conn.assert_called_with()
-
-    def test_get_bytes_to_send(self):
-        self.connection.outputbuf.output_msgs.append(self.to_31)
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.assertEqual(self.to_31, self.local_node.get_bytes_to_send(self.remote_fileno))
-
-    def test_on_bytes_sent(self):
-        self.connection.outputbuf.output_msgs.append(self.to_31)
-        self.connection.outputbuf.output_msgs.append(self.to_31)
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        advance_by = 8
-        self.local_node.on_bytes_sent(self.remote_fileno, advance_by)
-        self.assertEqual(advance_by, self.connection.outputbuf.index)
-
-    @patch("bxcommon.connections.abstract_node.AlarmQueue.time_to_next_alarm", return_value=(10, -1))
-    @patch("bxcommon.connections.abstract_node.AlarmQueue.fire_ready_alarms", return_value=40)
-    def test_get_sleep_timeout(self, mocked_time_to_next_alarm, mocked_fire_ready_alarms):
-        self.assertEqual(DEFAULT_SLEEP_TIMEOUT,
-                         self.local_node.get_sleep_timeout(triggered_by_timeout=10, first_call=True))
-        self.assertEqual(40, self.local_node.get_sleep_timeout(triggered_by_timeout=10))
-        self.local_node.connection_queue.append(self.connection)
-        self.assertEqual(DEFAULT_SLEEP_TIMEOUT, self.local_node.get_sleep_timeout(triggered_by_timeout=10))
-        mocked_fire_ready_alarms.assert_called()
-
-    def test_close(self):
-        self.assertNotIn(self.connection, self.local_node.connection_pool.by_fileno)
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.assertIn(self.connection, self.local_node.connection_pool.by_fileno)
-        self.local_node.close()
-        self.assertNotIn(self.connection, self.local_node.connection_pool.by_fileno)
-
-    def test_broadcast(self):
-        self.connection.state = ConnectionState.ESTABLISHED
-
-        fileno2 = 3
-        ip2 = "2.2.2.2"
-        port2 = 12345
-        connection2 = helpers.create_connection(MockConnection, fileno=fileno2, ip=ip2, port=port2)
-        connection2.state = ConnectionState.ESTABLISHED
-        connection2.enqueue_msg = MagicMock()
-
-        fileno3 = 4
-        ip3 = "3.3.3.3"
-        port3 = 12346
-        connection3 = helpers.create_connection(MockConnection, fileno=fileno3, ip=ip3, port=port3)
-        connection3.state = ConnectionState.ESTABLISHED
-        connection3.enqueue_msg = MagicMock()
-        connection3.CONNECTION_TYPE = MockConnectionType.NOT_MOCK
-
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node.connection_pool.add(fileno2, ip2, port2, connection2)
-        self.local_node.connection_pool.add(fileno3, ip3, port3, connection3)
-
-        msg = MockMessage(payload_len=32, buf=self.to_31)
-        self.local_node.broadcast(msg, self.connection, network_num=self.connection.network_num,
-                                  connection_types=[MockConnection.CONNECTION_TYPE])
-        connection2.enqueue_msg.assert_called_with(msg, False)
-        connection3.enqueue_msg.assert_not_called()
-
-    def test_enqueue_connection(self):
-        self.assertNotIn((self.remote_ip, self.remote_port), self.local_node.connection_queue)
-        self.local_node.enqueue_connection(self.remote_ip, self.remote_port)
-        self.assertIn((self.remote_ip, self.remote_port), self.local_node.connection_queue)
-
-    def test_enqueue_disconnect(self):
-        self.assertNotIn(self.remote_fileno, self.local_node.disconnect_queue)
-        self.local_node.enqueue_disconnect(self.remote_fileno)
-        self.assertIn(self.remote_fileno, self.local_node.disconnect_queue)
-
-    def test_pop_next_connection_address(self):
-        self.assertIsNone(self.local_node.pop_next_connection_address())
-        self.local_node.connection_queue.append((self.remote_ip, self.remote_port))
-        self.assertEqual((self.remote_ip, self.remote_port), self.local_node.pop_next_connection_address())
-        self.assertIsNone(self.local_node.pop_next_connection_address())
-
-    def test_pop_next_disconnect_connection(self):
-        self.assertIsNone(self.local_node.pop_next_disconnect_connection())
-        self.local_node.disconnect_queue.append(self.remote_fileno)
-        self.assertEqual(self.remote_fileno, self.local_node.pop_next_disconnect_connection())
-        self.assertIsNone(self.local_node.pop_next_disconnect_connection())
-
-    @patch("bxcommon.connections.abstract_node.SocketConnection.fileno", return_value=5)
-    def test_initialize_connection(self, mock_fileno):
-        socket_connection = MockSocketConnection(self.remote_fileno, self.remote_node)
-        self.assertEqual(3, self.local_node.alarm_queue.uniq_count)
-        self.assertIsNone(self.local_node.connection_pool.by_fileno[self.remote_fileno])
-        self.local_node._initialize_connection(socket_connection, self.remote_ip, self.remote_port, True)
-        self.assertEqual(4, self.local_node.alarm_queue.uniq_count)
-        self.assertEqual(self.connection.fileno,
-                         self.local_node.connection_pool.by_fileno[self.remote_fileno].fileno)
-
-    @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
-    def test_connection_timeout_established(self, mocked_register_alarm):
-        self.connection.state = ConnectionState.ESTABLISHED
-        self.local_node.schedule_pings_on_timeout = True
-        self.assertEqual(0, self.local_node._connection_timeout(self.connection))
-        mocked_register_alarm.assert_called_with(PING_INTERVAL_S, self.connection.send_ping)
-        self.connection.state = ConnectionState.MARK_FOR_CLOSE
-        self.assertEqual(0, self.local_node._connection_timeout(self.connection))
-
-    @patch("bxcommon.connections.abstract_node.AbstractNode.destroy_conn")
-    def test_connection_timeout_connecting(self, mocked_destroy_conn):
-        self.connection.state = ConnectionState.CONNECTING
-        self.assertEqual(0, self.local_node._connection_timeout(self.connection))
-        mocked_destroy_conn.assert_called_with(self.connection, retry_connection=True)
-
-    def test_kill_node(self):
-        with self.assertRaises(TerminationError):
-            self.local_node._kill_node(None, None)
-
-    @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
-    def test_destroy_conn(self, mocked_register_alarm):
-        self.connection.CONNECTION_TYPE = ConnectionType.BLOCKCHAIN_NODE
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node.destroy_conn(self.connection)
-        mocked_register_alarm.assert_not_called()
-        self.local_node.connection_pool.add(self.remote_fileno, self.remote_ip, self.remote_port, self.connection)
-        self.local_node.destroy_conn(self.connection, retry_connection=True)
-        self.assertIn(self.connection.fileno, self.local_node.disconnect_queue)
-        mocked_register_alarm.assert_called_with(CONNECTION_RETRY_SECONDS, self.local_node._retry_init_client_socket,
-                                                 self.remote_ip, self.remote_port, self.connection.CONNECTION_TYPE)
-
-    def test_is_outbound_peer(self):
-        self.assertFalse(self.local_node.is_outbound_peer(self.remote_ip, self.remote_port))
-        ip = "111.111.111.111"
-        port = 1000
-        self.local_node.outbound_peers = [OutboundPeerModel(ip, port),
-                                          OutboundPeerModel("222.222.222.222", 2000),
-                                          OutboundPeerModel("0.0.0.0", 1234)]
-
-        self.assertFalse(self.local_node.is_outbound_peer(self.remote_ip, self.remote_port))
-        self.assertTrue(self.local_node.is_outbound_peer(ip, port))
-
-    @patch("bxcommon.connections.abstract_node.sdn_http_service.submit_peer_connection_error_event")
-    def test_retry_init_client_socket(self, mocked_submit_peer):
-        self.assertEqual(0, self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port,
-                                                                      ConnectionType.RELAY_ALL))
-        self.assertIn((self.remote_ip, self.remote_port), self.local_node.connection_queue)
-        self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)] = MAX_CONNECT_RETRIES
-        self.local_node._retry_init_client_socket(self.remote_ip, self.remote_port, ConnectionType.RELAY_ALL)
-        self.assertEqual(0, self.local_node.num_retries_by_ip[(self.remote_ip, self.remote_port)])
-        mocked_submit_peer.assert_called_with(self.local_node.opts.node_id, self.remote_ip, self.remote_port)
-
-    @patch("bxcommon.connections.abstract_node.AlarmQueue.register_alarm")
-    def test_init_throughput_logging(self, mocked_alarm_queue):
-        self.local_node.init_throughput_logging()
-        mocked_alarm_queue.assert_called_once_with(THROUGHPUT_STATS_INTERVAL, throughput_statistics.flush_info)
-
-    @patch("bxcommon.utils.logger.statistics")
-    def test_dump_memory_usage(self, mock_warn):
-        # set to dump memory at 10 MB
-        self.local_node.next_report_mem_usage_bytes = 10 * 1024 * 1024
-
-        # current memory usage is 5 MB
-        memory_utils.get_app_memory_usage = MagicMock(return_value=5 * 1024 * 1024)
-
-        self.local_node.dump_memory_usage()
-        # expect that memory details are not logged
-        self.assertEqual(10 * 1024 * 1024, self.local_node.next_report_mem_usage_bytes)
-        mock_warn.assert_not_called()
-
-        # current memory usage goes up to 11 MB
-        memory_utils.get_app_memory_usage = MagicMock(return_value=11 * 1024 * 1024)
-
-        self.local_node.dump_memory_usage()
-        # expect that memory details are logged
-        self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
-                         self.local_node.next_report_mem_usage_bytes)
-        mock_warn.assert_called_once()
-
-        # current memory usage goes up to 15 MB
-        memory_utils.get_app_memory_usage = MagicMock(return_value=15 * 1024 * 1024)
-
-        self.local_node.dump_memory_usage()
-        # expect that memory details are not logged again
-        self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
-                         self.local_node.next_report_mem_usage_bytes)
-        mock_warn.assert_called_once()
 
 
 class TestNode(AbstractNode):
-    NODE_TYPE = "TestNode"
-
     def __init__(self, opts):
         super(TestNode, self).__init__(opts)
 
@@ -289,3 +25,270 @@ class TestNode(AbstractNode):
 
     def build_connection(self, socket_connection, ip, port, from_me=False):
         return MockConnection(socket_connection, (ip, port), self, from_me)
+
+    def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:
+        sdn_http_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
+
+
+class AbstractNodeTest(AbstractTestCase):
+    def setUp(self):
+        self.node = TestNode(helpers.get_common_opts(4321))
+        self.fileno = 1
+        self.ip = "123.123.123.123"
+        self.port = 8000
+        self.connection = helpers.create_connection(MockConnection, self.node, fileno=self.fileno, ip=self.ip,
+                                                    port=self.port, add_to_pool=False)
+        self.connection.close = MagicMock(side_effect=self.connection.close)
+        self.socket_connection = self.connection.socket_connection
+
+    def test_connection_exists(self):
+        self.assertFalse(self.node.connection_exists(self.ip, self.port))
+        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
+        self.assertTrue(self.node.connection_exists(self.ip, self.port))
+
+    def test_on_connection_added_new_connection(self):
+        self.node.on_connection_added(self.socket_connection, self.ip, self.port, True)
+        self.assertTrue(self.node.connection_exists(self.ip, self.port))
+        self.assertEqual(0, len(self.node.disconnect_queue))
+
+    def test_on_connection_added_duplicate(self):
+        self.node.connection_exists = MagicMock(return_value=True)
+        self.node.on_connection_added(self.socket_connection, self.ip, self.port, True)
+
+        self.assertIsNone(self.node.connection_pool.get_by_fileno(self.fileno))
+        self.assertEqual(1, len(self.node.disconnect_queue))
+        self.assertEqual((self.fileno, False), self.node.disconnect_queue[0])
+
+    def test_on_connection_added_unknown_connection_type(self):
+        self.node.build_connection = MagicMock(return_value=None)
+        self.node.on_connection_added(self.socket_connection, self.ip, self.port, True)
+
+        self.assertIsNone(self.node.connection_pool.get_by_fileno(self.fileno))
+        self.assertEqual(1, len(self.node.disconnect_queue))
+        self.assertEqual((self.fileno, True), self.node.disconnect_queue[0])
+
+    def test_on_connection_initialized(self):
+        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
+        self.assertEqual(ConnectionState.CONNECTING, self.connection.state)
+        self.node.on_connection_initialized(self.fileno)
+        self.assertEqual(ConnectionState.INITIALIZED, self.connection.state)
+
+    def test_on_connection_closed(self):
+        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
+        with self.assertRaises(ValueError):
+            self.node.on_connection_closed(self.fileno, True)
+
+        self.node.alarm_queue.register_alarm = MagicMock()
+        self.connection.mark_for_close()
+        self.node.on_connection_closed(self.fileno, True)
+        self.connection.close.assert_called_once()
+
+        self.assertFalse(self.node.connection_exists(self.ip, self.port))
+        self.node.alarm_queue.register_alarm.assert_called_once_with(1, self.node._retry_init_client_socket, self.ip,
+                                                                     self.port, self.connection.CONNECTION_TYPE)
+
+    def test_on_updated_peers(self):
+        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
+        self.node.opts.outbound_peers = [OutboundPeerModel("222.222.222.222", 2000)]
+        self.node.outbound_peers = [OutboundPeerModel("111.111.111.111", 1000),
+                                    OutboundPeerModel("222.222.222.222", 2000),
+                                    OutboundPeerModel(self.ip, self.port)]
+
+        outbound_peer_models = [OutboundPeerModel("111.111.111.111", 1000)]
+        self.node.on_updated_peers(outbound_peer_models)
+
+        self.assertEqual(outbound_peer_models, self.node.outbound_peers)
+        self.assertIn((self.fileno, False), self.node.disconnect_queue)
+
+    def test_on_bytes_received(self):
+        data = helpers.generate_bytearray(250)
+        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
+        self.node.on_bytes_received(self.fileno, data)
+        self.assertEqual(data, self.connection.inputbuf.input_list[0])
+
+    def test_on_finished_receiving(self):
+        self.connection.process_message = MagicMock()
+
+        some_other_fileno = 2
+        self.node.on_finished_receiving(some_other_fileno)
+        self.connection.process_message.assert_not_called()
+
+        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
+        self.connection.state = ConnectionState.INITIALIZED
+
+        self.node.on_finished_receiving(self.fileno)
+        self.connection.process_message.assert_called_once()
+        self.assertEqual(0, len(self.node.disconnect_queue))
+        self.connection.process_message.reset_mock()
+
+        self.connection.process_message.side_effect = lambda: self.connection.mark_for_close()
+        self.node.on_finished_receiving(self.fileno)
+        self.connection.process_message.assert_called_once()
+        self.assertIn((self.fileno, False), self.node.disconnect_queue)
+
+    def test_on_finished_receiving_from_me(self):
+        self.connection.process_message = MagicMock()
+
+        self.connection.from_me = True
+        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
+        self.connection.state = ConnectionState.INITIALIZED
+
+        self.connection.process_message.side_effect = lambda: self.connection.mark_for_close()
+        self.node.on_finished_receiving(self.fileno)
+        self.connection.process_message.assert_called_once()
+        self.assertIn((self.fileno, True), self.node.disconnect_queue)
+
+    def test_get_bytes_to_send(self):
+        data = helpers.generate_bytearray(250)
+        self.connection.outputbuf.output_msgs.append(data)
+        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
+        self.assertEqual(data, self.node.get_bytes_to_send(self.fileno))
+
+    def test_on_bytes_sent(self):
+        self.connection.outputbuf.output_msgs.append(helpers.generate_bytearray(200))
+        self.connection.outputbuf.output_msgs.append(helpers.generate_bytearray(200))
+        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
+        advance_by = 8
+        self.node.on_bytes_sent(self.fileno, advance_by)
+        self.assertEqual(advance_by, self.connection.outputbuf.index)
+
+    @patch("bxcommon.connections.abstract_node.AlarmQueue.time_to_next_alarm", return_value=(10, -1))
+    @patch("bxcommon.connections.abstract_node.AlarmQueue.fire_ready_alarms", return_value=40)
+    def test_get_sleep_timeout(self, mocked_time_to_next_alarm, mocked_fire_ready_alarms):
+        self.assertEqual(DEFAULT_SLEEP_TIMEOUT,
+                         self.node.get_sleep_timeout(triggered_by_timeout=10, first_call=True))
+        self.assertEqual(40, self.node.get_sleep_timeout(triggered_by_timeout=10))
+        self.node.connection_queue.append(self.connection)
+        self.assertEqual(DEFAULT_SLEEP_TIMEOUT, self.node.get_sleep_timeout(triggered_by_timeout=10))
+        mocked_fire_ready_alarms.assert_called()
+
+    def test_close(self):
+        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
+        self.assertIn(self.connection, self.node.connection_pool.by_fileno)
+        self.node.close()
+        self.assertNotIn(self.connection, self.node.connection_pool.by_fileno)
+        self.connection.close.assert_called_once()
+
+    def test_enqueue_connection(self):
+        self.assertNotIn((self.ip, self.port), self.node.connection_queue)
+        self.node.enqueue_connection(self.ip, self.port)
+        self.assertIn((self.ip, self.port), self.node.connection_queue)
+
+    def test_enqueue_disconnect(self):
+        self.assertNotIn((self.fileno, False), self.node.disconnect_queue)
+        self.node.enqueue_disconnect(self.socket_connection, False)
+        self.assertIn((self.fileno, False), self.node.disconnect_queue)
+
+    def test_enqueue_disconnect_unknown_connection(self):
+        self.node.enqueue_disconnect(self.socket_connection)
+        self.assertIn((self.fileno, False), self.node.disconnect_queue)
+        self.node.on_connection_closed(self.fileno, False)
+        self.assertNotIn(self.connection, self.node.connection_pool.by_fileno)
+
+    def test_pop_next_connection_address(self):
+        self.assertIsNone(self.node.pop_next_connection_address())
+        self.node.connection_queue.append((self.ip, self.port))
+        self.assertEqual((self.ip, self.port), self.node.pop_next_connection_address())
+        self.assertIsNone(self.node.pop_next_connection_address())
+
+    def test_pop_next_disconnect_connection(self):
+        self.assertIsNone(self.node.pop_next_disconnect_connection())
+        self.node.disconnect_queue.append(DisconnectRequest(self.fileno, False))
+        self.assertEqual((self.fileno, False), self.node.pop_next_disconnect_connection())
+        self.assertIsNone(self.node.pop_next_disconnect_connection())
+
+    def test_connection_timeout_established(self):
+        self.connection.state = ConnectionState.ESTABLISHED
+        self.assertEqual(0, self.node._connection_timeout(self.connection))
+        self.assertEqual(0, len(self.node.disconnect_queue))
+
+    def test_connection_timeout_closed(self):
+        self.connection.state = ConnectionState.MARK_FOR_CLOSE
+        self.assertEqual(0, self.node._connection_timeout(self.connection))
+        self.assertEqual(0, len(self.node.disconnect_queue))
+
+    def test_connection_timeout_connecting(self):
+        self.connection.state = ConnectionState.CONNECTING
+        self.assertEqual(0, self.node._connection_timeout(self.connection))
+        self.assertIn((self.fileno, False), self.node.disconnect_queue)
+
+    def test_get_next_retry_timeout(self):
+        self.connection.CONNECTION_TYPE = ConnectionType.BLOCKCHAIN_NODE
+        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
+
+        self.assertEqual(1, self.node._get_next_retry_timeout(self.ip, self.port))
+
+        self.node.num_retries_by_ip[(self.ip, self.port)] += 1
+        self.assertEqual(1, self.node._get_next_retry_timeout(self.ip, self.port))
+
+        self.node.num_retries_by_ip[(self.ip, self.port)] += 1
+        self.assertEqual(2, self.node._get_next_retry_timeout(self.ip, self.port))
+
+        self.node.num_retries_by_ip[(self.ip, self.port)] += 1
+        self.assertEqual(3, self.node._get_next_retry_timeout(self.ip, self.port))
+
+        self.node.num_retries_by_ip[(self.ip, self.port)] += 1
+        self.assertEqual(5, self.node._get_next_retry_timeout(self.ip, self.port))
+
+        self.node.num_retries_by_ip[(self.ip, self.port)] += 1
+        self.assertEqual(8, self.node._get_next_retry_timeout(self.ip, self.port))
+
+        self.node.num_retries_by_ip[(self.ip, self.port)] += 1
+        self.assertEqual(13, self.node._get_next_retry_timeout(self.ip, self.port))
+
+        # caps at 13
+        self.node.num_retries_by_ip[(self.ip, self.port)] += 1
+        self.assertEqual(13, self.node._get_next_retry_timeout(self.ip, self.port))
+
+        self.node.num_retries_by_ip[(self.ip, self.port)] += 10
+        self.assertEqual(13, self.node._get_next_retry_timeout(self.ip, self.port))
+
+    def test_retry_init_client_socket(self):
+        self.node._retry_init_client_socket(self.ip, self.port, ConnectionType.RELAY_ALL)
+        self.assertIn((self.ip, self.port), self.node.connection_queue)
+        self.assertEqual(1, self.node.num_retries_by_ip[(self.ip, self.port)])
+
+        self.node._retry_init_client_socket(self.ip, self.port, ConnectionType.RELAY_ALL)
+        self.assertEqual(2, self.node.num_retries_by_ip[(self.ip, self.port)])
+
+    def test_retry_init_client_socket_maxed_out(self):
+        sdn_http_service.submit_peer_connection_error_event = MagicMock()
+
+        self.node.num_retries_by_ip[(self.ip, self.port)] = MAX_CONNECT_RETRIES
+        self.node._retry_init_client_socket(self.ip, self.port, ConnectionType.RELAY_ALL)
+        self.assertEqual(0, self.node.num_retries_by_ip[(self.ip, self.port)])
+
+        sdn_http_service.submit_peer_connection_error_event.assert_called_with(
+            self.node.opts.node_id, self.ip, self.port
+        )
+
+    @patch("bxcommon.connections.abstract_node.memory_logger")
+    def test_dump_memory_usage(self, logger_mock):
+        # set to dump memory at 10 MB
+        self.node.next_report_mem_usage_bytes = 10 * 1024 * 1024
+
+        # current memory usage is 5 MB
+        memory_utils.get_app_memory_usage = MagicMock(return_value=5 * 1024 * 1024)
+
+        self.node.dump_memory_usage()
+        # expect that memory details are not logged
+        self.assertEqual(10 * 1024 * 1024, self.node.next_report_mem_usage_bytes)
+        logger_mock.assert_not_called()
+
+        # current memory usage goes up to 11 MB
+        memory_utils.get_app_memory_usage = MagicMock(return_value=11 * 1024 * 1024)
+
+        self.node.dump_memory_usage()
+        # expect that memory details are logged
+        self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
+                         self.node.next_report_mem_usage_bytes)
+        logger_mock.statistics.assert_called_once()
+
+        # current memory usage goes up to 15 MB
+        memory_utils.get_app_memory_usage = MagicMock(return_value=15 * 1024 * 1024)
+
+        self.node.dump_memory_usage()
+        # expect that memory details are not logged again
+        self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
+                         self.node.next_report_mem_usage_bytes)
+        logger_mock.statistics.assert_called_once()

@@ -1,15 +1,18 @@
 import struct
 from abc import ABCMeta
 
+from bxutils import logging
+
 from bxcommon import constants
 from bxcommon.constants import VERSION_NUM_LEN
 from bxcommon.messages.bloxroute.v4.version_message_v4 import VersionMessageV4
 from bxcommon.messages.bloxroute.version_message import VersionMessage
-from bxcommon.utils import logger
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 
+logger = logging.get_logger(__name__)
 
-class AbstractVersionManager(object):
+
+class AbstractVersionManager:
     __metaclass__ = ABCMeta
 
     CURRENT_PROTOCOL_VERSION = 1
@@ -34,8 +37,7 @@ class AbstractVersionManager(object):
         if not self.is_protocol_supported(protocol_version):
             raise ValueError("Protocol of version {} is not supported.".format(protocol_version))
         if protocol_version not in self.protocol_to_factory_mapping:
-            logger.error("Got a message of type {}. Should be supported, but not in factory mapping."
-                         .format(protocol_version))
+            logger.error("Got a message of type {}. Should be supported, but not in factory mapping.", protocol_version)
             raise NotImplementedError()
 
         return self.protocol_to_factory_mapping[protocol_version]
@@ -227,8 +229,7 @@ class AbstractVersionManager(object):
             header_len = VersionMessageV4.HEADER_LENGTH
 
         if command != self.version_message_command:
-            logger.error("Received a nonversion hello message of type {}. Ignoring and closing connection."
-                         .format(command))
+            logger.debug("Received a nonversion hello message of type {}. Ignoring and closing connection.", command)
             return self.MIN_SUPPORTED_PROTOCOL_VERSION - 1
 
         if payload_len < self.VERSION_MESSAGE_MAIN_LENGTH:

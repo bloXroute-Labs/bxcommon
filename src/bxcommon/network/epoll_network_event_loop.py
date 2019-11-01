@@ -1,10 +1,13 @@
 import errno
 import select
 
+from bxutils import logging
+
 from bxcommon.network.abstract_network_event_loop import AbstractNetworkEventLoop
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.socket_connection_state import SocketConnectionState
-from bxcommon.utils import logger
+
+logger = logging.get_logger(__name__)
 
 
 class EpollNetworkEventLoop(AbstractNetworkEventLoop):
@@ -24,15 +27,12 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
         self._epoll.close()
 
     def _process_events(self, timeout):
-        if timeout is None:
-            timeout = -1
-
         # Grab all events.
         try:
             events = self._epoll.poll(timeout)
         except IOError as ioe:
             if ioe.errno == errno.EINTR:
-                logger.info("got interrupted in epoll")
+                logger.debug("epoll was interrupted. Skipping to next iteration of event loop.")
                 return 0
             raise ioe
 
@@ -42,17 +42,15 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
 
             if fileno in self._socket_connections:
                 socket_connection = self._socket_connections[fileno]
-                assert isinstance(socket_connection, SocketConnection)
 
                 if socket_connection.is_server:
                     self._handle_incoming_connections(socket_connection)
                 else:
                     # Mark this connection for close if we received a POLLHUP. No other functions will be called
-                    #   on this connection.
+                    # on this connection.
                     if event & select.EPOLLHUP:
-                        socket_connection.set_state(SocketConnectionState.MARK_FOR_CLOSE)
-                        logger.info("Received EPOLLHUP. Closing connection on fileno: {}".format(fileno))
-                        self._node.on_connection_closed(fileno)
+                        logger.info("Received close from fileno: {}. Closing connection.", fileno)
+                        self._node.enqueue_disconnect(socket_connection)
 
                     if event & select.EPOLLOUT and \
                             not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
@@ -75,7 +73,8 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
         # Process receive events in the end
         for socket_connection in receive_connections:
             if not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-                socket_connection.receive()
+                if self._node.on_input_received(socket_connection.fileno()):
+                    socket_connection.receive()
 
         return len(events)
 

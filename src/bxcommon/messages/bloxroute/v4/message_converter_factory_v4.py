@@ -11,11 +11,11 @@ class _MessageConverterFactoryV4(AbstractMessageConverterFactory):
         BloxrouteMessageType.PING: common_message_converter_v4,
         BloxrouteMessageType.PONG: common_message_converter_v4,
         BloxrouteMessageType.BROADCAST: broadcast_message_converter_v4,
-        BloxrouteMessageType.TRANSACTION: common_message_converter_v4,
+        BloxrouteMessageType.TRANSACTION: broadcast_message_converter_v4,
         BloxrouteMessageType.GET_TRANSACTIONS: common_message_converter_v4,
         BloxrouteMessageType.TRANSACTIONS: common_message_converter_v4,
-        BloxrouteMessageType.KEY: common_message_converter_v4,
-        BloxrouteMessageType.BLOCK_HOLDING: common_message_converter_v4
+        BloxrouteMessageType.KEY: broadcast_message_converter_v4,
+        BloxrouteMessageType.BLOCK_HOLDING: broadcast_message_converter_v4
     }
 
     def get_message_converter(self, msg_type):

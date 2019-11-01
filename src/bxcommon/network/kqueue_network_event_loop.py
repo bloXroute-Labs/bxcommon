@@ -59,7 +59,8 @@ class KQueueNetworkEventLoop(AbstractNetworkEventLoop):
         # Process receive events in the end
         for socket_connection in receive_connections:
             if not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
-                socket_connection.receive()
+                if self._node.on_input_received(socket_connection.fileno()):
+                    socket_connection.receive()
 
         return len(events)
 

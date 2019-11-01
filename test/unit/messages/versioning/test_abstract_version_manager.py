@@ -1,3 +1,4 @@
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants
 from bxcommon.constants import VERSIONED_HELLO_MSG_MIN_PAYLOAD_LEN
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
@@ -5,7 +6,6 @@ from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.v4.hello_message_v4 import HelloMessageV4
 from bxcommon.messages.versioning.abstract_version_manager import AbstractVersionManager
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils import crypto
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.object_hash import Sha256Hash
@@ -58,8 +58,9 @@ class AbstractVersionManagerTest(AbstractTestCase):
 
     def test_get_connection_protocol_version__wrong_message(self):
         wrong_message = BroadcastMessage(
-            msg_hash=Sha256Hash(crypto.double_sha256(b"hello")),
+            message_hash=Sha256Hash(crypto.double_sha256(b"hello")),
             network_num=1,
+            source_id="",
             blob=bytearray(1))
         input_buffer = InputBuffer()
         input_buffer.add_bytes(wrong_message.rawbytes())

@@ -10,6 +10,10 @@ class AbstractBlockMessage(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def prev_block_hash(self) -> Sha256Hash:
+        pass
+
+    @abstractmethod
     def timestamp(self) -> int:
         pass
 

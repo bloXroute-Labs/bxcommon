@@ -1,11 +1,15 @@
 from collections import defaultdict
 
+from bxutils import logging
+
 from bxcommon import constants
-from bxcommon.utils import logger
 from bxcommon.utils.stats.direction import Direction
 from bxcommon.utils.stats.measurement_type import MeasurementType
 from bxcommon.utils.stats.peer_stats import PeerStats
 from bxcommon.utils.stats.statistics_service import StatisticsService, StatsIntervalData
+from bxutils.logging.log_record_type import LogRecordType
+
+logger = logging.get_logger(LogRecordType.Throughput)
 
 
 class ThroughputIntervalData(StatsIntervalData):
@@ -22,8 +26,8 @@ class ThroughputIntervalData(StatsIntervalData):
 class ThroughputStatistics(StatisticsService):
     INTERVAL_DATA_CLASS = ThroughputIntervalData
 
-    def __init__(self, interval=constants.THROUGHPUT_STATS_INTERVAL, look_back=constants.THROUGHPUT_STATS_LOOK_BACK):
-        super(ThroughputStatistics, self).__init__("ThroughputStats", interval, look_back, reset=True)
+    def __init__(self, interval=constants.THROUGHPUT_STATS_INTERVAL_S, look_back=constants.THROUGHPUT_STATS_LOOK_BACK):
+        super(ThroughputStatistics, self).__init__("ThroughputStats", interval, look_back, reset=True, logger=logger)
 
     def add_event(self, direction, msg_type, msg_size, peer_desc):
         peer_stats = self.interval_data.peer_to_stats[peer_desc]
@@ -54,7 +58,8 @@ class ThroughputStatistics(StatisticsService):
             else:
                 peer_stats.ping_max = max(peer_stats.ping_max, measure_value)
         else:
-            logger.error("{} {}".format(measure_type, measure_value))
+            # TODO: should be assertion that this should not happen
+            logger.error("Unexpected throughput measurement: {}={}".format(measure_type, measure_value))
 
     def get_info(self):
         if self.node is None:

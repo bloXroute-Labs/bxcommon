@@ -1,14 +1,17 @@
 import struct
 from typing import List, Optional
 
+from bxutils import logging
+from bxutils.logging.log_level import LogLevel
+
 import bxcommon.utils.crypto
 from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.models.transaction_info import TransactionInfo
-from bxcommon.utils import logger
-from bxcommon.utils.log_level import LogLevel
 from bxcommon.utils.object_hash import Sha256Hash
+
+logger = logging.get_logger(__name__)
 
 
 class TxsMessage(AbstractBloxrouteMessage):
@@ -41,7 +44,7 @@ class TxsMessage(AbstractBloxrouteMessage):
         self._txs = None
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG
 
     def get_txs(self) -> List[TransactionInfo]:
         if self._txs is None:

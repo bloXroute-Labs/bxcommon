@@ -1,14 +1,22 @@
 import argparse
 
+from bxutils.logging.log_format import LogFormat
+from bxutils.logging.log_level import LogLevel
+from bxutils.logging import log_config
+from bxutils import logging
+from bxutils import constants as utils_constants
+
 from bxcommon import constants
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import ALL_NETWORK_NUM
+from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.services import sdn_http_service
+from bxcommon.services import http_service
 from bxcommon.utils import config, ip_resolver
-from bxcommon.utils import convert, logger
-from bxcommon.utils.log_format import LogFormat
-from bxcommon.utils.log_level import LogLevel
+from bxcommon.utils import convert
 from bxcommon.utils.node_start_args import NodeStartArgs
+
+logger = logging.get_logger(__name__)
 
 
 def get_argument_parser() -> argparse.ArgumentParser:
@@ -40,14 +48,14 @@ def get_argument_parser() -> argparse.ArgumentParser:
         help="set log level",
         type=LogLevel.__getattr__,  # pyre-ignore
         choices=list(LogLevel),
-        default=constants.DEFAULT_LOG_LEVEL
+        default=utils_constants.DEFAULT_LOG_LEVEL
     )
     arg_parser.add_argument(
         "--log-format",
         help="set log format",
         type=LogFormat.__getattr__,  # pyre-ignore
         choices=list(LogFormat),
-        default=constants.DEFAULT_LOG_FORMAT
+        default=utils_constants.DEFAULT_LOG_FORMAT
     )
     arg_parser.add_argument(
         "--log-flush-immediately",
@@ -56,16 +64,34 @@ def get_argument_parser() -> argparse.ArgumentParser:
         default=False
     )
     arg_parser.add_argument(
+        "--log-level-overrides",
+        help="override log level for namespace stats=INFO,bxcommon.connections=WARNING",
+        default={"stats": "NOTSET", "bx": "NOTSET"},
+        type=log_config.str_to_log_options
+    )
+    arg_parser.add_argument(
         "--node-id",
         help="(TEST ONLY) Set the node_id for using in testing."
     )
     arg_parser.add_argument("--transaction-pool-memory-limit",
                             help="Maximum size of transactions to keep in memory pool (MB)",
                             type=int)
+
+    arg_parser.add_argument("--info-stats-interval",
+                            help="Frequency of info statistics logs in seconds",
+                            type=int,
+                            default=constants.INFO_STATS_INTERVAL_S)
+
+    arg_parser.add_argument("--throughput-stats-interval",
+                            help="Frequency of throughput statistics logs in seconds",
+                            type=int,
+                            default=constants.THROUGHPUT_STATS_INTERVAL_S)
+
     arg_parser.add_argument("--memory-stats-interval",
                             help="Frequency of memory statistics logs in seconds",
                             type=int,
-                            default=constants.MEMORY_STATS_INTERVAL)
+                            default=constants.MEMORY_STATS_INTERVAL_S)
+
     arg_parser.add_argument("--dump-detailed-report-at-memory-usage",
                             help="Total memory usage of application when detailed memory report "
                                  "should be dumped to log (MB)",
@@ -122,7 +148,7 @@ def parse_arguments(arg_parser: argparse.ArgumentParser) -> argparse.Namespace:
         opts.external_ip = ip_resolver.get_node_public_ip()
     assert opts.external_ip is not None
     opts.external_ip = ip_resolver.blocking_resolve_ip(opts.external_ip)
-    constants.SDN_ROOT_URL = opts.sdn_url
+    http_service.set_sdn_url(opts.sdn_url)
     config.append_manifest_args(opts.__dict__)
     return opts
 
@@ -150,13 +176,15 @@ def parse_blockchain_opts(opts, node_type):
     opts_dict["blockchain_network_num"] = network_info.network_num
     opts_dict["blockchain_block_interval"] = network_info.block_interval
     opts_dict["blockchain_ignore_block_interval_count"] = network_info.ignore_block_interval_count
+    opts_dict["blockchain_block_recovery_timeout_s"] = network_info.block_recovery_timeout_s
+    opts_dict["blockchain_block_hold_timeout_s"] = network_info.block_hold_timeout_s
 
 
 def set_blockchain_networks_info(opts):
     opts.blockchain_networks = sdn_http_service.fetch_blockchain_networks()
 
 
-def _get_blockchain_network_info(opts):
+def _get_blockchain_network_info(opts) -> BlockchainNetworkModel:
     """
     Retrieves the blockchain network info from the SDN based on blockchain-protocol and blockchain-network cli arguments.
 
@@ -168,11 +196,15 @@ def _get_blockchain_network_info(opts):
                 blockchain_network.network.lower() == opts.blockchain_network.lower():
             return blockchain_network
 
-    all_networks_names = "\n".join(
-        map(lambda n: "{} - {}".format(n.protocol, n.network), opts.blockchain_networks))
-    error_msg = "Network number does not exist for blockchain protocol {} and network {}.\nValid options:\n{}" \
-        .format(opts.blockchain_protocol, opts.blockchain_network, all_networks_names)
-    logger.fatal(error_msg)
+    if opts.blockchain_networks:
+        all_networks_names = "\n".join(
+            map(lambda n: "{} - {}".format(n.protocol, n.network), opts.blockchain_networks))
+        error_msg = "Network number does not exist for blockchain protocol {} and network {}.\nValid options:\n{}" \
+            .format(opts.blockchain_protocol, opts.blockchain_network, all_networks_names)
+        logger.fatal(error_msg, exc_info=False)
+    else:
+        logger.fatal("Could not reach the SDN to fetch network information. Check that {} is the actual address "
+                     "you are trying to reach.", opts.sdn_url, exc_info=False)
     exit(1)
 
 

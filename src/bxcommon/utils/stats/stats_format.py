@@ -3,7 +3,6 @@ from typing import List
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_type import ConnectionType
-from bxcommon.test_utils.mocks.mock_connection import MockConnectionType
 
 SUFFIXES = ["bytes", "kB", "MB", "GB"]
 
@@ -12,6 +11,7 @@ def byte_count(num_bytes: float) -> str:
     i = 0
     while num_bytes > 1024 and i < len(SUFFIXES):
         num_bytes /= 1024
+        i += 1
 
     return f"{int(num_bytes)} {SUFFIXES[i]}"
 
@@ -32,6 +32,9 @@ def connection(conn: AbstractConnection) -> str:
     :param conn: Connection
     :return: formatted string
     """
+
+    if conn is None:
+        return "<None>"
 
     return "{} - {}".format(conn.peer_desc, _format_connection_type(conn))
 
@@ -84,10 +87,6 @@ def ratio(first_value: float, second_value: float) -> str:
 
 
 def _format_connection_type(conn: AbstractConnection) -> str:
-    # hack for tests
-    if isinstance(conn.CONNECTION_TYPE, MockConnectionType):
-        return "M"
-
     if conn.CONNECTION_TYPE & ConnectionType.GATEWAY or conn.network_num != constants.ALL_NETWORK_NUM:
         return "G"
 

@@ -1,11 +1,14 @@
 from datetime import datetime
 from bxcommon.utils.stats.statistics_service import StatisticsService
-from bxcommon.constants import INFO_STATS_INTERVAL
+from bxcommon.constants import INFO_STATS_INTERVAL_S
+from bxutils.logging.log_record_type import LogRecordType
+from bxutils import logging
 
 
 class NodeInfo(StatisticsService):
     def __init__(self, interval=0):
-        super(NodeInfo, self).__init__("NodeInfo", interval=interval, look_back=0, reset=False)
+        super(NodeInfo, self).__init__("NodeInfo", interval=interval, look_back=0, reset=False,
+                                       logger=logging.get_logger(LogRecordType.NodeInfo))
 
     def get_info(self):
         payload = dict(self.node.opts.__dict__)
@@ -16,4 +19,4 @@ class NodeInfo(StatisticsService):
         return payload
 
 
-node_info_statistics = NodeInfo(interval=INFO_STATS_INTERVAL)
+node_info_statistics = NodeInfo(interval=INFO_STATS_INTERVAL_S)

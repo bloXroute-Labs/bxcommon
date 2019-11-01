@@ -1,8 +1,8 @@
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.messages.bloxroute.bloxroute_message_factory import _BloxrouteMessageFactory
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.keep_alive_message import KeepAliveMessage
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 
 
 class PingPongMessageTests(AbstractTestCase):

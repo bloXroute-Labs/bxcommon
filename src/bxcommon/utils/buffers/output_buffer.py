@@ -1,10 +1,16 @@
 import time
 from collections import deque
+from typing import Set, Optional
 
+from bxutils import logging
 from bxcommon import constants
+from bxcommon.utils import memory_utils
+from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
+
+logger = logging.get_logger(__name__)
 
 
-class OutputBuffer(object):
+class OutputBuffer(SpecialMemoryProperties):
     """
     There are three key functions on the outputbuffer read interface. This should also
     be implemented by the cut through sink interface.
@@ -36,10 +42,13 @@ class OutputBuffer(object):
         # how long we hold onto messages for batching in seconds
         self.max_hold_time = max_hold_time
         self.last_memview = None
-        self.last_bytearray = None
+        self.last_bytearray: Optional[bytearray] = None
         # size of the last valid memoryview
         self.valid_len = 0
         self.last_bytearray_create_time = None
+
+    def __len__(self):
+        return self.length
 
     def get_buffer(self):
         """
@@ -58,12 +67,19 @@ class OutputBuffer(object):
 
         return self.output_msgs[0][self.index:]
 
-    def advance_buffer(self, num_bytes):
-        if not isinstance(num_bytes, int) or num_bytes < 0:
+    def advance_buffer(self, num_bytes: int):
+        if num_bytes < 0:
             raise ValueError("Num_bytes must be a positive integer.")
 
         if (not self.output_msgs and num_bytes > 0) or (self.index + num_bytes) > len(self.output_msgs[0]):
-            raise ValueError("Index cannot be larger than length of first message.")
+            if len(self.output_msgs):
+                output_message = self.output_msgs[0].tobytes().hex()
+            else:
+                output_message = None
+            raise ValueError(
+                "Index cannot be larger than length of first message. Message: {}, Index: {}, Bytes: {}".format(
+                    output_message, self.index, num_bytes)
+            )
 
         self.index += num_bytes
         self.length -= num_bytes
@@ -77,7 +93,7 @@ class OutputBuffer(object):
 
     def enqueue_msgbytes(self, msg_bytes):
         if not isinstance(msg_bytes, bytearray) and not isinstance(msg_bytes, memoryview):
-            raise ValueError("Msg_bytes must be a bytearray.")
+            raise ValueError("Msg_bytes must be a bytearray. The type given was a {}".format(type(msg_bytes)))
 
         length = len(msg_bytes)
 
@@ -133,3 +149,20 @@ class OutputBuffer(object):
         self.last_bytearray = None
         self.last_memview = None
         self.valid_len = 0
+
+    def safe_empty(self):
+        """
+        Removes all bytes in OutputBuffer that are not in the current message boundary.
+        """
+        self.flush()
+        if self.output_msgs and self.index:
+            first = self.output_msgs.popleft()
+            self.output_msgs.clear()
+            self.output_msgs.append(first)
+            self.length = len(first) - self.index
+        else:
+            self.output_msgs.clear()
+            self.length = 0
+
+    def special_memory_size(self, ids: Optional[Set[int]] = None) -> SpecialTuple:
+        return memory_utils.get_special_size(self.output_msgs, ids=ids)
