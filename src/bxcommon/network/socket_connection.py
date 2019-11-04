@@ -79,7 +79,7 @@ class SocketConnection:
                 self._node.enqueue_disconnect(self)
                 return
             else:
-                collect_input = self._node.on_bytes_received(fileno, piece)
+                self._node.on_bytes_received(fileno, piece)
 
         self._node.on_finished_receiving(fileno)
 
@@ -113,7 +113,7 @@ class SocketConnection:
                     logger.trace("Got {0}. Send to {1} failed, trying again...", e.strerror, fileno)
                     continue
                 elif e.errno in [errno.EACCES, errno.ECONNRESET, errno.EPIPE, errno.EHOSTUNREACH,
-                                 errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
+                                 errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF, errno.ECONNREFUSED]:
                     logger.trace("Got {0}, send to {1} failed, closing connection.", e.strerror, fileno)
                     self._node.enqueue_disconnect(self)
                     return 0

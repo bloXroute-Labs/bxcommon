@@ -49,8 +49,6 @@ class AbstractNode:
         self.disconnect_queue: Deque[DisconnectRequest] = deque()
         self.outbound_peers = opts.outbound_peers[:]
 
-        self.receivable_connections = []
-
         self.connection_pool = ConnectionPool()
 
         self.should_force_exit = False
@@ -218,7 +216,7 @@ class AbstractNode:
             conn.log_trace("Skipping receiving bytes for closed connection.")
             return
 
-        continue_receiving = conn.add_received_bytes(bytes_received)
+        conn.add_received_bytes(bytes_received)
 
     def on_finished_receiving(self, fileno):
         conn = self.connection_pool.get_by_fileno(fileno)

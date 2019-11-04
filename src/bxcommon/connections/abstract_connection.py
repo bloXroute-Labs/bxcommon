@@ -146,8 +146,6 @@ class AbstractConnection(Generic[Node]):
 
         self.inputbuf.add_bytes(bytes_received)
 
-        return True
-
     def get_bytes_to_send(self):
         assert not self.state & ConnectionState.MARK_FOR_CLOSE
 
@@ -201,6 +199,7 @@ class AbstractConnection(Generic[Node]):
             if self.message_tracker:
                 self.message_tracker.append_message(len(msg_bytes), full_message)
 
+        self.socket_connection.can_send = True
         self.socket_connection.send()
 
     def pre_process_msg(self):
@@ -269,7 +268,7 @@ class AbstractConnection(Generic[Node]):
                     return
 
                 if self.log_throughput:
-                    hooks.add_throughput_event(Direction.INBOUND_MESSAGE, msg_type, len(msg.rawbytes()), self.peer_desc)
+                    hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
 
                 if not logger.isEnabledFor(msg.log_level()) and logger.isEnabledFor(LogLevel.INFO):
                     self._debug_message_tracker[msg_type] += 1
