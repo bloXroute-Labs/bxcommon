@@ -31,13 +31,13 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
         :param input_buffer: input buffer
         """
 
-        if self._connection_protocol_version > self.STARTING_SEQUENCE_CONTROL_FLAGS_FIRST_VERSION:
+        if self._connection_protocol_version >= self.STARTING_SEQUENCE_CONTROL_FLAGS_FIRST_VERSION:
             self._validate_starting_sequence(input_buffer)
 
         if self._size_validation_settings is not None:
             self._validate_payload_length(msg_type, payload_len)
 
-        if self._connection_protocol_version > self.STARTING_SEQUENCE_CONTROL_FLAGS_FIRST_VERSION:
+        if self._connection_protocol_version >= self.STARTING_SEQUENCE_CONTROL_FLAGS_FIRST_VERSION:
             self._validate_control_flags(is_full_msg, header_len, payload_len, input_buffer)
 
     def _validate_starting_sequence(self, input_buffer: InputBuffer) -> None:
