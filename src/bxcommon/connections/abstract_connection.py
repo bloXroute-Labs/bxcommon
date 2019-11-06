@@ -199,6 +199,7 @@ class AbstractConnection(Generic[Node]):
             if self.message_tracker:
                 self.message_tracker.append_message(len(msg_bytes), full_message)
 
+        # TODO: temporary fix for some situations where, see https://bloxroute.atlassian.net/browse/BX-1153
         self.socket_connection.can_send = True
         self.socket_connection.send()
 

@@ -55,6 +55,7 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
             return
 
         if msg_type == BloxrouteMessageType.TRANSACTION:
+            assert self._size_validation_settings is not None
             if payload_len > self._size_validation_settings.max_tx_size_bytes:
                 raise MessageValidationError(
                     "Transaction message size exceeds expected max size. Expected: {}. Actual: {}."
@@ -65,6 +66,7 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
                 msg_type == BloxrouteMessageType.TX_SERVICE_SYNC_TXS or \
                 msg_type == BloxrouteMessageType.TRANSACTION_CLEANUP or \
                 msg_type == BloxrouteMessageType.BLOCK_CONFIRMATION:
+            assert self._size_validation_settings is not None
             if payload_len > self._size_validation_settings.max_block_size_bytes:
                 raise MessageValidationError("{} message size exceeds expected max size. Expected: {}. Actual: {}."
                                              .format(msg_type, self._size_validation_settings.max_block_size_bytes,

@@ -7,7 +7,7 @@ from bxcommon.network.socket_connection import SocketConnection
 
 
 class MockSocketConnection(SocketConnection):
-    def __init__(self, fileno=1, node=None, default_socket_opts=None):
+    def __init__(self, fileno=1, node=None, default_socket_opts=None, send_bytes=False):
         super(MockSocketConnection, self).__init__(MagicMock(spec=socket.socket), node)
 
         if default_socket_opts is None:
@@ -16,6 +16,8 @@ class MockSocketConnection(SocketConnection):
             }
 
         self._fileno = fileno
+        # TODO: temporary fix for some situations where, see https://bloxroute.atlassian.net/browse/BX-1153
+        self._send_bytes = send_bytes
 
         self.socket_instance = MagicMock()
 
@@ -28,6 +30,13 @@ class MockSocketConnection(SocketConnection):
 
     def fileno(self):
         return self._fileno
+
+    # TODO: temporary fix for some situations where, see https://bloxroute.atlassian.net/browse/BX-1153
+    def send(self):
+        if self._node is None or not self._send_bytes:
+            return
+        else:
+            super().send()
 
     def socket_instance_send(self, bytes_written):
         if isinstance(bytes_written, memoryview):
