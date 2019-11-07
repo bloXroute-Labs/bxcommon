@@ -40,7 +40,7 @@ def _http_request(method: str, endpoint: str, **kwargs) -> Optional[jsonT]:
     url = build_url(endpoint)
     try:
         logger.trace("HTTP {0} to {1}", method, url)
-        response = _http.request(method=method, url=url, **kwargs)
+        response = _http.request(method=method, url=url, timeout=constants.HTTP_REQUEST_TIMEOUT, **kwargs)
         response.raise_for_status()
     except HTTPError as e:
         logger.error("{0} to {1} returned error: {2}", method, url, e)

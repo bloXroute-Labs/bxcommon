@@ -88,7 +88,7 @@ class MessageV4(AbstractMessage):
 
     def payload(self):
         if self._payload is None:
-            self._payload = self._memoryview[self.HEADER_LENGTH:self.payload_len() + self.HEADER_LENGTH]
+            self._payload = self.buf[self.HEADER_LENGTH:self.payload_len() + self.HEADER_LENGTH]
         return self._payload
 
     def set_priority(self, high: bool) -> None:

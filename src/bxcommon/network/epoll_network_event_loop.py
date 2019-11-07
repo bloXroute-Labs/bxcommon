@@ -36,7 +36,7 @@ class EpollNetworkEventLoop(AbstractNetworkEventLoop):
                 return 0
             raise ioe
 
-        receive_connections = self._node.get_and_clear_receivable_connections()
+        receive_connections = []
 
         for fileno, event in events:
 

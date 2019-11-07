@@ -68,6 +68,7 @@ class ConnectionPool:
         self.delete(conn)
         conn.CONNECTION_TYPE = connection_type
         self.add(conn.fileno, conn.peer_ip, conn.peer_port, conn)
+        self.index_conn_node_id(conn.peer_id, conn)
 
     def index_conn_node_id(self, node_id: str, conn: AbstractConnection) -> None:
         if node_id:

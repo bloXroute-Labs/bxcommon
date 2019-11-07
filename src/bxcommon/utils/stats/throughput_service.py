@@ -13,13 +13,12 @@ logger = logging.get_logger(LogRecordType.Throughput)
 
 
 class ThroughputIntervalData(StatsIntervalData):
-    __slots__ = ["total_in", "total_out", "total_processed_message_bytes", "peer_to_stats"]
+    __slots__ = ["total_in", "total_out", "peer_to_stats"]
 
     def __init__(self, *args, **kwargs):
         super(ThroughputIntervalData, self).__init__(*args, **kwargs)
         self.total_in = 0
         self.total_out = 0
-        self.total_processed_message_bytes = 0
         self.peer_to_stats = defaultdict(PeerStats)
 
 
@@ -33,12 +32,12 @@ class ThroughputStatistics(StatisticsService):
         peer_stats = self.interval_data.peer_to_stats[peer_desc]
         peer_stats.address = peer_desc
 
-        if direction is Direction.INBOUND_MESSAGE:
+        if direction is Direction.INBOUND:
             peer_stats.messages_received[msg_type].bytes += msg_size
             peer_stats.messages_received[msg_type].count += 1
             peer_stats.peer_total_received += msg_size
             self.interval_data.total_in += msg_size
-        elif direction is Direction.OUTBOUND:
+        else:
             peer_stats.messages_sent.bytes += msg_size
             peer_stats.messages_sent.count += 1
             peer_stats.peer_total_sent += msg_size
@@ -72,7 +71,6 @@ class ThroughputStatistics(StatisticsService):
             node_peers=[],
             total_bytes_received=self.interval_data.total_in,
             total_bytes_sent=self.interval_data.total_out,
-            total_processed_message_bytes=self.interval_data.total_processed_message_bytes,
             peer_stats=[],
             start_time=self.interval_data.start_time,
             end_time=self.interval_data.end_time,

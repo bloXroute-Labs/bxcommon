@@ -31,7 +31,7 @@ class KQueueNetworkEventLoop(AbstractNetworkEventLoop):
         # get all available events from kqueue or wait until timeout. do not add any new events ([] is empty).
         events = self._kqueue.control([], constants.MAX_KQUEUE_EVENTS_COUNT, timeout)
 
-        receive_connections = self._node.get_and_clear_receivable_connections()
+        receive_connections = []
 
         # Process new connections and send events before receive
         for event in events:

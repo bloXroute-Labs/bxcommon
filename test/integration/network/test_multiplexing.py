@@ -84,7 +84,6 @@ class TestNode(AbstractNode):
         print("Node {0}: on_bytes_received call. {1} bytes received from connection {2}"
               .format(self.port, len(bytes_received), fileno))
         self.receive_buffers[fileno] += bytes_received
-        return True
 
     def get_sleep_timeout(self, triggered_by_timeout, first_call=False):
         print("Node {0}: get_sleep_timeout called.".format(self.port))
