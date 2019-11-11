@@ -87,10 +87,10 @@ def ratio(first_value: float, second_value: float) -> str:
 
 
 def _format_connection_type(conn: AbstractConnection) -> str:
-    if conn.CONNECTION_TYPE & ConnectionType.GATEWAY or conn.network_num != constants.ALL_NETWORK_NUM:
-        return "G"
-
     if conn.CONNECTION_TYPE & ConnectionType.RELAY_ALL:
         return "R"
+
+    if conn.CONNECTION_TYPE & ConnectionType.GATEWAY or conn.network_num != constants.ALL_NETWORK_NUM:
+        return "G"
 
     return conn.CONNECTION_TYPE.name
