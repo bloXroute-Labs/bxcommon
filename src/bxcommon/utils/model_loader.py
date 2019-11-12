@@ -142,7 +142,9 @@ def _load_union(union_type: Type[T], union_value: Any) -> Any:
 # noinspection PyRedeclaration
 _TYPE_HANDLER_MAPPING = {
     list: _load_list,
+    List: _load_list,
     dict: _load_dict,
+    Dict: _load_dict,
     Optional: _load_optional,
     Union: _load_union,
 }
