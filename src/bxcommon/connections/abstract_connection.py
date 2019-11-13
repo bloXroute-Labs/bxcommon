@@ -269,7 +269,8 @@ class AbstractConnection(Generic[Node]):
                     return
 
                 if self.log_throughput:
-                    hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc)
+                    hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc,
+                                               self.peer_id)
 
                 if not logger.isEnabledFor(msg.log_level()) and logger.isEnabledFor(LogLevel.INFO):
                     self._debug_message_tracker[msg_type] += 1
@@ -369,7 +370,7 @@ class AbstractConnection(Generic[Node]):
         return self.message_factory.create_message_from_buffer(msg_contents)
 
     def advance_bytes_on_buffer(self, buf, bytes_written):
-        hooks.add_throughput_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc)
+        hooks.add_throughput_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc, self.peer_id)
         try:
             buf.advance_buffer(bytes_written)
         except ValueError as e:
