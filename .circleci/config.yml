@@ -39,10 +39,10 @@ jobs:
             . venv/bin/activate
             { # try
                 echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxextensions."
-                git clone -b $CIRCLE_BRANCH --single-branch --depth=1 --recursive git@github.com:bloXroute-Labs/bxextensions.git
+                git clone -b $CIRCLE_BRANCH --single-branch --depth=1 --recursive git@github.com:bloXroute-Labs/bxextensions-private.git bxextensions
             } || { # catch
                 echo "Trying bxextensions develop branch, could not find identical branch name '$CIRCLE_BRANCH'."
-                git clone -b develop --single-branch --depth=1 --recursive git@github.com:bloXroute-Labs/bxextensions.git
+                git clone -b develop --single-branch --depth=1 --recursive git@github.com:bloXroute-Labs/bxextensions-private.git bxextensions
             }
             cd bxextensions
             python build_extensions.py
@@ -130,10 +130,10 @@ jobs:
             }
             { # try
                 echo "Trying to clone identical branch name '$CIRCLE_BRANCH  from bxgateway."
-                git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway.git
+                git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway-private.git bxgateway
             } || { # catch
                 echo "Trying bxgateway develop branch, could not find identical branch name '$CIRCLE_BRANCH."
-                git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway.git
+                git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway-private.git bxgateway
             }
       - run:
           name: Initialize virtualenv
