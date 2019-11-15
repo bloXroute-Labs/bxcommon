@@ -416,21 +416,23 @@ class AbstractConnection(Generic[Node]):
     def msg_pong(self, _msg):
         pass
 
-    def mark_for_close(self):
+    def mark_for_close(self, should_retry: Optional[bool] = None):
         """
-        Marks a connection for close. Prefer using this method to close a connection over
-        AbstractConnection#destroy_conn, as this allows a cleaner showdown and finish processing messages.
+        Marks a connection for close, so AbstractNode can dispose of this class.
+        Use this where possible for a clean shutdown.
+        """
+        if should_retry is None:
+            should_retry = self.from_me
+
+        self.log_debug("Marking connection for close.")
+        self.state |= ConnectionState.MARK_FOR_CLOSE
+        self.socket_connection.mark_for_close(should_retry)
+
+    def dispose(self):
+        """
+        Performs any need operations after connection object has been discarded by the AbstractNode.
         """
         self.state |= ConnectionState.MARK_FOR_CLOSE
-        self.log_debug("Marking connection for close.")
-
-    def close(self):
-        """
-        Cleans up connection state after socket has been terminated.
-
-        Do not call this directly from connection event handlers.
-        """
-        assert self.state & ConnectionState.MARK_FOR_CLOSE
 
     def clean_up_current_msg(self, payload_len: int, msg_is_in_input_buffer: bool) -> None:
         """

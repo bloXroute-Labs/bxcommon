@@ -1,15 +1,15 @@
 import errno
 import socket
 from abc import ABCMeta, abstractmethod
-from typing import Dict
+from collections import deque
+from typing import Dict, Deque
 
-from bxutils import logging
-
-from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon import constants
+from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.network.socket_connection import SocketConnection
-from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
 from bxcommon.network.socket_connection_state import SocketConnectionState
+from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -27,6 +27,7 @@ class AbstractNetworkEventLoop:
     def __init__(self, node: AbstractNode):
         self._node: AbstractNode = node
         self._socket_connections: Dict[int, SocketConnection] = {}
+        self._disconnect_queue: Deque[int] = deque()
 
     def run(self):
         """
@@ -37,12 +38,10 @@ class AbstractNetworkEventLoop:
 
         try:
             self._start_server()
-
             self._connect_to_sdn()
-
             self._connect_to_peers()
 
-            timeout = self._node.get_sleep_timeout(triggered_by_timeout=False, first_call=True)
+            timeout = self._node.fire_alarms()
 
             while True:
                 # since alarms can be registered from multiple threads we need to occasionally check for new alarms.
@@ -50,8 +49,8 @@ class AbstractNetworkEventLoop:
                     timeout = constants.MAX_EVENT_LOOP_TIMEOUT_S
                 else:
                     timeout = min(timeout, constants.MAX_EVENT_LOOP_TIMEOUT_S)
-                events_count = self._process_events(timeout)
 
+                self._process_events(timeout)
                 self._process_disconnect_requests()
 
                 if self._node.force_exit():
@@ -59,10 +58,12 @@ class AbstractNetworkEventLoop:
                     break
 
                 self._node.flush_all_send_buffers()
-
                 self._process_new_connections_requests()
 
-                timeout = self._node.get_sleep_timeout(events_count == 0)
+                timeout = self._node.fire_alarms()
+                if self._node.connection_queue:
+                    self._process_new_connections_requests()
+
         finally:
             self.close()
 
@@ -74,10 +75,10 @@ class AbstractNetworkEventLoop:
         self._node.close()
 
         for _, socket_connection in self._socket_connections.items():
-            socket_connection.close(force_destroy=True)
+            socket_connection.dispose(force_destroy=True)
 
     @abstractmethod
-    def _process_events(self, timeout):
+    def _process_events(self, timeout: float) -> int:
         pass
 
     def _start_server(self):
@@ -132,19 +133,15 @@ class AbstractNetworkEventLoop:
             address = self._node.pop_next_connection_address()
 
     def _process_disconnect_requests(self):
-        disconnect_request = self._node.pop_next_disconnect_connection()
-        while disconnect_request is not None:
-            fileno, should_retry = disconnect_request
+        for fileno in self._disconnect_queue:
             if fileno in self._socket_connections:
-                logger.debug("Closing connection to {0}, total_connections: {1}", fileno, len(self._socket_connections))
                 socket_connection = self._socket_connections.pop(fileno)
-                socket_connection.close()
-
-                self._node.on_connection_closed(fileno, should_retry)
+                socket_connection.dispose()
+                self._node.on_connection_closed(fileno)
             else:
-                logger.debug("Fileno {0} could not be closed", fileno)
-
-            disconnect_request = self._node.pop_next_disconnect_connection()
+                # should never be called
+                logger.debug("Connection was requested to be removed twice: {}", fileno)
+        self._disconnect_queue.clear()
 
     def _connect_to_server(self, ip, port, protocol=TransportLayerProtocol.TCP):
         if self._node.connection_exists(ip, port):
@@ -152,7 +149,6 @@ class AbstractNetworkEventLoop:
             return
 
         sock = None
-
         initialized = True  # True if socket is connected. False otherwise.
 
         try:
@@ -201,7 +197,7 @@ class AbstractNetworkEventLoop:
             pass
 
     def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):
-        socket_connection = SocketConnection(new_socket, self._node, is_server)
+        socket_connection = SocketConnection(new_socket, self._node, self._schedule_socket_disconnect, is_server)
 
         if initialized:
             socket_connection.set_state(SocketConnectionState.INITIALIZED)
@@ -213,3 +209,14 @@ class AbstractNetworkEventLoop:
 
             if initialized:
                 self._node.on_connection_initialized(new_socket.fileno())
+
+    def _send_on_socket(self, socket_connection: SocketConnection):
+        if not socket_connection.state & SocketConnectionState.INITIALIZED:
+            socket_connection.set_state(SocketConnectionState.INITIALIZED)
+            self._node.on_connection_initialized(socket_connection.fileno())
+
+        socket_connection.can_send = True
+        socket_connection.send()
+
+    def _schedule_socket_disconnect(self, fileno: int):
+        self._disconnect_queue.append(fileno)

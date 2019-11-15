@@ -155,7 +155,7 @@ MAX_KQUEUE_EVENTS_COUNT = 1000
 CANCEL_ALARMS = 0
 
 # Fast execution timeout on alarm queue
-DEFAULT_SLEEP_TIMEOUT = 0.1
+MIN_SLEEP_TIMEOUT = 0.1
 
 REQUEST_EXPIRATION_TIME = 15 * 60  # TODO: Return this value to 1 minute
 

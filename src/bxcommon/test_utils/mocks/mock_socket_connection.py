@@ -8,7 +8,7 @@ from bxcommon.network.socket_connection import SocketConnection
 
 class MockSocketConnection(SocketConnection):
     def __init__(self, fileno=1, node=None, default_socket_opts=None, send_bytes=False):
-        super(MockSocketConnection, self).__init__(MagicMock(spec=socket.socket), node)
+        super(MockSocketConnection, self).__init__(MagicMock(spec=socket.socket), node, lambda _: None)
 
         if default_socket_opts is None:
             default_socket_opts = {
@@ -28,7 +28,7 @@ class MockSocketConnection(SocketConnection):
         self.socket_instance.setsockopt = self.socket_instance_set_opt
         self.socket_instance.getsockopt = self.socket_instance_get_opt
 
-    def fileno(self):
+    def fileno(self) -> int:
         return self._fileno
 
     # TODO: temporary fix for some situations where, see https://bloxroute.atlassian.net/browse/BX-1153

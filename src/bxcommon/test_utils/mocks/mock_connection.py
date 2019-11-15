@@ -62,9 +62,6 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
     def is_sendable(self):
         return self.is_active()
 
-    def mark_for_close(self, force_destroy_now=False):
-        self.state |= ConnectionState.MARK_FOR_CLOSE
-
     def add_received_bytes(self, bytes_received):
         self.inputbuf.add_bytes(bytes_received)
         self.mark_for_close()

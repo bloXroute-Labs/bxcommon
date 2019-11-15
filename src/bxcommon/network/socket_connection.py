@@ -1,82 +1,98 @@
 import errno
 import socket
+from typing import TYPE_CHECKING, Callable
 
 from bxcommon import constants
+from bxcommon.exceptions import TerminationError
 from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.utils import convert
 from bxutils import logging
+from bxutils.logging.log_level import LogLevel
+
+if TYPE_CHECKING:
+    from bxcommon.connections.abstract_node import AbstractNode
 
 logger = logging.get_logger(__name__)
 
 
 class SocketConnection:
-    def __init__(self, socket_instance, node, is_server=False):
-        if not isinstance(socket_instance, socket.socket):
-            raise ValueError("socket_instance is expected to be of type socket but was {0}"
-                             .format(type(socket.socket)))
-
+    def __init__(self, socket_instance: socket.socket, node: "AbstractNode",
+                 disconnection_scheduler: Callable[[int], None], is_server: bool = False):
         self.socket_instance = socket_instance
         self.is_server = is_server
         self._node = node
+        self._disconnect_scheduler = disconnection_scheduler
 
         self.state = SocketConnectionState.CONNECTING
 
         self._receive_buf = bytearray(constants.RECV_BUFSIZE)
         self.can_send = False
 
+    def __repr__(self):
+        return f"SocketConnection<fileno: {self.fileno()}, server: {self.is_server}>"
+
+    def _log_message(self, level: LogLevel, message, *args, **kwargs):
+        logger.log(level, f"[{self}] {message}", *args, **kwargs)
+
+    def log_trace(self, message, *args, **kwargs):
+        self._log_message(LogLevel.TRACE, message, *args, **kwargs)
+
+    def log_debug(self, message, *args, **kwargs):
+        self._log_message(LogLevel.DEBUG, message, *args, **kwargs)
+
+    def log_info(self, message, *args, **kwargs):
+        self._log_message(LogLevel.INFO, message, *args, **kwargs)
+
+    def log_warning(self, message, *args, **kwargs):
+        self._log_message(LogLevel.WARNING, message, *args, **kwargs)
+
+    def log_error(self, message, *args, **kwargs):
+        self._log_message(LogLevel.ERROR, message, *args, **kwargs)
+
+    def log_fatal(self, message, *args, **kwargs):
+        self._log_message(LogLevel.FATAL, message, *args, **kwargs)
+
     def set_state(self, state: SocketConnectionState):
         self.state |= state
 
-    def mark_for_close(self):
+    def mark_for_close(self, should_retry: bool = True):
         self.set_state(SocketConnectionState.MARK_FOR_CLOSE)
+        if not should_retry:
+            self.set_state(SocketConnectionState.DO_NOT_RETRY)
+
+        self._disconnect_scheduler(self.fileno())
 
     def receive(self):
-
         fileno = self.fileno()
+        self.log_trace("Collecting input...")
 
-        logger.trace("Collecting input from fileno {0}.", fileno)
-        collect_input = True
-
-        while collect_input and not self.state & SocketConnectionState.MARK_FOR_CLOSE:
+        while not self.state & SocketConnectionState.MARK_FOR_CLOSE:
             # Read from the socket and store it into the receive buffer.
             try:
                 bytes_read = self.socket_instance.recv_into(self._receive_buf, constants.RECV_BUFSIZE)
             except socket.error as e:
                 if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
-                    logger.trace("Received errno {0} with message: '{1}' on connection {2}. Stop collecting input.",
-                                 e.errno, e.strerror, fileno)
+                    self.log_trace("Receive completed. Received errno {} with message: {}", e.errno, e.strerror)
                     break
                 elif e.errno in [errno.EINTR]:
-                    # we were interrupted, try again
-                    logger.trace("Received errno {0} with message '{1}', receive on {2} failed. Continuing recv.",
-                                 e.errno, e.strerror, fileno)
+                    self.log_trace("Receive interrupted: {}. Retrying...", e.strerror)
                     continue
-                elif e.errno in [errno.ECONNREFUSED]:
-                    # Fatal errors for the connections
-                    logger.trace("Received errno {0} with message '{1}', receive on {2} failed. "
-                                 "Closing connection and retrying...",
-                                 e.errno, e.strerror, fileno)
-                    self._node.enqueue_disconnect(self)
-                    return
-                elif e.errno in [errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
-                    # Perform orderly shutdown
-                    self._node.enqueue_disconnect(self)
+                elif e.errno in [errno.ECONNREFUSED, errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF]:
+                    self.log_info("Receive rejected. Code: {}, message: {}. Closing connection.", e.errno, e.strerror)
+                    self.mark_for_close()
                     return
                 elif e.errno in [errno.EFAULT, errno.EINVAL, errno.ENOTCONN, errno.ENOMEM]:
-                    # Should never happen errors
-                    logger.error("Received errno {0} with msg {1}, receive on {2} failed. This should never happen.",
-                                 e.errno, e.strerror, fileno)
+                    self.log_error("Receive triggered fatal error. Code: {}, message: {}", e.errno, e.strerror)
                     return
                 else:
                     raise e
 
             piece = self._receive_buf[:bytes_read]
-            logger.trace("Got {0} bytes from fileno {1}: {2}",
-                         bytes_read, fileno, convert.bytes_to_hex(piece))
+            self.log_trace("Received {} bytes: {}", bytes_read, convert.bytes_to_hex(piece))
 
             if bytes_read == 0:
-                logger.info("Received close from fileno: {}. Closing connection.", self.fileno())
-                self._node.enqueue_disconnect(self)
+                self.log_info("Received orderly close from remote. Closing connection.")
+                self.mark_for_close()
                 return
             else:
                 self._node.on_bytes_received(fileno, piece)
@@ -99,33 +115,54 @@ class SocketConnection:
         while self.can_send and not self.state & SocketConnectionState.MARK_FOR_CLOSE:
             try:
                 send_buffer = self._node.get_bytes_to_send(fileno)
-
                 if not send_buffer:
                     break
 
                 bytes_written = self.socket_instance.send(send_buffer)
-                logger.trace("Sent {0} bytes on fileno {1}", bytes_written, fileno)
+                self.log_trace("Sent {} bytes.", bytes_written)
             except socket.error as e:
                 if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOBUFS]:
-                    logger.trace("Got {0}. Fileno {1} has a full socket. Marking as not sendable.", e.strerror, fileno)
+                    self.log_trace(
+                        "Sending filled up socket buffer. Marking as not sendable for now. Message: {}", e.strerror
+                    )
                     self.can_send = False
                 elif e.errno in [errno.EINTR]:
-                    logger.trace("Got {0}. Send to {1} failed, trying again...", e.strerror, fileno)
+                    self.log_trace("Sending was interrupted with message: {}. Trying again...", e.strerror)
                     continue
-                elif e.errno in [errno.EACCES, errno.ECONNRESET, errno.EPIPE, errno.EHOSTUNREACH,
-                                 errno.ECONNRESET, errno.ETIMEDOUT, errno.EBADF, errno.ECONNREFUSED]:
-                    logger.trace("Got {0}, send to {1} failed, closing connection.", e.strerror, fileno)
-                    self._node.enqueue_disconnect(self)
+                elif e.errno in [
+                    errno.EACCES,
+                    errno.ECONNRESET,
+                    errno.EPIPE,
+                    errno.EHOSTUNREACH,
+                    errno.ECONNRESET,
+                    errno.ETIMEDOUT,
+                    errno.EBADF,
+                    errno.ECONNREFUSED,
+                ]:
+                    self.log_trace("Sending rejected. Code: {}, message: {}", e.errno, e.strerror)
+                    self.mark_for_close()
                     return 0
-                elif e.errno in [errno.EDESTADDRREQ, errno.EFAULT, errno.EINVAL,
-                                 errno.EISCONN, errno.EMSGSIZE, errno.ENOTCONN, errno.ENOTSOCK]:
-                    logger.fatal("Fatal socket error {} on fileno {}: {}. Shutting down.",
-                                 e.errno, fileno, e.strerror)
-                    exit(1)
+                elif e.errno in [
+                    errno.EDESTADDRREQ,
+                    errno.EFAULT,
+                    errno.EINVAL,
+                    errno.EISCONN,
+                    errno.EMSGSIZE,
+                    errno.ENOTCONN,
+                    errno.ENOTSOCK,
+                ]:
+                    # Unrecoverable error. Likely that some developer code has been breaking invariants.
+                    self.log_fatal(
+                        "Sending triggered fatal socket error. Code: {}, message: {}. Shutting down.",
+                        e.errno,
+                        e.strerror,
+                    )
+                    raise TerminationError("Fatal socket error")
                 elif e.errno in [errno.ENOMEM]:
-                    # Fatal errors for the node
-                    logger.fatal("Fatal socket error ENOMEM on fileno {}: {}. Shutting down.", fileno, e.strerror)
-                    exit(1)
+                    self.log_fatal(
+                        "Sending triggered out of memory. Code: {}, message: {}. Shutting down.", e.errno, e.strerror
+                    )
+                    raise TerminationError("Socket out of memory")
                 else:
                     raise e
 
@@ -136,10 +173,16 @@ class SocketConnection:
 
         return total_bytes_written
 
-    def fileno(self):
+    def fileno(self) -> int:
         return self.socket_instance.fileno()
 
-    def close(self, force_destroy: bool = False):
+    def dispose(self, force_destroy: bool = False):
+        """
+        Discard socket resources after socket usage has been disabled.
+        SocketConnection is expected to have MARK_FOR_CLOSE state already set on it.
+
+        :param force_destroy: Forcibly dispose of resources even if socket has not been marked for close.
+        """
         if not force_destroy and not self.state & SocketConnectionState.MARK_FOR_CLOSE:
             raise ValueError("Attempted to close socket that was not MARK_FOR_CLOSE.")
         try:

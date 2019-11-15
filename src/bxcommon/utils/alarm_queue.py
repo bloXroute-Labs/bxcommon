@@ -1,7 +1,7 @@
 import time
 from heapq import heappop, heappush
 from threading import RLock
-from typing import List
+from typing import List, Optional, Tuple
 
 from bxcommon import constants
 from bxutils import logging
@@ -197,29 +197,27 @@ class AlarmQueue(object):
                             if not alarm_heap:
                                 del self.approx_alarms_scheduled[alarm.fn]
 
-    def fire_ready_alarms(self, has_alarm):
+    def fire_ready_alarms(self) -> Optional[float]:
         """
         Fires ready alarm repeatedly until no more should be fired.
-        :param has_alarm: Force fire initial alarm. (what?)
         :return: time until next alarm, or None
         """
-        alarmq_empty, time_to_next_alarm = self.time_to_next_alarm()
+        time_to_next_alarm = self.time_to_next_alarm()
 
-        if has_alarm or (not alarmq_empty and time_to_next_alarm <= 0):
-            while not alarmq_empty and time_to_next_alarm <= 0:
-                self.fire_alarms()
-                alarmq_empty, time_to_next_alarm = self.time_to_next_alarm()
+        while time_to_next_alarm is not None and time_to_next_alarm <= 0:
+            self.fire_alarms()
+            time_to_next_alarm = self.time_to_next_alarm()
 
         return time_to_next_alarm
 
-    def time_to_next_alarm(self):
+    def time_to_next_alarm(self) -> Optional[float]:
         """
         Indicates if there's not an alarm on the queue and the timeout to the next one if there is.
         :return: (if alarm queue is empty, timeout to next alarm)
         """
         with self.lock:
             if not self.alarms:
-                return True, None
+                return None
 
             time_to_alarm = self.alarms[0].fire_time - time.time()
-            return False, time_to_alarm
+            return time_to_alarm

@@ -1,14 +1,14 @@
 import time
 from threading import Thread
+from typing import List, Tuple
 
-from bxutils import logging
-
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.connections.abstract_node import AbstractNode
-from bxcommon.connections.node_type import NodeType
 from bxcommon.network.network_event_loop_factory import create_event_loop
+from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.test_utils import helpers
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import generate_bytearray
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -27,15 +27,13 @@ class TestNode(AbstractNode):
         self.finished_sending = True
         self.ready_to_close = False
 
-        self.connections = []
+        self.connections: List[Tuple[SocketConnection, int, int, str, bool]] = []
 
         self.send_bytes = send_bytes if send_bytes is not None else bytearray(0)
         self.memory_view = memoryview(self.send_bytes)
         self.bytes_sent = 0
 
         self.receive_buffers = {}
-
-        self.timeout_triggered_loops = 0
 
     def send_request_for_relay_peers(self):
         pass
@@ -85,11 +83,9 @@ class TestNode(AbstractNode):
               .format(self.port, len(bytes_received), fileno))
         self.receive_buffers[fileno] += bytes_received
 
-    def get_sleep_timeout(self, triggered_by_timeout, first_call=False):
+    def fire_alarms(self):
         print("Node {0}: get_sleep_timeout called.".format(self.port))
 
-        if triggered_by_timeout:
-            self.timeout_triggered_loops += 1
         return self.timeout
 
     def force_exit(self):
@@ -129,10 +125,6 @@ class MultiplexingTest(AbstractTestCase):
 
             self._validate_successful_run(send_bytes, sender_node, receiver_node, sender_event_loop,
                                           receiver_event_loop)
-
-            # verify that sender does not have any timeout triggered loops and receiver does
-            self.assertEqual(sender_node.timeout_triggered_loops, 0)
-            self.assertTrue(receiver_node.timeout_triggered_loops > 0)
         finally:
             if receiver_thread.is_alive():
                 receiver_thread.join()
@@ -207,7 +199,7 @@ class MultiplexingTest(AbstractTestCase):
             self.assertEqual(len(sender_node.connections), 1)
 
             # request disconnect while clients are running
-            sender_node.enqueue_disconnect(sender_node.connections[0][0], False)
+            sender_node.connections[0][0].mark_for_close(False)
 
             # sender and receiver have to disconnect and exit
             receiver_thread.join()

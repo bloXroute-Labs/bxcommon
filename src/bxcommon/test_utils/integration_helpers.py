@@ -1,6 +1,7 @@
 import time
 
 from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.network.socket_connection_state import SocketConnectionState
 
 """
 These are a set of testing utilities for manually instantiating an event loop to test the full
@@ -25,7 +26,8 @@ def send_on_connection(connection):
     This one will never loop infinitely; just need to flush output buffer.
     """
     connection.socket_connection.can_send = True
-    while connection.outputbuf.length > 1 and not connection.state & ConnectionState.MARK_FOR_CLOSE:
+    while connection.outputbuf.length > 1 and \
+            not connection.socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
         if connection.outputbuf.last_bytearray is not None:
             connection.outputbuf.flush()
         connection.socket_connection.send()

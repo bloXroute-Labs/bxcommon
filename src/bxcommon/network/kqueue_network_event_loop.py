@@ -1,8 +1,9 @@
 import select
+import socket
+from typing import Tuple
 
 from bxcommon import constants
 from bxcommon.network.abstract_network_event_loop import AbstractNetworkEventLoop
-from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.socket_connection_state import SocketConnectionState
 
 
@@ -26,7 +27,7 @@ class KQueueNetworkEventLoop(AbstractNetworkEventLoop):
 
         self._kqueue.close()
 
-    def _process_events(self, timeout):
+    def _process_events(self, timeout: float) -> int:
 
         # get all available events from kqueue or wait until timeout. do not add any new events ([] is empty).
         events = self._kqueue.control([], constants.MAX_KQUEUE_EVENTS_COUNT, timeout)
@@ -38,21 +39,13 @@ class KQueueNetworkEventLoop(AbstractNetworkEventLoop):
             assert event.ident in self._socket_connections
 
             socket_connection = self._socket_connections[event.ident]
-            assert isinstance(socket_connection, SocketConnection)
 
             if event.filter == select.KQ_FILTER_READ and socket_connection.is_server:
                 self._handle_incoming_connections(socket_connection)
 
-            elif event.filter == select.KQ_FILTER_WRITE and \
-                    not event.flags & select.KQ_EV_EOF and \
-                    not socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
+            elif event.filter == select.KQ_FILTER_WRITE and not event.flags & select.KQ_EV_EOF:
+                self._send_on_socket(socket_connection)
 
-                if not socket_connection.state & SocketConnectionState.INITIALIZED:
-                    socket_connection.set_state(SocketConnectionState.INITIALIZED)
-                    self._node.on_connection_initialized(event.ident)
-
-                socket_connection.can_send = True
-                socket_connection.send()
             elif event.filter == select.KQ_FILTER_READ:
                 receive_connections.append(socket_connection)
 
@@ -64,13 +57,22 @@ class KQueueNetworkEventLoop(AbstractNetworkEventLoop):
 
         return len(events)
 
-    def _register_socket(self, new_socket, address, is_server=False, initialized=True, from_me=False):
+    def _register_socket(
+        self,
+        new_socket: socket.socket,
+        address: Tuple[str, int],
+        is_server: bool = False,
+        initialized: bool = True,
+        from_me: bool = False,
+    ):
         super(KQueueNetworkEventLoop, self)._register_socket(new_socket, address, is_server, initialized, from_me)
 
         read_event = select.kevent(
-            new_socket, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
+            new_socket, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR,
+        )
         write_event = select.kevent(
-            new_socket, select.KQ_FILTER_WRITE, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR)
+            new_socket, select.KQ_FILTER_WRITE, select.KQ_EV_ADD | select.KQ_EV_ENABLE | select.KQ_EV_CLEAR,
+        )
 
         # add new events to listen. do not pull any events from kqeue and continue immediately.
         self._kqueue.control([read_event, write_event], 0, 0)

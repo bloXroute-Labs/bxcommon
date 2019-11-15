@@ -45,16 +45,17 @@ class AlarmQueueTest(AbstractTestCase):
         self.assertEqual(1, len(self.alarm_queue.alarms))
 
     def test_time_to_next_alarm(self):
+        self.assertIsNone(self.alarm_queue.time_to_next_alarm())
         self.alarm_queue.register_alarm(1, self.function_to_pass, 1, 5)
         self.assertEqual(1, len(self.alarm_queue.alarms))
-        self.assertLess(0, self.alarm_queue.time_to_next_alarm()[1])
+        self.assertLess(0, self.alarm_queue.time_to_next_alarm())
         time.time = MagicMock(return_value=time.time() + 2)
-        self.assertGreater(0, self.alarm_queue.time_to_next_alarm()[1])
+        self.assertGreater(0, self.alarm_queue.time_to_next_alarm())
 
     def test_fire_ready_alarms(self):
         self.alarm_queue.register_alarm(1, self.function_to_pass, 0, 0)
         self.alarm_queue.register_alarm(5, self.function_to_pass, 0, 0)
         time.time = MagicMock(return_value=time.time() + 2)
-        time_to_next_alarm = self.alarm_queue.fire_ready_alarms(False)
+        time_to_next_alarm = self.alarm_queue.fire_ready_alarms()
         self.assertEqual(1, len(self.alarm_queue.alarms))
         self.assertLess(0, time_to_next_alarm)
