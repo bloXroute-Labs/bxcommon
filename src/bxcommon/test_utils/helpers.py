@@ -2,11 +2,12 @@ import os
 import socket
 from argparse import Namespace
 from contextlib import closing
-from typing import Optional, TypeVar, Type, TYPE_CHECKING
+from typing import Optional, TypeVar, Type, TYPE_CHECKING, List
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.node_type import NodeType
+from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
@@ -86,12 +87,41 @@ def receive_node_message(node, fileno, message):
     node.on_finished_receiving(fileno)
 
 
-def get_queued_node_message(node: AbstractNode, fileno: int, message_type: str):
+def get_queued_node_bytes(node: AbstractNode, fileno: int, message_type: str):
     bytes_to_send = node.get_bytes_to_send(fileno)
     assert message_type in bytes_to_send.tobytes(), \
         f"could not find {message_type} in message bytes {convert.bytes_to_hex(bytes_to_send.tobytes())}"
     node.on_bytes_sent(fileno, len(bytes_to_send))
     return bytes_to_send
+
+
+def get_queued_node_messages(node: AbstractNode, fileno: int) -> List[AbstractMessage]:
+    connection = node.connection_pool.get_by_fileno(fileno)
+    bytes_to_send = node.get_bytes_to_send(fileno)
+    input_buffer = create_input_buffer_with_bytes(bytes_to_send)
+
+    total_bytes = 0
+    messages = []
+    (
+        is_full_message,
+        message_type,
+        payload_length
+    ) = connection.message_factory.get_message_header_preview_from_input_buffer(input_buffer)
+    while is_full_message:
+        message_length = connection.message_factory.base_message_type.HEADER_LENGTH + payload_length
+        message_contents = input_buffer.remove_bytes(message_length)
+        total_bytes += message_length
+
+        messages.append(connection.message_factory.create_message_from_buffer(message_contents))
+        (
+            is_full_message,
+            message_type,
+            payload_length
+        ) = connection.message_factory.get_message_header_preview_from_input_buffer(input_buffer)
+
+    if total_bytes:
+        node.on_bytes_sent(fileno, total_bytes)
+    return messages
 
 
 def get_free_port():
@@ -183,7 +213,7 @@ def get_common_opts(port,
 def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockchain_address=None,
                      test_mode=None, peer_gateways=None, peer_relays=None, peer_transaction_relays=None,
                      split_relays=False, protocol_version=1, sid_expire_time=30, bloxroute_version="bloxroute 1.5",
-                     include_default_btc_args=False, include_default_eth_args=False,
+                     include_default_btc_args=False, include_default_eth_args=False, include_default_ont_args=False,
                      blockchain_network_num=constants.DEFAULT_NETWORK_NUM, min_peer_gateways=0,
                      remote_blockchain_ip=None, remote_blockchain_port=None, connect_to_remote_blockchain=False,
                      is_internal_gateway=False, is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
@@ -276,6 +306,20 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
             "chain_difficulty": 4194304,
             "genesis_hash": "1e8ff5fd9d06ab673db775cf5c72a6b2d63171cd26fe1e6a8b9d2d696049c781",
             "no_discovery": True,
+        })
+    if include_default_ont_args:
+        opts.__dict__.update({
+            "blockchain_net_magic": 12345,
+            "blockchain_version": 23456,
+            "is_consensus": True,
+            "sync_port": 10001,
+            "http_info_port": 10002,
+            "cons_port": 10003,
+            "cap": bytes(32),
+            "blockchain_nonce": 0,
+            "relay": True,
+            "soft_version": "myversion",
+            "blockchain_services": 1,
         })
     for key, val in kwargs.items():
         opts.__dict__[key] = val
