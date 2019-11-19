@@ -142,13 +142,17 @@ class SocketConnection:
                     self.log_trace("Sending rejected. Code: {}, message: {}", e.errno, e.strerror)
                     self.mark_for_close()
                     return 0
+
+                elif e.errno is errno.ENOTCONN:
+                    logger.trace("Got socket error 57 on fileno {}. Marking for close.", fileno)
+                    self.mark_for_close()
+                    return 0
                 elif e.errno in [
                     errno.EDESTADDRREQ,
                     errno.EFAULT,
                     errno.EINVAL,
                     errno.EISCONN,
                     errno.EMSGSIZE,
-                    errno.ENOTCONN,
                     errno.ENOTSOCK,
                 ]:
                     # Unrecoverable error. Likely that some developer code has been breaking invariants.
@@ -158,6 +162,7 @@ class SocketConnection:
                         e.strerror,
                     )
                     raise TerminationError("Fatal socket error")
+
                 elif e.errno in [errno.ENOMEM]:
                     self.log_fatal(
                         "Sending triggered out of memory. Code: {}, message: {}. Shutting down.", e.errno, e.strerror
