@@ -34,6 +34,11 @@ def get_argument_parser() -> argparse.ArgumentParser:
     arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", type=str,
                             default=config.get_env_default(NodeStartArgs.SDN_ROOT_URL))
     arg_parser.add_argument(
+        "--data-dir",
+        help="Path to store configuration, state and log files",
+        default=config.get_default_data_path()
+    )
+    arg_parser.add_argument(
         "--log-path",
         help="Path to store logfiles in"
     )
