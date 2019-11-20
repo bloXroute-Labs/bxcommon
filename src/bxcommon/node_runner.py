@@ -1,3 +1,5 @@
+import sys
+
 from datetime import datetime
 from typing import List, Optional
 
@@ -26,6 +28,8 @@ def run_node(process_id_file_path, opts, node_class, node_type=None, logger_name
                              opts.log_level_overrides,
                              enable_fluent_logger=opts.log_fluentd_enable,
                              fluentd_host=opts.log_fluentd_host)
+    startup_param = sys.argv[1:]
+    logger.info("Startup Parameters are: {}", " ".join(startup_param))
 
     if node_type is None:
         node_type = node_class.NODE_TYPE
