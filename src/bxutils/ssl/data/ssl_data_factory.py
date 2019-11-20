@@ -60,23 +60,23 @@ def create_storage_info(
         SSLCertificateInfo(
             SSLFileInfo(
                 private_dir_name,
-                constants.SSL_CERT_FILE_FORMAT.format(private_dir_name)
+                constants.SSL_CERT_FILE_FORMAT.format(node_name)
             ),
             SSLFileInfo(
                 private_dir_name,
-                constants.SSL_KEY_FILE_FORMAT.format(private_dir_name)
+                constants.SSL_KEY_FILE_FORMAT.format(node_name)
             )
         ),
         SSLCertificateInfo(
             SSLFileInfo(
                 registration_dir_name,
                 registration_cert_name,
-                url_helper.url_join(node_base_url, registration_cert_name)
+                url_helper.url_join(node_base_url, registration_dir_name, registration_cert_name)
             ),
             SSLFileInfo(
                 registration_dir_name,
                 registration_key_name,
-                url_helper.url_join(node_base_url, registration_key_name)
+                url_helper.url_join(node_base_url, registration_dir_name, registration_key_name)
             )
         )
     )

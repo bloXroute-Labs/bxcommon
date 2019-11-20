@@ -134,7 +134,7 @@ class NodeSSLService:
         """
         cert_type = SSLCertificateType.PRIVATE
         has_cert = cert_type in self.certificates
-        return not has_cert or is_cert_valid(self.certificates[cert_type], expiration_threshold_days)
+        return not has_cert or not is_cert_valid(self.certificates[cert_type], expiration_threshold_days)
 
     def blocking_store_node_certificate(self, cert: Certificate) -> None:
         """
