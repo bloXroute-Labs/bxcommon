@@ -1,9 +1,11 @@
-from bxcommon import constants
 from dataclasses import dataclass
 from typing import Optional
+
+from bxcommon import constants
 from bxcommon.connections.node_type import NodeType
 
-@dataclass
+
+@dataclass(unsafe_hash=True)
 class NodeModel:
     external_port: int = None
 
@@ -69,12 +71,14 @@ class NodeModel:
     # number of redundant forwarding routes a particular relay expects by default
     baseline_route_redundancy: int = 0
 
+    # number of redundant forwarding routes a particular relay expects to send to by default
+    baseline_source_redundancy: int = 0
+
     def __post_init__(self):
         # TODO: Remove network attribute, not being used
-        if self.network == None:
+        if self.network is None:
             self.network = constants.DEFAULT_NETWORK_NAME
         if self.continent not in constants.DEFAULT_LIST_LOCATION_ORDER:
             self.continent = None
         if self.country:
             self.country = self.country[:constants.MAX_COUNTRY_LENGTH]
-
