@@ -98,14 +98,6 @@ def submit_sid_space_full_event(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.SID_SPACE_FULL))
 
 
-def submit_node_online_event(node_id: str) -> None:
-    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.ONLINE))
-
-
-def submit_node_offline_event(node_id: str) -> None:
-    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.OFFLINE))
-
-
 def submit_peer_connection_error_event(node_id: str, peer_ip: str, peer_port: int):
     submit_peer_connection_event(NodeEventType.PEER_CONN_ERR, node_id, peer_ip, peer_port)
 
@@ -119,15 +111,8 @@ def submit_gateway_inbound_connection(node_id: str, peer_id: str):
     http_service.post_json(SdnRoutes.gateway_inbound_connection.format(node_id), peer_id)
 
 
-def submit_sync_txs_event(node_id: str):
-    # TODO: Send these events over socket connection instead of HTTP
+def submit_tx_synced_event(node_id: str):
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_FULLY_SYNCED))
-
-
-def submit_node_txs_sync_in_network(node_id: str, networks: List[int]):
-    # TODO: Send these events over socket connection instead of HTTP
-    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_SYNCED_IN_NETWORK,
-                                     tx_sync_networks=networks))
 
 
 def delete_gateway_inbound_connection(node_id: str, peer_id: str):

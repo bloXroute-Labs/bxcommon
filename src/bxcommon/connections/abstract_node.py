@@ -437,7 +437,6 @@ class AbstractNode:
     def on_fully_updated_tx_service(self):
         logger.info("Synced transaction state with BDN.")
         self.opts.has_fully_updated_tx_service = True
-        sdn_http_service.submit_sync_txs_event(self.opts.node_id)
 
     def _connection_timeout(self, conn: AbstractConnection) -> int:
         """

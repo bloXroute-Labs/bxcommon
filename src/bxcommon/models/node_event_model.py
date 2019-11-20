@@ -14,7 +14,6 @@ class NodeEventType(SerializeableEnum):
     REMOTE_BLOCKCHAIN_CONN_ERR = "REMOTE_BLOCKCHAIN_CONN_ERR"
     REMOTE_BLOCKCHAIN_CONN_ESTABLISHED = "REMOTE_BLOCKCHAIN_CONN_ESTABLISHED"
     TX_SERVICE_FULLY_SYNCED = "TX_SERVICE_FULLY_SYNCED"
-    TX_SERVICE_SYNCED_IN_NETWORK = "TX_SERVICE_SYNCED_IN_NETWORK"
 
 @dataclass
 class NodeEventModel:
@@ -25,4 +24,3 @@ class NodeEventModel:
     peer_port: int = None
     timestamp: str = None
     event_id: str = None
-    tx_sync_networks: List[int] = None
