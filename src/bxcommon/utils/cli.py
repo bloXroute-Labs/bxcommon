@@ -5,7 +5,7 @@ from bxutils.logging.log_level import LogLevel
 from bxutils.logging import log_config
 from bxutils import logging
 from bxutils import constants as utils_constants
-
+from argparse import Namespace
 from bxcommon import constants
 from bxcommon.connections.node_type import NodeType
 from bxcommon.constants import ALL_NETWORK_NUM
@@ -15,12 +15,72 @@ from bxcommon.services import http_service
 from bxcommon.utils import config, ip_resolver
 from bxcommon.utils import convert
 from bxcommon.utils.node_start_args import NodeStartArgs
-
+from typing import Dict
+from dataclasses import dataclass
 logger = logging.get_logger(__name__)
 
 
+@dataclass()
+class CommonOpts:
+    external_ip: str
+    external_port: int
+    continent: str
+    country: str
+    hostname: str
+    sdn_url: str
+    log_path: str
+    to_stdout: bool
+    log_level: LogLevel
+    log_format: LogFormat
+    log_flush_immediately: bool
+    log_level_overrides: Dict[str, LogLevel]
+    node_id: str
+    transaction_pool_memory_limit: int
+    info_stats_interval: int
+    throughput_stats_interval: int
+    memory_stats_interval: int
+    dump_detailed_report_at_memory_usage: int
+    dump_removed_short_ids: bool
+    dump_removed_short_ids_path: str
+    enable_buffered_send: bool
+    track_detailed_sent_messages: bool
+    use_extensions: bool
+    import_extensions: bool
+    thread_pool_parallelism_degree: int
+    tx_mem_pool_bucket_size: int
+
+    def __init__(self, opts: Namespace):
+        self.external_ip = opts.external_ip
+        self.external_port = opts.external_port
+        self.continent = opts.continent
+        self.country = opts.country
+        self.hostname = opts.hostname
+        self.sdn_url = opts.sdn_url
+        self.log_path = opts.log_path
+        self.to_stdout = opts.to_stdout
+        self.log_level = opts.log_level
+        self.log_format = opts.log_format
+        self.log_flush_immediately = opts.log_flush_immediately
+        self.log_level_overrides = opts.log_level_overrides
+        self.node_id = opts.node_id
+        self.transaction_pool_memory_limit = opts.transaction_pool_memory_limit
+        self.info_stats_interval = opts.info_stats_interval
+        self.throughput_stats_interval = opts.throughput_stats_interval
+        self.memory_stats_interval = opts.memory_stats_interval
+        self.dump_detailed_report_at_memory_usage = opts.dump_detailed_report_at_memory_usage
+        self.dump_removed_short_ids = opts.dump_removed_short_ids
+        self.dump_removed_short_ids_path = opts.dump_removed_short_ids_path
+        self.enable_buffered_send = opts.enable_buffered_send
+        self.track_detailed_sent_messages = opts.track_detailed_sent_messages
+        self.use_extensions = opts.use_extensions
+        self.import_extensions = opts.import_extensions
+        self.thread_pool_parallelism_degree = opts.thread_pool_parallelism_degree
+        self.tx_mem_pool_bucket_size = opts.tx_mem_pool_bucket_size
+        self.data_dir = opts.data_dir
+
+
 def get_argument_parser() -> argparse.ArgumentParser:
-    arg_parser = argparse.ArgumentParser()
+    arg_parser = argparse.ArgumentParser(add_help=False)
 
     arg_parser.add_argument("--external-ip", help="External network ip of this node",
                             type=ip_resolver.blocking_resolve_ip)
@@ -90,6 +150,7 @@ def get_argument_parser() -> argparse.ArgumentParser:
         "--node-id",
         help="(TEST ONLY) Set the node_id for using in testing."
     )
+
     arg_parser.add_argument("--transaction-pool-memory-limit",
                             help="Maximum size of transactions to keep in memory pool (MB)",
                             type=int)
@@ -155,7 +216,6 @@ def get_argument_parser() -> argparse.ArgumentParser:
         default=constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
         type=int
     )
-
     return arg_parser
 
 

@@ -176,6 +176,9 @@ class AbstractNode:
             return
 
         logger.info("Closed connection: {}", conn)
+        if conn.CONNECTION_TYPE == ConnectionType.BLOCKCHAIN_NODE:
+            logger.info("Unable to connect to blockchain node on IP {} and port {}. Check that blockchain IP and port "
+                        "are correct!", conn.peer_ip, conn.peer_port)
         self._destroy_conn(conn)
 
     def on_updated_peers(self, outbound_peer_models):
