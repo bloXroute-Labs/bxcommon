@@ -52,6 +52,8 @@ class TestNodeRunner(unittest.TestCase):
             "log_level": LogLevel.INFO,
             "log_format": LogFormat.PLAIN,
             "log_flush_immediately": True,
+            "log_fluentd_enable": False,
+            "log_fluentd_host": None,
             "use_extensions": True,
             "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
                 str(constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE),

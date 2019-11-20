@@ -63,6 +63,18 @@ def get_argument_parser() -> argparse.ArgumentParser:
         default=utils_constants.DEFAULT_LOG_FORMAT
     )
     arg_parser.add_argument(
+        "--log-fluentd-enable",
+        help="enable logging directly to fluentd",
+        type=convert.str_to_bool,
+        default=False
+    )
+    arg_parser.add_argument(
+        "--log-fluentd-host",
+        help="fluentd instance address provide, hostname:port",
+        type=str,
+        default=utils_constants.FLUENTD_HOST
+    )
+    arg_parser.add_argument(
         "--log-flush-immediately",
         help="Enables immediate flush for logs",
         type=convert.str_to_bool,

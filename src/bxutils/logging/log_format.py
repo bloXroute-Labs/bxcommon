@@ -1,10 +1,11 @@
 # An enum that stores the different log levels
 import os
 from enum import Enum
+from abc import abstractmethod
+from typing import Dict, Any
 from logging import Formatter
 import json
 from datetime import datetime
-
 from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 
 
@@ -58,7 +59,10 @@ class AbstractFormatter(Formatter):
 
 class JSONFormatter(AbstractFormatter):
 
-    def format(self, record) -> str:
+    def format(self, record):  # pyre-ignore
+        return json.dumps(self._format_json(record), cls=EnhancedJSONEncoder)
+
+    def _format_json(self, record) -> Dict[Any, Any]:
         log_record = {k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS}
         if "timestamp" not in log_record:
             log_record["timestamp"] = datetime.utcnow()
@@ -73,7 +77,13 @@ class JSONFormatter(AbstractFormatter):
             log_record["exc_info"] = self.formatException(record.exc_info)
         if self.instance != self.NO_INSTANCE:
             log_record["instance"] = self.instance
-        return json.dumps(log_record, cls=EnhancedJSONEncoder)
+        return log_record
+
+
+class FluentJSONFormatter(JSONFormatter):
+    # TODO: check if there is a correct way to annotate this
+    def format(self, record):
+        return EnhancedJSONEncoder().as_dict(self._format_json(record))
 
 
 class CustomFormatter(AbstractFormatter):

@@ -20,7 +20,12 @@ LOGGER_NAMES = ["bxcommon", "bxutils", "stats", "bx"]
 
 def run_node(process_id_file_path, opts, node_class, node_type=None, logger_names: List[Optional[str]] = LOGGER_NAMES):
     opts.logger_names = logger_names
-    log_config.setup_logging(opts.log_format, opts.log_level, logger_names, opts.log_level_overrides)
+    log_config.setup_logging(opts.log_format,
+                             opts.log_level,
+                             logger_names,
+                             opts.log_level_overrides,
+                             enable_fluent_logger=opts.log_fluentd_enable,
+                             fluentd_host=opts.log_fluentd_host)
 
     if node_type is None:
         node_type = node_class.NODE_TYPE
@@ -40,6 +45,9 @@ def run_node(process_id_file_path, opts, node_class, node_type=None, logger_name
         logger.fatal("Node terminated")
     except Exception as e:
         logger.fatal("Unhandled exception {} raised, terminating!", e)
+    for handler in logger.handlers:
+        if hasattr(handler, "close"):
+            handler.close()
 
 
 def _run_node(opts, node_class, node_type, logger_names: List[Optional[str]]):

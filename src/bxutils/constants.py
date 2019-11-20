@@ -3,6 +3,7 @@ from urllib import parse as url_parse
 
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
+from bxutils.logging.fluentd_overflow_handler_type import OverflowHandlerType
 
 DEFAULT_LOG_LEVEL = LogLevel.INFO
 
@@ -35,6 +36,9 @@ DEFAULT_LOG_LEVEL = LogLevel.INFO
 DEBUG_LOG_FORMAT_PATTERN = "%(asctime)s - %(process)d - %(name)s - %(levelname)s - %(message)s"
 INFO_LOG_FORMAT_PATTERN = "%(asctime)s - %(levelname)s - %(message)s"
 DEFAULT_LOG_FORMAT = LogFormat.PLAIN
+FLUENTD_HOST = "fluentd"
+FLUENTD_PORT = 24224
+FLUENTD_OVERFLOW_HANDLER = OverflowHandlerType.Ignore
 
 # ssl constants
 
@@ -47,3 +51,4 @@ SSL_CERT_FILE_FORMAT = "{}_cert.pem"
 DEFAULT_PUBLIC_SSL_BASE_URL = "https://s3.amazonaws.com/credentials.blxrbdn.com/mainnet/"
 DEFAULT_PRIVATE_SSL_BASE_URL = url_parse.urljoin("file:", DEFAULT_SSL_FOLDER_PATH)
 DEFAULT_CERTIFICATE_RENEWAL_PERIOD_DAYS: int = 10
+
