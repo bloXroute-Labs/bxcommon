@@ -74,6 +74,8 @@ class NodeModel:
     # number of redundant forwarding routes a particular relay expects to send to by default
     baseline_source_redundancy: int = 0
 
+    private_ip: str = None
+
     def __post_init__(self):
         # TODO: Remove network attribute, not being used
         if self.network is None:
