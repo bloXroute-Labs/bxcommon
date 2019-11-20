@@ -1,19 +1,8 @@
 from dataclasses import dataclass
+from typing import List
+from bxcommon.models.serializeable_enum import SerializeableEnum
 
-
-@dataclass()
-class NodeEventModel(object):
-
-    def __init__(self, node_id, event_type, peer_ip=None, peer_port=None, timestamp=None, tx_sync_networks=None):
-        self.node_id = node_id
-        self.type = event_type
-        self.peer_ip = peer_ip
-        self.peer_port = peer_port
-        self.timestamp = timestamp
-        self.tx_sync_networks = tx_sync_networks
-
-
-class NodeEventType(object):
+class NodeEventType(SerializeableEnum):
     PEER_CONN_ERR = "PEER_CONN_ERR"
     PEER_CONN_ESTABLISHED = "PEER_CONN_ESTABLISHED"
     PEER_CONN_CLOSED = "PEER_CONN_CLOSED"
@@ -26,3 +15,14 @@ class NodeEventType(object):
     REMOTE_BLOCKCHAIN_CONN_ESTABLISHED = "REMOTE_BLOCKCHAIN_CONN_ESTABLISHED"
     TX_SERVICE_FULLY_SYNCED = "TX_SERVICE_FULLY_SYNCED"
     TX_SERVICE_SYNCED_IN_NETWORK = "TX_SERVICE_SYNCED_IN_NETWORK"
+
+@dataclass
+class NodeEventModel:
+    # What event happened in a node.
+    node_id: str
+    event_type: NodeEventType
+    peer_ip: str = None
+    peer_port: int = None
+    timestamp: str = None
+    event_id: str = None
+    tx_sync_networks: List[int] = None

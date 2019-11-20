@@ -235,3 +235,8 @@ try:
     from bxcommon.constants_local import *
 except ImportError as e:
     pass
+
+DEFAULT_LIST_LOCATION_ORDER = ["NA", "SA", "EU", "OC", "AS", "AF", "AN"]
+DEFAULT_NETWORK_NAME = "bxtest"
+
+UNASSIGNED_NETWORK_NUMBER = -1

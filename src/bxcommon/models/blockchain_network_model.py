@@ -8,18 +8,18 @@ from bxcommon.models.blockchain_network_type import BlockchainNetworkType
 
 @dataclass
 class BlockchainNetworkModel:
-    protocol: str
-    network: str
-    network_num: int
-    type: BlockchainNetworkType
-    environment: BlockchainNetworkEnvironment
-    default_attributes: Dict[str, Any]
-    block_interval: int
-    ignore_block_interval_count: int
-    block_recovery_timeout_s: int
-    block_hold_timeout_s: float
-    final_tx_confirmations_count: int
-    tx_contents_memory_limit_bytes: int
+    protocol: str = None
+    network: str = None
+    network_num: int = constants.UNASSIGNED_NETWORK_NUMBER
+    type: BlockchainNetworkType = None
+    environment: BlockchainNetworkEnvironment = None
+    default_attributes: Dict[str, Any] = None
+    block_interval: int = None
+    ignore_block_interval_count: int = None
+    block_recovery_timeout_s: int = None
+    block_hold_timeout_s: int = None
+    final_tx_confirmations_count: int = None
+    tx_contents_memory_limit_bytes: int = None
     max_block_size_bytes: int = constants.DEFAULT_MAX_PAYLOAD_LEN_BYTES
     max_tx_size_bytes: int = constants.DEFAULT_MAX_PAYLOAD_LEN_BYTES
     block_confirmations_count: int = constants.BLOCK_CONFIRMATIONS_COUNT
