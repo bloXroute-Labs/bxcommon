@@ -7,15 +7,12 @@ from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxr
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash
 
-_SID_LEN = constants.UL_INT_SIZE_IN_BYTES
-_NULL_SID = constants.NULL_TX_SID
-
 
 class TxMessageV5(AbstractBloxrouteMessage):
     MESSAGE_TYPE = BloxrouteMessageType.TRANSACTION
     EMPTY_TX_VAL = memoryview(bytes())
 
-    def __init__(self, tx_hash=None, network_num=None, sid=_NULL_SID, tx_val=None, buf=None):
+    def __init__(self, tx_hash=None, network_num=None, sid=constants.NULL_TX_SID, tx_val=None, buf=None):
         self._tx_hash = None
         self._short_id = None
         self._network_num = None
@@ -27,7 +24,8 @@ class TxMessageV5(AbstractBloxrouteMessage):
             if tx_val is None:
                 tx_val = bytes()
 
-            buf = bytearray(self.HEADER_LENGTH + SHA256_HASH_LEN + NETWORK_NUM_LEN + _SID_LEN + len(tx_val) + constants.CONTROL_FLAGS_LEN)
+            buf = bytearray(self.HEADER_LENGTH + SHA256_HASH_LEN + NETWORK_NUM_LEN + constants.SID_LEN + len(tx_val) +
+                            constants.CONTROL_FLAGS_LEN)
             self.buf = buf
 
             off = self.HEADER_LENGTH
@@ -36,7 +34,7 @@ class TxMessageV5(AbstractBloxrouteMessage):
             struct.pack_into("<L", buf, off, network_num)
             off += NETWORK_NUM_LEN
             struct.pack_into("<L", buf, off, sid)
-            off += _SID_LEN
+            off += constants.SID_LEN
             self.buf[off:off + len(tx_val)] = tx_val
             off += len(tx_val)
 
@@ -65,9 +63,9 @@ class TxMessageV5(AbstractBloxrouteMessage):
     def short_id(self):
         if self._short_id is None:
             off = self.HEADER_LENGTH + SHA256_HASH_LEN + NETWORK_NUM_LEN
-            self._short_id, = struct.unpack_from("<L", self.buf[off:off + _SID_LEN], 0)
+            self._short_id, = struct.unpack_from("<L", self.buf[off:off + constants.SID_LEN], 0)
 
-        if self._short_id != _NULL_SID:
+        if self._short_id != constants.NULL_TX_SID:
             return self._short_id
 
     def tx_val(self):
@@ -75,7 +73,7 @@ class TxMessageV5(AbstractBloxrouteMessage):
             if self.payload_len() == 0:
                 self._tx_val = self.EMPTY_TX_VAL
             else:
-                off = self.HEADER_LENGTH + SHA256_HASH_LEN + _SID_LEN + NETWORK_NUM_LEN
+                off = self.HEADER_LENGTH + SHA256_HASH_LEN + constants.SID_LEN + NETWORK_NUM_LEN
                 self._tx_val = self._memoryview[off:self.HEADER_LENGTH + self.payload_len() - constants.CONTROL_FLAGS_LEN]
 
         return self._tx_val

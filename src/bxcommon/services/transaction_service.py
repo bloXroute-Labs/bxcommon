@@ -14,6 +14,7 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
+from bxcommon.models.tx_quota_type_model import TxQuotaType
 from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 

@@ -5,7 +5,8 @@ from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessag
 
 from bxcommon import constants
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, NODE_ID_SIZE_IN_BYTES, \
-    BX_HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN
+    BX_HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN, QUOTA_FLAG_LEN
+from bxcommon.models.tx_quota_type_model import TxQuotaType
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
@@ -71,7 +72,8 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.get_message_preview_successfully(TxMessage(self.HASH, 1, self.NODE_ID, 12, blob),
                                               TxMessage.MESSAGE_TYPE,
                                               SHA256_HASH_LEN + NETWORK_NUM_LEN + UL_INT_SIZE_IN_BYTES +
-                                              constants.NODE_ID_SIZE_IN_BYTES + len(blob) + constants.CONTROL_FLAGS_LEN)
+                                              QUOTA_FLAG_LEN + constants.NODE_ID_SIZE_IN_BYTES + len(blob) +
+                                              constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(KeyMessage(self.HASH, 1, self.NODE_ID,
                                                          bytearray(1 for _ in range(KEY_SIZE))),
                                               KeyMessage.MESSAGE_TYPE,
@@ -266,4 +268,21 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertNotEqual(NULL_SHA256_HASH, rebuilt_msg.message_hash())
         print(rebuilt_msg.message_hash())
 
+    def test_tx_bx_message(self):
+        sid = 12
+        tx_val = bytes(1 for _ in range(5))
+        test_network_num = 4
 
+        tx_message = self.create_message_successfully(TxMessage(self.HASH,
+                                                                network_num=test_network_num,
+                                                                source_id=self.NODE_ID,
+                                                                short_id=sid,
+                                                                tx_val=tx_val,
+                                                                quota_type=TxQuotaType.PAID_DAILY_QUOTA),
+                                                      TxMessage)
+        self.assertEqual(self.HASH, tx_message.tx_hash())
+        self.assertEqual(self.NODE_ID, tx_message.source_id())
+        self.assertEqual(sid, tx_message.short_id())
+        self.assertEqual(test_network_num, tx_message.network_num())
+        self.assertEqual(tx_val, tx_message.tx_val())
+        self.assertEqual(TxQuotaType.PAID_DAILY_QUOTA, tx_message.quota_type())

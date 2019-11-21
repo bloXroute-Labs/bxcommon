@@ -10,6 +10,7 @@ class LogRecordType(Enum):
     Throughput = "stats.throughput"
     Memory = "stats.memory"
     NodeInfo = "stats.node.info"
+    NodeEvent = "stats.node.event"
     NetworkInfo = "stats.network.info"
     ConnectionState = "stats.connection_state"
     BlockCleanup = "bx.cleanup.block"
