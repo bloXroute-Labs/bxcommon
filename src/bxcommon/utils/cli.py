@@ -34,6 +34,8 @@ class CommonOpts:
     log_format: LogFormat
     log_flush_immediately: bool
     log_level_overrides: Dict[str, LogLevel]
+    log_fluentd_enable: bool
+    log_fluentd_host: str
     node_id: str
     transaction_pool_memory_limit: int
     info_stats_interval: int
@@ -62,6 +64,8 @@ class CommonOpts:
         self.log_format = opts.log_format
         self.log_flush_immediately = opts.log_flush_immediately
         self.log_level_overrides = opts.log_level_overrides
+        self.log_fluentd_enable = opts.log_fluentd_enable
+        self.log_fluentd_host = opts.log_fluentd_host
         self.node_id = opts.node_id
         self.transaction_pool_memory_limit = opts.transaction_pool_memory_limit
         self.info_stats_interval = opts.info_stats_interval
