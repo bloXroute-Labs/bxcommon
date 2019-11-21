@@ -77,6 +77,7 @@ class NodeModel:
     private_ip: str = None
 
     def __post_init__(self):
+        self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
         # TODO: Remove network attribute, not being used
         if self.network is None:
             self.network = constants.DEFAULT_NETWORK_NAME

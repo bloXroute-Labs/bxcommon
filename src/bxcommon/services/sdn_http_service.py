@@ -102,7 +102,7 @@ def submit_peer_connection_error_event(node_id: str, peer_ip: str, peer_port: in
     submit_peer_connection_event(NodeEventType.PEER_CONN_ERR, node_id, peer_ip, peer_port)
 
 
-def submit_peer_connection_event(event_type: str, node_id: str, peer_ip: str, peer_port: int):
+def submit_peer_connection_event(event_type: NodeEventType, node_id: str, peer_ip: str, peer_port: int):
     submit_node_event(
         NodeEventModel(node_id=node_id, event_type=event_type, peer_ip=peer_ip, peer_port=peer_port))
 
