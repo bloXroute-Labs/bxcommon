@@ -7,14 +7,14 @@ from bxcommon.connections.node_type import NodeType
 
 @dataclass(unsafe_hash=True)
 class NodeModel:
-    external_port: int = None
+    node_type: NodeType
+    external_port: int
+    external_ip: str
 
     # Whether the node is online.
-    online: bool = None
+    online: bool = False
 
-    external_ip: str = None
-
-    # The network of the node, e.g. main, test, local.
+    # TODO: Remove this attribute as it's not being used anymore
     network: str = None
 
     # Internal id for distinguishing nodes.
@@ -25,10 +25,9 @@ class NodeModel:
     sid_end: int = None
 
     sid_expire_time: int = None
-    node_type: NodeType = None
-    last_pong_time: int = None
-    is_gateway_miner: bool = None
-    is_internal_gateway: bool = None
+    last_pong_time: int = 0
+    is_gateway_miner: bool = False
+    is_internal_gateway: bool = False
 
     # Current build's version
     source_version: str = None

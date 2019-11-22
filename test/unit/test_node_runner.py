@@ -44,7 +44,8 @@ class TestNodeRunner(unittest.TestCase):
             "log_path": "",
             "to_stdout": True,
             "external_port": 0,
-            "node_id": "Test-Node-1",
+            "external_ip": "1.1.1.1",
+            "node_id": None,
             "blockchain_network": self.blockchain_network.network,
             "network_num": self.blockchain_network.network_num,
             "blockchain_protocol": self.blockchain_network.protocol,
@@ -82,7 +83,7 @@ class TestNodeRunner(unittest.TestCase):
     ):
         log_pid_mock.return_value = None
         create_event_loop_mock.return_value = self.event_loop_mock
-        register_node_mock.return_value = NodeModel()
+        register_node_mock.return_value = NodeModel(external_ip="1.1.1.1", external_port=1234, node_type=NodeType.RELAY)
         fetch_blockchain_networks_mock.return_value = [self.blockchain_network]
         get_argument_parser_mock.return_value = argparse.ArgumentParser()
         parse_arguments_mock.return_value = self.opts

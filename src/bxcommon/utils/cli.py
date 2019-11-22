@@ -50,6 +50,8 @@ class CommonOpts:
     import_extensions: bool
     thread_pool_parallelism_degree: int
     tx_mem_pool_bucket_size: int
+    protocol_version: int
+    source_version: int
 
     def __init__(self, opts: Namespace):
         self.external_ip = opts.external_ip
@@ -81,6 +83,8 @@ class CommonOpts:
         self.thread_pool_parallelism_degree = opts.thread_pool_parallelism_degree
         self.tx_mem_pool_bucket_size = opts.tx_mem_pool_bucket_size
         self.data_dir = opts.data_dir
+        self.protocol_version = opts.protocol_version
+        self.source_version = opts.source_version
 
 
 def get_argument_parser() -> argparse.ArgumentParser:
