@@ -7,9 +7,9 @@ from bxcommon.connections.node_type import NodeType
 
 @dataclass(unsafe_hash=True)
 class NodeModel:
-    node_type: NodeType
-    external_port: int
-    external_ip: str
+    node_type: NodeType = None
+    external_port: int = 0
+    external_ip: str = None
 
     # Whether the node is online.
     online: bool = False
