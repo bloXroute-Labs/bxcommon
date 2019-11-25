@@ -105,7 +105,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         return super(InternalNodeConnection, self).pre_process_msg()
 
     def enqueue_msg(self, msg, prepend=False):
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
+        if not self.is_alive():
             return
 
         if self.protocol_version < self.version_manager.CURRENT_PROTOCOL_VERSION:
@@ -128,7 +128,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
     def msg_hello(self, msg):
         super(InternalNodeConnection, self).msg_hello(msg)
 
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
+        if not self.is_alive():
             self.log_trace("Connection has been closed: {}, Ignoring: {} ", self, msg)
             return
 
@@ -155,7 +155,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         """
         Send a ping (and reschedule if called from alarm queue)
         """
-        if self.can_send_pings and not self.state & ConnectionState.MARK_FOR_CLOSE:
+        if self.can_send_pings and self.is_alive():
             nonce = nonce_generator.get_nonce()
             msg = PingMessage(nonce=nonce)
             self.enqueue_msg(msg)

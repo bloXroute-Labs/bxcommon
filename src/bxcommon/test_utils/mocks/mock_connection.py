@@ -55,13 +55,6 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
         return f"MockConnection<fileno: {self.fileno}, address: ({self.peer_ip}, {self.peer_port}), " \
                f"network_num: {self.network_num}>"
 
-    def is_active(self):
-        return self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED and \
-               not self.state & ConnectionState.MARK_FOR_CLOSE
-
-    def is_sendable(self):
-        return self.is_active()
-
     def add_received_bytes(self, bytes_received):
         self.inputbuf.add_bytes(bytes_received)
         self.mark_for_close()
@@ -77,7 +70,7 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
 
     def enqueue_msg(self, msg, _prepend_to_queue=False):
 
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
+        if not self.is_alive():
             return
 
         self.outputbuf.enqueue_msgbytes(msg.rawbytes())
@@ -85,7 +78,7 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
 
     def enqueue_msg_bytes(self, msg_bytes, prepend=False):
 
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
+        if not self.is_alive():
             return
 
         self.outputbuf.enqueue_msgbytes(msg_bytes)

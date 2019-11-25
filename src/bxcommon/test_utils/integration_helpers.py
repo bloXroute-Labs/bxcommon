@@ -1,5 +1,6 @@
 import time
 
+from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.network.socket_connection_state import SocketConnectionState
 
@@ -33,7 +34,7 @@ def send_on_connection(connection):
         connection.socket_connection.send()
 
 
-def receive_on_connection(connection):
+def receive_on_connection(connection: AbstractConnection):
     """
     Receives messages on a connection's socket.
     It's not really possible to receive only one message, since this will process
@@ -51,7 +52,7 @@ def receive_on_connection(connection):
     connection.process_message = process_message_called
 
     wait_while(
-        lambda: not (process_message_called.is_called or connection.state & ConnectionState.MARK_FOR_CLOSE),
+        lambda: not (process_message_called.is_called or not connection.is_alive()),
         lambda: connection.socket_connection.receive()
     )
 

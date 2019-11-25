@@ -51,7 +51,7 @@ class AbstractConnectionTest(AbstractTestCase):
         self.connection.inputbuf.add_bytes(bad_message)
 
         self.connection.process_message()
-        self.assertTrue(self.connection.state & ConnectionState.MARK_FOR_CLOSE)
+        self.assertFalse(self.connection.is_alive())
 
     def test_process_message_not_yet_setup(self):
         self.connection.inputbuf.add_bytes(PongMessage().rawbytes())
@@ -59,7 +59,7 @@ class AbstractConnectionTest(AbstractTestCase):
 
         self.connection.process_message()
         self.connection.msg_pong.assert_not_called()
-        self.assertTrue(self.connection.state & ConnectionState.MARK_FOR_CLOSE)
+        self.assertFalse(self.connection.is_alive())
 
     def test_process_message_handler(self):
         mock_pong = MagicMock()

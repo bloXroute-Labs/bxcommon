@@ -62,11 +62,14 @@ class SocketConnection:
 
         self._disconnect_scheduler(self.fileno())
 
+    def is_alive(self) -> bool:
+        return not self.state & SocketConnectionState.MARK_FOR_CLOSE
+
     def receive(self):
         fileno = self.fileno()
         self.log_trace("Collecting input...")
 
-        while not self.state & SocketConnectionState.MARK_FOR_CLOSE:
+        while self.is_alive():
             # Read from the socket and store it into the receive buffer.
             try:
                 bytes_read = self.socket_instance.recv_into(self._receive_buf, constants.RECV_BUFSIZE)
@@ -100,19 +103,13 @@ class SocketConnection:
         self._node.on_finished_receiving(fileno)
 
     def send(self):
-        if self.state & SocketConnectionState.MARK_FOR_CLOSE:
-            return 0
-
-        if not self.can_send:
-            return 0
-
         fileno = self.fileno()
 
         total_bytes_written = 0
         bytes_written = 0
 
         # Send on the socket until either the socket is full or we have nothing else to send.
-        while self.can_send and not self.state & SocketConnectionState.MARK_FOR_CLOSE:
+        while self.can_send and self.is_alive():
             try:
                 send_buffer = self._node.get_bytes_to_send(fileno)
                 if not send_buffer:
@@ -188,7 +185,7 @@ class SocketConnection:
 
         :param force_destroy: Forcibly dispose of resources even if socket has not been marked for close.
         """
-        if not force_destroy and not self.state & SocketConnectionState.MARK_FOR_CLOSE:
+        if not force_destroy and self.is_alive():
             raise ValueError("Attempted to close socket that was not MARK_FOR_CLOSE.")
         try:
             self.socket_instance.shutdown(socket.SHUT_RDWR)

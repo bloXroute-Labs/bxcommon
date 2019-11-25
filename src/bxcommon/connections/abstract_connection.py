@@ -119,18 +119,17 @@ class AbstractConnection(Generic[Node]):
     def log_error(self, message, *args, **kwargs):
         self._log_message(LogLevel.ERROR, message, *args, **kwargs)
 
-    def is_active(self):
+    def is_active(self) -> bool:
         """
-        Indicates whether the connection is established and not marked for close.
+        Indicates whether the connection is established and ready for normal messages.
         """
-        return self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED and \
-               not self.state & ConnectionState.MARK_FOR_CLOSE
+        return self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED and self.is_alive()
 
-    def is_sendable(self):
+    def is_alive(self) -> bool:
         """
-        Indicates whether the connection should send bytes on broadcast.
+        Indicates whether the connection's socket is alive.
         """
-        return self.is_active()
+        return self.socket_connection.is_alive()
 
     def on_connection_established(self):
         self.state |= ConnectionState.ESTABLISHED
@@ -142,12 +141,12 @@ class AbstractConnection(Generic[Node]):
 
         :param bytes_received: new bytes received from socket connection
         """
-        assert not self.state & ConnectionState.MARK_FOR_CLOSE
+        assert self.is_alive()
 
         self.inputbuf.add_bytes(bytes_received)
 
     def get_bytes_to_send(self):
-        assert not self.state & ConnectionState.MARK_FOR_CLOSE
+        assert self.is_alive()
 
         return self.outputbuf.get_buffer()
 
@@ -183,7 +182,7 @@ class AbstractConnection(Generic[Node]):
         :param full_message: full message for detailed logging
         """
 
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
+        if not self.is_alive():
             return
 
         size = len(msg_bytes)
@@ -240,7 +239,7 @@ class AbstractConnection(Generic[Node]):
 
             try:
                 # abort message processing if connection has been closed
-                if self.state & ConnectionState.MARK_FOR_CLOSE:
+                if not self.is_alive():
                     return
 
                 is_full_msg, msg_type, payload_len = self.pre_process_msg()
@@ -380,7 +379,7 @@ class AbstractConnection(Generic[Node]):
         """
         Send a ping (and reschedule if called from alarm queue)
         """
-        if self.can_send_pings and not self.state & ConnectionState.MARK_FOR_CLOSE:
+        if self.can_send_pings and self.is_alive():
             self.enqueue_msg(self.ping_message)
             return self.ping_interval_s
         return constants.CANCEL_ALARMS
@@ -425,14 +424,13 @@ class AbstractConnection(Generic[Node]):
             should_retry = self.from_me
 
         self.log_debug("Marking connection for close.")
-        self.state |= ConnectionState.MARK_FOR_CLOSE
         self.socket_connection.mark_for_close(should_retry)
 
     def dispose(self):
         """
         Performs any need operations after connection object has been discarded by the AbstractNode.
         """
-        self.state |= ConnectionState.MARK_FOR_CLOSE
+        pass
 
     def clean_up_current_msg(self, payload_len: int, msg_is_in_input_buffer: bool) -> None:
         """

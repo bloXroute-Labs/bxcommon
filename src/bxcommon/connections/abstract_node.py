@@ -230,7 +230,7 @@ class AbstractNode:
             logger.debug("Received bytes for connection not in pool. Fileno: {0}", fileno)
             return
 
-        if conn.state & ConnectionState.MARK_FOR_CLOSE:
+        if not conn.is_alive():
             conn.log_trace("Skipping receiving bytes for closed connection.")
             return
 
@@ -252,7 +252,7 @@ class AbstractNode:
             logger.debug("Request to get bytes for connection not in pool. Fileno: {0}", fileno)
             return
 
-        if conn.state & ConnectionState.MARK_FOR_CLOSE:
+        if not conn.is_alive():
             conn.log_trace("Skipping sending bytes for closed connection.")
             return
 
@@ -451,7 +451,7 @@ class AbstractNode:
 
             return constants.CANCEL_ALARMS
 
-        if conn.state & ConnectionState.MARK_FOR_CLOSE:
+        if not conn.is_alive():
             logger.trace("Connection has already been marked for close: {}", conn)
             return constants.CANCEL_ALARMS
 

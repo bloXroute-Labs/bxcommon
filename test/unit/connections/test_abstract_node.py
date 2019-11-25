@@ -174,7 +174,7 @@ class AbstractNodeTest(AbstractTestCase):
         self._assert_socket_connected()
 
     def test_connection_timeout_closed(self):
-        self.connection.state = ConnectionState.MARK_FOR_CLOSE
+        self.connection.mark_for_close()
         self.assertEqual(0, self.node._connection_timeout(self.connection))
 
     def test_connection_timeout_connecting(self):

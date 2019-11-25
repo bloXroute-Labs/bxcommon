@@ -1,4 +1,4 @@
-from enum import auto, IntFlag
+from enum import IntFlag
 
 
 class ConnectionState(IntFlag):
@@ -7,4 +7,3 @@ class ConnectionState(IntFlag):
     HELLO_RECVD = 2
     HELLO_ACKD = 4
     ESTABLISHED = INITIALIZED | HELLO_RECVD | HELLO_ACKD
-    MARK_FOR_CLOSE = 8
