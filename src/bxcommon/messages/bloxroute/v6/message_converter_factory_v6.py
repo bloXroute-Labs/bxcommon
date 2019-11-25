@@ -2,6 +2,7 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.messages.bloxroute.v6.tx_message_converter_v6 import tx_message_converter_v6
 from bxcommon.messages.bloxroute.v6.tx_sync_message_converter_v6 import tx_sync_message_converter_v6
 from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
+from bxcommon.messages.versioning.no_changes_message_converter import no_changes_message_converter
 
 
 class _MessageConverterFactoryV6(AbstractMessageConverterFactory):
@@ -15,7 +16,7 @@ class _MessageConverterFactoryV6(AbstractMessageConverterFactory):
             raise ValueError("msg_type is required.")
 
         if msg_type not in self._MESSAGE_CONVERTER_MAPPING:
-            raise ValueError("Converter for message type '{}' is not defined.".format(msg_type))
+            return no_changes_message_converter
 
         return self._MESSAGE_CONVERTER_MAPPING[msg_type]
 
