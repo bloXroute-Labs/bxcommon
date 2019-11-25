@@ -133,7 +133,8 @@ class AbstractNetworkEventLoop:
             address = self._node.pop_next_connection_address()
 
     def _process_disconnect_requests(self):
-        for fileno in self._disconnect_queue:
+        while self._disconnect_queue:
+            fileno = self._disconnect_queue.popleft()
             if fileno in self._socket_connections:
                 socket_connection = self._socket_connections.pop(fileno)
                 socket_connection.dispose()
@@ -141,7 +142,6 @@ class AbstractNetworkEventLoop:
             else:
                 # should never be called
                 logger.debug("Connection was requested to be removed twice: {}", fileno)
-        self._disconnect_queue.clear()
 
     def _connect_to_server(self, ip, port, protocol=TransportLayerProtocol.TCP):
         if self._node.connection_exists(ip, port):
