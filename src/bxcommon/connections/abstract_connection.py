@@ -135,6 +135,10 @@ class AbstractConnection(Generic[Node]):
         self.state |= ConnectionState.ESTABLISHED
         self.log_info("Connection established.")
 
+        # Reset num_retries when a connection established in order to support resetting the Fibonnaci logic
+        # to determine next retry
+        self.node.num_retries_by_ip[(self.peer_ip, self.peer_port)] = 0
+
     def add_received_bytes(self, bytes_received: int):
         """
         Adds bytes received from socket connection to input buffer

@@ -164,10 +164,6 @@ class AbstractNode:
         logger.debug("Connection initialized: {}", conn)
         conn.state |= ConnectionState.INITIALIZED
 
-        # Reset num_retries when a connection established in order to support resetting the Fibonnaci logic
-        # to determine next retry
-        self.num_retries_by_ip[(conn.peer_ip, conn.peer_port)] = 0
-
     def on_connection_closed(self, fileno: int):
         conn = self.connection_pool.get_by_fileno(fileno)
 
