@@ -25,6 +25,7 @@ from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
+from bxcommon.models.tx_quota_type_model import TxQuotaType
 from bxutils import logging
 
 logger = logging.get_logger(__name__)
@@ -198,10 +199,14 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
         while tx_service_snap:
             tx_hash = tx_service_snap.pop()
-            tx_content_short_ids = TxContentShortIds(
+            short_ids = self.node.get_tx_service(network_num).get_short_ids(tx_hash)
+            # TODO: evaluate short id quota type flag value
+            short_id_flags = [TxQuotaType.NONE for _ in short_ids]
+            tx_content_short_ids: TxContentShortIds = TxContentShortIds(
                 tx_hash,
                 self.node.get_tx_service(network_num).get_transaction_by_hash(tx_hash),
-                self.node.get_tx_service(network_num).get_short_ids(tx_hash)
+                list(short_ids),
+                short_id_flags
             )
 
             txs_msg_len += txs_serializer.get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids)

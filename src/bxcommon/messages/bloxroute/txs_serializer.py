@@ -1,7 +1,6 @@
 import struct
-from typing import List, Union
-from collections import namedtuple
 
+from typing import NamedTuple, Optional, List, Union, Set
 from bxutils import logging
 
 from bxcommon.utils.crypto import SHA256_HASH_LEN
@@ -10,7 +9,13 @@ from bxcommon import constants
 from bxcommon.models.tx_quota_type_model import TxQuotaType
 
 logger = logging.get_logger(__name__)
-TxContentShortIds = namedtuple("TxContentAndShortIds", ["tx_hash", "tx_content", "short_ids", "short_id_flags"])
+
+
+class TxContentShortIds(NamedTuple):
+    tx_hash: Sha256Hash
+    tx_content: Optional[Union[bytearray, memoryview]]
+    short_ids: List[int]
+    short_id_flags: List[TxQuotaType]
 
 
 def get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids: TxContentShortIds) -> int:
@@ -48,7 +53,7 @@ def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxCon
     off = 0
     for tx_content_short_ids in txs_content_short_ids:
         if tx_content_short_ids.tx_content is not None and constants.NULL_TX_SID not in tx_content_short_ids.short_ids:
-            buffer[off: off + SHA256_HASH_LEN] = tx_content_short_ids.tx_hash
+            buffer[off: off + SHA256_HASH_LEN] = tx_content_short_ids.tx_hash.binary
             off += SHA256_HASH_LEN
 
             struct.pack_into("<L", buffer, off, len(tx_content_short_ids.tx_content))
