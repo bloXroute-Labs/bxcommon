@@ -28,8 +28,6 @@ class CommonOpts:
     country: str
     hostname: str
     sdn_url: str
-    log_path: str
-    to_stdout: bool
     log_level: LogLevel
     log_format: LogFormat
     log_flush_immediately: bool
@@ -60,8 +58,6 @@ class CommonOpts:
         self.country = opts.country
         self.hostname = opts.hostname
         self.sdn_url = opts.sdn_url
-        self.log_path = opts.log_path
-        self.to_stdout = opts.to_stdout
         self.log_level = opts.log_level
         self.log_format = opts.log_format
         self.log_flush_immediately = opts.log_flush_immediately
@@ -105,16 +101,6 @@ def get_argument_parser() -> argparse.ArgumentParser:
         "--data-dir",
         help="Path to store configuration, state and log files",
         default=config.get_default_data_path()
-    )
-    arg_parser.add_argument(
-        "--log-path",
-        help="Path to store logfiles in"
-    )
-    arg_parser.add_argument(
-        "--to-stdout",
-        help="Log to stdout. Doesn't generate logfiles in this mode",
-        type=convert.str_to_bool,
-        default=True
     )
     arg_parser.add_argument(
         "--log-level",
