@@ -15,7 +15,7 @@ from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.network.socket_connection import SocketConnection
 from bxcommon.network.socket_connection_state import SocketConnectionState
-from bxcommon.services import sdn_http_service
+from bxcommon.services.threaded_request_service import ThreadedRequestService
 from bxcommon.services.broadcast_service import BroadcastService, BroadcastOptions
 from bxcommon.utils import memory_utils, json_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
@@ -96,6 +96,8 @@ class AbstractNode:
             constants.LAST_MSG_FROM_RELAY_THRESHOLD_S, self._check_sync_relay_connections)
         self._transaction_sync_timeout_alarm_id = self.alarm_queue.register_alarm(
             constants.TX_SERVICE_CHECK_NETWORKS_SYNCED_S, self._transaction_sync_timeout)
+
+        self.requester = ThreadedRequestService(self.alarm_queue, constants.THREADED_STAT_SLEEP_INTERVAL)
 
     def get_sdn_address(self):
         """

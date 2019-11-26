@@ -1,6 +1,5 @@
 import time
 from typing import List, Optional, Dict, Any, cast
-
 from bxutils import logging
 
 from bxcommon.constants import SdnRoutes

@@ -1,4 +1,5 @@
 from datetime import datetime
+from threading import active_count
 from bxcommon.utils.stats.statistics_service import StatisticsService
 from bxcommon.constants import INFO_STATS_INTERVAL_S
 from bxutils.logging.log_record_type import LogRecordType
@@ -15,6 +16,7 @@ class NodeInfo(StatisticsService):
         payload["current_time"] = datetime.utcnow()
         payload["node_peers"] = {connection_type: len(connections) for (connection_type, connections)
                                  in self.node.connection_pool.by_connection_type.items()}
+        payload["threads"] = active_count()
 
         return payload
 
