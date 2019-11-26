@@ -40,8 +40,10 @@ class BlockStatEventType:
     ENC_BLOCK_CUT_THROUGH_SEND_START = StatEventTypeSettings("EncBlockCutThroughSendStart")
     ENC_BLOCK_CUT_THROUGH_SEND_END = StatEventTypeSettings("EncBlockCutThroughSendEnd")
     ENC_BLOCK_CUT_THROUGH_RECEIVE_START = StatEventTypeSettings("EncBlockCutThroughReceiveStart",
-                                                                event_logic_flags=StatEventLogicFlags.SUMMARY)
-    ENC_BLOCK_CUT_THROUGH_RECEIVE_END = StatEventTypeSettings("EncBlockCutThroughReceiveEnd")
+                                                                event_logic_flags=StatEventLogicFlags.SUMMARY |
+                                                                                  StatEventLogicFlags.PROPAGATION_START)
+    ENC_BLOCK_CUT_THROUGH_RECEIVE_END = StatEventTypeSettings("EncBlockCutThroughReceiveEnd",
+                                                              event_logic_flags=StatEventLogicFlags.PROPAGATION_END)
     ENC_BLOCK_CUT_THROUGH_IGNORE_SEEN_BLOCK = StatEventTypeSettings("EncBlockCutThroughIgnoreSeenBlock")
     ENC_BLOCK_CUT_THROUGH_SOURCE_CANCELLED = StatEventTypeSettings("EncBlockCutThroughCancelled")
     ENC_BLOCK_CUT_THROUGH_MANGER_CANCELLED = StatEventTypeSettings("EncBlockCutThroughManagerCancelled")
