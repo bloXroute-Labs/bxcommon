@@ -204,6 +204,7 @@ def get_common_opts(port,
         "throughput_stats_interval": constants.THROUGHPUT_STATS_INTERVAL_S,
         "info_stats_interval": constants.INFO_STATS_INTERVAL_S,
         "sync_tx_service": True,
+        "source_version": "v1.0.0"
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val

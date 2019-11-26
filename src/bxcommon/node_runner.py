@@ -3,8 +3,6 @@ import sys
 from datetime import datetime
 from typing import List, Optional
 
-from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
-from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
 from bxutils.logging import log_config
 
@@ -14,6 +12,7 @@ from bxcommon.services import sdn_http_service
 from bxcommon.utils import cli, model_loader
 from bxcommon.utils import config
 from bxcommon.exceptions import TerminationError
+from bxutils.logging.status import status_log
 
 logger = logging.get_logger(__name__)
 
@@ -30,6 +29,7 @@ def run_node(process_id_file_path, opts, node_class, node_type=None, logger_name
                              fluentd_host=opts.log_fluentd_host)
     startup_param = sys.argv[1:]
     logger.info("Startup Parameters are: {}", " ".join(startup_param))
+    status_log.initialize(opts.use_extensions, opts.source_version)
 
     if node_type is None:
         node_type = node_class.NODE_TYPE

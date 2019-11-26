@@ -26,6 +26,7 @@ from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
 from bxutils.logging import LogRecordType
+from bxutils.logging.status import status_log
 
 logger = logging.get_logger(__name__)
 memory_logger = logging.get_logger(LogRecordType.BxMemory)
@@ -164,6 +165,10 @@ class AbstractNode:
         logger.debug("Connection initialized: {}", conn)
         conn.state |= ConnectionState.INITIALIZED
 
+        self.alarm_queue.register_approx_alarm(2 * constants.MIN_SLEEP_TIMEOUT, constants.MIN_SLEEP_TIMEOUT,
+                                               status_log.update, self.connection_pool, self.opts.use_extensions,
+                                               self.opts.source_version)
+
     def on_connection_closed(self, fileno: int):
         conn = self.connection_pool.get_by_fileno(fileno)
 
@@ -176,6 +181,10 @@ class AbstractNode:
             logger.info("Unable to connect to blockchain node on IP {} and port {}. Check that blockchain IP and port "
                         "are correct!", conn.peer_ip, conn.peer_port)
         self._destroy_conn(conn)
+
+        self.alarm_queue.register_approx_alarm(2 * constants.MIN_SLEEP_TIMEOUT, constants.MIN_SLEEP_TIMEOUT,
+                                               status_log.update, self.connection_pool, self.opts.use_extensions,
+                                               self.opts.source_version)
 
     def on_updated_peers(self, outbound_peer_models):
         if not outbound_peer_models:

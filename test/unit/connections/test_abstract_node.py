@@ -82,8 +82,8 @@ class AbstractNodeTest(AbstractTestCase):
         self.connection.dispose.assert_called_once()
 
         self.assertFalse(self.node.connection_exists(self.ip, self.port))
-        self.node.alarm_queue.register_alarm.assert_called_once_with(1, self.node._retry_init_client_socket, self.ip,
-                                                                     self.port, self.connection.CONNECTION_TYPE)
+        self.node.alarm_queue.register_alarm.assert_any_call(1, self.node._retry_init_client_socket, self.ip,
+                                                             self.port, self.connection.CONNECTION_TYPE)
 
     def test_on_updated_peers(self):
         self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)

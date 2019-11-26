@@ -1,4 +1,5 @@
 import argparse
+import os
 import unittest
 from argparse import Namespace
 from unittest import mock
@@ -6,6 +7,7 @@ from unittest import mock
 from bxutils.logging import log_config
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.log_format import LogFormat
+from bxutils.logging.status.status_log import STATUS_FILE_NAME
 
 from bxcommon import node_runner, constants
 from bxcommon.utils import config
@@ -59,12 +61,16 @@ class TestNodeRunner(unittest.TestCase):
             "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
                 str(constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE),
             ),
-            "log_level_overrides": {}
+            "log_level_overrides": {},
+            "source_version": "v1.0.0"
         }
         self.opts = Namespace()
         self.opts.__dict__ = opts
         log_config.create_logger(None, LogLevel.WARNING)
         self.event_loop_mock = EventLoopMock()
+
+        path = config.get_data_file(STATUS_FILE_NAME)
+        self.addCleanup(os.remove, path)
 
     @mock.patch("bxcommon.utils.cli.get_argument_parser")
     @mock.patch("bxcommon.utils.cli.parse_arguments")
