@@ -56,6 +56,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.ping_message_timestamps = ExpiringDict(self.node.alarm_queue, constants.REQUEST_EXPIRATION_TIME)
         self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)
 
+        self.pong_timeout_alarm_id = None
+
     def disable_buffering(self):
         """
         Disable buffering on this particular connection.
@@ -161,6 +163,13 @@ class InternalNodeConnection(AbstractConnection[Node]):
             msg = PingMessage(nonce=nonce)
             self.enqueue_msg(msg)
             self.ping_message_timestamps.add(nonce, time.time())
+
+            if self.pong_timeout_alarm_id is None:
+                self.log_trace("Schedule pong reply timeout for ping message in {} seconds",
+                               constants.INTERNAL_NODE_PING_PONG_REPLY_TIMEOUT_S)
+                self.pong_timeout_alarm_id = self.node.alarm_queue.register_alarm(
+                    constants.INTERNAL_NODE_PING_PONG_REPLY_TIMEOUT_S, self._pong_msg_timeout)
+
             return self.ping_interval_s
         return constants.CANCEL_ALARMS
 
@@ -177,6 +186,10 @@ class InternalNodeConnection(AbstractConnection[Node]):
             hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
         elif nonce is not None:
             self.log_debug("Pong message had no matching ping request. Nonce: {}", nonce)
+
+        if self.pong_timeout_alarm_id is not None:
+            self.node.alarm_queue.unregister_alarm(self.pong_timeout_alarm_id)
+            self.pong_timeout_alarm_id = None
 
     def msg_tx_service_sync_txs(self, msg: TxServiceSyncTxsMessage):
         """
@@ -237,7 +250,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.log_trace("Sending {} block short ids took {:.3f} seconds.", len(blocks_short_ids), duration)
         self.enqueue_msg(block_short_ids_msg)
 
-    def send_tx_service_sync_txs(self, network_num: int, tx_service_snap: List[Sha256Hash], duration: float = 0, msgs_count: int = 0, total_tx_count: int = 0, sending_tx_msgs_start_time: float = 0):
+    def send_tx_service_sync_txs(self, network_num: int, tx_service_snap: List[Sha256Hash], duration: float = 0,
+                                 msgs_count: int = 0, total_tx_count: int = 0, sending_tx_msgs_start_time: float = 0):
         if (time.time() - sending_tx_msgs_start_time) < constants.SENDING_TX_MSGS_TIMEOUT_MS:
             if tx_service_snap:
                 start = time.time()
@@ -250,13 +264,14 @@ class InternalNodeConnection(AbstractConnection[Node]):
             # TX_SERVICE_SYNC_TXS_S seconds
             if tx_service_snap:
                 self.node.alarm_queue.register_alarm(
-                    constants.TX_SERVICE_SYNC_TXS_S, self.send_tx_service_sync_txs, network_num, tx_service_snap, duration, msgs_count, total_tx_count, sending_tx_msgs_start_time
+                    constants.TX_SERVICE_SYNC_TXS_S, self.send_tx_service_sync_txs, network_num, tx_service_snap,
+                    duration, msgs_count, total_tx_count, sending_tx_msgs_start_time
                 )
-            else:   # if all txs were sent, send complete msg
+            else:  # if all txs were sent, send complete msg
                 self.log_trace("Sending {} transactions and {} messages took {:.3f} seconds.",
                                total_tx_count, msgs_count, duration)
                 self.send_tx_service_sync_complete(network_num)
-        else:   # if time is up - upgrade this node as synced - giving up
+        else:  # if time is up - upgrade this node as synced - giving up
             self.log_trace("Sending {} transactions and {} messages took more than {} seconds. Giving up.",
                            total_tx_count, msgs_count, constants.SENDING_TX_MSGS_TIMEOUT_MS)
             self.send_tx_service_sync_complete(network_num)
@@ -265,3 +280,9 @@ class InternalNodeConnection(AbstractConnection[Node]):
         network_num = msg.network_num()
         self.node.last_sync_message_received_by_network.pop(network_num, None)
         self.node.on_fully_updated_tx_service()
+
+    def _pong_msg_timeout(self):
+        self.log_error("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
+                       "Closing connection.")
+        self.mark_for_close()
+        self.pong_timeout_alarm_id = None
