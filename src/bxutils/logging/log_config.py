@@ -3,7 +3,7 @@ import sys
 import os
 import time
 
-from typing import Optional, List, Dict, Union
+from typing import Optional, List, Dict, Union, Iterable
 from logging import StreamHandler, FileHandler
 
 from bxutils import constants
@@ -75,8 +75,13 @@ def create_logger(
             fluent_host, fluentd_port = fluentd_host.split(":")
         else:
             fluentd_port = constants.FLUENTD_PORT
-        handler = FluentHandler('bx', host=fluentd_host, port=fluentd_port,buffer_overflow_handler=overflow_handler,
-                                nanosecond_precision=True)
+        handler = FluentHandler(
+            'bx',
+            host=fluentd_host,
+            port=fluentd_port,
+            buffer_overflow_handler=overflow_handler,
+            nanosecond_precision=True
+        )
     else:
         handler = StreamHandler(sys.stdout)
 
@@ -125,7 +130,7 @@ def str_to_log_options(value: str) -> Dict[str, LogLevel]:
 def setup_logging(
         log_format: LogFormat,
         default_log_level: LogLevel,
-        default_logger_names: List[str],
+        default_logger_names: Iterable[str],
         log_level_overrides: Dict[str, LogLevel],
         root_log_level: LogLevel = LogLevel.WARNING,
         root_log_style: str = "{",

@@ -24,8 +24,8 @@ class TestNode(AbstractNode):
     def send_request_for_peers(self):
         pass
 
-    def build_connection(self, socket_connection, ip, port, from_me=False):
-        return MockConnection(socket_connection, (ip, port), self, from_me)
+    def build_connection(self, socket_connection):
+        return MockConnection(socket_connection, self)
 
     def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:
         sdn_http_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
@@ -39,7 +39,7 @@ class AbstractNodeTest(AbstractTestCase):
         self.fileno = 1
         self.ip = "123.123.123.123"
         self.port = 8000
-        self.connection = helpers.create_connection(MockConnection, self.node, fileno=self.fileno, ip=self.ip,
+        self.connection = helpers.create_connection(MockConnection, self.node, file_no=self.fileno, ip=self.ip,
                                                     port=self.port, add_to_pool=False, from_me=True)
         self.connection.dispose = MagicMock(side_effect=self.connection.dispose)
         self.socket_connection = self.connection.socket_connection
@@ -50,29 +50,23 @@ class AbstractNodeTest(AbstractTestCase):
         self.assertTrue(self.node.connection_exists(self.ip, self.port))
 
     def test_on_connection_added_new_connection(self):
-        self.node.on_connection_added(self.socket_connection, self.ip, self.port, True)
+        self.node.on_connection_added(self.socket_connection)
         self.assertTrue(self.node.connection_exists(self.ip, self.port))
         self._assert_socket_connected()
 
     def test_on_connection_added_duplicate(self):
         self.node.connection_exists = MagicMock(return_value=True)
-        self.node.on_connection_added(self.socket_connection, self.ip, self.port, True)
+        self.node.on_connection_added(self.socket_connection)
 
         self.assertIsNone(self.node.connection_pool.get_by_fileno(self.fileno))
         self._assert_socket_disconnected(False)
 
     def test_on_connection_added_unknown_connection_type(self):
         self.node.build_connection = MagicMock(return_value=None)
-        self.node.on_connection_added(self.socket_connection, self.ip, self.port, True)
+        self.node.on_connection_added(self.socket_connection)
 
         self.assertIsNone(self.node.connection_pool.get_by_fileno(self.fileno))
         self._assert_socket_disconnected(False)
-
-    def test_on_connection_initialized(self):
-        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
-        self.assertEqual(ConnectionState.CONNECTING, self.connection.state)
-        self.node.on_connection_initialized(self.fileno)
-        self.assertEqual(ConnectionState.INITIALIZED, self.connection.state)
 
     def test_on_connection_closed(self):
         self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
@@ -103,38 +97,6 @@ class AbstractNodeTest(AbstractTestCase):
         self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
         self.node.on_bytes_received(self.fileno, data)
         self.assertEqual(data, self.connection.inputbuf.input_list[0])
-
-    def test_on_finished_receiving(self):
-        self.connection.process_message = MagicMock()
-
-        some_other_fileno = 2
-        self.node.on_finished_receiving(some_other_fileno)
-        self.connection.process_message.assert_not_called()
-
-        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
-        self.connection.state = ConnectionState.INITIALIZED
-
-        self.node.on_finished_receiving(self.fileno)
-        self.connection.process_message.assert_called_once()
-        self._assert_socket_connected()
-        self.connection.process_message.reset_mock()
-
-        self.connection.process_message.side_effect = lambda: self.connection.mark_for_close()
-        self.node.on_finished_receiving(self.fileno)
-        self.connection.process_message.assert_called_once()
-        self._assert_socket_disconnected(True)
-
-    def test_on_finished_receiving_from_me(self):
-        self.connection.process_message = MagicMock()
-
-        self.connection.from_me = True
-        self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
-        self.connection.state = ConnectionState.INITIALIZED
-
-        self.connection.process_message.side_effect = lambda: self.connection.mark_for_close()
-        self.node.on_finished_receiving(self.fileno)
-        self.connection.process_message.assert_called_once()
-        self._assert_socket_disconnected(True)
 
     def test_get_bytes_to_send(self):
         data = helpers.generate_bytearray(250)

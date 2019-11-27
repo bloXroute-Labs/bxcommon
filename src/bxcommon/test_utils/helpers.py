@@ -11,6 +11,7 @@ from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
+from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils import config, crypto, convert
@@ -52,7 +53,7 @@ Connection = TypeVar("Connection", bound="AbstractConnection")
 def create_connection(connection_cls: Type[Connection],
                       node: Optional[AbstractNode] = None,
                       node_opts: Optional[Namespace] = None,
-                      fileno: int = 1,
+                      file_no: int = 1,
                       ip: str = constants.LOCALHOST,
                       port: int = 8001,
                       from_me: bool = False,
@@ -66,12 +67,15 @@ def create_connection(connection_cls: Type[Connection],
     if isinstance(node, MockNode):
         add_to_pool = False
 
-    test_address = (ip, port)
-    test_socket_connection = MockSocketConnection(fileno, node)
-    connection = connection_cls(test_socket_connection, test_address, node, from_me)
+    test_socket_connection = MockSocketConnection(
+        file_no, node, ip_address=ip, port=port
+    )
+    if not from_me:
+        test_socket_connection.direction = NetworkDirection.INBOUND
+    connection = connection_cls(test_socket_connection, node)
 
     if add_to_pool:
-        node.connection_pool.add(fileno, ip, port, connection)
+        node.connection_pool.add(file_no, ip, port, connection)
     return connection
 
 
@@ -84,7 +88,6 @@ def clear_node_buffer(node, fileno):
 
 def receive_node_message(node, fileno, message):
     node.on_bytes_received(fileno, message)
-    node.on_finished_receiving(fileno)
 
 
 def get_queued_node_bytes(node: AbstractNode, fileno: int, message_type: str):

@@ -11,14 +11,14 @@ from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
-from bxcommon.network.socket_connection import SocketConnection
+from bxcommon.network.network_direction import NetworkDirection
+from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 from bxcommon.utils import convert
 from bxcommon.utils import memory_utils
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.stats import hooks
-from bxcommon.utils.stats.direction import Direction
 from bxutils import logging
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.log_record_type import LogRecordType
@@ -38,23 +38,24 @@ class AbstractConnection(Generic[Node]):
     CONNECTION_TYPE: ClassVar[ConnectionType] = ConnectionType.NONE
     node: Node
 
-    def __init__(self, socket_connection, address, node: Node, from_me=False):
-        if not isinstance(socket_connection, SocketConnection):
+    def __init__(self, socket_connection: SocketConnectionProtocol, node: Node):
+        if not isinstance(socket_connection, SocketConnectionProtocol):
             raise ValueError("SocketConnection type is expected for socket_connection arg but was {0}."
                              .format(type(socket_connection)))
 
         self.socket_connection = socket_connection
-        self.fileno = socket_connection.fileno()
+        self.file_no = socket_connection.file_no
 
         # (IP, Port) at time of socket creation.
         # If the version/hello message contains a different port (i.e. connection is not from me), this will
         # be updated to the one in the message.
-        self.peer_ip, self.peer_port = address
+        self.endpoint = self.socket_connection.endpoint
+        self.peer_ip, self.peer_port = self.endpoint
         self.peer_id: Optional[str] = None
         self.external_ip = node.opts.external_ip
         self.external_port = node.opts.external_port
-
-        self.from_me = from_me  # Whether or not I initiated the connection
+        self.direction = self.socket_connection.direction
+        self.from_me = self.direction == NetworkDirection.OUTBOUND
 
         if node.opts.track_detailed_sent_messages:
             self.message_tracker = MessageTracker(self)
@@ -66,7 +67,7 @@ class AbstractConnection(Generic[Node]):
 
         # Number of bad messages I've received in a row.
         self.num_bad_messages = 0
-        self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
+        self.peer_desc = repr(self.endpoint)
 
         self.can_send_pings = False
 
@@ -95,9 +96,9 @@ class AbstractConnection(Generic[Node]):
 
     def __repr__(self):
         if logger.isEnabledFor(LogLevel.DEBUG):
-            details = f"fileno: {self.fileno}, address: {self.peer_desc}, network_num: {self.network_num}"
+            details = f"file_no: {self.file_no}, address: {self.peer_desc}, network_num: {self.network_num}"
         else:
-            details = f"fileno: {self.fileno}, address: {self.peer_desc}"
+            details = f"file_no: {self.file_no}, address: {self.peer_desc}"
 
         return f"{self.CONNECTION_TYPE}({details})"
 
@@ -272,7 +273,7 @@ class AbstractConnection(Generic[Node]):
                     return
 
                 if self.log_throughput:
-                    hooks.add_throughput_event(Direction.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc,
+                    hooks.add_throughput_event(NetworkDirection.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc,
                                                self.peer_id)
 
                 if not logger.isEnabledFor(msg.log_level()) and logger.isEnabledFor(LogLevel.INFO):
@@ -373,7 +374,7 @@ class AbstractConnection(Generic[Node]):
         return self.message_factory.create_message_from_buffer(msg_contents)
 
     def advance_bytes_on_buffer(self, buf, bytes_written):
-        hooks.add_throughput_event(Direction.OUTBOUND, None, bytes_written, self.peer_desc, self.peer_id)
+        hooks.add_throughput_event(NetworkDirection.OUTBOUND, None, bytes_written, self.peer_desc, self.peer_id)
         try:
             buf.advance_buffer(bytes_written)
         except ValueError as e:
@@ -427,7 +428,7 @@ class AbstractConnection(Generic[Node]):
         if should_retry is None:
             should_retry = self.from_me
 
-        self.log_debug("Marking connection for close.")
+        self.log_debug("Marking connection for close, should_retry: {}.", should_retry)
         self.socket_connection.mark_for_close(should_retry)
 
     def dispose(self):

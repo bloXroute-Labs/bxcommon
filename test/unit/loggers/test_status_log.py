@@ -27,7 +27,9 @@ class StatusLogTest(AbstractTestCase):
         self.port1 = 1000
         self.node1 = MockNode(helpers.get_common_opts(1001, external_ip="128.128.128.128"))
         self.node_id1 = str(uuid.uuid1())
-        self.conn1 = MockConnection(MockSocketConnection(self.fileno1), (self.ip1, self.port1), self.node1)
+        self.conn1 = MockConnection(
+            MockSocketConnection(self.fileno1, self.node1, ip_address=self.ip1, port=self.port1), self.node1
+        )
         self.conn1.CONNECTION_TYPE = ConnectionType.RELAY_BLOCK
 
         self.fileno2 = 5
@@ -35,7 +37,9 @@ class StatusLogTest(AbstractTestCase):
         self.port2 = 2000
         self.node2 = MockNode(helpers.get_common_opts(1003, external_ip="321.321.321.321"))
         self.node_id2 = str(uuid.uuid1())
-        self.conn2 = MockConnection(MockSocketConnection(self.fileno2), (self.ip2, self.port2), self.node2)
+        self.conn2 = MockConnection(
+            MockSocketConnection(self.fileno2, self.node2, ip_address=self.ip2, port=self.port2), self.node2
+        )
         self.conn2.CONNECTION_TYPE = ConnectionType.RELAY_TRANSACTION
 
         self.fileno3 = 6
@@ -43,7 +47,9 @@ class StatusLogTest(AbstractTestCase):
         self.port3 = 3000
         self.node3 = MockNode(helpers.get_common_opts(1003, external_ip="213.213.213.213"))
         self.node_id3 = str(uuid.uuid1())
-        self.conn3 = MockConnection(MockSocketConnection(self.fileno3), (self.ip3, self.port3), self.node3)
+        self.conn3 = MockConnection(
+            MockSocketConnection(self.fileno3, self.node3, ip_address=self.ip3, port=self.port3), self.node3
+        )
         self.conn3.CONNECTION_TYPE = ConnectionType.BLOCKCHAIN_NODE
 
         self.fileno4 = 8
@@ -51,7 +57,9 @@ class StatusLogTest(AbstractTestCase):
         self.port4 = 3000
         self.node4 = MockNode(helpers.get_common_opts(1003, external_ip="101.101.101.101"))
         self.node_id4 = str(uuid.uuid1())
-        self.conn4 = MockConnection(MockSocketConnection(self.fileno4), (self.ip4, self.port4), self.node4)
+        self.conn4 = MockConnection(
+            MockSocketConnection(self.fileno4, self.node4, ip_address=self.ip4, port=self.port4), self.node4
+        )
         self.conn4.CONNECTION_TYPE = ConnectionType.REMOTE_BLOCKCHAIN_NODE
 
         initialize(False, self.source_version)

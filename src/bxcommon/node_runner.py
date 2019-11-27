@@ -1,32 +1,47 @@
+import asyncio
+import uvloop
 import sys
-
 from datetime import datetime
-from typing import List, Optional
+from typing import Iterable, Optional, Type
+from argparse import Namespace
 
+from bxcommon.connections.node_type import NodeType
 from bxutils import logging
 from bxutils.logging import log_config
+from bxutils.logging.status import status_log
 
 from bxcommon.models.node_model import NodeModel
-from bxcommon.network import network_event_loop_factory
+from bxcommon.network.node_event_loop import NodeEventLoop
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import cli, model_loader
 from bxcommon.utils import config
 from bxcommon.exceptions import TerminationError
-from bxutils.logging.status import status_log
+from bxcommon.connections.abstract_node import AbstractNode
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())  # pyre-ignore
+asyncio.set_event_loop(uvloop.new_event_loop())
 
 logger = logging.get_logger(__name__)
 
 LOGGER_NAMES = ["bxcommon", "bxutils", "stats", "bx"]
 
 
-def run_node(process_id_file_path, opts, node_class, node_type=None, logger_names: List[Optional[str]] = LOGGER_NAMES):
+def run_node(
+        process_id_file_path: str,
+        opts: Namespace,
+        node_class: Type[AbstractNode],
+        node_type: Optional[NodeType] = None,
+        logger_names: Iterable[Optional[str]] = tuple(LOGGER_NAMES)
+):
     opts.logger_names = logger_names
-    log_config.setup_logging(opts.log_format,
-                             opts.log_level,
-                             logger_names,
-                             opts.log_level_overrides,
-                             enable_fluent_logger=opts.log_fluentd_enable,
-                             fluentd_host=opts.log_fluentd_host)
+    log_config.setup_logging(
+        opts.log_format,
+        opts.log_level,
+        logger_names,
+        opts.log_level_overrides,
+        enable_fluent_logger=opts.log_fluentd_enable,
+        fluentd_host=opts.log_fluentd_host
+    )
     startup_param = sys.argv[1:]
     logger.info("Startup Parameters are: {}", " ".join(startup_param))
     status_log.initialize(opts.use_extensions, opts.source_version)
@@ -54,7 +69,7 @@ def run_node(process_id_file_path, opts, node_class, node_type=None, logger_name
             handler.close()
 
 
-def _run_node(opts, node_class, node_type, logger_names: List[Optional[str]]):
+def _run_node(opts, node_class, node_type, logger_names: Iterable[Optional[str]]):
     node_model = None
     if opts.node_id:
         # Test network, get pre-configured peers from the SDN.
@@ -81,8 +96,9 @@ def _run_node(opts, node_class, node_type, logger_names: List[Optional[str]]):
 
     # Start main loop
     node = node_class(opts)
-    log_config.set_instance(logger_names, node.opts.node_id)
-    event_loop = network_event_loop_factory.create_event_loop(node)
+    log_config.set_instance(list(logger_names), node.opts.node_id)
+    loop = asyncio.get_event_loop()
+    node_event_loop = NodeEventLoop(node)
 
     logger.trace("Running node...")
-    event_loop.run()
+    loop.run_until_complete(node_event_loop.run())

@@ -3,7 +3,7 @@ import signal
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from collections import defaultdict, deque
-from typing import List, Optional, Tuple, Dict, Deque, NamedTuple
+from typing import List, Optional, Tuple, Dict, Deque, NamedTuple, Union
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
@@ -13,7 +13,8 @@ from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import TerminationError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
-from bxcommon.network.socket_connection import SocketConnection
+from bxcommon.network.ip_endpoint import IpEndpoint
+from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.services.threaded_request_service import ThreadedRequestService
 from bxcommon.services.broadcast_service import BroadcastService, BroadcastOptions
@@ -33,7 +34,7 @@ memory_logger = logging.get_logger(LogRecordType.BxMemory)
 
 
 class DisconnectRequest(NamedTuple):
-    fileno: int
+    file_no: int
     should_retry: bool
 
 
@@ -44,6 +45,7 @@ class AbstractNode:
 
     def __init__(self, opts: Namespace):
         logger.debug("Initializing node of type: {}", self.NODE_TYPE)
+        self.server_endpoint = IpEndpoint(constants.LISTEN_ON_IP_ADDRESS, opts.external_port)
 
         self.set_node_config_opts_from_sdn(opts)
         self.opts = opts
@@ -123,59 +125,44 @@ class AbstractNode:
         pass
 
     @abstractmethod
-    def build_connection(self, socket_connection: SocketConnection, ip: str, port: int, from_me: bool = False) \
-            -> Optional[AbstractConnection]:
+    def build_connection(self, socket_connection: SocketConnectionProtocol) -> Optional[AbstractConnection]:
         pass
 
     @abstractmethod
     def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:
         pass
 
-    @abstractmethod
-    def _sync_tx_services(self):
-        pass
-
-    @abstractmethod
-    def _transaction_sync_timeout(self):
-        pass
-
-    @abstractmethod
-    def _check_sync_relay_connections(self):
-        pass
-
-    def connection_exists(self, ip, port):
+    def connection_exists(self, ip: str, port: int) -> bool:
         return self.connection_pool.has_connection(ip, port)
 
-    def on_connection_added(self, socket_connection: SocketConnection, ip: str, port: int, from_me: bool):
+    def on_connection_added(self, socket_connection: SocketConnectionProtocol) -> Optional[AbstractConnection]:
         """
         Notifies the node that a connection is coming in.
         """
         # If we're already connected to the remote peer, log the event and request disconnect.
+        ip, port = socket_connection.endpoint
+        connection = None
         if self.connection_exists(ip, port):
             logger.debug("Duplicate connection attempted to: {0}:{1}. Dropping.", ip, port)
             socket_connection.mark_for_close(should_retry=False)
         else:
-            self._initialize_connection(socket_connection, ip, port, from_me)
+            connection = self._initialize_connection(socket_connection)
+        if connection is not None:
+            connection.state |= ConnectionState.INITIALIZED
+            logger.debug("Successfully initialized connection: {}", connection)
+            logger.debug("Connection initialized: {}", connection)
+            connection.state |= ConnectionState.INITIALIZED
 
-    def on_connection_initialized(self, fileno: int):
-        conn = self.connection_pool.get_by_fileno(fileno)
+            self.alarm_queue.register_approx_alarm(2 * constants.MIN_SLEEP_TIMEOUT, constants.MIN_SLEEP_TIMEOUT,
+                                                   status_log.update, self.connection_pool, self.opts.use_extensions,
+                                                   self.opts.source_version)
+        return connection
 
-        if conn is None:
-            logger.debug("Unexpectedly initialized connection not in pool. Fileno: {0}", fileno)
-            return
-
-        logger.debug("Connection initialized: {}", conn)
-        conn.state |= ConnectionState.INITIALIZED
-
-        self.alarm_queue.register_approx_alarm(2 * constants.MIN_SLEEP_TIMEOUT, constants.MIN_SLEEP_TIMEOUT,
-                                               status_log.update, self.connection_pool, self.opts.use_extensions,
-                                               self.opts.source_version)
-
-    def on_connection_closed(self, fileno: int):
-        conn = self.connection_pool.get_by_fileno(fileno)
+    def on_connection_closed(self, file_no: int):
+        conn = self.connection_pool.get_by_fileno(file_no)
 
         if conn is None:
-            logger.debug("Unexpectedly closed connection not in pool. Fileno: {0}", fileno)
+            logger.debug("Unexpectedly closed connection not in pool. file_no: {}", file_no)
             return
 
         logger.info("Closed connection: {}", conn)
@@ -225,16 +212,16 @@ class AbstractNode:
         """
         return
 
-    def on_bytes_received(self, fileno: int, bytes_received: bytearray) -> None:
+    def on_bytes_received(self, file_no: int, bytes_received: Union[bytearray, bytes]) -> None:
         """
-        :param fileno:
+        :param file_no:
         :param bytes_received:
         :return: True if the node should continue receiving bytes from the remote peer. False otherwise.
         """
-        conn = self.connection_pool.get_by_fileno(fileno)
+        conn = self.connection_pool.get_by_fileno(file_no)
 
         if conn is None:
-            logger.debug("Received bytes for connection not in pool. Fileno: {0}", fileno)
+            logger.debug("Received bytes for connection not in pool. file_no: {0}", file_no)
             return
 
         if not conn.is_alive():
@@ -242,21 +229,13 @@ class AbstractNode:
             return
 
         conn.add_received_bytes(bytes_received)
-
-    def on_finished_receiving(self, fileno):
-        conn = self.connection_pool.get_by_fileno(fileno)
-
-        if conn is None:
-            logger.debug("Received bytes for connection not in pool. Fileno: {0}", fileno)
-            return
-
         conn.process_message()
 
-    def get_bytes_to_send(self, fileno):
-        conn = self.connection_pool.get_by_fileno(fileno)
+    def get_bytes_to_send(self, file_no: int) -> Optional[memoryview]:
+        conn = self.connection_pool.get_by_fileno(file_no)
 
         if conn is None:
-            logger.debug("Request to get bytes for connection not in pool. Fileno: {0}", fileno)
+            logger.debug("Request to get bytes for connection not in pool. file_no: {}", file_no)
             return
 
         if not conn.is_alive():
@@ -265,11 +244,11 @@ class AbstractNode:
 
         return conn.get_bytes_to_send()
 
-    def on_bytes_sent(self, fileno, bytes_sent):
-        conn = self.connection_pool.get_by_fileno(fileno)
+    def on_bytes_sent(self, file_no: int, bytes_sent: int):
+        conn = self.connection_pool.get_by_fileno(file_no)
 
         if conn is None:
-            logger.debug("Bytes sent call for connection not in pool. Fileno: {0}", fileno)
+            logger.debug("Bytes sent call for connection not in pool. file_no: {0}", file_no)
             return
 
         conn.advance_sent_bytes(bytes_sent)
@@ -279,7 +258,7 @@ class AbstractNode:
         if time_to_next is not None:
             return max(time_to_next, constants.MIN_SLEEP_TIMEOUT)
         else:
-            return constants.MAX_EVENT_LOOP_TIMEOUT_S
+            return constants.MAX_EVENT_LOOP_TIMEOUT
 
     def force_exit(self):
         """
@@ -293,8 +272,8 @@ class AbstractNode:
     def close(self):
         logger.error("Node is closing! Closing everything.")
 
-        for _fileno, conn in self.connection_pool.items():
-            self._destroy_conn(conn)
+        for _, conn in self.connection_pool.items():
+            conn.mark_for_close(should_retry=False)
         self.cleanup_memory_stats_logging()
 
     def broadcast(self, msg: AbstractMessage, broadcasting_conn: Optional[AbstractConnection] = None,
@@ -323,33 +302,6 @@ class AbstractNode:
             return self.connection_queue.popleft()
 
         return
-
-    def _destroy_conn(self, conn: AbstractConnection):
-        """
-        Clean up the associated connection and update all data structures tracking it.
-
-        Do not call this function directly to close a connection, unless circumstances do not allow cleaning shutting
-        down the node via event loop lifecycle hooks (e.g. immediate shutdown).
-
-        In connection handlers, use `AbstractConnection#mark_for_close`, and the connection will be cleaned up as part
-        of event handling.
-        In other node lifecycle events, use `enqueue_disconnect` to allow the event loop to trigger connection cleanup.
-
-        :param conn connection to destroy
-        """
-        should_retry = not bool(conn.socket_connection.state & SocketConnectionState.DO_NOT_RETRY)
-
-        logger.debug("Breaking connection to {}. Attempting retry: {}", conn, should_retry)
-        conn.dispose()
-        self.connection_pool.delete(conn)
-
-        peer_ip, peer_port = conn.peer_ip, conn.peer_port
-        if should_retry and self.continue_retrying_connection(peer_ip, peer_port, conn.CONNECTION_TYPE):
-            self.alarm_queue.register_alarm(self._get_next_retry_timeout(peer_ip, peer_port),
-                                            self._retry_init_client_socket,
-                                            peer_ip, peer_port, conn.CONNECTION_TYPE)
-        else:
-            self.on_failed_connection_retry(peer_ip, peer_port, conn.CONNECTION_TYPE)
 
     def continue_retrying_connection(self, ip: str, port: int, connection_type: ConnectionType) -> bool:
         """
@@ -396,7 +348,6 @@ class AbstractNode:
         return memory_statistics.flush_info()
 
     def set_node_config_opts_from_sdn(self, opts):
-
         # TODO: currently hard-coding configuration values
         opts.stats_calculate_actual_size = False
         opts.log_detailed_block_stats = False
@@ -426,20 +377,63 @@ class AbstractNode:
             return False
         return connection.on_input_received()
 
-    def _initialize_connection(self, socket_connection: SocketConnection, ip: str, port: int, from_me: bool):
-        conn_obj = self.build_connection(socket_connection, ip, port, from_me)
+    @abstractmethod
+    def _sync_tx_services(self):
+        pass
+
+    @abstractmethod
+    def _transaction_sync_timeout(self):
+        pass
+
+    @abstractmethod
+    def _check_sync_relay_connections(self):
+        pass
+
+    def _destroy_conn(self, conn: AbstractConnection):
+        """
+        Clean up the associated connection and update all data structures tracking it.
+
+        Do not call this function directly to close a connection, unless circumstances do not allow cleaning shutting
+        down the node via event loop lifecycle hooks (e.g. immediate shutdown).
+
+        In connection handlers, use `AbstractConnection#mark_for_close`, and the connection will be cleaned up as part
+        of event handling.
+        In other node lifecycle events, use `enqueue_disconnect` to allow the event loop to trigger connection cleanup.
+
+        :param conn connection to destroy
+        """
+        should_retry = not bool(conn.socket_connection.state & SocketConnectionState.DO_NOT_RETRY)
+
+        logger.debug("Breaking connection to {}. Attempting retry: {}", conn, should_retry)
+        conn.dispose()
+        self.connection_pool.delete(conn)
+
+        peer_ip, peer_port = conn.peer_ip, conn.peer_port
+        if should_retry and self.continue_retrying_connection(peer_ip, peer_port, conn.CONNECTION_TYPE):
+            self.alarm_queue.register_alarm(self._get_next_retry_timeout(peer_ip, peer_port),
+                                            self._retry_init_client_socket,
+                                            peer_ip, peer_port, conn.CONNECTION_TYPE)
+        else:
+            self.on_failed_connection_retry(peer_ip, peer_port, conn.CONNECTION_TYPE)
+
+    def _initialize_connection(self, socket_connection: SocketConnectionProtocol) -> Optional[AbstractConnection]:
+        conn_obj = self.build_connection(socket_connection)
+        ip, port = socket_connection.endpoint
         if conn_obj is not None:
             logger.info("Connecting to: {}...", conn_obj)
 
             self.alarm_queue.register_alarm(constants.CONNECTION_TIMEOUT, self._connection_timeout, conn_obj)
-            self.connection_pool.add(socket_connection.fileno(), ip, port, conn_obj)
+            self.connection_pool.add(socket_connection.file_no, ip, port, conn_obj)
 
             if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
                 self.sdn_connection = conn_obj
         else:
-            logger.warning("Could not determine expected connection type for {}:{}. Disconnecting...",
-                           ip, port)
+            logger.warning(
+                "Could not determine expected connection type for {}:{}. Disconnecting...", ip, port
+            )
             socket_connection.mark_for_close(should_retry=False)
+
+        return conn_obj
 
     def on_fully_updated_tx_service(self):
         logger.info("Synced transaction state with BDN.")

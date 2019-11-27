@@ -21,21 +21,21 @@ class ConnectionPoolTest(AbstractTestCase):
         self.port1 = 1000
         self.node1 = MockNode(helpers.get_common_opts(1001, external_ip="128.128.128.128"))
         self.node_id1 = str(uuid.uuid1())
-        self.conn1 = MockConnection(MockSocketConnection(self.fileno1), (self.ip1, self.port1), self.node1)
+        self.conn1 = MockConnection(MockSocketConnection(self.fileno1, ip_address=self.ip1, port=self.port1), self.node1)
 
         self.fileno2 = 5
         self.ip2 = "234.234.234.234"
         self.port2 = 2000
         self.node2 = MockNode(helpers.get_common_opts(1003, external_ip="321.321.321.321"))
         self.node_id2 = str(uuid.uuid1())
-        self.conn2 = MockConnection(MockSocketConnection(self.fileno2), (self.ip2, self.port2), self.node2)
+        self.conn2 = MockConnection(MockSocketConnection(self.fileno2, ip_address=self.ip2, port=self.port2), self.node2)
 
         self.fileno3 = 6
         self.ip3 = "234.234.234.234"
         self.port3 = 3000
         self.node3 = MockNode(helpers.get_common_opts(1003, external_ip="213.213.213.213."))
         self.node_id3 = str(uuid.uuid1())
-        self.conn3 = MockConnection(MockSocketConnection(self.fileno3), (self.ip3, self.port3), self.node3)
+        self.conn3 = MockConnection(MockSocketConnection(self.fileno3, ip_address=self.ip3, port=self.port3), self.node3)
 
     def test_add(self):
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
@@ -147,7 +147,7 @@ class ConnectionPoolTest(AbstractTestCase):
             B = auto()
             AB = A | B
 
-        conn = MockConnection(MockSocketConnection(), (LOCALHOST, 8000), self.node1)
+        conn = MockConnection(MockSocketConnection(ip_address=LOCALHOST, port=8000), self.node1)
         conn.CONNECTION_TYPE = TestConnectionType.AB
         self.conn_pool1.add(self.fileno1, LOCALHOST, 8000, conn)
         self.assertIn(conn, self.conn_pool1.get_by_connection_type(TestConnectionType.A))

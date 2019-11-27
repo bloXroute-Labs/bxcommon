@@ -27,8 +27,7 @@ def send_on_connection(connection):
     This one will never loop infinitely; just need to flush output buffer.
     """
     connection.socket_connection.can_send = True
-    while connection.outputbuf.length > 1 and \
-            not connection.socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE:
+    while connection.outputbuf.length > 1 and connection.socket_connection.is_alive():
         if connection.outputbuf.last_bytearray is not None:
             connection.outputbuf.flush()
         connection.socket_connection.send()

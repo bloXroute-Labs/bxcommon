@@ -30,7 +30,7 @@ class BroadcastServiceTest(AbstractTestCase):
 
     def _add_connection(self, fileno: int, port: int, network_num: int,
                         connection_type=MockConnection.CONNECTION_TYPE) -> MockConnection:
-        conn = MockConnection(MockSocketConnection(fileno), (LOCALHOST, port), self.node)
+        conn = MockConnection(MockSocketConnection(fileno, ip_address=LOCALHOST, port=port), self.node)
         conn.network_num = network_num
         conn.state = ConnectionState.ESTABLISHED
         conn.CONNECTION_TYPE = connection_type

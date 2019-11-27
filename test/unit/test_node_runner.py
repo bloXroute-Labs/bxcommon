@@ -28,7 +28,7 @@ class EventLoopMock(object):
     def __init__(self):
         self.run_count = 0
 
-    def run(self, *args, **kwargs):
+    async def run(self):
         self.run_count += 1
 
 
@@ -75,7 +75,7 @@ class TestNodeRunner(unittest.TestCase):
     @mock.patch("bxcommon.utils.cli.get_argument_parser")
     @mock.patch("bxcommon.utils.cli.parse_arguments")
     @mock.patch("bxcommon.services.sdn_http_service.fetch_blockchain_networks")
-    @mock.patch("bxcommon.network.network_event_loop_factory.create_event_loop")
+    @mock.patch("bxcommon.node_runner.NodeEventLoop")
     @mock.patch("bxcommon.services.sdn_http_service.register_node")
     @mock.patch("bxcommon.utils.config.log_pid")
     def test_run_node(

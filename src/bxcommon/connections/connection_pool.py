@@ -67,7 +67,7 @@ class ConnectionPool:
     def update_connection_type(self, conn: AbstractConnection, connection_type: ConnectionType):
         self.delete(conn)
         conn.CONNECTION_TYPE = connection_type
-        self.add(conn.fileno, conn.peer_ip, conn.peer_port, conn)
+        self.add(conn.file_no, conn.peer_ip, conn.peer_port, conn)
         self.index_conn_node_id(conn.peer_id, conn)
 
     def index_conn_node_id(self, node_id: str, conn: AbstractConnection) -> None:
@@ -123,12 +123,12 @@ class ConnectionPool:
         Delete connection from connection pool.
         """
         # Remove conn from the dictionaries
-        self.by_fileno[conn.fileno] = None
+        self.by_fileno[conn.file_no] = None
 
         # Connection might be replaced with new connection
         # Only delete from byipport if connection has the matching fileno
         ipport = (conn.peer_ip, conn.peer_port)
-        if ipport in self.by_ipport and self.by_ipport[ipport].fileno == conn.fileno:
+        if ipport in self.by_ipport and self.by_ipport[ipport].file_no == conn.file_no:
             del self.by_ipport[(conn.peer_ip, conn.peer_port)]
 
         for connection_type in self.by_connection_type:

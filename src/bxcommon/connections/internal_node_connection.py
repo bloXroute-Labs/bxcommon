@@ -19,6 +19,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServi
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
+from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 from bxcommon.utils import nonce_generator
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.expiring_dict import ExpiringDict
@@ -34,8 +35,8 @@ logger = logging.get_logger(__name__)
 class InternalNodeConnection(AbstractConnection[Node]):
     __metaclass__ = ABCMeta
 
-    def __init__(self, sock, address, node, from_me=False):
-        super(InternalNodeConnection, self).__init__(sock, address, node, from_me)
+    def __init__(self, sock: SocketConnectionProtocol, node: Node):
+        super(InternalNodeConnection, self).__init__(sock, node)
 
         # Enable buffering only on internal connections
         self.enable_buffered_send = node.opts.enable_buffered_send

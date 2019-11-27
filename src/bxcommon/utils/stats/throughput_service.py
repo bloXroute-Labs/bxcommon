@@ -1,10 +1,10 @@
 from typing import Optional, Union
 from collections import defaultdict
 
+from bxcommon.network.network_direction import NetworkDirection
 from bxutils import logging
 
 from bxcommon import constants
-from bxcommon.utils.stats.direction import Direction
 from bxcommon.utils.stats.measurement_type import MeasurementType
 from bxcommon.utils.stats.peer_stats import PeerStats
 from bxcommon.utils.stats.statistics_service import StatisticsService, StatsIntervalData
@@ -30,7 +30,7 @@ class ThroughputStatistics(StatisticsService):
         super(ThroughputStatistics, self).__init__("ThroughputStats", interval, look_back, reset=True, logger=logger)
 
     def add_event(self,
-                  direction: Direction,
+                  direction: NetworkDirection,
                   msg_type: str,
                   msg_size: int,
                   peer_desc: str,
@@ -40,7 +40,7 @@ class ThroughputStatistics(StatisticsService):
         if peer_id is not None:
             peer_stats.peer_id = peer_id
 
-        if direction is Direction.INBOUND:
+        if direction == NetworkDirection.INBOUND:
             peer_stats.messages_received[msg_type].bytes += msg_size
             peer_stats.messages_received[msg_type].count += 1
             peer_stats.peer_total_received += msg_size

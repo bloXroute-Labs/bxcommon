@@ -2,11 +2,11 @@ from typing import Optional, Union
 
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.throughput_service import throughput_statistics
-from bxcommon.utils.stats.direction import Direction
+from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.utils.stats.measurement_type import MeasurementType
 
 
-def add_throughput_event(direction: Direction,
+def add_throughput_event(direction: NetworkDirection,
                          msg_type: str,
                          msg_size: int,
                          peer_desc: str,

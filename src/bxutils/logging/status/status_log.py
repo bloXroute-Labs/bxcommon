@@ -57,7 +57,7 @@ def update(conn_pool: ConnectionPool, use_ext: bool, src_ver: str) -> None:
         for conn in conn_pool.get_by_connection_type(conn_type):
             if conn_type not in current_conn_types:
                 current_conn_types.add(conn_type)
-            network.update_connection(conn.CONNECTION_TYPE, conn.peer_desc, conn.fileno, conn.peer_id)
+            network.update_connection(conn.CONNECTION_TYPE, conn.peer_desc, conn.file_no, conn.peer_id)
 
     for conn_type in CONN_TYPES - current_conn_types:
         network.update_connection(conn_type)
