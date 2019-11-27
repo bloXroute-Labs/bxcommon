@@ -3,6 +3,7 @@ import os
 import platform
 import json
 from datetime import datetime
+from json.decoder import JSONDecodeError
 from pip._internal.operations.freeze import freeze
 from typing import List
 
@@ -12,6 +13,7 @@ from bxcommon.constants import OS_VERSION
 from bxcommon.utils import config
 from bxcommon.utils import model_loader
 from bxutils.encoding.json_encoder import EnhancedJSONEncoder
+from bxutils import logging
 from bxutils.logging.status.analysis import Analysis
 from bxutils.logging.status.blockchain_connection import BlockchainConnection
 from bxutils.logging.status.diagnostics import Diagnostics
@@ -23,12 +25,14 @@ from bxutils.logging.status.network import Network
 from bxutils.logging.status.relay_connection import RelayConnection
 from bxutils.logging.status.summary import Summary
 
+logger = logging.get_logger(__name__)
+
 STATUS_FILE_NAME = "bloxroute_status.log"
 CONN_TYPES = {ConnectionType.RELAY_BLOCK, ConnectionType.RELAY_TRANSACTION, ConnectionType.BLOCKCHAIN_NODE,
               ConnectionType.REMOTE_BLOCKCHAIN_NODE}
 
 
-def initialize(use_ext: bool, src_ver: str) -> None:
+def initialize(use_ext: bool, src_ver: str) -> Diagnostics:
     current_time = _get_current_time()
     summary = Summary(gateway_status=GatewayStatus.OFFLINE)
     environment = Environment(_get_installation_type(), OS_VERSION, platform.python_version(), sys.executable)
@@ -42,13 +46,14 @@ def initialize(use_ext: bool, src_ver: str) -> None:
     diagnostics = Diagnostics(summary, analysis)
 
     _save_status_to_file(diagnostics)
+    return diagnostics
 
 
 def update(conn_pool: ConnectionPool, use_ext: bool, src_ver: str) -> None:
     path = config.get_data_file(STATUS_FILE_NAME)
     if not os.path.exists(path):
         initialize(use_ext, src_ver)
-    diagnostics = _load_status_from_file()
+    diagnostics = _load_status_from_file(use_ext, src_ver)
     analysis = diagnostics.analysis
     network = analysis.network
 
@@ -107,11 +112,19 @@ def _get_startup_param() -> str:
     return " ".join(sys.argv[1:])
 
 
-def _load_status_from_file() -> Diagnostics:
+def _load_status_from_file(use_ext: bool, src_ver: str) -> Diagnostics:
     path = config.get_data_file(STATUS_FILE_NAME)
     with open(path, "r", encoding="utf-8") as json_file:
         status_file = json_file.read()
-    return model_loader.load_model_from_json(Diagnostics, status_file)
+    try:
+        model_dict = json.loads(status_file)
+        diagnostics = model_loader.load_model(Diagnostics, model_dict)
+    except JSONDecodeError:
+        logger.warning("The status file may have been modified. This message can be safely ignored when "
+                       "running multiple nodes on the same machine. "
+                       f"For more information, please check the validity of status file: {path}")
+        diagnostics = initialize(use_ext, src_ver)
+    return diagnostics
 
 
 def _save_status_to_file(diagnostics: Diagnostics) -> None:
