@@ -1,6 +1,8 @@
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
-from bxcommon.connections.node_type import NodeType
+from typing import Any, Dict, Optional
+
+from bxcommon.models.node_type import NodeType
+
 
 @dataclass
 class OutboundPeerModel(object):

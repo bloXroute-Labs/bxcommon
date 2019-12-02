@@ -2,7 +2,7 @@ import unittest
 
 from mock import mock
 
-from bxcommon.connections.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 from bxcommon.services import sdn_http_service
 from bxcommon.test_utils import helpers
 

@@ -1,6 +1,6 @@
 import os
 
-from bxutils.models.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase

@@ -4,7 +4,7 @@ executors:
     docker:
       - image: circleci/python:3.7.0
     environment:
-      PYTHONPATH: /home/circleci/ws/bxcommon/src:/home/circleci/ws/bxextensions
+      PYTHONPATH: /home/circleci/ws/bxcommon/src:/home/circleci/ws/bxextensions:/home/circleci/ws/bxcommon-internal/src/
     working_directory: ~/ws
 jobs:
   initialize:
@@ -135,6 +135,13 @@ jobs:
                 echo "Trying bxgateway develop branch, could not find identical branch name '$CIRCLE_BRANCH."
                 git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxgateway-private.git bxgateway
             }
+            { # try
+                echo "Trying to clone identical branch name '$CIRCLE_BRANCH  from bxcommon-internal."
+                git clone -b $CIRCLE_BRANCH --single-branch --depth=1 git@github.com:bloXroute-Labs/bxcommon-internal.git bxcommon-internal
+            } || { # catch
+                echo "Trying bxcommon-internal develop branch, could not find identical branch name '$CIRCLE_BRANCH."
+                git clone -b develop --single-branch --depth=1 git@github.com:bloXroute-Labs/bxcommon-internal.git bxcommon-internal
+            }
       - run:
           name: Initialize virtualenv
           command: |
@@ -148,7 +155,7 @@ jobs:
           command: |
             . venv/bin/activate
             cd bxe2e/test/integration
-            PYTHONPATH=$PYTHONPATH:/home/circleci/ws/bxe2e/src:/home/circleci/ws/bxgateway/src:/home/circleci/ws/bxrelay/src \
+            PYTHONPATH=$PYTHONPATH:/home/circleci/ws/bxcommon-internal/src:/home/circleci/ws/bxe2e/src:/home/circleci/ws/bxgateway/src:/home/circleci/ws/bxrelay/src \
             python -m unittest discover --verbose
   build:
     docker:

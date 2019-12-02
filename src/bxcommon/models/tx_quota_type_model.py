@@ -1,6 +1,5 @@
 from enum import IntFlag
 
-
 # IntFlag allows comparison with ints, which is not as strict as Flag, but allows easier unit testing.
 class TxQuotaType(IntFlag):
     NONE = 0

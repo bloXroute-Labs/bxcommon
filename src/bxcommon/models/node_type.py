@@ -1,10 +1,9 @@
 import enum
-from bxutils.models.serializable_flag import SerializableFlag
 
-# TODO : remove old reference in bxcommon and bxapi
+from bxcommon.models.serializeable_flag import SerializeableFlag
 
 
-class NodeType(SerializableFlag):
+class NodeType(SerializeableFlag):
     INTERNAL_GATEWAY = enum.auto()
     EXTERNAL_GATEWAY = enum.auto()
     GATEWAY = INTERNAL_GATEWAY | EXTERNAL_GATEWAY

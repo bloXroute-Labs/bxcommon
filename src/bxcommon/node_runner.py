@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Iterable, Optional, Type
 from argparse import Namespace
 
-from bxcommon.connections.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 from bxutils import logging
 from bxutils.logging import log_config
 from bxutils.logging.status import status_log

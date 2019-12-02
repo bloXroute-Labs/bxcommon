@@ -14,7 +14,7 @@ from bxutils.ssl import ssl_certificate_factory
 from bxutils.ssl.data.ssl_storage_info import SSLStorageInfo
 from bxutils.ssl.data.ssl_file_info import SSLFileInfo
 from bxutils.common import url_helper
-from bxutils.models.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 
 logger = logging.get_logger(__name__)
 

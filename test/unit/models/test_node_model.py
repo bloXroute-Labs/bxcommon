@@ -4,7 +4,7 @@ from bxutils.logging import log_config
 
 from bxcommon.utils import model_loader
 from bxcommon.models.node_model import NodeModel
-from bxcommon.connections.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 from bxcommon import constants
 
 

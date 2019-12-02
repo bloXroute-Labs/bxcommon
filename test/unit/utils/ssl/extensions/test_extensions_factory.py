@@ -1,7 +1,7 @@
 import uuid
 import os
 
-from bxutils.models.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 from cryptography import x509
 from cryptography.hazmat import backends
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKeyWithSerialization

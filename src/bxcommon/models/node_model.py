@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from bxcommon import constants
-from bxcommon.connections.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 
 
 @dataclass(unsafe_hash=True)

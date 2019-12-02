@@ -7,7 +7,7 @@ from bxutils import logging
 from bxutils import constants as utils_constants
 from argparse import Namespace
 from bxcommon import constants
-from bxcommon.connections.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 from bxcommon.constants import ALL_NETWORK_NUM
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.services import sdn_http_service

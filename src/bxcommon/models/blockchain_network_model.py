@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Any, Dict
 
 from bxcommon import constants
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment

@@ -6,7 +6,7 @@ from typing import Optional, TypeVar, Type, TYPE_CHECKING, List
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
-from bxcommon.connections.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel

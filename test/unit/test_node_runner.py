@@ -11,7 +11,7 @@ from bxutils.logging.status.status_log import STATUS_FILE_NAME
 
 from bxcommon import node_runner, constants
 from bxcommon.utils import config
-from bxcommon.connections.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.test_utils import helpers
 

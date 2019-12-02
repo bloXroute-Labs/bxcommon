@@ -4,7 +4,7 @@ from abc import abstractmethod, ABCMeta
 from mock import MagicMock
 
 from bxcommon import constants
-from bxcommon.connections.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 from bxcommon.constants import NULL_TX_SID
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.services.transaction_service import TransactionService

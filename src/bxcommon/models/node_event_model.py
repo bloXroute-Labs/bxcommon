@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from bxcommon.models.serializeable_enum import SerializeableEnum
 
 

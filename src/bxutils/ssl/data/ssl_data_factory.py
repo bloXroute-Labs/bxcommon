@@ -1,6 +1,6 @@
 import os
 
-from bxutils.models.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 from bxutils import constants
 from bxutils.ssl.data.ssl_storage_info import SSLStorageInfo
 from bxutils.ssl.data.ssl_certificate_info import SSLCertificateInfo
