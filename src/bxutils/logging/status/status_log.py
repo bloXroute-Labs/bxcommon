@@ -49,7 +49,7 @@ def initialize(use_ext: bool, src_ver: str) -> Diagnostics:
     return diagnostics
 
 
-def update(conn_pool: ConnectionPool, use_ext: bool, src_ver: str) -> None:
+def update(conn_pool: ConnectionPool, use_ext: bool, src_ver: str) -> Diagnostics:
     path = config.get_data_file(STATUS_FILE_NAME)
     if not os.path.exists(path):
         initialize(use_ext, src_ver)
@@ -71,6 +71,11 @@ def update(conn_pool: ConnectionPool, use_ext: bool, src_ver: str) -> None:
     diagnostics = Diagnostics(summary, analysis)
 
     _save_status_to_file(diagnostics)
+    return diagnostics
+
+
+def update_alarm_callback(conn_pool: ConnectionPool, use_ext: bool, src_ver: str) -> None:
+    update(conn_pool, use_ext, src_ver)
 
 
 def _check_extensions_validity(use_ext: bool, src_ver: str) -> ExtensionModulesState:

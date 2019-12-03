@@ -2,10 +2,12 @@ import asyncio
 import uvloop
 import sys
 from datetime import datetime
-from typing import Iterable, Optional, Type
+from typing import Iterable, Optional, Type, Union
 from argparse import Namespace
 
+from bxcommon.utils.cli import CommonOpts
 from bxcommon.models.node_type import NodeType
+
 from bxutils import logging
 from bxutils.logging import log_config
 from bxutils.logging.status import status_log
@@ -28,7 +30,7 @@ LOGGER_NAMES = ["bxcommon", "bxutils", "stats", "bx"]
 
 def run_node(
         process_id_file_path: str,
-        opts: Namespace,
+        opts: Union[Namespace, CommonOpts],
         node_class: Type[AbstractNode],
         node_type: Optional[NodeType] = None,
         logger_names: Iterable[Optional[str]] = tuple(LOGGER_NAMES)

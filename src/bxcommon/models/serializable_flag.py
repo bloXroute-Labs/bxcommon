@@ -1,7 +1,7 @@
 from enum import Flag
 
 
-class SerializeableFlag(Flag):
+class SerializableFlag(Flag):
     def __str__(self):
         return self.name
 

@@ -1,9 +1,9 @@
 import enum
 
-from bxcommon.models.serializeable_flag import SerializeableFlag
+from bxcommon.models.serializable_flag import SerializableFlag
 
 
-class NodeType(SerializeableFlag):
+class NodeType(SerializableFlag):
     INTERNAL_GATEWAY = enum.auto()
     EXTERNAL_GATEWAY = enum.auto()
     GATEWAY = INTERNAL_GATEWAY | EXTERNAL_GATEWAY

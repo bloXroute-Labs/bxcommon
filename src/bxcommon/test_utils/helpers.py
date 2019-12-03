@@ -1,8 +1,10 @@
 import os
 import socket
+import asyncio
 from argparse import Namespace
 from contextlib import closing
-from typing import Optional, TypeVar, Type, TYPE_CHECKING, List
+from typing import Optional, TypeVar, Type, TYPE_CHECKING, List, Callable
+from mock import MagicMock
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
@@ -329,3 +331,23 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
     for key, val in kwargs.items():
         opts.__dict__[key] = val
     return opts
+
+
+def async_test(method):
+    def wrapper(*args, **kwargs):
+        async_method = asyncio.coroutine(method)
+        future = async_method(*args, **kwargs)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(future)
+
+    return wrapper
+
+
+class AsyncMock(Callable):
+    mock: MagicMock
+
+    def __init__(self, *args, **kwargs):
+        self.mock = MagicMock(*args, **kwargs)
+
+    async def __call__(self, *args, **kwargs):
+        return self.mock(*args, **kwargs)

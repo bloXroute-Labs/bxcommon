@@ -49,7 +49,7 @@ class CommonOpts:
     thread_pool_parallelism_degree: int
     tx_mem_pool_bucket_size: int
     protocol_version: int
-    source_version: int
+    source_version: str
 
     def __init__(self, opts: Namespace):
         self.external_ip = opts.external_ip

@@ -25,3 +25,7 @@ class TransactionStatEventType(object):
     TX_UNKNOWN_TRANSACTION_RECEIVED_BY_GATEWAY_FROM_RELAY = StatEventTypeSettings("TxUnknownTransactionReceivedByGatewayFromRelay")
     TX_REMOVED_FROM_MEMORY = StatEventTypeSettings("TxRemovedFromMemory")
     TX_BLOCK_RECOVERY_STATS = StatEventTypeSettings("TxBlockRecoveryStats")
+    BDN_TX_RECEIVED_FROM_CLIENT_ACCOUNT = StatEventTypeSettings("BDNTxReceivedFromClientAccount")
+    BDN_TX_RECEIVED_FROM_CLIENT_ACCOUNT_IGNORE_SEEN = StatEventTypeSettings(
+        "BDNTxReceivedFromClientAccountIgnoreSeen"
+    )

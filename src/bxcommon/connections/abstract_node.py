@@ -154,7 +154,7 @@ class AbstractNode:
             connection.state |= ConnectionState.INITIALIZED
 
             self.alarm_queue.register_approx_alarm(2 * constants.MIN_SLEEP_TIMEOUT, constants.MIN_SLEEP_TIMEOUT,
-                                                   status_log.update, self.connection_pool, self.opts.use_extensions,
+                                                   status_log.update_alarm_callback, self.connection_pool, self.opts.use_extensions,
                                                    self.opts.source_version)
         return connection
 
@@ -172,7 +172,7 @@ class AbstractNode:
         self._destroy_conn(conn)
 
         self.alarm_queue.register_approx_alarm(2 * constants.MIN_SLEEP_TIMEOUT, constants.MIN_SLEEP_TIMEOUT,
-                                               status_log.update, self.connection_pool, self.opts.use_extensions,
+                                               status_log.update_alarm_callback, self.connection_pool, self.opts.use_extensions,
                                                self.opts.source_version)
 
     def on_updated_peers(self, outbound_peer_models):
@@ -376,6 +376,9 @@ class AbstractNode:
         if connection is None:
             return False
         return connection.on_input_received()
+
+    async def init(self) -> None:
+        pass
 
     @abstractmethod
     def _sync_tx_services(self):

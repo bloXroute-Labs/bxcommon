@@ -1,4 +1,5 @@
 import binascii
+from binascii import Error
 
 
 def str_to_bool(value):
@@ -26,5 +27,7 @@ def hex_to_bytes(s):
 
     if not isinstance(s, (str, bytes, bytearray, memoryview)):
         raise TypeError("Value must be an instance of str or unicode")
-
-    return binascii.unhexlify(s)
+    try:
+        return binascii.unhexlify(s)
+    except Error as e:
+        raise ValueError(f"Invalid hex string provided: {s}.") from e

@@ -42,6 +42,7 @@ class NodeEventLoop:
             self._started = None
 
     async def _run(self) -> None:
+        await self._node.init()
         node_server = await self._create_server()
         async with node_server:
             await self._connect_to_peers()
