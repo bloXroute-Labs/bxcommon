@@ -1,11 +1,10 @@
 import unittest
 
-from bxutils.logging import log_config
-
-from bxcommon.utils import model_loader
+from bxcommon import constants
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.node_type import NodeType
-from bxcommon import constants
+from bxcommon.utils import model_loader
+from bxutils.logging import log_config
 
 
 class TestNodeModel(unittest.TestCase):

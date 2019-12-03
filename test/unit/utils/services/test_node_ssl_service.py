@@ -1,17 +1,16 @@
 import os
 
-from bxcommon.models.node_type import NodeType
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
+from bxcommon.models.node_type import NodeType
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-
+from bxutils.common import url_helper
 from bxutils.services.node_ssl_service import NodeSSLService
-from bxutils.ssl.data.ssl_storage_info import SSLStorageInfo
+from bxutils.ssl import ssl_certificate_factory
 from bxutils.ssl.data.ssl_certificate_info import SSLCertificateInfo
 from bxutils.ssl.data.ssl_file_info import SSLFileInfo
-from bxutils.ssl import ssl_certificate_factory
+from bxutils.ssl.data.ssl_storage_info import SSLStorageInfo
 from bxutils.ssl.ssl_certificate_type import SSLCertificateType
-from bxutils.common import url_helper
 
 
 class NodeSSLServiceTest(AbstractTestCase):

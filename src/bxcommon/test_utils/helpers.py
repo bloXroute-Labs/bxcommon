@@ -8,11 +8,11 @@ from mock import MagicMock
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
-from bxcommon.models.node_type import NodeType
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
+from bxcommon.models.node_type import NodeType
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection

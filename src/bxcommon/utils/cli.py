@@ -1,22 +1,23 @@
 import argparse
-
-from bxutils.logging.log_format import LogFormat
-from bxutils.logging.log_level import LogLevel
-from bxutils.logging import log_config
-from bxutils import logging
-from bxutils import constants as utils_constants
 from argparse import Namespace
+from dataclasses import dataclass
+from typing import Dict
+
 from bxcommon import constants
-from bxcommon.models.node_type import NodeType
 from bxcommon.constants import ALL_NETWORK_NUM
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
-from bxcommon.services import sdn_http_service
+from bxcommon.models.node_type import NodeType
 from bxcommon.services import http_service
+from bxcommon.services import sdn_http_service
 from bxcommon.utils import config, ip_resolver
 from bxcommon.utils import convert
 from bxcommon.utils.node_start_args import NodeStartArgs
-from typing import Dict
-from dataclasses import dataclass
+from bxutils import constants as utils_constants
+from bxutils import logging
+from bxutils.logging import log_config
+from bxutils.logging.log_format import LogFormat
+from bxutils.logging.log_level import LogLevel
+
 logger = logging.get_logger(__name__)
 
 

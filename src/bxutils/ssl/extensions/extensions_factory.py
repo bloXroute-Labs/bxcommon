@@ -1,12 +1,12 @@
-from typing import List, Union, Optional
-from cryptography.x509 import Certificate, UnrecognizedExtension, BasicConstraints, KeyUsage, \
-    ExtensionNotFound
+from typing import List, Optional, Union
+
+from cryptography.x509 import BasicConstraints, Certificate, ExtensionNotFound, KeyUsage, UnrecognizedExtension
 
 from bxcommon.models.node_type import NodeType
-from bxutils.ssl.extensions.node_type_extension import NodeTypeExtension
-from bxutils.ssl.extensions.node_id_extension import NodeIdExtension
 from bxutils.ssl.extensions.account_id_extension import AccountIdExtension
 from bxutils.ssl.extensions.extensions_object_ids import ExtensionsObjectIds
+from bxutils.ssl.extensions.node_id_extension import NodeIdExtension
+from bxutils.ssl.extensions.node_type_extension import NodeTypeExtension
 
 DEFAULT_KEY_USAGE = KeyUsage(
             digital_signature=True,

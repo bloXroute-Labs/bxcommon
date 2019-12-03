@@ -4,16 +4,15 @@ import unittest
 from argparse import Namespace
 from unittest import mock
 
-from bxutils.logging import log_config
-from bxutils.logging.log_level import LogLevel
-from bxutils.logging.log_format import LogFormat
-from bxutils.logging.status.status_log import STATUS_FILE_NAME
-
-from bxcommon import node_runner, constants
-from bxcommon.utils import config
-from bxcommon.models.node_type import NodeType
+from bxcommon import constants, node_runner
 from bxcommon.models.node_model import NodeModel
+from bxcommon.models.node_type import NodeType
 from bxcommon.test_utils import helpers
+from bxcommon.utils import config
+from bxutils.logging import log_config
+from bxutils.logging.log_format import LogFormat
+from bxutils.logging.log_level import LogLevel
+from bxutils.logging.status.status_log import STATUS_FILE_NAME
 
 
 class NodeMock(object):

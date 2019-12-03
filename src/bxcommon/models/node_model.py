@@ -3,6 +3,7 @@ from typing import Optional
 
 from bxcommon import constants
 from bxcommon.models.node_type import NodeType
+from bxcommon.models.platform_provider import PlatformProvider
 
 
 @dataclass(unsafe_hash=True)
@@ -74,6 +75,8 @@ class NodeModel:
     baseline_source_redundancy: int = 0
 
     private_ip: str = None
+
+    platform_provider: PlatformProvider = None
 
     def __post_init__(self):
         self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS

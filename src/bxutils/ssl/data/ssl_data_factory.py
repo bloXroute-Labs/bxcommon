@@ -2,11 +2,11 @@ import os
 
 from bxcommon.models.node_type import NodeType
 from bxutils import constants
-from bxutils.ssl.data.ssl_storage_info import SSLStorageInfo
+from bxutils.common import url_helper
 from bxutils.ssl.data.ssl_certificate_info import SSLCertificateInfo
 from bxutils.ssl.data.ssl_file_info import SSLFileInfo
+from bxutils.ssl.data.ssl_storage_info import SSLStorageInfo
 from bxutils.ssl.ssl_certificate_type import SSLCertificateType
-from bxutils.common import url_helper
 
 CA_DIR_NAME: str = SSLCertificateType.CA.name.lower()
 REGISTRATION_DIR_NAME: str = SSLCertificateType.REGISTRATION_ONLY.name.lower()

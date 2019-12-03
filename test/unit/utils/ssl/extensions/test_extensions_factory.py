@@ -1,16 +1,15 @@
-import uuid
 import os
+import uuid
 
-from bxcommon.models.node_type import NodeType
 from cryptography import x509
 from cryptography.hazmat import backends
-from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKeyWithSerialization
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKeyWithSerialization
 
+from bxcommon.models.node_type import NodeType
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-
-from bxutils.ssl.extensions import extensions_factory
 from bxutils.ssl import ssl_certificate_factory
+from bxutils.ssl.extensions import extensions_factory
 
 
 class ExtensionsFactoryTest(AbstractTestCase):

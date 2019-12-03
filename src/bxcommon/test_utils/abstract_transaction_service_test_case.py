@@ -1,11 +1,11 @@
 import time
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta, abstractmethod
 
 from mock import MagicMock
 
 from bxcommon import constants
-from bxcommon.models.node_type import NodeType
 from bxcommon.constants import NULL_TX_SID
+from bxcommon.models.node_type import NodeType
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils import helpers

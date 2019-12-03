@@ -3,8 +3,8 @@ from typing import List
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.abstract_node import AbstractNode
-from bxcommon.models.node_type import NodeType
 from bxcommon.constants import DEFAULT_NETWORK_NUM
+from bxcommon.models.node_type import NodeType
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils.alarm_queue import AlarmQueue
 
