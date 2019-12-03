@@ -10,7 +10,7 @@ from bxcommon.models.node_type import NodeType
 
 from bxutils import logging
 from bxutils.logging import log_config
-from bxutils.logging.status import status_log
+
 
 from bxcommon.models.node_model import NodeModel
 from bxcommon.network.node_event_loop import NodeEventLoop
@@ -46,7 +46,6 @@ def run_node(
     )
     startup_param = sys.argv[1:]
     logger.info("Startup Parameters are: {}", " ".join(startup_param))
-    status_log.initialize(opts.use_extensions, opts.source_version)
 
     if node_type is None:
         node_type = node_class.NODE_TYPE

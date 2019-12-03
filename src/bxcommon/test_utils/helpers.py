@@ -226,7 +226,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
                      is_internal_gateway=False, is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
                      parallelism_degree=1, cookie_file_path=COOKIE_FILE_PATH, blockchain_block_hold_timeout_s=30,
                      blockchain_block_recovery_timeout_s=30, stay_alive_duration=30 * 60, source_version="v1.1.1.1",
-                     initial_liveliness_check=30, block_interval=600, **kwargs) -> Namespace:
+                     initial_liveliness_check=30, block_interval=600, continent="NA", country="United States",
+                     **kwargs) -> Namespace:
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -294,7 +295,9 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "initial_liveliness_check": initial_liveliness_check,
         "has_fully_updated_tx_service": False,
         "source_version": source_version,
-        "require_blockchain_connection": True
+        "require_blockchain_connection": True,
+        "continent": continent,
+        "country": country
     })
 
     if include_default_btc_args:
