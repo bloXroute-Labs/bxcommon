@@ -99,7 +99,7 @@ def _run_node(opts, node_class, node_type, logger_names: Iterable[Optional[str]]
         if node_model.cert is not None:
             private_cert = ssl_serializer.deserialize_cert(node_model.cert)
             node_ssl_service.blocking_store_node_certificate(private_cert)
-            ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.REGISTRATION_ONLY)
+            ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
             sdn_http_service.reset_pool(ssl_context)
 
     # Add opts from SDN, but don't overwrite CLI args
