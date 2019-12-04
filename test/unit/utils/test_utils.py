@@ -17,17 +17,17 @@ class UtilsTests(unittest.TestCase):
 
     def mocked_requests_get(*args):
         class MockResponse:
-            text = ""
+            body = ""
 
-            def __init__(self, text):
-                self.text = text
+            def __init__(self, data):
+                self.data = data
 
-        if args[1] == "VALID_URL":
-            return MockResponse("Current IP Address: 135.84.167.43")
-        elif args[1] == "INVALID_URL":
-            raise ConnectionError("Connection aborted - connection reset by peer")
-        elif args[1] == "INVALID_IP":
-            return MockResponse("No ip returned")
+        if args[2] == "VALID_URL":
+            return MockResponse(b'Current IP Address: 135.84.167.43')
+        elif args[2] == "INVALID_URL":
+            raise ConnectionError(b'Connection aborted - connection reset by peer')
+        elif args[2] == "INVALID_IP":
+            return MockResponse(b'No ip returned')
 
     @patch("bxcommon.utils.config.get_env_default")
     @patch("bxcommon.utils.config.append_manifest_args")
@@ -73,7 +73,7 @@ class UtilsTests(unittest.TestCase):
         mock_get_node_public_ip.assert_not_called()
         mock_blocking_resolve_ip.called_once_with(custom_external_ip)
 
-    @patch("requests.get")
+    @patch("urllib3.PoolManager.request")
     @patch("bxcommon.constants.PUBLIC_IP_ADDR_RESOLVER", "VALID_URL")
     def test_get_node_public_ip_with_valid_url(self, mock_get):
         mock_get.side_effect = self.mocked_requests_get
@@ -81,9 +81,9 @@ class UtilsTests(unittest.TestCase):
         public_ip = ip_resolver.get_node_public_ip()
 
         self.assertEqual("135.84.167.43", public_ip)
-        mock_get.assert_called_once_with("VALID_URL")
+        mock_get.assert_called_once_with("GET", "VALID_URL")
 
-    @patch("requests.get")
+    @patch("urllib3.PoolManager.request")
     @patch("bxcommon.constants.PUBLIC_IP_ADDR_RESOLVER", "INVALID_URL")
     def test_get_node_public_ip_raising_connection_exception(self, mock_get):
         mock_get.side_effect = self.mocked_requests_get
@@ -93,7 +93,7 @@ class UtilsTests(unittest.TestCase):
 
         self.assertTrue(system_exit.exception.code, 1)
 
-    @patch("requests.get")
+    @patch("urllib3.PoolManager.request")
     @patch("bxcommon.constants.PUBLIC_IP_ADDR_RESOLVER", "INVALID_IP")
     def test_get_node_public_ip_with_no_ip_in_response(self, mock_get):
         mock_get.side_effect = self.mocked_requests_get

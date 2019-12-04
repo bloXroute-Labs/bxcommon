@@ -27,7 +27,7 @@ from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
 from bxutils.logging import LogRecordType
-
+from bxutils.services.node_ssl_service import NodeSSLService
 
 logger = logging.get_logger(__name__)
 memory_logger = logging.get_logger(LogRecordType.BxMemory)
@@ -43,7 +43,8 @@ class AbstractNode:
     FLUSH_SEND_BUFFERS_INTERVAL = constants.OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME * 2
     NODE_TYPE = None
 
-    def __init__(self, opts: Namespace):
+    def __init__(self, opts: Namespace, node_ssl_service: Optional[NodeSSLService] = None):
+        self.node_ssl_service = node_ssl_service
         logger.debug("Initializing node of type: {}", self.NODE_TYPE)
         self.server_endpoint = IpEndpoint(constants.LISTEN_ON_IP_ADDRESS, opts.external_port)
 

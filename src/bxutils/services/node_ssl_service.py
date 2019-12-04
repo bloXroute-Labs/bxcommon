@@ -81,6 +81,7 @@ class NodeSSLService:
                 if key_url is not None:
                     key = ssl_certificate_factory.fetch_key(key_url)
                     self.private_keys[cert_type] = key
+                    self._store_key(key, key_file_info)
         if not self.has_valid_certificate(SSLCertificateType.CA):
             raise RuntimeError("Failed to load CA certificate.")
         elif not self.has_valid_certificate(SSLCertificateType.REGISTRATION_ONLY) and not \
@@ -199,7 +200,8 @@ class NodeSSLService:
         cert_folder_path = os.path.join(
             self.storage_info.ssl_folder_path, cert_file_info.sub_directory_name
         )
-        ssl_certificate_factory.store_certificate(cert, cert_folder_path, self._node_name)
+        cert_file_name = cert_type.name.lower() if cert_type == SSLCertificateType.CA else self._node_name
+        ssl_certificate_factory.store_certificate(cert, cert_folder_path, cert_file_name)
 
     def _store_key(self, key: EllipticCurvePrivateKeyWithSerialization, file_info: Optional[SSLFileInfo]) -> None:
         if not self._store_local or file_info is None or os.path.exists(self._get_file_path(file_info)):
@@ -207,7 +209,9 @@ class NodeSSLService:
             return
         ssl_folder_path = self.storage_info.ssl_folder_path
         folder_path = os.path.join(ssl_folder_path, file_info.sub_directory_name)
-        ssl_certificate_factory.store_key(key, folder_path, self._node_name)
+        file_parts = file_info.file_name.split("_")[:-1]
+        file_prefix = "_".join(file_parts)
+        ssl_certificate_factory.store_key(key, folder_path, file_prefix)
 
     def _make_dirs(self) -> None:
         if not self._store_local:
@@ -218,7 +222,6 @@ class NodeSSLService:
             yield ssl_folder_path
             for cert_info in self.storage_info.certificates_info.values():
                 yield os.path.join(ssl_folder_path, cert_info.cert_file_info.sub_directory_name)
-                yield os.path.join(ssl_folder_path, cert_info.key_file_info.sub_directory_name)  # pyre-ignore
         for folder_path in _get_dirs():
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)

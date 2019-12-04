@@ -64,7 +64,7 @@ def create_connection(connection_cls: Type[Connection],
         node_opts = get_common_opts(8002)
 
     if node is None:
-        node = MockNode(node_opts)
+        node = MockNode(node_opts, None)
 
     if isinstance(node, MockNode):
         add_to_pool = False
@@ -254,7 +254,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
     opts = get_common_opts(**partial_apply_args)
 
     opts.__dict__.update({
-        "node_type": NodeType.GATEWAY,
+        "node_type": NodeType.EXTERNAL_GATEWAY,
         "bloxroute_version": bloxroute_version,
         "blockchain_ip": blockchain_address[0],
         "blockchain_port": blockchain_address[1],

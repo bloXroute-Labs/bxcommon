@@ -50,7 +50,9 @@ class CommonOpts:
     thread_pool_parallelism_degree: int
     tx_mem_pool_bucket_size: int
     protocol_version: int
-    source_version: str
+    source_version: int
+    ca_cert_url: str
+    private_ssl_base_url: str
 
     def __init__(self, opts: Namespace):
         self.external_ip = opts.external_ip
@@ -82,6 +84,8 @@ class CommonOpts:
         self.data_dir = opts.data_dir
         self.protocol_version = opts.protocol_version
         self.source_version = opts.source_version
+        self.ca_cert_url = opts.ca_cert_url
+        self.private_ssl_base_url = opts.private_ssl_base_url
 
 
 def get_argument_parser() -> argparse.ArgumentParser:
@@ -211,6 +215,25 @@ def get_argument_parser() -> argparse.ArgumentParser:
         default=constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
         type=int
     )
+
+    arg_parser.add_argument(
+        "--ca-cert-url",
+        help="The  URL for retrieving BDN ca certificate data (default: {})".format(
+            utils_constants.DEFAULT_PUBLIC_CA_URL
+        ),
+        default=utils_constants.DEFAULT_PUBLIC_CA_URL,
+        type=str
+    )
+
+    arg_parser.add_argument(
+        "--private-ssl-base-url",
+        help="The base URL for retrieving specific certificate data (default: {})".format(
+            utils_constants.DEFAULT_PUBLIC_CA_URL
+        ),
+        default=utils_constants.DEFAULT_PUBLIC_CA_URL,
+        type=str
+    )
+
     return arg_parser
 
 
@@ -220,12 +243,12 @@ def parse_arguments(arg_parser: argparse.ArgumentParser) -> argparse.Namespace:
         opts.external_ip = ip_resolver.get_node_public_ip()
     assert opts.external_ip is not None
     opts.external_ip = ip_resolver.blocking_resolve_ip(opts.external_ip)
-    http_service.set_sdn_url(opts.sdn_url)
+    http_service.set_root_url(opts.sdn_url)
     config.append_manifest_args(opts.__dict__)
     return opts
 
 
-def parse_blockchain_opts(opts, node_type):
+def parse_blockchain_opts(opts, node_type: NodeType):
     """
     Get the blockchain network info from the SDN and set the default values for the blockchain cli params if they were
     not passed in the args.

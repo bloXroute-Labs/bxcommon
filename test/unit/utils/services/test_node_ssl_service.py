@@ -15,12 +15,12 @@ from bxutils.ssl.ssl_certificate_type import SSLCertificateType
 
 class NodeSSLServiceTest(AbstractTestCase):
     def setUp(self) -> None:
-        self.ssl_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ssl")
-        self.ssl_url = url_helper.url_join("file:", self.ssl_dir)
+        self.set_ssl_folder()
+        self.ssl_url = url_helper.url_join("file:", self.ssl_folder_path)
         cert_name = "template_cert.pem"
         key_name = "template_key.pem"
         self.storage_info = SSLStorageInfo(
-            self.ssl_dir,
+            self.ssl_folder_path,
             SSLCertificateInfo(
                 SSLFileInfo("", cert_name, url_helper.url_join(self.ssl_url, cert_name)),
                 SSLFileInfo("", key_name, url_helper.url_join(self.ssl_url, key_name))

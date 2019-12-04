@@ -1,6 +1,8 @@
 import os
 from urllib import parse as url_parse
 
+from bxcommon.utils import config
+from bxutils.common import url_helper
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.fluentd_overflow_handler_type import OverflowHandlerType
@@ -42,13 +44,14 @@ FLUENTD_OVERFLOW_HANDLER = OverflowHandlerType.Ignore
 
 # ssl constants
 
-DEFAULT_VALIDATION_PERIOD_DAYS: int = 365
 # TODO: use the data dir configurations (https://github.com/bloXroute-Labs/bxcommon-private/pull/510) after merging
 #  bxutils back into bxcommon
-DEFAULT_SSL_FOLDER_PATH: str = os.path.join(os.getenv("HOME", "/home"), ".ssl")
+DEFAULT_VALIDATION_PERIOD_DAYS: int = 365
+SSL_FOLDER = ".ssl"
+DEFAULT_SSL_FOLDER_PATH: str = config.get_default_data_path()
 SSL_KEY_FILE_FORMAT = "{}_key.pem"
 SSL_CERT_FILE_FORMAT = "{}_cert.pem"
-DEFAULT_PUBLIC_SSL_BASE_URL = "https://s3.amazonaws.com/credentials.blxrbdn.com/mainnet/"
-DEFAULT_PRIVATE_SSL_BASE_URL = url_parse.urljoin("file:", DEFAULT_SSL_FOLDER_PATH)
+DEFAULT_PUBLIC_CA_URL = "https://s3.amazonaws.com/credentials.blxrbdn.com/"
+DEFAULT_PRIVATE_SSL_BASE_URL = url_helper.url_join("file:", DEFAULT_SSL_FOLDER_PATH)
 DEFAULT_CERTIFICATE_RENEWAL_PERIOD_DAYS: int = 10
 

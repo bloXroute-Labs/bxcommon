@@ -1,13 +1,13 @@
 import time
+import unittest
 
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon import constants
 from bxcommon.utils import network_latency
 from bxcommon.utils.ping_latency import NodeLatencyInfo
 
 
-class NetworkLatencyTests(AbstractTestCase):
+class NetworkLatencyTests(unittest.TestCase):
     def test_get_best_relay(self):
         relays = [OutboundPeerModel("34.227.149.148", node_id="0"), OutboundPeerModel("35.198.90.230", node_id="1"),
                   OutboundPeerModel("52.221.211.38", node_id="2"), OutboundPeerModel("34.245.23.125", node_id="3"),

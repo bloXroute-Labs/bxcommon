@@ -3,7 +3,7 @@ import socket
 import time
 from typing import List, Optional
 
-import requests
+import urllib3
 
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
@@ -49,12 +49,17 @@ def get_node_public_ip() -> Optional[str]:
     :return: the resolved IP address
     """
     try:
-        get_response = requests.get(constants.PUBLIC_IP_ADDR_RESOLVER).text
-        public_ip_addr = re.findall(constants.PUBLIC_IP_ADDR_REGEX, get_response)
-        if public_ip_addr:
-            return public_ip_addr[0]
+        http = urllib3.PoolManager()
+        r = http.request("GET", constants.PUBLIC_IP_ADDR_RESOLVER)
+        if r is not None:
+            public_ip_addr = re.findall(constants.PUBLIC_IP_ADDR_REGEX, r.data.decode("utf-8"))
+            if public_ip_addr:
+                return public_ip_addr[0]
 
-        raise ConnectionError("Unable to parse IP from response - response was [{}]".format(get_response))
+            raise ConnectionError("Unable to parse IP from response - response was [{}]".format(r.data.decode("utf-8")))
+        else:
+            raise ConnectionError("Unable to parse IP from response - no response was returned")
+
     except Exception as ex:
         logger.error(
             "Unable to determine public IP address, please specify one manually via the '--external-ip' command line "

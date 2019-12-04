@@ -1,3 +1,5 @@
+from typing import Optional
+
 from mock import patch, MagicMock
 
 from bxcommon import constants
@@ -12,11 +14,12 @@ from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.utils import memory_utils
+from bxutils.services.node_ssl_service import NodeSSLService
 
 
 class TestNode(AbstractNode):
-    def __init__(self, opts):
-        super(TestNode, self).__init__(opts)
+    def __init__(self, opts, node_ssl_service: Optional[NodeSSLService] = None):
+        super(TestNode, self).__init__(opts, node_ssl_service)
 
     def get_outbound_peer_addresses(self):
         return True
@@ -35,7 +38,7 @@ class AbstractNodeTest(AbstractTestCase):
     def setUp(self):
         sdn_http_service.submit_peer_connection_error_event = MagicMock()
 
-        self.node = TestNode(helpers.get_common_opts(4321))
+        self.node = TestNode(helpers.get_common_opts(4321), None)
         self.fileno = 1
         self.ip = "123.123.123.123"
         self.port = 8000

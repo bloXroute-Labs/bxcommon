@@ -1,6 +1,8 @@
 import time
+from ssl import SSLContext
 from typing import List, Optional, Dict, Any, cast
 from bxutils import logging
+from bxutils.encoding import json_encoder
 
 from bxcommon.constants import SdnRoutes
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
@@ -139,3 +141,7 @@ def register_node(node_model: NodeModel) -> NodeModel:
         raise EnvironmentError("Unable to reach SDN and register this node. Please check connection.")
 
     return model_loader.load_model(NodeModel, node_config)
+
+
+def reset_pool(ssl_context: SSLContext):
+    http_service.reset_pool(ssl_context)

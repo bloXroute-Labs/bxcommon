@@ -1,5 +1,5 @@
 from argparse import Namespace
-from typing import List
+from typing import List, Optional
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.abstract_node import AbstractNode
@@ -7,14 +7,15 @@ from bxcommon.constants import DEFAULT_NETWORK_NUM
 from bxcommon.models.node_type import NodeType
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils.alarm_queue import AlarmQueue
+from bxutils.services.node_ssl_service import NodeSSLService
 
 
 class MockNode(AbstractNode):
 
     NODE_TYPE = NodeType.RELAY
 
-    def __init__(self, opts: Namespace):
-        super(MockNode, self).__init__(opts)
+    def __init__(self, opts: Namespace, node_ssl_service: Optional[NodeSSLService] = None):
+        super(MockNode, self).__init__(opts, node_ssl_service)
         self.alarm_queue = AlarmQueue()
         self.network_num = DEFAULT_NETWORK_NUM
 

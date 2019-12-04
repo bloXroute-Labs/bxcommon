@@ -28,10 +28,10 @@ class MockFileStream(BytesIO):
 class SSLCertificateFactoryTest(AbstractTestCase):
 
     def setUp(self) -> None:
-        self.folder_path = os.path.dirname(__file__)
+        self.set_ssl_folder()
         self.file_path = "dummy_path"
         self.stream_mock = MockFileStream()
-        self.cert_file_path = os.path.join(self.folder_path, "template_cert.pem")
+        self.cert_file_path = os.path.join(self.ssl_folder_path, "template_cert.pem")
         with open(self.cert_file_path, "rb") as template_cert_file:
             self.template_cert: x509.Certificate = x509.load_pem_x509_certificate(
                 template_cert_file.read(), backends.default_backend()
@@ -63,9 +63,9 @@ class SSLCertificateFactoryTest(AbstractTestCase):
 
     def test_store_certificate(self):
         cert_name = "ref_cert"
-        self.file_path = os.path.join(self.folder_path, ssl_certificate_factory.CERT_FILE_FORMAT.format(cert_name))
+        self.file_path = os.path.join(self.ssl_folder_path, ssl_certificate_factory.CERT_FILE_FORMAT.format(cert_name))
         ssl_certificate_factory.store_certificate(
-            self.template_cert, self.folder_path, "ref_cert", self._stream_factory
+            self.template_cert, self.ssl_folder_path, "ref_cert", self._stream_factory
         )
         self.assertEqual(
             self.template_cert,
@@ -77,8 +77,8 @@ class SSLCertificateFactoryTest(AbstractTestCase):
         key: ec.EllipticCurvePrivateKeyWithSerialization = ec.generate_private_key(
             ec.SECP384R1(), backends.default_backend()
         )
-        self.file_path = os.path.join(self.folder_path, ssl_certificate_factory.KEY_FILE_FORMAT.format(key_name))
-        ssl_certificate_factory.store_key(key, self.folder_path, key_name, self._stream_factory)
+        self.file_path = os.path.join(self.ssl_folder_path, ssl_certificate_factory.KEY_FILE_FORMAT.format(key_name))
+        ssl_certificate_factory.store_key(key, self.ssl_folder_path, key_name, self._stream_factory)
         ref_key = serialization.load_pem_private_key(self.stream_mock.data, None, backends.default_backend())
         self.assertEqual(
             key.private_bytes(Encoding.PEM, PrivateFormat.TraditionalOpenSSL, NoEncryption()),
@@ -94,8 +94,8 @@ class SSLCertificateFactoryTest(AbstractTestCase):
         key_name = "temp_key_file"
         key_file = NamedTemporaryFile()
         key = ssl_certificate_factory.generate_key()
-        self.file_path = os.path.join(self.folder_path, ssl_certificate_factory.KEY_FILE_FORMAT.format(key_name))
-        ssl_certificate_factory.store_key(key, self.folder_path, key_name, self._stream_factory)
+        self.file_path = os.path.join(self.ssl_folder_path, ssl_certificate_factory.KEY_FILE_FORMAT.format(key_name))
+        ssl_certificate_factory.store_key(key, self.ssl_folder_path, key_name, self._stream_factory)
         key_file.write(self.stream_mock.data)
         key_file.seek(0)
         ref_key = ssl_certificate_factory.fetch_key(url_helper.url_join("file:", key_file.name))
@@ -107,17 +107,17 @@ class SSLCertificateFactoryTest(AbstractTestCase):
     def test_sign_csr(self):
         ca_key = ssl_certificate_factory.fetch_key(url_helper.url_join(
             "file:",
-            self.folder_path,
+            self.ssl_folder_path,
             "ca_key.pem"
         ))
         ca_cert = ssl_certificate_factory.fetch_cert(url_helper.url_join(
             "file:",
-            self.folder_path,
+            self.ssl_folder_path,
             "ca_cert.pem"
         ))
         key = ssl_certificate_factory.fetch_key(url_helper.url_join(
             "file:",
-            self.folder_path,
+            self.ssl_folder_path,
             "template_key.pem"
         ))
         csr = ssl_certificate_factory.create_csr(key, self.template_cert)

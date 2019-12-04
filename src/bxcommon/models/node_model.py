@@ -75,6 +75,8 @@ class NodeModel:
     baseline_source_redundancy: int = 0
 
     private_ip: str = None
+    csr: str = None
+    cert: str = None
 
     platform_provider: PlatformProvider = None
 

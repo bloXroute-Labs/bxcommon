@@ -165,8 +165,8 @@ def get_transport_cert(transport: Transport) -> Certificate:
     :return: a certificate object
     :raise: ValueError if the transport doesn't wrap an SSL socket
     """
-    ssl_socket = typing.cast(SSLSocket, transport.get_extra_info("socket"))
-    if isinstance(ssl_socket, SSLSocket):
+    ssl_socket = typing.cast(SSLSocket, transport.get_extra_info("ssl_object"))
+    if isinstance(ssl_socket, (SSLSocket, ssl.SSLObject)):
         return get_socket_cert(ssl_socket)
     else:
         raise ValueError("transport does not wrap an ssl socket")

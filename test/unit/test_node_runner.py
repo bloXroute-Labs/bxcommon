@@ -1,8 +1,9 @@
 import argparse
-import unittest
 from argparse import Namespace
+from typing import Optional
 from unittest import mock
 
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants, node_runner
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.node_type import NodeType
@@ -11,14 +12,15 @@ from bxcommon.utils import config
 from bxutils.logging import log_config
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
+from bxutils.services.node_ssl_service import NodeSSLService
 
 
 class NodeMock(object):
-    NODE_TYPE = NodeType.GATEWAY
+    NODE_TYPE = NodeType.EXTERNAL_GATEWAY
 
-    def __init__(self, opts: Namespace):
+    def __init__(self, opts: Namespace, node_ssl_service: Optional[NodeSSLService] = None):
         self.opts: Namespace = opts
-
+        self.node_ssl_service = node_ssl_service
 
 class EventLoopMock(object):
 
@@ -29,7 +31,7 @@ class EventLoopMock(object):
         self.run_count += 1
 
 
-class TestNodeRunner(unittest.TestCase):
+class TestNodeRunner(AbstractTestCase):
 
     def setUp(self):
         self.blockchain_network = helpers.blockchain_network(
@@ -39,6 +41,7 @@ class TestNodeRunner(unittest.TestCase):
             block_interval=600,
             final_tx_confirmations_count=6
         )
+        self.set_ssl_folder()
         opts = {
             "log_path": "",
             "to_stdout": True,
@@ -59,7 +62,10 @@ class TestNodeRunner(unittest.TestCase):
                 str(constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE),
             ),
             "log_level_overrides": {},
-            "source_version": "v1.0.0"
+            "source_version": "v1.0.0",
+            "ca_cert_url": self.ssl_folder_url,
+            "private_ssl_base_url": self.ssl_folder_url,
+            "data_dir": config.get_default_data_path()
         }
         self.opts = Namespace()
         self.opts.__dict__ = opts

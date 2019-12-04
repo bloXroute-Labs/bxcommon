@@ -9,8 +9,8 @@ from logging import StreamHandler, FileHandler
 from bxutils import constants
 from bxutils.logging.log_format import LogFormat, JSONFormatter, CustomFormatter, FluentJSONFormatter
 from bxutils.logging.log_level import LogLevel
-from bxutils.logging import log_level
 from bxutils.logging.handler_type import HandlerType
+from bxutils.logging import log_level, ThirdPartyLoggers
 
 try:
     # TODO: remove try catch clause once the decencies are installed
@@ -52,7 +52,7 @@ def create_logger(
         else:
             formatter = CustomFormatter(fmt=constants.INFO_LOG_FORMAT_PATTERN, style=style)
     elif handler_type == HandlerType.Fluent:
-        formatter = FluentJSONFormatter(style="{")
+        formatter = FluentJSONFormatter(style=style)
     elif log_format == LogFormat.JSON:
         formatter = JSONFormatter(style=style)
     else:
@@ -135,7 +135,8 @@ def setup_logging(
         root_log_level: LogLevel = LogLevel.WARNING,
         root_log_style: str = "{",
         enable_fluent_logger: bool = False,
-        fluentd_host: Optional[str] = None
+        fluentd_host: Optional[str] = None,
+        third_party_loggers: Optional[List[ThirdPartyLoggers]] = None
         ):
     create_logger(None, log_level=root_log_level, log_format=log_format, style=root_log_style,
                   handler_type=HandlerType.Stream)
@@ -147,3 +148,22 @@ def setup_logging(
         log_level_config[logger_name] = default_log_level
     log_level_config.update(log_level_overrides)
     set_log_levels(log_level_config)
+
+    # Add third party loggers
+    if third_party_loggers is not None:
+        for third_party_logger in third_party_loggers:
+            handler_type = HandlerType.Stream
+            flush_handlers = None
+            if enable_fluent_logger and fluentd_host is not None and FluentHandler is not None:
+                handler_type = HandlerType.Fluent
+                flush_handlers = False
+                log_format = LogFormat.JSON
+
+            create_logger(global_logger_name=third_party_logger.name,
+                          log_format=log_format,
+                          log_level=third_party_logger.log_level if third_party_logger.log_level is not None else default_log_level,
+                          handler_type=handler_type,
+                          flush_handlers=flush_handlers,
+                          fluentd_host=fluentd_host,
+                          style=third_party_logger.style
+                          )

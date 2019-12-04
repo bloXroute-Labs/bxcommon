@@ -15,10 +15,10 @@ from bxutils.ssl.extensions import extensions_factory
 class ExtensionsFactoryTest(AbstractTestCase):
 
     def setUp(self) -> None:
-        self.folder_path = os.path.dirname(os.path.dirname(__file__))
-        self.cert_file_path = os.path.join(self.folder_path, "template_cert.pem")
-        self.csr_file_path = os.path.join(self.folder_path, "template_csr.pem")
-        self.key_file_path = os.path.join(self.folder_path, "template_key.pem")
+        self.set_ssl_folder()
+        self.cert_file_path = os.path.join(self.ssl_folder_path, "template_cert.pem")
+        self.csr_file_path = os.path.join(self.ssl_folder_path, "template_csr.pem")
+        self.key_file_path = os.path.join(self.ssl_folder_path, "template_key.pem")
         with open(self.cert_file_path, "rb") as template_cert_file:
             self.template_cert: x509.Certificate = x509.load_pem_x509_certificate(
                 template_cert_file.read(), backends.default_backend()
