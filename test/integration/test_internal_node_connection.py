@@ -23,11 +23,11 @@ class InternalNodeConnectionTest(AbstractTestCase):
         self.connection.send_ping()
         self.assertIsNotNone(self.connection.pong_timeout_alarm_id)
 
-        time.time = MagicMock(return_value=time.time() + constants.INTERNAL_NODE_PING_PONG_REPLY_TIMEOUT_S - 1)
+        time.time = MagicMock(return_value=time.time() + constants.PING_PONG_REPLY_TIMEOUT_S - 1)
         self.connection.node.alarm_queue.fire_alarms()
         self.assertIsNotNone(self.connection.pong_timeout_alarm_id)
 
-        time.time = MagicMock(return_value=time.time() + constants.INTERNAL_NODE_PING_PONG_REPLY_TIMEOUT_S)
+        time.time = MagicMock(return_value=time.time() + constants.PING_PONG_REPLY_TIMEOUT_S)
         self.connection.node.alarm_queue.fire_alarms()
         self.assertIsNone(self.connection.pong_timeout_alarm_id)
         self.assertFalse(self.connection.is_active())
@@ -42,7 +42,7 @@ class InternalNodeConnectionTest(AbstractTestCase):
         self.connection.msg_pong(PongMessage(1))
         self.assertIsNone(self.connection.pong_timeout_alarm_id)
 
-        time.time = MagicMock(return_value=time.time() + constants.INTERNAL_NODE_PING_PONG_REPLY_TIMEOUT_S)
+        time.time = MagicMock(return_value=time.time() + constants.PING_PONG_REPLY_TIMEOUT_S)
         self.connection.node.alarm_queue.fire_alarms()
         self.assertIsNone(self.connection.pong_timeout_alarm_id)
         self.assertTrue(self.connection.is_active())

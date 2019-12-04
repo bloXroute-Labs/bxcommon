@@ -57,8 +57,6 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.ping_message_timestamps = ExpiringDict(self.node.alarm_queue, constants.REQUEST_EXPIRATION_TIME)
         self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)
 
-        self.pong_timeout_alarm_id = None
-
     def disable_buffering(self):
         """
         Disable buffering on this particular connection.
@@ -165,11 +163,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
             self.enqueue_msg(msg)
             self.ping_message_timestamps.add(nonce, time.time())
 
-            if self.pong_timeout_alarm_id is None:
-                self.log_trace("Schedule pong reply timeout for ping message in {} seconds",
-                               constants.INTERNAL_NODE_PING_PONG_REPLY_TIMEOUT_S)
-                self.pong_timeout_alarm_id = self.node.alarm_queue.register_alarm(
-                    constants.INTERNAL_NODE_PING_PONG_REPLY_TIMEOUT_S, self._pong_msg_timeout)
+            self.schedule_pong_timeout()
 
             return self.ping_interval_s
         return constants.CANCEL_ALARMS
@@ -188,9 +182,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         elif nonce is not None:
             self.log_debug("Pong message had no matching ping request. Nonce: {}", nonce)
 
-        if self.pong_timeout_alarm_id is not None:
-            self.node.alarm_queue.unregister_alarm(self.pong_timeout_alarm_id)
-            self.pong_timeout_alarm_id = None
+        self.cancel_pong_timeout()
 
     def msg_tx_service_sync_txs(self, msg: TxServiceSyncTxsMessage):
         """
@@ -282,8 +274,3 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.node.last_sync_message_received_by_network.pop(network_num, None)
         self.node.on_fully_updated_tx_service()
 
-    def _pong_msg_timeout(self):
-        self.log_error("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
-                       "Closing connection.")
-        self.mark_for_close()
-        self.pong_timeout_alarm_id = None

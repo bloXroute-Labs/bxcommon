@@ -92,6 +92,8 @@ class AbstractConnection(Generic[Node]):
         self.ping_interval_s: int = constants.PING_INTERVAL_S
         self.peer_model: Optional[OutboundPeerModel] = None
 
+        self.pong_timeout_alarm_id = None
+
         self.log_debug("Connection initialized.")
 
     def __repr__(self):
@@ -488,6 +490,24 @@ class AbstractConnection(Generic[Node]):
     def update_model(self, model: OutboundPeerModel):
         self.log_trace("Updated connection model: {}", model)
         self.peer_model = model
+
+    def schedule_pong_timeout(self):
+        if self.pong_timeout_alarm_id is None:
+            self.log_trace("Schedule pong reply timeout for ping message in {} seconds",
+                           constants.PING_PONG_REPLY_TIMEOUT_S)
+            self.pong_timeout_alarm_id = self.node.alarm_queue.register_alarm(
+                constants.PING_PONG_REPLY_TIMEOUT_S, self._pong_msg_timeout)
+
+    def cancel_pong_timeout(self):
+        if self.pong_timeout_alarm_id is not None:
+            self.node.alarm_queue.unregister_alarm(self.pong_timeout_alarm_id)
+            self.pong_timeout_alarm_id = None
+
+    def _pong_msg_timeout(self):
+        self.log_error("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
+                       "Closing connection.")
+        self.mark_for_close()
+        self.pong_timeout_alarm_id = None
 
     def _report_bad_message(self):
         """
