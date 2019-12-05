@@ -100,7 +100,8 @@ NODE_ID_SIZE_IN_BYTES = 16
 
 NULL_ENCRYPT_REPEAT_VALUE = "1"  # must be nonzero string character
 BLOXROUTE_HELLO_MESSAGES = [b"hello", b"ack"]
-
+HTTP_MESSAGE = b"HTTP"
+BITCOIN_MESSAGES = [b"\x03\x00\x00/*\xe0\x00\x00\x00\x00\x00C", b"\xff\x00d\x00\x00\x00\x01"]
 # </editor-fold>
 
 # <editor-fold desc="SDN Constants">

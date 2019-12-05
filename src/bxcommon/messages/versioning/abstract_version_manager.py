@@ -8,6 +8,7 @@ from bxcommon.constants import VERSION_NUM_LEN
 from bxcommon.messages.bloxroute.v4.version_message_v4 import VersionMessageV4
 from bxcommon.messages.bloxroute.version_message import VersionMessage
 from bxcommon.utils.buffers.input_buffer import InputBuffer
+from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
 
 logger = logging.get_logger(__name__)
 
@@ -229,8 +230,21 @@ class AbstractVersionManager:
             header_len = VersionMessageV4.HEADER_LENGTH
 
         if command != self.version_message_command:
-            logger.debug("Received a nonversion hello message of type {}. Ignoring and closing connection.", command)
-            return self.MIN_SUPPORTED_PROTOCOL_VERSION - 1
+            if constants.HTTP_MESSAGE in command:
+                raise NonVersionMessageError(
+                    msg="Instead of a version hello message, we received an HTTP request: {} with payload length: {} "
+                    "Ignoring and closing connection. "
+                    .format(command, payload_len),
+                    is_known=True)
+            elif command in constants.BITCOIN_MESSAGES:
+                raise NonVersionMessageError(
+                    msg="Received some kind of bitcoin peering message: {}. "
+                        "Ignoring and closing connection.".format(command),
+                    is_known=True)
+            raise NonVersionMessageError(
+                msg="Received an unknown nonversion hello message of type {}. "
+                    "Ignoring and closing connection.".format(command),
+                is_known=False)
 
         if payload_len < self.VERSION_MESSAGE_MAIN_LENGTH:
             return 1

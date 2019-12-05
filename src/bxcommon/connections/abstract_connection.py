@@ -10,6 +10,7 @@ from bxcommon.exceptions import PayloadLenError, UnauthorizedMessageError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
+from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
@@ -332,6 +333,18 @@ class AbstractConnection(Generic[Node]):
 
                 if self._report_bad_message():
                     return
+
+            except NonVersionMessageError as e:
+                if e.is_known:
+                    self.log_debug("Received invalid handshake request on {}:{}, {}", self.peer_ip, self.peer_port, e.msg)
+                else:
+                    self.log_warning("Invalid handshake request on {}:{}. Rejecting the connection. {}",
+                                     self.peer_ip, self.peer_port, e.msg)
+                self.log_debug("Failed message bytes: {}",
+                               self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
+
+                self.mark_for_close()
+                return
 
             # TODO: Throw custom exception for any errors that come from input that has not been validated and only catch that subclass of exceptions
             except Exception as e:
