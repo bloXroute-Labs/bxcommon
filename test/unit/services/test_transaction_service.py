@@ -34,6 +34,9 @@ class TransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_verify_tx_removal_by_hash(self):
         self._test_verify_tx_removal_by_hash()
 
+    def test_verify_tx_removal_by_hash_flagged_txs(self):
+        self._test_verify_tx_removal_by_hash_flagged_txs()
+
     def test_memory_stats(self):
         self._test_memory_stats()
 

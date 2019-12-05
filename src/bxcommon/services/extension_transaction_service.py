@@ -155,7 +155,7 @@ class ExtensionTransactionService(TransactionService):
         super(ExtensionTransactionService, self)._track_seen_transaction(transaction_cache_key)
         self.proxy.track_seen_transaction(transaction_cache_key)
 
-    def remove_transaction_by_short_id(self, short_id: int, remove_related_short_ids: bool = False):
+    def remove_transaction_by_short_id(self, short_id: int, remove_related_short_ids: bool = False, force: bool = False):
         # overriding this in order to handle removes triggered by either the mem limit or expiration queue
         # if the remove_related_short_ids is True than we assume the call originated by the track seen call
         # else we assume it was triggered by the cleanup.
@@ -169,7 +169,7 @@ class ExtensionTransactionService(TransactionService):
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
         else:
-            super(ExtensionTransactionService, self).remove_transaction_by_short_id(short_id)
+            super(ExtensionTransactionService, self).remove_transaction_by_short_id(short_id, force=force)
 
     def _clear(self):
         super(ExtensionTransactionService, self)._clear()

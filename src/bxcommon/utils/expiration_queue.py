@@ -1,7 +1,7 @@
 import time
 
 from collections import OrderedDict
-from typing import TypeVar, Generic, Optional, Callable, Dict
+from typing import TypeVar, Generic, Optional, Callable, Dict, Any, List
 
 T = TypeVar("T")
 
@@ -45,11 +45,15 @@ class ExpirationQueue(Generic[T]):
             del self.queue[item]
 
     def remove_expired(self, current_time: Optional[float] = None,
-                       remove_callback: Optional[Callable[[T], None]] = None):
+                       remove_callback: Optional[Callable[[T], None]] = None,
+                       *args,
+                       **kwargs):
         """
         Removes expired items from the queue
         :param current_time: time to use as current time for expiration
         :param remove_callback: reference to a callback function that is being called when item is removed
+        :param args: arguments to pass into the callback method
+        :param kwargs: keyword args to pass into the callback method
         """
         if current_time is None:
             current_time = time.time()
@@ -59,7 +63,7 @@ class ExpirationQueue(Generic[T]):
             item, timestamp = self.queue.popitem(last=False)
 
             if remove_callback is not None:
-                remove_callback(item)
+                remove_callback(item, *args, **kwargs)
 
     def get_oldest(self) -> Optional[T]:
         """

@@ -79,7 +79,7 @@ def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxCon
             assert len(tx_content_short_ids.short_id_flags) == len(tx_content_short_ids.short_ids),\
                 "Invalid QuotaFlag Array Provided"
             for short_id_quota_type in tx_content_short_ids.short_id_flags:
-                struct.pack_into("<B", buffer, off, short_id_quota_type)
+                struct.pack_into("<B", buffer, off, short_id_quota_type.value)
                 off += constants.QUOTA_FLAG_LEN
 
         else:
@@ -122,7 +122,7 @@ def deserialize_txs_content_short_ids_from_buffer(buffer: Union[bytearray, memor
             offset += constants.SID_LEN
         for _ in range(short_ids_count):
             short_id_flag, = struct.unpack_from("<B", buffer, offset)
-            short_id_flags.append(short_id_flag)
+            short_id_flags.append(TxQuotaType(short_id_flag))
             offset += constants.QUOTA_FLAG_LEN
         txs_content_short_ids.append(TxContentShortIds(tx_hash, tx_content, short_ids, short_id_flags))
 

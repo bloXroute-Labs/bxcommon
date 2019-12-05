@@ -196,18 +196,20 @@ class InternalNodeConnection(AbstractConnection[Node]):
         for tx_content_short_ids in txs_content_short_ids:
             tx_hash = tx_content_short_ids.tx_hash
             tx_service.set_transaction_contents(tx_hash, tx_content_short_ids.tx_content)
-            for short_id in tx_content_short_ids.short_ids:
+            for short_id, quota_type in zip(tx_content_short_ids.short_ids, tx_content_short_ids.short_id_flags):
                 tx_service.assign_short_id(tx_hash, short_id)
+                if TxQuotaType.PAID_DAILY_QUOTA in quota_type:
+                    tx_service.set_short_id_quota_type(short_id, quota_type)
 
     def _create_txs_service_msg(self, network_num: int, tx_service_snap: List[Sha256Hash]) -> List[TxContentShortIds]:
         txs_content_short_ids: List[TxContentShortIds] = []
         txs_msg_len = 0
-
+        tx_service = self.node.get_tx_service(network_num)
         while tx_service_snap:
             tx_hash = tx_service_snap.pop()
-            short_ids = self.node.get_tx_service(network_num).get_short_ids(tx_hash)
+            short_ids = tx_service.get_short_ids(tx_hash)
             # TODO: evaluate short id quota type flag value
-            short_id_flags = [TxQuotaType.NONE for _ in short_ids]
+            short_id_flags = [tx_service.get_short_id_quota_type(short_id) for short_id in short_ids]
             tx_content_short_ids: TxContentShortIds = TxContentShortIds(
                 tx_hash,
                 self.node.get_tx_service(network_num).get_transaction_by_hash(tx_hash),

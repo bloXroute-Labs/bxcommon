@@ -36,7 +36,7 @@ class TxMessage(AbstractBroadcastMessage):
             off += constants.SID_LEN
 
             if quota_type is None:
-                quota_type = TxQuotaType.NONE
+                quota_type = TxQuotaType.FREE_DAILY_QUOTA
             struct.pack_into("<B", self.buf, off, quota_type.value)
             off += constants.QUOTA_FLAG_LEN
 

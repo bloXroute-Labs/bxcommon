@@ -1,10 +1,14 @@
-from enum import IntFlag
+from enum import auto
+from bxcommon.models.serializable_flag import SerializableFlag
 
-# IntFlag allows comparison with ints, which is not as strict as Flag, but allows easier unit testing.
-class TxQuotaType(IntFlag):
-    NONE = 0
-    FREE_DAILY_QUOTA = 1
-    PAID_DAILY_QUOTA = 2
+
+class TxQuotaType(SerializableFlag):
+    FREE_DAILY_QUOTA = auto()
+    PAID_DAILY_QUOTA = auto()
 
     def __str__(self):
         return self.name
+
+
+def from_string(quota_type: str) -> TxQuotaType:
+    return TxQuotaType[quota_type.upper()]

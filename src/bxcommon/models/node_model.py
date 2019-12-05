@@ -80,6 +80,8 @@ class NodeModel:
 
     platform_provider: PlatformProvider = None
 
+    account_id: Optional[str] = None
+
     def __post_init__(self):
         self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
         # TODO: Remove network attribute, not being used

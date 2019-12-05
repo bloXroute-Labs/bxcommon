@@ -60,7 +60,7 @@ class BloxrouteTxSyncVersionManagerV6Test(AbstractTestCase):
             tx_contents = helpers.generate_bytes(250)
             short_ids = [_get_next_fake_sid.__next__() for i in range(0, 1 + i % 7)]
             tx_content_short_ids.append(TxContentShortIds(tx_hash, tx_contents, short_ids,
-                                                          [TxQuotaType.NONE for _ in short_ids]))
+                                                          [TxQuotaType.FREE_DAILY_QUOTA for _ in short_ids]))
             tx_content_short_ids_v6.append(TxContentShortIdsV6(tx_hash, tx_contents, short_ids))
         network_num = 1234
         new_version_msg = TxServiceSyncTxsMessage(network_num, tx_content_short_ids)

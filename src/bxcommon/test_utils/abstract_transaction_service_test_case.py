@@ -7,6 +7,7 @@ from bxcommon import constants
 from bxcommon.constants import NULL_TX_SID
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.transaction_info import TransactionInfo
+from bxcommon.models.tx_quota_type_model import TxQuotaType
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -153,6 +154,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         for i in range(len(short_ids)):
             self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
             self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
+            self.transaction_service.set_short_id_quota_type(short_ids[i], TxQuotaType.PAID_DAILY_QUOTA)
 
         time_zero = time.time()
 
@@ -364,8 +366,29 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self._verify_txs_in_tx_service(expected_short_ids=[1, 2, 3, 4], not_expected_short_ids=[])
 
         for tx_hash in transaction_hashes:
-            self.transaction_service.remove_transaction_by_tx_hash(tx_hash)
+            self.transaction_service.remove_transaction_by_tx_hash(tx_hash, force=False)
         self._verify_txs_in_tx_service(expected_short_ids=[], not_expected_short_ids=[0, 1, 2, 3, 4])
+
+    def _test_verify_tx_removal_by_hash_flagged_txs(self):
+        short_ids = [1, 2, 3, 4]
+        transaction_hashes = list(map(Sha256Hash, map(crypto.double_sha256, map(bytes, short_ids))))
+        transaction_contents = list(map(lambda _: helpers.generate_bytearray(250), short_ids))
+
+        for i in range(len(short_ids)):
+            self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
+            self.transaction_service.set_short_id_quota_type(short_ids[i], TxQuotaType.PAID_DAILY_QUOTA)
+
+        self._verify_txs_in_tx_service(expected_short_ids=[1, 2, 3, 4], not_expected_short_ids=[])
+
+        for tx_hash in transaction_hashes:
+            self.transaction_service.remove_transaction_by_tx_hash(tx_hash, force=False)
+        self._verify_txs_in_tx_service(expected_short_ids=[1, 2, 3, 4], not_expected_short_ids=[])
+
+        for tx_hash in transaction_hashes:
+            self.transaction_service.remove_transaction_by_tx_hash(tx_hash, force=True)
+        self._verify_txs_in_tx_service(expected_short_ids=[], not_expected_short_ids=[1, 2, 3, 4])
+
 
     def _test_memory_stats(self):
         self._add_transactions(1000, 100)

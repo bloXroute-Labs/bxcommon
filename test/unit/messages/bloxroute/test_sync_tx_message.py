@@ -55,7 +55,7 @@ class SyncTxServiceTest(MessageFactoryTestCase):
         for tx_hash in tx_service_snap:
             short_ids = self.transaction_service.get_short_ids(tx_hash)
             # TODO: evaluate short id quota type flag value
-            short_id_flags = [TxQuotaType.NONE for short_id in short_ids]
+            short_id_flags = [self.transaction_service.get_short_id_quota_type(short_id) for short_id in short_ids]
             tx_content_short_ids = TxContentShortIds(
                 tx_hash,
                 self.transaction_service.get_transaction_by_hash(tx_hash),

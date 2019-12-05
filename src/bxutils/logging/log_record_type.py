@@ -18,5 +18,8 @@ class LogRecordType(Enum):
     BxMemory = "bx.memory"
     Recovery = "stats.recovery"
     TransactionHistogram = "bx.transaction.histogram"
+    TransactionAudit = "stats.transaction.audit"
+    TransactionAuditSummary = "stats.transaction.audit.summary"
+    
 
 

@@ -43,7 +43,7 @@ class _TxSyncMessageConverterV6(AbstractMessageConverter):
             TxContentShortIds(item.tx_hash,
                               item.tx_content,
                               item.short_ids,
-                              [TxQuotaType.NONE for _ in item.short_ids]
+                              [TxQuotaType.FREE_DAILY_QUOTA for _ in item.short_ids]
                               ) for item in txs_content_short_ids_v6
         ]
         network_num = msg.network_num()
