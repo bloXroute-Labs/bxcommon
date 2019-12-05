@@ -16,9 +16,9 @@ class ExtensionsFactoryTest(AbstractTestCase):
 
     def setUp(self) -> None:
         self.set_ssl_folder()
-        self.cert_file_path = os.path.join(self.ssl_folder_path, "template_cert.pem")
-        self.csr_file_path = os.path.join(self.ssl_folder_path, "template_csr.pem")
-        self.key_file_path = os.path.join(self.ssl_folder_path, "template_key.pem")
+        self.cert_file_path = os.path.join(self.ssl_folder_path, "template", "template_cert.pem")
+        self.csr_file_path = os.path.join(self.ssl_folder_path, "template", "template_csr.pem")
+        self.key_file_path = os.path.join(self.ssl_folder_path, "template", "template_key.pem")
         with open(self.cert_file_path, "rb") as template_cert_file:
             self.template_cert: x509.Certificate = x509.load_pem_x509_certificate(
                 template_cert_file.read(), backends.default_backend()
@@ -43,7 +43,7 @@ class ExtensionsFactoryTest(AbstractTestCase):
         self.assertEqual(node_id, extension.node_id)
 
     def test_get_node_credentials(self):
-        node_type = NodeType.GATEWAY
+        node_type = NodeType.EXTERNAL_GATEWAY
         node_id = str(uuid.uuid4())
         cert = ssl_certificate_factory.sign_csr(
             self.template_csr,

@@ -16,28 +16,29 @@ from bxutils.ssl.ssl_certificate_type import SSLCertificateType
 class NodeSSLServiceTest(AbstractTestCase):
     def setUp(self) -> None:
         self.set_ssl_folder()
-        self.ssl_url = url_helper.url_join("file:", self.ssl_folder_path)
+        self.ssl_folder_path = os.path.join(self.ssl_folder_path, "template")
+        self.ssl_folder_url = url_helper.url_join("file:", self.ssl_folder_path)
         cert_name = "template_cert.pem"
         key_name = "template_key.pem"
         self.storage_info = SSLStorageInfo(
             self.ssl_folder_path,
             SSLCertificateInfo(
-                SSLFileInfo("", cert_name, url_helper.url_join(self.ssl_url, cert_name)),
-                SSLFileInfo("", key_name, url_helper.url_join(self.ssl_url, key_name))
+                SSLFileInfo("", cert_name, url_helper.url_join(self.ssl_folder_url, cert_name)),
+                SSLFileInfo("", key_name, url_helper.url_join(self.ssl_folder_url, key_name))
             ),
             SSLCertificateInfo(
                 SSLFileInfo("", cert_name),
                 SSLFileInfo("", key_name)
             ),
             SSLCertificateInfo(
-                SSLFileInfo("", cert_name, url_helper.url_join(self.ssl_url, cert_name)),
-                SSLFileInfo("", key_name, url_helper.url_join(self.ssl_url, key_name))
+                SSLFileInfo("", cert_name, url_helper.url_join(self.ssl_folder_url, cert_name)),
+                SSLFileInfo("", key_name, url_helper.url_join(self.ssl_folder_url, key_name))
             )
         )
         self.node_service = NodeSSLService(NodeType.API, self.storage_info, store_local=False)
         self.node_service.blocking_load()
-        self.ref_cert = ssl_certificate_factory.fetch_cert(url_helper.url_join(self.ssl_url, cert_name))
-        self.ref_key = ssl_certificate_factory.fetch_key(url_helper.url_join(self.ssl_url, key_name))
+        self.ref_cert = ssl_certificate_factory.fetch_cert(url_helper.url_join(self.ssl_folder_url, cert_name))
+        self.ref_key = ssl_certificate_factory.fetch_key(url_helper.url_join(self.ssl_folder_url, key_name))
 
     def test_load(self):
         self.assertTrue(self.node_service.has_valid_certificate(SSLCertificateType.CA))

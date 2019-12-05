@@ -6,8 +6,8 @@ from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption
 
-from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxutils.common import url_helper
 
 from bxutils.ssl import ssl_serializer
 
@@ -16,6 +16,8 @@ class SSLSerializerTest(AbstractTestCase):
 
     def setUp(self) -> None:
         self.set_ssl_folder()
+        self.ssl_folder_path = os.path.join(self.ssl_folder_path, "template")
+        self.ssl_folder_url = url_helper.url_join("file:", self.ssl_folder_path)
         self.cert_file_path = os.path.join(self.ssl_folder_path, "template_cert.pem")
         self.csr_file_path = os.path.join(self.ssl_folder_path, "template_csr.pem")
         self.key_file_path = os.path.join(self.ssl_folder_path, "template_key.pem")

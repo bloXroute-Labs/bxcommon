@@ -31,7 +31,7 @@ class SSLCertificateFactoryTest(AbstractTestCase):
         self.set_ssl_folder()
         self.file_path = "dummy_path"
         self.stream_mock = MockFileStream()
-        self.cert_file_path = os.path.join(self.ssl_folder_path, "template_cert.pem")
+        self.cert_file_path = os.path.join(self.ssl_folder_path, "template", "template_cert.pem")
         with open(self.cert_file_path, "rb") as template_cert_file:
             self.template_cert: x509.Certificate = x509.load_pem_x509_certificate(
                 template_cert_file.read(), backends.default_backend()
@@ -108,16 +108,19 @@ class SSLCertificateFactoryTest(AbstractTestCase):
         ca_key = ssl_certificate_factory.fetch_key(url_helper.url_join(
             "file:",
             self.ssl_folder_path,
+            "template",
             "ca_key.pem"
         ))
         ca_cert = ssl_certificate_factory.fetch_cert(url_helper.url_join(
             "file:",
             self.ssl_folder_path,
+            "template",
             "ca_cert.pem"
         ))
         key = ssl_certificate_factory.fetch_key(url_helper.url_join(
             "file:",
             self.ssl_folder_path,
+            "template",
             "template_key.pem"
         ))
         csr = ssl_certificate_factory.create_csr(key, self.template_cert)
