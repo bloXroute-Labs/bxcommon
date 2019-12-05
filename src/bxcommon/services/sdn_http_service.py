@@ -60,10 +60,10 @@ def fetch_gateway_peers(node_id: str) -> Optional[List[OutboundPeerModel]]:
     return _fetch_peers(node_url, node_id)
 
 
-def fetch_remote_blockchain_peer(network_num: int) -> Optional[OutboundPeerModel]:
-    node_url = SdnRoutes.node_remote_blockchain.format(network_num)
-    peers = _fetch_peers(node_url)
-    if len(peers) != 1:
+def fetch_remote_blockchain_peer(node_id: str) -> Optional[OutboundPeerModel]:
+    node_url = SdnRoutes.node_remote_blockchain.format(node_id)
+    peers = _fetch_peers(node_url, node_id)
+    if len(peers) < 1:
         logger.warning("BDN did not send the expected number of remote blockchain peers.")
         return None
     else:

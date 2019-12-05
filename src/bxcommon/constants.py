@@ -126,7 +126,7 @@ class SdnRoutes(object):
     node_potential_relays = "/nodes/{0}/potential-relays"
     node_potential_relays_by_network = "/nodes/{0}/{1}/potential-relays"
     node_gateways = "/nodes/{0}/gateways"
-    node_remote_blockchain = "/nodes/blockchain-peers/{0}"
+    node_remote_blockchain = "/nodes/{0}/potential-remote-blockchain-peers"
     node_event = "/nodes/{0}/events"
     blockchain_network = "/blockchain-networks/{0}/{1}"
     blockchain_networks = "/blockchain-networks"
