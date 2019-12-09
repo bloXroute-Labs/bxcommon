@@ -72,6 +72,7 @@ class NodeSSLService:
             cert_file_info = cert_info.cert_file_info
             cert_url = self._get_url(cert_file_info)
             if cert_url is not None:
+                logger.debug("Load ssl certificate {}", cert_url)
                 cert = ssl_certificate_factory.fetch_cert(cert_url)
                 self.certificates[cert_type] = cert
                 self._store_cert(cert_type, cert)
@@ -79,6 +80,7 @@ class NodeSSLService:
             if key_file_info is not None:
                 key_url = self._get_url(key_file_info)
                 if key_url is not None:
+                    logger.debug("Load ssl key {}", key_url)
                     key = ssl_certificate_factory.fetch_key(key_url)
                     self.private_keys[cert_type] = key
                     self._store_key(key, key_file_info)

@@ -40,12 +40,12 @@ def post_json(endpoint: str, payload=None) -> Optional[jsonT]:
 
 
 def patch_json(endpoint: str, payload=None) -> Optional[jsonT]:
-    return _http_request("PATCH", endpoint, data=json_utils.serialize(payload),
+    return _http_request("PATCH", endpoint, body=json_utils.serialize(payload),
                          headers=constants.HTTP_HEADERS)
 
 
 def delete_json(endpoint: str, payload=None) -> Optional[jsonT]:
-    return _http_request("DELETE", endpoint, data=json_utils.serialize(payload),
+    return _http_request("DELETE", endpoint, body=json_utils.serialize(payload),
                          headers=constants.HTTP_HEADERS)
 
 

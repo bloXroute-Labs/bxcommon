@@ -3,7 +3,7 @@
 
 import json
 from enum import Flag
-from typing import Dict, Type, TypeVar, Any, List, Optional, Union
+from typing import Dict, Type, TypeVar, Any, List, Optional, Union, Set
 
 import dataclasses
 
@@ -87,6 +87,17 @@ def _load_list(list_type: Type[T], list_value: Any) -> List:
     return [_load_attribute(list_param, list_entry) for list_entry in list_value]
 
 
+def _load_set(set_type: Type[T], set_value: Any) -> Set:
+    if isinstance(set_value, dict):
+        raise ValueError("Forcibly raising when trying to cast Dict to Set.")
+
+    if len(set_type.__args__) != 1:
+        raise ValueError("List type annotation requires 1 or 0 args.")
+
+    set_param = set_type.__args__[0]
+    return {_load_attribute(set_param, set_entry) for set_entry in set_value}
+
+
 def _load_dict(dict_type: Type[T], dict_value: Any) -> Dict:
     if not isinstance(dict_value, Dict):
         raise TypeError("Cannot deserialize value {} to Dict type {}".format(dict_value, dict_type))
@@ -126,6 +137,8 @@ def _load_union(union_type: Type[T], union_value: Any) -> Any:
 _TYPE_HANDLER_MAPPING = {
     list: _load_list,
     List: _load_list,
+    set: _load_set,
+    Set: _load_set,
     dict: _load_dict,
     Dict: _load_dict,
     Optional: _load_optional,
