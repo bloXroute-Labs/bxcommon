@@ -1,7 +1,10 @@
+import status
+from urllib3 import Retry, HTTPResponse
+from urllib3.exceptions import HTTPError
 from urllib3.poolmanager import PoolManager
 from urllib3.util import parse_url
 from ssl import SSLContext
-from typing import Optional, Dict, Any, Union, List, Tuple
+from typing import Optional, Dict, Any, Union, List
 
 from bxcommon.utils import json_utils
 from bxutils import logging
@@ -27,11 +30,18 @@ def set_root_url(sdn_url: str, ssl_context: Optional[SSLContext] = None):
 def reset_pool(ssl_context: Optional[SSLContext] = None):
     global http_pool_manager
     url = parse_url(_url)
-    http_pool_manager = PoolManager(host=url.host,
-                                    port=url.port,
-                                    retries=constants.HTTP_REQUEST_RETRIES_COUNT,
-                                    ssl_context=ssl_context,
-                                    assert_hostname=False)
+    http_pool_manager = PoolManager(
+        host=url.host,
+        port=url.port,
+        retries=Retry(
+            connect=constants.HTTP_REQUEST_RETRIES_COUNT,
+            read=constants.HTTP_REQUEST_RETRIES_COUNT,
+            redirect=constants.HTTP_REQUEST_RETRIES_COUNT,
+            backoff_factor=constants.HTTP_REQUEST_BACKOFF_FACTOR
+        ),
+        ssl_context=ssl_context,
+        assert_hostname=False
+    )
 
 
 def post_json(endpoint: str, payload=None) -> Optional[jsonT]:
@@ -54,6 +64,17 @@ def get_json(endpoint: str) -> Optional[jsonT]:
                          headers=constants.HTTP_HEADERS)
 
 
+def build_url(endpoint: str) -> str:
+    if not endpoint or not isinstance(endpoint, str):
+        raise ValueError("Missing or invalid URL")
+    return _url + endpoint
+
+
+def raise_for_status(res: HTTPResponse) -> None:
+    if status.is_client_error(res.status) or status.is_server_error(res.status):
+        raise HTTPError("{}:{}", res.status, res.reason)
+
+
 def _http_request(method: str,
                   endpoint: str,
                   **kwargs) -> Optional[jsonT]:
@@ -63,16 +84,11 @@ def _http_request(method: str,
         response = http_pool_manager.request(
             method=method,
             url=url,
+            timeout=constants.HTTP_REQUEST_TIMEOUT,
             **kwargs)
-        # TODO: Check response return code
+        raise_for_status(response)
     except Exception as e:
         logger.error("{0} to {1} returned error: {2}", method, url, e)
         return None
 
     return json.loads(response.data)
-
-
-def build_url(endpoint: str) -> str:
-    if not endpoint or not isinstance(endpoint, str):
-        raise ValueError("Missing or invalid URL")
-    return _url + endpoint
