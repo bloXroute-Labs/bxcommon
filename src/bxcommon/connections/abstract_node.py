@@ -14,11 +14,12 @@ from bxcommon.exceptions import TerminationError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.network.ip_endpoint import IpEndpoint
+from bxcommon.network.peer_info import ConnectionPeerInfo
 from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.services.threaded_request_service import ThreadedRequestService
 from bxcommon.services.broadcast_service import BroadcastService, BroadcastOptions
-from bxcommon.utils import memory_utils, json_utils
+from bxcommon.utils import memory_utils, json_utils, convert
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
@@ -50,7 +51,7 @@ class AbstractNode:
 
         self.set_node_config_opts_from_sdn(opts)
         self.opts = opts
-        self.connection_queue: Deque[Tuple[str, int]] = deque()
+        self.connection_queue: Deque[ConnectionPeerInfo] = deque()
         self.outbound_peers = opts.outbound_peers[:]
 
         self.connection_pool = ConnectionPool()
@@ -114,7 +115,7 @@ class AbstractNode:
         pass
 
     @abstractmethod
-    def get_outbound_peer_addresses(self):
+    def get_outbound_peer_info(self) -> List[ConnectionPeerInfo]:
         pass
 
     @abstractmethod
@@ -197,7 +198,9 @@ class AbstractNode:
             peer_ip = peer.ip
             peer_port = peer.port
             if not self.connection_pool.has_connection(peer_ip, peer_port):
-                self.enqueue_connection(peer_ip, peer_port)
+                self.enqueue_connection(
+                    peer_ip, peer_port, convert.peer_node_to_connection_type(self.NODE_TYPE, peer.node_type)
+                )
         self.outbound_peers = outbound_peer_models
 
     def on_updated_sid_space(self, sid_start, sid_end):
@@ -281,14 +284,15 @@ class AbstractNode:
         options = BroadcastOptions(broadcasting_conn, prepend_to_queue, connection_types)
         return self.broadcast_service.broadcast(msg, options)
 
-    def enqueue_connection(self, ip: str, port: int):
+    def enqueue_connection(self, ip: str, port: int, connection_type: ConnectionType):
         """
         Queues a connection up for the event loop to open a socket for.
         """
-        logger.trace("Enqueuing connection to {}:{}", ip, port)
-        self.connection_queue.append((ip, port))
+        peer_info = ConnectionPeerInfo(IpEndpoint(ip, port), connection_type)
+        logger.trace("Enqueuing connection: {}.", peer_info)
+        self.connection_queue.append(peer_info)
 
-    def pop_next_connection_address(self) -> Optional[Tuple[str, int]]:
+    def pop_next_connection_request(self) -> Optional[ConnectionPeerInfo]:
         """
         Returns the next connection address for the event loop to initiate a socket connection to.
         """
@@ -374,6 +378,16 @@ class AbstractNode:
     async def init(self) -> None:
         pass
 
+    def handle_connection_closed(self, should_retry: bool, peer_info: ConnectionPeerInfo) -> None:
+        peer_ip, peer_port = peer_info.endpoint
+        connection_type = peer_info.connection_type
+        if should_retry and self.continue_retrying_connection(peer_ip, peer_port, connection_type):
+            self.alarm_queue.register_alarm(self._get_next_retry_timeout(peer_ip, peer_port),
+                                            self._retry_init_client_socket,
+                                            peer_ip, peer_port, connection_type)
+        else:
+            self.on_failed_connection_retry(peer_ip, peer_port, connection_type)
+
     @abstractmethod
     def _sync_tx_services(self):
         pass
@@ -404,14 +418,7 @@ class AbstractNode:
         logger.debug("Breaking connection to {}. Attempting retry: {}", conn, should_retry)
         conn.dispose()
         self.connection_pool.delete(conn)
-
-        peer_ip, peer_port = conn.peer_ip, conn.peer_port
-        if should_retry and self.continue_retrying_connection(peer_ip, peer_port, conn.CONNECTION_TYPE):
-            self.alarm_queue.register_alarm(self._get_next_retry_timeout(peer_ip, peer_port),
-                                            self._retry_init_client_socket,
-                                            peer_ip, peer_port, conn.CONNECTION_TYPE)
-        else:
-            self.on_failed_connection_retry(peer_ip, peer_port, conn.CONNECTION_TYPE)
+        self.handle_connection_closed(should_retry, ConnectionPeerInfo(conn.endpoint, conn.CONNECTION_TYPE))
 
     def _initialize_connection(self, socket_connection: SocketConnectionProtocol) -> Optional[AbstractConnection]:
         conn_obj = self.build_connection(socket_connection)
@@ -480,7 +487,7 @@ class AbstractNode:
 
         logger.debug("Retrying {} connection to {}:{}. Attempt #{}.", connection_type, ip, port,
                      self.num_retries_by_ip[(ip, port)])
-        self.enqueue_connection(ip, port)
+        self.enqueue_connection(ip, port, connection_type)
 
         # In case of connection retry to SDN - no need to resync transactions on this node, just update
         # 'has_fully_updated_tx_service' attribute on SDN since it was set to false when the connection was

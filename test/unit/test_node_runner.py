@@ -1,5 +1,5 @@
 import argparse
-import os
+from mock import MagicMock
 from argparse import Namespace
 from typing import Optional
 from unittest import mock
@@ -22,6 +22,7 @@ class NodeMock(object):
     def __init__(self, opts: Namespace, node_ssl_service: Optional[NodeSSLService] = None):
         self.opts: Namespace = opts
         self.node_ssl_service = node_ssl_service
+
 
 class EventLoopMock(object):
 
@@ -94,5 +95,6 @@ class TestNodeRunner(AbstractTestCase):
         fetch_blockchain_networks_mock.return_value = [self.blockchain_network]
         get_argument_parser_mock.return_value = argparse.ArgumentParser()
         parse_arguments_mock.return_value = self.opts
+        node_runner._init_ssl_service = MagicMock()
         node_runner.run_node("", self.opts, NodeMock)
         self.assertEqual(self.event_loop_mock.run_count, 1)

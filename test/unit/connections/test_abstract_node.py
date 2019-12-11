@@ -1,12 +1,15 @@
-from typing import Optional
+from typing import Optional, List
 
+from bxcommon.models.node_type import NodeType
+from bxcommon.network.ip_endpoint import IpEndpoint
+from bxcommon.network.peer_info import ConnectionPeerInfo
 from mock import patch, MagicMock
 
 from bxcommon import constants
-from bxcommon.connections.abstract_node import AbstractNode, DisconnectRequest
+from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
-from bxcommon.constants import MIN_SLEEP_TIMEOUT, MAX_CONNECT_RETRIES
+from bxcommon.constants import MAX_CONNECT_RETRIES
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.services import sdn_http_service
@@ -18,11 +21,13 @@ from bxutils.services.node_ssl_service import NodeSSLService
 
 
 class TestNode(AbstractNode):
+    NODE_TYPE = NodeType.GATEWAY
+
     def __init__(self, opts, node_ssl_service: Optional[NodeSSLService] = None):
         super(TestNode, self).__init__(opts, node_ssl_service)
 
-    def get_outbound_peer_addresses(self):
-        return True
+    def get_outbound_peer_info(self) -> List[ConnectionPeerInfo]:
+        return [MagicMock()]
 
     def send_request_for_peers(self):
         pass
@@ -84,12 +89,12 @@ class AbstractNodeTest(AbstractTestCase):
 
     def test_on_updated_peers(self):
         self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
-        self.node.opts.outbound_peers = [OutboundPeerModel("222.222.222.222", 2000)]
-        self.node.outbound_peers = [OutboundPeerModel("111.111.111.111", 1000),
-                                    OutboundPeerModel("222.222.222.222", 2000),
-                                    OutboundPeerModel(self.ip, self.port)]
+        self.node.opts.outbound_peers = [OutboundPeerModel("222.222.222.222", 2000, node_type=NodeType.GATEWAY)]
+        self.node.outbound_peers = [OutboundPeerModel("111.111.111.111", 1000, node_type=NodeType.GATEWAY),
+                                    OutboundPeerModel("222.222.222.222", 2000, node_type=NodeType.GATEWAY),
+                                    OutboundPeerModel(self.ip, self.port, node_type=NodeType.GATEWAY)]
 
-        outbound_peer_models = [OutboundPeerModel("111.111.111.111", 1000)]
+        outbound_peer_models = [OutboundPeerModel("111.111.111.111", 1000, node_type=NodeType.GATEWAY)]
         self.node.on_updated_peers(outbound_peer_models)
 
         self.assertEqual(outbound_peer_models, self.node.outbound_peers)
@@ -124,14 +129,16 @@ class AbstractNodeTest(AbstractTestCase):
 
     def test_enqueue_connection(self):
         self.assertNotIn((self.ip, self.port), self.node.connection_queue)
-        self.node.enqueue_connection(self.ip, self.port)
-        self.assertIn((self.ip, self.port), self.node.connection_queue)
+        self.node.enqueue_connection(self.ip, self.port, ConnectionType.GATEWAY)
+        self.assertIn(
+            ConnectionPeerInfo(IpEndpoint(self.ip, self.port), ConnectionType.GATEWAY), self.node.connection_queue
+        )
 
     def test_pop_next_connection_address(self):
-        self.assertIsNone(self.node.pop_next_connection_address())
+        self.assertIsNone(self.node.pop_next_connection_request())
         self.node.connection_queue.append((self.ip, self.port))
-        self.assertEqual((self.ip, self.port), self.node.pop_next_connection_address())
-        self.assertIsNone(self.node.pop_next_connection_address())
+        self.assertEqual((self.ip, self.port), self.node.pop_next_connection_request())
+        self.assertIsNone(self.node.pop_next_connection_request())
 
     def test_connection_timeout_established(self):
         self.connection.state = ConnectionState.ESTABLISHED
@@ -180,7 +187,9 @@ class AbstractNodeTest(AbstractTestCase):
 
     def test_retry_init_client_socket(self):
         self.node._retry_init_client_socket(self.ip, self.port, ConnectionType.RELAY_ALL)
-        self.assertIn((self.ip, self.port), self.node.connection_queue)
+        self.assertIn(
+            ConnectionPeerInfo(IpEndpoint(self.ip, self.port), ConnectionType.RELAY_ALL), self.node.connection_queue
+        )
         self.assertEqual(1, self.node.num_retries_by_ip[(self.ip, self.port)])
 
         self.node._retry_init_client_socket(self.ip, self.port, ConnectionType.RELAY_ALL)
