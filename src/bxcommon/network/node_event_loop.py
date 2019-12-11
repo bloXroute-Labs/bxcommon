@@ -131,7 +131,8 @@ class NodeEventLoop:
                     lambda: SocketConnectionProtocol(self._node, target_endpoint, is_ssl=is_ssl),
                     target_endpoint.ip_address,
                     target_endpoint.port,
-                    family=socket.AF_INET
+                    family=socket.AF_INET,
+                    ssl=ssl_ctx
                 ))
             else:
                 conn_task = loop.create_task(loop.create_datagram_endpoint(
