@@ -6,9 +6,6 @@ from datetime import datetime
 from typing import Iterable, Optional, Type, Union
 from argparse import Namespace
 
-from bxcommon.utils.cli import CommonOpts
-from bxcommon.models.node_type import NodeType
-
 from bxutils import logging
 from bxutils.logging import log_config, ThirdPartyLoggers
 from bxutils.logging.log_level import LogLevel
@@ -17,6 +14,8 @@ from bxutils.ssl.data.ssl_data_factory import create_storage_info
 from bxutils.ssl import ssl_serializer
 from bxutils.ssl.ssl_certificate_type import SSLCertificateType
 
+from bxcommon.utils.cli import CommonOpts
+from bxcommon.models.node_type import NodeType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.network.node_event_loop import NodeEventLoop
 from bxcommon.services import sdn_http_service
@@ -24,7 +23,6 @@ from bxcommon.utils import cli, model_loader
 from bxcommon.utils import config
 from bxcommon.exceptions import TerminationError
 from bxcommon.connections.abstract_node import AbstractNode
-
 
 logger = logging.get_logger(__name__)
 
@@ -50,6 +48,7 @@ def run_node(
                              enable_fluent_logger=opts.log_fluentd_enable,
                              fluentd_host=opts.log_fluentd_host,
                              third_party_loggers=THIRD_PARTY_LOGGERS)
+
     startup_param = sys.argv[1:]
     logger.info("Startup Parameters are: {}", " ".join(startup_param))
 

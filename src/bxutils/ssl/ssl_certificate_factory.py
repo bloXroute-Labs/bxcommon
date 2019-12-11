@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from ssl import SSLSocket
 import ssl
 from asyncio import Transport
+from uvloop.loop import TCPTransport # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKeyWithSerialization, \
     EllipticCurvePrivateKey
@@ -158,7 +159,7 @@ def get_socket_cert(ssl_socket: SSLSocket) -> Certificate:
     return ssl_serializer.deserialize_cert(pem_cert)
 
 
-def get_transport_cert(transport: Transport) -> Certificate:
+def get_transport_cert(transport: Union[Transport, TCPTransport]) -> Certificate:  # pyre-ignore
     """
     Obtain a peer certificate from a Transport socket wrapper
     :param transport: the SSL socket transport wrapper

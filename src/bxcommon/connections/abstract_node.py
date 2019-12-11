@@ -10,9 +10,11 @@ from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
+from bxcommon.connections.internal_node_connection import InternalNodeConnection
 from bxcommon.exceptions import TerminationError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
+from bxcommon.models.node_type import NodeType
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
 from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
@@ -26,9 +28,12 @@ from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
+
 from bxutils import logging
+from bxutils.exceptions.connection_authentication_error import ConnectionAuthenticationError
 from bxutils.logging import LogRecordType
 from bxutils.services.node_ssl_service import NodeSSLService
+from bxutils.ssl.extensions import extensions_factory
 
 logger = logging.get_logger(__name__)
 memory_logger = logging.get_logger(LogRecordType.BxMemory)
@@ -42,12 +47,16 @@ class DisconnectRequest(NamedTuple):
 class AbstractNode:
     __meta__ = ABCMeta
     FLUSH_SEND_BUFFERS_INTERVAL = constants.OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME * 2
-    NODE_TYPE = None
+    NODE_TYPE: Optional[NodeType] = None
 
-    def __init__(self, opts: Namespace, node_ssl_service: Optional[NodeSSLService] = None):
+    def __init__(self, opts: Namespace, node_ssl_service: NodeSSLService):
         self.node_ssl_service = node_ssl_service
         logger.debug("Initializing node of type: {}", self.NODE_TYPE)
-        self.server_endpoint = IpEndpoint(constants.LISTEN_ON_IP_ADDRESS, opts.external_port)
+        self.server_endpoints = [
+            IpEndpoint(constants.LISTEN_ON_IP_ADDRESS, opts.external_port),
+            # TODO: remove this after v1 is no longer supported
+            IpEndpoint(constants.LISTEN_ON_IP_ADDRESS, opts.non_ssl_port)
+        ]
 
         self.set_node_config_opts_from_sdn(opts)
         self.opts = opts
@@ -149,6 +158,13 @@ class AbstractNode:
             socket_connection.mark_for_close(should_retry=False)
         else:
             connection = self._initialize_connection(socket_connection)
+            try:
+                self._authenticate_connection(connection)
+            except ConnectionAuthenticationError as e:
+                if connection is not None:
+                    logger.warning("Failed to authenticate connection: {} due to an error: {}.", connection, e)
+                    connection.mark_for_close(should_retry=False)
+                    connection = None
         if connection is not None:
             connection.state |= ConnectionState.INITIALIZED
             logger.debug("Successfully initialized connection: {}", connection)
@@ -399,6 +415,27 @@ class AbstractNode:
     @abstractmethod
     def _check_sync_relay_connections(self):
         pass
+
+    def _authenticate_connection(self, connection: Optional[AbstractConnection]) -> None:
+        if connection is None:
+            return
+        assert self.NODE_TYPE is not None
+        sock = connection.socket_connection
+        if sock.is_ssl and isinstance(connection, InternalNodeConnection):
+            cert = sock.get_peer_certificate()
+            node_type = extensions_factory.get_node_type(cert)
+            try:
+                connection_type = convert.peer_node_to_connection_type(self.NODE_TYPE, node_type)
+            except (KeyError, ValueError):
+                raise ConnectionAuthenticationError(
+                    f"Peer ssl certificate ({cert}) has an invalid node type: {node_type}!"
+                )
+            peer_id = extensions_factory.get_node_id(cert)
+            if peer_id is None:
+                raise ConnectionAuthenticationError(f"Peer ssl certificate ({cert}) does not contain a node id!")
+            account_id = extensions_factory.get_account_id(cert)
+            self.connection_pool.update_connection_type(connection, connection_type)
+            connection.on_connection_authenticated(peer_id, connection_type, account_id)
 
     def _destroy_conn(self, conn: AbstractConnection):
         """

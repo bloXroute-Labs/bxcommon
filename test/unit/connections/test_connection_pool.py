@@ -88,12 +88,12 @@ class ConnectionPoolTest(AbstractTestCase):
             self.conn_pool1.get_by_ipport(self.ip1, 1)
 
     def test_get_by_connection_type(self):
-        self.conn1.CONNECTION_TYPE = ConnectionType.GATEWAY
+        self.conn1.CONNECTION_TYPE = ConnectionType.EXTERNAL_GATEWAY
         self.conn2.CONNECTION_TYPE = ConnectionType.RELAY_BLOCK
         self.conn3.CONNECTION_TYPE = ConnectionType.RELAY_ALL
         self._add_connections()
 
-        gateway_connections = self.conn_pool1.get_by_connection_type(ConnectionType.GATEWAY)
+        gateway_connections = self.conn_pool1.get_by_connection_type(ConnectionType.EXTERNAL_GATEWAY)
         self.assertEqual(1, len(gateway_connections))
         self.assertIn(self.conn1, gateway_connections)
 
@@ -103,13 +103,13 @@ class ConnectionPoolTest(AbstractTestCase):
         self.assertIn(self.conn3, relay_connections)
 
     def test_get_by_connection_types(self):
-        self.conn1.CONNECTION_TYPE = ConnectionType.GATEWAY
+        self.conn1.CONNECTION_TYPE = ConnectionType.EXTERNAL_GATEWAY
         self.conn2.CONNECTION_TYPE = ConnectionType.RELAY_BLOCK
         self.conn3.CONNECTION_TYPE = ConnectionType.RELAY_ALL
         self._add_connections()
 
         gateway_and_relay_block_connections = self.conn_pool1.get_by_connection_types([
-            ConnectionType.GATEWAY, ConnectionType.RELAY_TRANSACTION
+            ConnectionType.EXTERNAL_GATEWAY, ConnectionType.RELAY_TRANSACTION
         ])
         self.assertEqual(2, len(gateway_and_relay_block_connections))
         self.assertIn(self.conn1, gateway_and_relay_block_connections)

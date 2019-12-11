@@ -1,6 +1,6 @@
 import unittest
 
-from mock import mock
+import mock
 
 from bxcommon.models.node_type import NodeType
 from bxcommon.services import sdn_http_service

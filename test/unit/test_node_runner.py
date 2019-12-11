@@ -1,8 +1,8 @@
 import argparse
-from mock import MagicMock
 from argparse import Namespace
 from typing import Optional
 from unittest import mock
+from mock import MagicMock
 
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants, node_runner
@@ -10,13 +10,14 @@ from bxcommon.models.node_model import NodeModel
 from bxcommon.models.node_type import NodeType
 from bxcommon.test_utils import helpers
 from bxcommon.utils import config
+
 from bxutils.logging import log_config
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
 from bxutils.services.node_ssl_service import NodeSSLService
 
 
-class NodeMock(object):
+class NodeMock:
     NODE_TYPE = NodeType.EXTERNAL_GATEWAY
 
     def __init__(self, opts: Namespace, node_ssl_service: Optional[NodeSSLService] = None):
@@ -24,7 +25,7 @@ class NodeMock(object):
         self.node_ssl_service = node_ssl_service
 
 
-class EventLoopMock(object):
+class EventLoopMock:
 
     def __init__(self):
         self.run_count = 0
@@ -90,6 +91,7 @@ class TestNodeRunner(AbstractTestCase):
             parse_arguments_mock,
     ):
         log_pid_mock.return_value = None
+        node_runner._init_ssl_service = MagicMock()
         create_event_loop_mock.return_value = self.event_loop_mock
         register_node_mock.return_value = NodeModel(external_ip="1.1.1.1", external_port=1234, node_type=NodeType.RELAY)
         fetch_blockchain_networks_mock.return_value = [self.blockchain_network]

@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Optional, Dict, Any
 
 from bxcommon.models.node_type import NodeType
 
 
 @dataclass
-class OutboundPeerModel(object):
+class OutboundPeerModel:
     ip: str
     port: int
     node_id: Optional[str]

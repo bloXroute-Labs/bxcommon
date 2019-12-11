@@ -12,8 +12,10 @@ from bxcommon.services import sdn_http_service
 from bxcommon.utils import config, ip_resolver
 from bxcommon.utils import convert
 from bxcommon.utils.node_start_args import NodeStartArgs
+
 from bxutils import constants as utils_constants
 from bxutils import logging
+from bxutils.common import url_helper
 from bxutils.logging import log_config
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
@@ -53,6 +55,7 @@ class CommonOpts:
     source_version: int
     ca_cert_url: str
     private_ssl_base_url: str
+    non_ssl_port: int
 
     def __init__(self, opts: Namespace):
         self.external_ip = opts.external_ip
@@ -86,6 +89,7 @@ class CommonOpts:
         self.source_version = opts.source_version
         self.ca_cert_url = opts.ca_cert_url
         self.private_ssl_base_url = opts.private_ssl_base_url
+        self.non_ssl_port = opts.non_ssl_port
 
 
 def get_argument_parser() -> argparse.ArgumentParser:
@@ -95,6 +99,8 @@ def get_argument_parser() -> argparse.ArgumentParser:
                             type=ip_resolver.blocking_resolve_ip)
     arg_parser.add_argument("--external-port", help="External network port to listen on", type=int,
                             default=config.get_env_default(NodeStartArgs.EXTERNAL_PORT))
+    arg_parser.add_argument("--non-ssl-port", help="External network port for non SSL nodes to listen on", type=int,
+                            default=config.get_env_default(NodeStartArgs.NON_SSL_PORT))
     arg_parser.add_argument("--continent", help="The continent of this node", type=str,
                             choices=["NA", "SA", "EU", "AS", "AF", "OC", "AN"])
     arg_parser.add_argument("--country", help="The country of this node.", type=str)
@@ -225,12 +231,14 @@ def get_argument_parser() -> argparse.ArgumentParser:
         type=str
     )
 
+    data_dir = config.get_default_data_path()
+    private_ssl_base_url = url_helper.url_join("file:", data_dir)
     arg_parser.add_argument(
         "--private-ssl-base-url",
         help="The base URL for retrieving specific certificate data (default: {})".format(
-            utils_constants.DEFAULT_PUBLIC_CA_URL
+            private_ssl_base_url
         ),
-        default=utils_constants.DEFAULT_PUBLIC_CA_URL,
+        default=private_ssl_base_url,
         type=str
     )
 
@@ -258,7 +266,7 @@ def parse_blockchain_opts(opts, node_type: NodeType):
     """
     opts_dict = opts.__dict__
 
-    if node_type & NodeType.RELAY:
+    if node_type in NodeType.RELAY:
         opts_dict["blockchain_network_num"] = ALL_NETWORK_NUM
         return
 

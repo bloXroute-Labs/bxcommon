@@ -19,7 +19,7 @@ class NodeModel:
     network: str = None
 
     # Internal id for distinguishing nodes.
-    node_id: str = None
+    node_id: Optional[str] = None
 
     # The starting and ending Transaction Short ID range, inclusive.
     sid_start: int = None
@@ -77,7 +77,6 @@ class NodeModel:
     private_ip: str = None
     csr: str = None
     cert: str = None
-
     platform_provider: PlatformProvider = None
 
     account_id: Optional[str] = None

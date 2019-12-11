@@ -1,8 +1,5 @@
-import os
-from urllib import parse as url_parse
+from bxcommon.network.port_range import PortRange
 
-from bxcommon.utils import config
-from bxutils.common import url_helper
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.fluentd_overflow_handler_type import OverflowHandlerType
@@ -48,10 +45,10 @@ FLUENTD_OVERFLOW_HANDLER = OverflowHandlerType.Ignore
 #  bxutils back into bxcommon
 DEFAULT_VALIDATION_PERIOD_DAYS: int = 365
 SSL_FOLDER = ".ssl"
-DEFAULT_SSL_FOLDER_PATH: str = config.get_default_data_path()
 SSL_KEY_FILE_FORMAT = "{}_key.pem"
 SSL_CERT_FILE_FORMAT = "{}_cert.pem"
 DEFAULT_PUBLIC_CA_URL = "https://s3.amazonaws.com/credentials.blxrbdn.com/"
-DEFAULT_PRIVATE_SSL_BASE_URL = url_helper.url_join("file:", DEFAULT_SSL_FOLDER_PATH)
 DEFAULT_CERTIFICATE_RENEWAL_PERIOD_DAYS: int = 10
+SSL_PORT_RANGE: PortRange = PortRange(1800, 2000)
 
+DEFAULT_SDN_SOCKET_PORT = 1800

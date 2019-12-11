@@ -2,6 +2,7 @@ import asyncio
 import socket
 from asyncio import CancelledError, Future
 from asyncio.events import AbstractServer
+from ssl import SSLContext
 from typing import Iterator, List, Coroutine, Generator, Callable, Awaitable, Optional
 
 from bxcommon import constants
@@ -11,7 +12,8 @@ from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
 from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
-from bxutils import logging
+from bxutils import logging, constants as utils_constants
+from bxutils.ssl.ssl_certificate_type import SSLCertificateType
 
 logger = logging.get_logger(__name__)
 
@@ -57,10 +59,10 @@ class NodeEventLoop:
             self._started = None
 
     async def _run(self) -> None:
-        await self._node.init()
-        node_server = await self._create_server()
-        loop = asyncio.get_event_loop()
-        async with node_server:
+        node_servers = await self._create_servers()
+        try:
+            await self._node.init()
+            loop = asyncio.get_event_loop()
             await self._connect_to_peers()
             self._node.fire_alarms()
             self._started.set_result(True)
@@ -75,6 +77,9 @@ class NodeEventLoop:
                     self.stop()
                     logger.info("Ending event loop. Shutdown has been requested manually.")
                     break
+        finally:
+            for server in node_servers:
+                server.close()
 
     async def _process_new_connections_requests(self):
         peer_info = self._node.pop_next_connection_request()
@@ -92,17 +97,24 @@ class NodeEventLoop:
         if connection_futures:
             await asyncio.gather(*connection_futures)
 
-    async def _create_server(self) -> AbstractServer:
+    async def _create_servers(self) -> List[AbstractServer]:
         loop = asyncio.get_running_loop()
-        endpoint = self._node.server_endpoint
-        return await loop.create_server(
-            lambda: SocketConnectionProtocol(self._node),
-            endpoint.ip_address,
-            endpoint.port,
-            family=socket.AF_INET,
-            backlog=constants.DEFAULT_NODE_BACKLOG,
-            reuse_address=True
-        )
+        endpoints = self._node.server_endpoints
+        server_futures = []
+        for endpoint in endpoints:
+            ssl_ctx = self._get_ssl_context(endpoint)
+            is_ssl = ssl_ctx is not None
+            server_future = loop.create_server(
+                lambda: SocketConnectionProtocol(self._node, is_ssl=is_ssl),
+                endpoint.ip_address,
+                endpoint.port,
+                family=socket.AF_INET,
+                backlog=constants.DEFAULT_NODE_BACKLOG,
+                reuse_address=True,
+                ssl=ssl_ctx
+            )
+            server_futures.append(server_future)
+        return await asyncio.gather(*server_futures)
 
     async def _connect_to_target(
             self,
@@ -113,15 +125,17 @@ class NodeEventLoop:
         target_endpoint = peer_info.endpoint
         try:
             if peer_info.transport_protocol == TransportLayerProtocol.TCP:
+                ssl_ctx = self._get_ssl_context(target_endpoint)
+                is_ssl = ssl_ctx is not None
                 conn_task = loop.create_task(loop.create_connection(
-                    lambda: SocketConnectionProtocol(self._node, target_endpoint),
+                    lambda: SocketConnectionProtocol(self._node, target_endpoint, is_ssl=is_ssl),
                     target_endpoint.ip_address,
                     target_endpoint.port,
                     family=socket.AF_INET
                 ))
             else:
                 conn_task = loop.create_task(loop.create_datagram_endpoint(
-                    lambda: SocketConnectionProtocol(self._node, target_endpoint),
+                    lambda: SocketConnectionProtocol(self._node, target_endpoint, is_ssl=True),
                     remote_addr=(target_endpoint.ip_address, target_endpoint.port),
                     family=socket.AF_INET
                 ))
@@ -145,6 +159,12 @@ class NodeEventLoop:
         return [
             self._connect_to_target(peer_info) for peer_info in connections_info
         ]
+
+    def _get_ssl_context(self, endpoint: IpEndpoint) -> Optional[SSLContext]:
+        if endpoint.port in utils_constants.SSL_PORT_RANGE:
+            return self._node.node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
+        else:
+            return None
 
     async def _perform_node_tasks(self) -> None:
         timeout = self._node.fire_alarms()

@@ -1,12 +1,14 @@
 import typing
 from asyncio import Protocol, BaseTransport, Transport
 from typing import TYPE_CHECKING, Optional
+from cryptography.x509 import Certificate
 
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.network.socket_connection_state import SocketConnectionState
 
 from bxutils import logging
+from bxutils.ssl import ssl_certificate_factory
 
 if TYPE_CHECKING:
     from bxcommon.connections.abstract_node import AbstractNode
@@ -21,10 +23,11 @@ class SocketConnectionProtocol(Protocol):
     direction: NetworkDirection
     can_send: bool
     state: SocketConnectionState
+    is_ssl: bool
     _node: "AbstractNode"
     _should_retry: bool
 
-    def __init__(self, node: "AbstractNode", endpoint: Optional[IpEndpoint] = None):
+    def __init__(self, node: "AbstractNode", endpoint: Optional[IpEndpoint] = None, is_ssl: bool = True):
         self._node = node
         self.transport: Optional[Transport] = None
         self.file_no = -1
@@ -36,6 +39,7 @@ class SocketConnectionProtocol(Protocol):
         self.can_send = False
         self.state = SocketConnectionState.CONNECTING
         self._should_retry = self.direction == NetworkDirection.OUTBOUND
+        self.is_ssl = is_ssl
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} <{self.endpoint}, {self.direction.name}>"
@@ -103,3 +107,10 @@ class SocketConnectionProtocol(Protocol):
 
     def is_alive(self) -> bool:
         return not self.state & SocketConnectionState.MARK_FOR_CLOSE
+
+    def get_peer_certificate(self) -> Certificate:
+        assert self.transport is not None, "Connection is broken!"
+        try:
+            return ssl_certificate_factory.get_transport_cert(self.transport)
+        except ValueError as e:
+            raise TypeError("Socket is not SSL type!") from e

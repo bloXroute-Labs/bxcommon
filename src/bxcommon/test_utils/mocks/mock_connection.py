@@ -15,8 +15,8 @@ from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
 
 
 class MockConnectionType(IntFlag):
-    MOCK = max(ConnectionType) << 1
-    NOT_MOCK = max(ConnectionType) << 2
+    MOCK = ConnectionType.INTERNAL_GATEWAY << 1
+    NOT_MOCK = ConnectionType.INTERNAL_GATEWAY << 2
 
 
 class MockConnection(AbstractConnection, SpecialMemoryProperties):

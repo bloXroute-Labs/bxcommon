@@ -1,10 +1,11 @@
 import time
 from abc import ABCMeta
-from typing import List
+from typing import List, Optional
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection, Node
 from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.blocks_short_ids_serializer import BlockShortIds
@@ -56,6 +57,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.can_send_pings = True
         self.ping_message_timestamps = ExpiringDict(self.node.alarm_queue, constants.REQUEST_EXPIRATION_TIME)
         self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)
+        self.account_id: Optional[str] = None
+        self._is_authenticated = False
 
     def disable_buffering(self):
         """
@@ -200,6 +203,14 @@ class InternalNodeConnection(AbstractConnection[Node]):
                 tx_service.assign_short_id(tx_hash, short_id)
                 if TxQuotaType.PAID_DAILY_QUOTA in quota_type:
                     tx_service.set_short_id_quota_type(short_id, quota_type)
+
+    def on_connection_authenticated(
+            self, peer_id: str, connection_type: ConnectionType, account_id: Optional[str]
+    ) -> None:
+        self.peer_id = peer_id
+        self.CONNECTION_TYPE = connection_type  # pyre-ignore
+        self.account_id = account_id
+        self._is_authenticated = True
 
     def _create_txs_service_msg(self, network_num: int, tx_service_snap: List[Sha256Hash]) -> List[TxContentShortIds]:
         txs_content_short_ids: List[TxContentShortIds] = []

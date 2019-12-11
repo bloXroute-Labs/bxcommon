@@ -2,13 +2,13 @@ from typing import List
 
 from bxcommon.test_utils.message_factory_test_case import MessageFactoryTestCase
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
+from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.test_utils import helpers
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.services.transaction_service import TransactionService
-from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.models.tx_quota_type_model import TxQuotaType
 
@@ -18,7 +18,7 @@ class SyncTxServiceTest(MessageFactoryTestCase):
     NETWORK_NUM = 12345
 
     def setUp(self) -> None:
-        self.node = AbstractNode(helpers.get_common_opts(1234))
+        self.node = MockNode(helpers.get_common_opts(1234))
 
         self.network_num = 4
         self.transaction_service = TransactionService(self.node, self.network_num)

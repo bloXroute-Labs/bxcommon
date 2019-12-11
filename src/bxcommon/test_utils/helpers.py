@@ -209,7 +209,9 @@ def get_common_opts(port,
         "throughput_stats_interval": constants.THROUGHPUT_STATS_INTERVAL_S,
         "info_stats_interval": constants.INFO_STATS_INTERVAL_S,
         "sync_tx_service": True,
-        "source_version": "v1.0.0"
+        "source_version": "v1.0.0",
+        "non_ssl_port": 3000,
+        "enable_node_cache": True
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val
@@ -227,6 +229,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
                      parallelism_degree=1, cookie_file_path=COOKIE_FILE_PATH, blockchain_block_hold_timeout_s=30,
                      blockchain_block_recovery_timeout_s=30, stay_alive_duration=30 * 60, source_version="v1.1.1.1",
                      initial_liveliness_check=30, block_interval=600, continent="NA", country="United States",
+                     non_ssl_port: int = 9001, rpc_port: int = 28332,
                      **kwargs) -> Namespace:
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
@@ -297,7 +300,10 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "source_version": source_version,
         "require_blockchain_connection": True,
         "continent": continent,
-        "country": country
+        "country": country,
+        "non_ssl_port": non_ssl_port,
+        "rpc_port": rpc_port,
+        "rpc_host": constants.LOCALHOST
     })
 
     if include_default_btc_args:

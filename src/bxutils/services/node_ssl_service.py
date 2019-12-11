@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from ssl import Purpose, SSLContext
 from typing import Dict, Iterator, Optional
 
+from bxutils.ssl.extensions import extensions_factory
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKeyWithSerialization
 from cryptography.x509 import Certificate, CertificateSigningRequest
 
@@ -152,7 +153,8 @@ class NodeSSLService:
             ssl_certificate_factory.store_key(key, key_folder_path, self._node_name)
         self.certificates[SSLCertificateType.PRIVATE] = cert
         self._store_cert(SSLCertificateType.PRIVATE, cert)
-        logger.debug("{} successfully stored private SSL certificate: {}.", self, cert)
+        node_id = extensions_factory.get_node_id(cert)
+        logger.debug("{} successfully stored private SSL certificate: {} ({}).", self, cert, node_id)
 
     async def store_node_certificate(self, cert: Certificate) -> None:
         """
@@ -206,7 +208,7 @@ class NodeSSLService:
         ssl_certificate_factory.store_certificate(cert, cert_folder_path, cert_file_name)
 
     def _store_key(self, key: EllipticCurvePrivateKeyWithSerialization, file_info: Optional[SSLFileInfo]) -> None:
-        if not self._store_local or file_info is None or os.path.exists(self._get_file_path(file_info)):
+        if not self._store_local or file_info is None:
             logger.debug("{} skip saving private key to local storage.", self)
             return
         ssl_folder_path = self.storage_info.ssl_folder_path

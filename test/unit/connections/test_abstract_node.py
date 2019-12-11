@@ -1,10 +1,12 @@
 from typing import Optional, List
-
-from bxcommon.models.node_type import NodeType
-from bxcommon.network.ip_endpoint import IpEndpoint
-from bxcommon.network.peer_info import ConnectionPeerInfo
 from mock import patch, MagicMock
 
+from bxcommon.models.node_type import NodeType
+from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
+from bxcommon.network.ip_endpoint import IpEndpoint
+from bxcommon.network.peer_info import ConnectionPeerInfo
+from bxcommon.connections.abstract_connection import AbstractConnection
+from bxcommon.services.broadcast_service import BroadcastService
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
@@ -17,6 +19,7 @@ from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.utils import memory_utils
+
 from bxutils.services.node_ssl_service import NodeSSLService
 
 
@@ -24,6 +27,8 @@ class TestNode(AbstractNode):
     NODE_TYPE = NodeType.GATEWAY
 
     def __init__(self, opts, node_ssl_service: Optional[NodeSSLService] = None):
+        if node_ssl_service is None:
+            node_ssl_service = MockNodeSSLService(NodeType.EXTERNAL_GATEWAY, MagicMock())
         super(TestNode, self).__init__(opts, node_ssl_service)
 
     def get_outbound_peer_info(self) -> List[ConnectionPeerInfo]:
@@ -37,6 +42,27 @@ class TestNode(AbstractNode):
 
     def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:
         sdn_http_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
+
+    def get_tx_service(self, network_num=None):
+        pass
+
+    def get_broadcast_service(self) -> BroadcastService:
+        pass
+
+    def send_request_for_relay_peers(self):
+        pass
+
+    def _sync_tx_services(self):
+        pass
+
+    def _transaction_sync_timeout(self):
+        pass
+
+    def _check_sync_relay_connections(self):
+        pass
+
+    def _authenticate_connection(self, connection: Optional[AbstractConnection]) -> None:
+        pass
 
 
 class AbstractNodeTest(AbstractTestCase):

@@ -2,7 +2,6 @@ import time
 from ssl import SSLContext
 from typing import List, Optional, Dict, Any, cast
 from bxutils import logging
-from bxutils.encoding import json_encoder
 
 from bxcommon.constants import SdnRoutes
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel

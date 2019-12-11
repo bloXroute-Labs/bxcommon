@@ -36,7 +36,7 @@ def create_account_id_extension(account_id: str) -> AccountIdExtension:
 def get_node_type(cert: Certificate) -> Optional[NodeType]:
     try:
         node_type_str = cert.extensions.get_extension_for_oid(ExtensionsObjectIds.NODE_TYPE).value.value.decode("utf-8")
-        return NodeType(NodeType[node_type_str])
+        return NodeType[node_type_str]
     except ExtensionNotFound:
         return None
 

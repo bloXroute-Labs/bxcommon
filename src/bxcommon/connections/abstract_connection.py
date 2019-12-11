@@ -103,7 +103,7 @@ class AbstractConnection(Generic[Node]):
         else:
             details = f"file_no: {self.file_no}, address: {self.peer_desc}"
 
-        return f"{self.CONNECTION_TYPE}({details})"
+        return f"{self.CONNECTION_TYPE} ({details})"
 
     def _log_message(self, level: LogLevel, message, *args, **kwargs):
         logger.log(level, f"[{self}] {message}", *args, **kwargs)
@@ -408,8 +408,9 @@ class AbstractConnection(Generic[Node]):
         self.state |= ConnectionState.HELLO_RECVD
         if msg.node_id() is None:
             self.log_debug("Received hello message without peer id.")
-        self.peer_id = msg.node_id()
-        self.node.connection_pool.index_conn_node_id(self.peer_id, self)
+        if self.peer_id is None:
+            self.peer_id = msg.node_id()
+            self.node.connection_pool.index_conn_node_id(self.peer_id, self)
 
         if len(self.node.connection_pool.get_by_node_id(self.peer_id)) > 1:
             if self.from_me:

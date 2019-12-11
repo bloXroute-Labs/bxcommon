@@ -1,9 +1,9 @@
 import os
-
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from bxcommon.models.node_type import NodeType
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+
 from bxutils.common import url_helper
 from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl import ssl_certificate_factory

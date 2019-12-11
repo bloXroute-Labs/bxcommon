@@ -15,9 +15,10 @@ class MockSocketConnection(SocketConnectionProtocol):
             default_socket_opts=None,
             send_bytes=False,
             ip_address: str = "127.0.0.1",
-            port: int = 8000
+            port: int = 8000,
+            is_ssl: bool = False
     ):
-        super(MockSocketConnection, self).__init__(node, IpEndpoint(ip_address, port))
+        super(MockSocketConnection, self).__init__(node, IpEndpoint(ip_address, port), is_ssl=is_ssl)
         self.transport = MagicMock()
         if default_socket_opts is None:
             default_socket_opts = {
