@@ -10,6 +10,7 @@ class ThreadedRequestService:
     """
     Single point for threaded requests with associated alarms
     """
+    thread_pool: ThreadPoolExecutor
     _instance = None
 
     def __new__(cls, alarm_queue: AlarmQueue, timeout: int):
@@ -35,7 +36,6 @@ class ThreadedRequestService:
         """
         # pyre-ignore
         self.logger.trace("Starting thread for request.")
-        # pyre-ignore
         task = self.thread_pool.submit(request, *args)
         # pyre-ignore
         self.alarm_queue.register_alarm(self.timeout, self._threaded_post_alarm, task, request, *args)
