@@ -10,7 +10,7 @@ from bxutils import constants
 from bxutils.logging.log_format import LogFormat, JSONFormatter, CustomFormatter, FluentJSONFormatter
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.handler_type import HandlerType
-from bxutils.logging import log_level, ThirdPartyLoggers
+from bxutils.logging import log_level, LoggerConfig
 
 try:
     # TODO: remove try catch clause once the decencies are installed
@@ -33,7 +33,8 @@ def create_logger(
         flush_handlers: bool = True,
         folder_path: Optional[str] = None,
         style: str = "{",
-        fluentd_host: Optional[str] = None
+        fluentd_host: Optional[str] = None,
+        fluentd_tag_suffix: Optional[str] = None
 ) -> None:
     """
     Installs a log configuration under the provided name.
@@ -45,6 +46,7 @@ def create_logger(
     :param flush_handlers: bool reset logging handlers
     :param style: the logger formatting style
     :param fluentd_host: fluentd host for fluent log handler
+    :param fluentd_tag_suffix: optional fluentd tag suffix
     """
     if log_format == LogFormat.PLAIN:
         if log_level <= LogLevel.DEBUG:
@@ -75,8 +77,12 @@ def create_logger(
             fluent_host, fluentd_port = fluentd_host.split(":")
         else:
             fluentd_port = constants.FLUENTD_PORT
+        if fluentd_tag_suffix:
+            fluentd_tag = constants.FLUENTD_DEFAULT_TAG + "." + fluentd_tag_suffix
+        else:
+            fluentd_tag = constants.FLUENTD_DEFAULT_TAG
         handler = FluentHandler(
-            'bx',
+            fluentd_tag,
             host=fluentd_host,
             port=fluentd_port,
             buffer_overflow_handler=overflow_handler,
@@ -136,34 +142,34 @@ def setup_logging(
         root_log_style: str = "{",
         enable_fluent_logger: bool = False,
         fluentd_host: Optional[str] = None,
-        third_party_loggers: Optional[List[ThirdPartyLoggers]] = None
+        fluentd_tag_suffix: Optional[str] = None,
+        third_party_loggers: Optional[List[LoggerConfig]] = None
         ):
-    create_logger(None, log_level=root_log_level, log_format=log_format, style=root_log_style,
-                  handler_type=HandlerType.Stream)
-    if enable_fluent_logger and fluentd_host is not None and FluentHandler is not None:
-        create_logger(None, log_level=root_log_level, log_format=LogFormat.JSON, style=root_log_style,
-                      handler_type=HandlerType.Fluent, flush_handlers=False, fluentd_host=fluentd_host)
+    loggers_config = [LoggerConfig(None, root_log_style, root_log_level)]
+    if third_party_loggers is not None:
+        loggers_config.extend(third_party_loggers)
+
+    for logger_config in loggers_config:
+        create_logger(
+            logger_config.name,
+            log_level=logger_config.log_level if logger_config.log_level is not None else default_log_level,
+            log_format=log_format,
+            style=logger_config.style,
+            handler_type=HandlerType.Stream
+        )
+        if enable_fluent_logger and fluentd_host is not None and FluentHandler is not None:
+            create_logger(logger_config.name,
+                          log_level=logger_config.log_level if logger_config.log_level is not None else default_log_level,
+                          log_format=LogFormat.JSON,
+                          style=logger_config.style,
+                          handler_type=HandlerType.Fluent,
+                          flush_handlers=False,
+                          fluentd_host=fluentd_host,
+                          fluentd_tag_suffix=fluentd_tag_suffix)
+        elif enable_fluent_logger:
+            print("Cannot Init fluentd logger")
     log_level_config = {}
     for logger_name in default_logger_names:
         log_level_config[logger_name] = default_log_level
     log_level_config.update(log_level_overrides)
     set_log_levels(log_level_config)
-
-    # Add third party loggers
-    if third_party_loggers is not None:
-        for third_party_logger in third_party_loggers:
-            handler_type = HandlerType.Stream
-            flush_handlers = None
-            if enable_fluent_logger and fluentd_host is not None and FluentHandler is not None:
-                handler_type = HandlerType.Fluent
-                flush_handlers = False
-                log_format = LogFormat.JSON
-
-            create_logger(global_logger_name=third_party_logger.name,
-                          log_format=log_format,
-                          log_level=third_party_logger.log_level if third_party_logger.log_level is not None else default_log_level,
-                          handler_type=handler_type,
-                          flush_handlers=flush_handlers,
-                          fluentd_host=fluentd_host,
-                          style=third_party_logger.style
-                          )

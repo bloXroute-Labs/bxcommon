@@ -2,6 +2,7 @@ import argparse
 from argparse import Namespace
 from dataclasses import dataclass
 from typing import Dict
+from argparse import ArgumentParser
 
 from bxcommon import constants
 from bxcommon.constants import ALL_NETWORK_NUM
@@ -109,49 +110,6 @@ def get_argument_parser() -> argparse.ArgumentParser:
     arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", type=str,
                             default=config.get_env_default(NodeStartArgs.SDN_ROOT_URL))
     arg_parser.add_argument(
-        "--data-dir",
-        help="Path to store configuration, state and log files",
-        default=config.get_default_data_path()
-    )
-    arg_parser.add_argument(
-        "--log-level",
-        help="set log level",
-        type=LogLevel.__getattr__,  # pyre-ignore
-        choices=list(LogLevel),
-        default=utils_constants.DEFAULT_LOG_LEVEL
-    )
-    arg_parser.add_argument(
-        "--log-format",
-        help="set log format",
-        type=LogFormat.__getattr__,  # pyre-ignore
-        choices=list(LogFormat),
-        default=utils_constants.DEFAULT_LOG_FORMAT
-    )
-    arg_parser.add_argument(
-        "--log-fluentd-enable",
-        help="enable logging directly to fluentd",
-        type=convert.str_to_bool,
-        default=False
-    )
-    arg_parser.add_argument(
-        "--log-fluentd-host",
-        help="fluentd instance address provide, hostname:port",
-        type=str,
-        default=utils_constants.FLUENTD_HOST
-    )
-    arg_parser.add_argument(
-        "--log-flush-immediately",
-        help="Enables immediate flush for logs",
-        type=convert.str_to_bool,
-        default=False
-    )
-    arg_parser.add_argument(
-        "--log-level-overrides",
-        help="override log level for namespace stats=INFO,bxcommon.connections=WARNING",
-        default={"stats": "NOTSET", "bx": "NOTSET"},
-        type=log_config.str_to_log_options
-    )
-    arg_parser.add_argument(
         "--node-id",
         help="(TEST ONLY) Set the node_id for using in testing."
     )
@@ -222,6 +180,58 @@ def get_argument_parser() -> argparse.ArgumentParser:
         type=int
     )
 
+    add_argument_parser_logging(arg_parser)
+    add_argument_parser_common(arg_parser)
+    return arg_parser
+
+
+def add_argument_parser_logging(arg_parser: ArgumentParser):
+    arg_parser.add_argument(
+        "--log-level",
+        help="set log level",
+        type=LogLevel.__getattr__,
+        choices=list(LogLevel),
+        default=utils_constants.DEFAULT_LOG_LEVEL
+    )
+    arg_parser.add_argument(
+        "--log-format",
+        help="set log format",
+        type=LogFormat.__getattr__,
+        choices=list(LogFormat),
+        default=utils_constants.DEFAULT_LOG_FORMAT
+    )
+    arg_parser.add_argument(
+        "--log-fluentd-enable",
+        help="enable logging directly to fluentd",
+        type=convert.str_to_bool,
+        default=False
+    )
+    arg_parser.add_argument(
+        "--log-fluentd-host",
+        help="fluentd instance address provide, hostname:port",
+        type=str,
+        default=utils_constants.FLUENTD_HOST
+    )
+    arg_parser.add_argument(
+        "--log-flush-immediately",
+        help="Enables immediate flush for logs",
+        type=convert.str_to_bool,
+        default=False
+    )
+    arg_parser.add_argument(
+        "--log-level-overrides",
+        help="override log level for namespace stats=INFO,bxcommon.connections=WARNING",
+        default={"stats": "NOTSET", "bx": "NOTSET"},
+        type=log_config.str_to_log_options
+    )
+
+
+def add_argument_parser_common(arg_parser: ArgumentParser):
+    arg_parser.add_argument(
+        "--data-dir",
+        help="Path to store configuration, state and log files",
+        default=config.get_default_data_path()
+    )
     arg_parser.add_argument(
         "--ca-cert-url",
         help="The  URL for retrieving BDN ca certificate data (default: {})".format(
@@ -230,7 +240,6 @@ def get_argument_parser() -> argparse.ArgumentParser:
         default=utils_constants.DEFAULT_PUBLIC_CA_URL,
         type=str
     )
-
     data_dir = config.get_default_data_path()
     private_ssl_base_url = url_helper.url_join("file:", data_dir)
     arg_parser.add_argument(
@@ -241,8 +250,6 @@ def get_argument_parser() -> argparse.ArgumentParser:
         default=private_ssl_base_url,
         type=str
     )
-
-    return arg_parser
 
 
 def parse_arguments(arg_parser: argparse.ArgumentParser) -> argparse.Namespace:

@@ -39,6 +39,8 @@ FLUENTD_HOST = "fluentd"
 FLUENTD_PORT = 24224
 FLUENTD_OVERFLOW_HANDLER = OverflowHandlerType.Ignore
 
+FLUENTD_DEFAULT_TAG = "bx"
+
 # ssl constants
 
 # TODO: use the data dir configurations (https://github.com/bloXroute-Labs/bxcommon-private/pull/510) after merging

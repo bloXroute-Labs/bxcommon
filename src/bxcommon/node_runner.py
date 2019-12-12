@@ -7,7 +7,7 @@ from typing import Iterable, Optional, Type, Union
 from argparse import Namespace
 
 from bxutils import logging
-from bxutils.logging import log_config, ThirdPartyLoggers
+from bxutils.logging import log_config, LoggerConfig
 from bxutils.logging.log_level import LogLevel
 from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.data.ssl_data_factory import create_storage_info
@@ -27,7 +27,7 @@ from bxcommon.connections.abstract_node import AbstractNode
 logger = logging.get_logger(__name__)
 
 LOGGER_NAMES = ["bxcommon", "bxutils", "stats", "bx"]
-THIRD_PARTY_LOGGERS = [ThirdPartyLoggers("urllib3", "%", LogLevel.WARNING)]
+THIRD_PARTY_LOGGERS = [LoggerConfig("urllib3", "%", LogLevel.WARNING)]
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())  # pyre-ignore
 asyncio.set_event_loop(uvloop.new_event_loop())
