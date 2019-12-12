@@ -341,7 +341,7 @@ class TransactionService:
             if TxQuotaType.PAID_DAILY_QUOTA in tx_flag and not force:
                 return None
             else:
-                del self._tx_cache_key_to_short_ids[transaction_cache_key]
+                short_ids = self._tx_cache_key_to_short_ids.pop(transaction_cache_key)
 
             for short_id_flag, short_id in zip(short_id_flags, short_ids):
                 tx_stats.add_tx_by_hash_event(
