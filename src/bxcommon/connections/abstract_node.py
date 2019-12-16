@@ -284,10 +284,15 @@ class AbstractNode:
 
     def close(self):
         logger.error("Node is closing! Closing everything.")
+        self.close_all_connections()
+        self.cleanup_memory_stats_logging()
 
+    def close_all_connections(self):
+        """
+        Closes all connections from the node
+        """
         for _, conn in self.connection_pool.items():
             conn.mark_for_close(should_retry=False)
-        self.cleanup_memory_stats_logging()
 
     def broadcast(self, msg: AbstractMessage, broadcasting_conn: Optional[AbstractConnection] = None,
                   prepend_to_queue: bool = False, connection_types: Optional[List[ConnectionType]] = None) \

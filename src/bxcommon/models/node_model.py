@@ -17,6 +17,9 @@ class NodeModel:
     # Whether the node is online.
     online: bool = False
 
+    # Whether node has active connection with SDN
+    sdn_connection_alive: bool = False
+
     # TODO: Remove this attribute as it's not being used anymore
     network: str = None
 
