@@ -10,7 +10,9 @@ from bxcommon.models.platform_provider import PlatformProvider
 class NodeModel:
     node_type: NodeType = None
     external_port: int = 0
+    non_ssl_port: int = 0
     external_ip: str = None
+
 
     # Whether the node is online.
     online: bool = False

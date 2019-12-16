@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from bxcommon.models.node_type import NodeType
 
@@ -27,8 +27,8 @@ class OutboundPeerModel:
         self.attributes = attributes
 
     def __str__(self):
-        return "({}, {}, {}, {}, {})".format(self.ip, self.port, self.node_id, self.is_internal_gateway,
-                                             self.attributes)
+        return "({}: {}, {}, {}, {}, {})".format(self.node_type, self.ip, self.port, self.node_id,
+                                                 self.is_internal_gateway, self.attributes)
 
     def __repr__(self):
         return "OutboundPeerModel" + self.__str__()

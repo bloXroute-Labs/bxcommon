@@ -28,6 +28,7 @@ logger = logging.get_logger(__name__)
 class CommonOpts:
     external_ip: str
     external_port: int
+    non_ssl_port: int
     continent: str
     country: str
     hostname: str
@@ -61,6 +62,7 @@ class CommonOpts:
     def __init__(self, opts: Namespace):
         self.external_ip = opts.external_ip
         self.external_port = opts.external_port
+        self.non_ssl_port = opts.non_ssl_port
         self.continent = opts.continent
         self.country = opts.country
         self.hostname = opts.hostname
