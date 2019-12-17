@@ -2,8 +2,8 @@ import os
 import signal
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
-from collections import defaultdict, deque
-from typing import List, Optional, Tuple, Dict, Deque, NamedTuple, Union, Set
+from collections import defaultdict
+from typing import List, Optional, Tuple, Dict, NamedTuple, Union, Set
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
@@ -62,6 +62,7 @@ class AbstractNode:
         self.set_node_config_opts_from_sdn(opts)
         self.opts = opts
         self.pending_connection_requests: Set[ConnectionPeerInfo] = set()
+        self.pending_connection_attempts: Set[ConnectionPeerInfo] = set()
         self.outbound_peers: Set[OutboundPeerModel] = opts.outbound_peers.copy()
 
         self.connection_pool = ConnectionPool()
@@ -152,6 +153,9 @@ class AbstractNode:
         Notifies the node that a connection is coming in.
         """
         # If we're already connected to the remote peer, log the event and request disconnect.
+        self.pending_connection_attempts.discard(
+            ConnectionPeerInfo(socket_connection.endpoint, AbstractConnection.CONNECTION_TYPE)
+        )
         ip, port = socket_connection.endpoint
         connection = None
         if self.connection_exists(ip, port):
@@ -306,8 +310,11 @@ class AbstractNode:
         Queues a connection up for the event loop to open a socket for.
         """
         peer_info = ConnectionPeerInfo(IpEndpoint(ip, port), connection_type)
-        logger.trace("Enqueuing connection: {}.", peer_info)
-        self.pending_connection_requests.add(peer_info)
+        if peer_info in self.pending_connection_attempts:
+            logger.debug("Not adding {}, waiting until connection attempt to complete", peer_info)
+        else:
+            logger.trace("Enqueuing connection: {}.", peer_info)
+            self.pending_connection_requests.add(peer_info)
 
     def dequeue_connection_requests(self) -> Optional[Set[ConnectionPeerInfo]]:
         """
@@ -316,6 +323,7 @@ class AbstractNode:
         if self.pending_connection_requests:
             pending_connection_requests = self.pending_connection_requests
             self.pending_connection_requests = set()
+            self.pending_connection_attempts.update(pending_connection_requests)
             return pending_connection_requests
         else:
             return None
@@ -398,6 +406,7 @@ class AbstractNode:
         pass
 
     def handle_connection_closed(self, should_retry: bool, peer_info: ConnectionPeerInfo) -> None:
+        self.pending_connection_attempts.discard(peer_info)
         peer_ip, peer_port = peer_info.endpoint
         connection_type = peer_info.connection_type
         if should_retry and self.continue_retrying_connection(peer_ip, peer_port, connection_type):
