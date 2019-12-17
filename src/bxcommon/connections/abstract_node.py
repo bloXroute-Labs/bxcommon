@@ -169,8 +169,6 @@ class AbstractNode:
         if connection is not None:
             connection.state |= ConnectionState.INITIALIZED
             logger.debug("Successfully initialized connection: {}", connection)
-            logger.debug("Connection initialized: {}", connection)
-            connection.state |= ConnectionState.INITIALIZED
 
         return connection
 

@@ -211,6 +211,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.CONNECTION_TYPE = connection_type  # pyre-ignore
         self.account_id = account_id
         self._is_authenticated = True
+        self.on_connection_established()
 
     def _create_txs_service_msg(self, network_num: int, tx_service_snap: List[Sha256Hash]) -> List[TxContentShortIds]:
         txs_content_short_ids: List[TxContentShortIds] = []
