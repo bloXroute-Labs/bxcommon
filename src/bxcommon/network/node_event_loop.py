@@ -82,12 +82,8 @@ class NodeEventLoop:
                 server.close()
 
     async def _process_new_connections_requests(self):
-        peer_info = self._node.pop_next_connection_request()
-        peers_info = []
-        while peer_info is not None:
-            peers_info.append(peer_info)
-            peer_info = self._node.pop_next_connection_request()
-        if peers_info:
+        peers_info = self._node.dequeue_connection_requests()
+        if peers_info is not None:
             await asyncio.gather(*self._gather_connections(iter(peers_info)))
         else:
             await asyncio.sleep(constants.MAX_EVENT_LOOP_TIMEOUT)
@@ -136,7 +132,7 @@ class NodeEventLoop:
                 ))
             else:
                 conn_task = loop.create_task(loop.create_datagram_endpoint(
-                    lambda: SocketConnectionProtocol(self._node, target_endpoint, is_ssl=True),
+                    lambda: SocketConnectionProtocol(self._node, target_endpoint, is_ssl=False),
                     remote_addr=(target_endpoint.ip_address, target_endpoint.port),
                     family=socket.AF_INET
                 ))

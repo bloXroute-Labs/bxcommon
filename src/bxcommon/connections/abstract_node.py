@@ -61,7 +61,7 @@ class AbstractNode:
 
         self.set_node_config_opts_from_sdn(opts)
         self.opts = opts
-        self.connection_queue: Deque[ConnectionPeerInfo] = deque()
+        self.pending_connection_requests: Set[ConnectionPeerInfo] = set()
         self.outbound_peers: Set[OutboundPeerModel] = opts.outbound_peers.copy()
 
         self.connection_pool = ConnectionPool()
@@ -307,16 +307,18 @@ class AbstractNode:
         """
         peer_info = ConnectionPeerInfo(IpEndpoint(ip, port), connection_type)
         logger.trace("Enqueuing connection: {}.", peer_info)
-        self.connection_queue.append(peer_info)
+        self.pending_connection_requests.add(peer_info)
 
-    def pop_next_connection_request(self) -> Optional[ConnectionPeerInfo]:
+    def dequeue_connection_requests(self) -> Optional[Set[ConnectionPeerInfo]]:
         """
-        Returns the next connection address for the event loop to initiate a socket connection to.
+        Returns the pending connection requests for the event loop to initiate a socket connection to.
         """
-        if self.connection_queue:
-            return self.connection_queue.popleft()
-
-        return
+        if self.pending_connection_requests:
+            pending_connection_requests = self.pending_connection_requests
+            self.pending_connection_requests = set()
+            return pending_connection_requests
+        else:
+            return None
 
     def continue_retrying_connection(self, ip: str, port: int, connection_type: ConnectionType) -> bool:
         """

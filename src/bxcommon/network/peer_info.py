@@ -14,4 +14,7 @@ class ConnectionPeerInfo(NamedTuple):
         return f"{self.endpoint} [{self.connection_type.name}]"
 
     def __eq__(self, other: "ConnectionPeerInfo") -> bool:
-        return self.endpoint == other.endpoint and self.connection_type == other.connection_type
+        return self.endpoint == other.endpoint
+
+    def __hash__(self):
+        return hash(self.endpoint)

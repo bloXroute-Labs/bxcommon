@@ -154,17 +154,31 @@ class AbstractNodeTest(AbstractTestCase):
         self.connection.dispose.assert_called_once()
 
     def test_enqueue_connection(self):
-        self.assertNotIn((self.ip, self.port), self.node.connection_queue)
+
+        self.assertNotIn(
+            ConnectionPeerInfo(IpEndpoint(self.ip, self.port), ConnectionType.RELAY_BLOCK),
+            self.node.pending_connection_requests
+        )
         self.node.enqueue_connection(self.ip, self.port, ConnectionType.GATEWAY)
         self.assertIn(
-            ConnectionPeerInfo(IpEndpoint(self.ip, self.port), ConnectionType.GATEWAY), self.node.connection_queue
+            ConnectionPeerInfo(IpEndpoint(self.ip, self.port), ConnectionType.GATEWAY),
+            self.node.pending_connection_requests
         )
 
-    def test_pop_next_connection_address(self):
-        self.assertIsNone(self.node.pop_next_connection_request())
-        self.node.connection_queue.append((self.ip, self.port))
-        self.assertEqual((self.ip, self.port), self.node.pop_next_connection_request())
-        self.assertIsNone(self.node.pop_next_connection_request())
+    def test_dequeue_connection_requests(self):
+        self.assertIsNone(self.node.dequeue_connection_requests())
+        self.node.pending_connection_requests.add(
+            ConnectionPeerInfo(IpEndpoint(self.ip, self.port), ConnectionType.RELAY_BLOCK)
+        )
+        self.node.pending_connection_requests.add(
+            ConnectionPeerInfo(IpEndpoint(self.ip, self.port), ConnectionType.RELAY_TRANSACTION)
+        )
+        pending_connection_requests = self.node.dequeue_connection_requests()
+        self.assertEqual(1, len(pending_connection_requests))
+        peer_info = next(iter(pending_connection_requests))
+        self.assertEqual(IpEndpoint(self.ip, self.port), peer_info.endpoint)
+        self.assertEqual(ConnectionType.RELAY_BLOCK, peer_info.connection_type)
+        self.assertIsNone(self.node.dequeue_connection_requests())
 
     def test_connection_timeout_established(self):
         self.connection.state = ConnectionState.ESTABLISHED
@@ -214,7 +228,8 @@ class AbstractNodeTest(AbstractTestCase):
     def test_retry_init_client_socket(self):
         self.node._retry_init_client_socket(self.ip, self.port, ConnectionType.RELAY_ALL)
         self.assertIn(
-            ConnectionPeerInfo(IpEndpoint(self.ip, self.port), ConnectionType.RELAY_ALL), self.node.connection_queue
+            ConnectionPeerInfo(IpEndpoint(self.ip, self.port), ConnectionType.RELAY_ALL),
+            self.node.pending_connection_requests
         )
         self.assertEqual(1, self.node.num_retries_by_ip[(self.ip, self.port)])
 
