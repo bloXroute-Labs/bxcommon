@@ -3,7 +3,7 @@ import signal
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from collections import defaultdict, deque
-from typing import List, Optional, Tuple, Dict, Deque, NamedTuple, Union
+from typing import List, Optional, Tuple, Dict, Deque, NamedTuple, Union, Set
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
@@ -28,6 +28,7 @@ from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
+from bxcommon.models.outbound_peer_model import OutboundPeerModel
 
 from bxutils import logging
 from bxutils.exceptions.connection_authentication_error import ConnectionAuthenticationError
@@ -61,7 +62,7 @@ class AbstractNode:
         self.set_node_config_opts_from_sdn(opts)
         self.opts = opts
         self.connection_queue: Deque[ConnectionPeerInfo] = deque()
-        self.outbound_peers = opts.outbound_peers[:]
+        self.outbound_peers: Set[OutboundPeerModel] = opts.outbound_peers.copy()
 
         self.connection_pool = ConnectionPool()
         self.should_force_exit = False
@@ -186,7 +187,7 @@ class AbstractNode:
                         "are correct!", conn.peer_ip, conn.peer_port)
         self._destroy_conn(conn)
 
-    def on_updated_peers(self, outbound_peer_models):
+    def on_updated_peers(self, outbound_peer_models: Set[OutboundPeerModel]):
         if not outbound_peer_models:
             logger.debug("Got peer update with no peers.")
             return
@@ -196,12 +197,9 @@ class AbstractNode:
         # Remove peers not in updated list or from command-line args.
         remove_peers = []
         old_peers = self.outbound_peers
-        for old_peer in old_peers:
-            if not (any(old_peer.ip == fixed_peer.ip and old_peer.port == fixed_peer.port
-                        for fixed_peer in self.opts.outbound_peers)
-                    or any(new_peer.ip == old_peer.ip and new_peer.port == old_peer.port
-                           for new_peer in outbound_peer_models)):
-                remove_peers.append(old_peer)
+
+        # TODO: remove casting to set once the type of outbound peer model is verified globally
+        remove_peers = set(old_peers) - set(outbound_peer_models) - set(self.opts.outbound_peers)
 
         for rem_peer in remove_peers:
             if self.connection_pool.has_connection(rem_peer.ip, rem_peer.port):

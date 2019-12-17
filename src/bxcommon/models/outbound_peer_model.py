@@ -27,7 +27,7 @@ class OutboundPeerModel:
         self.attributes = attributes
 
     def __str__(self):
-        return "({}, {}, {}, {}, {})".format(self.ip, self.port, self.node_id,
+        return "({}, {}, {}, {}, {}, {})".format(self.node_type, self.ip, self.port, self.node_id,
                                                  self.is_internal_gateway, self.attributes)
 
     def __repr__(self):
@@ -38,4 +38,4 @@ class OutboundPeerModel:
                and other.node_id == self.node_id and other.is_internal_gateway == self.is_internal_gateway
 
     def __hash__(self):
-        return hash(self.__repr__())
+        return hash(self.node_id)
