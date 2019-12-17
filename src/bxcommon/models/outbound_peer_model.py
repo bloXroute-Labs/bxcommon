@@ -33,9 +33,9 @@ class OutboundPeerModel:
     def __repr__(self):
         return "OutboundPeerModel" + self.__str__()
 
-    def __eq__(self, other):
-        return isinstance(other, OutboundPeerModel) and other.ip == self.ip and other.port == self.port \
-               and other.node_id == self.node_id and other.is_internal_gateway == self.is_internal_gateway
+    def __eq__(self, other) -> bool:
+        return isinstance(other, OutboundPeerModel) and other.node_id == self.node_id and other.port == self.port and\
+               other.ip == self.ip
 
     def __hash__(self):
-        return hash(self.node_id)
+        return hash("{}{}{}".format(self.node_id, self.ip, self.port))

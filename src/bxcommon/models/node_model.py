@@ -6,7 +6,7 @@ from bxcommon.models.node_type import NodeType
 from bxcommon.models.platform_provider import PlatformProvider
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class NodeModel:
     node_type: NodeType = None
     external_port: int = 0
@@ -95,3 +95,9 @@ class NodeModel:
             self.continent = None
         if self.country:
             self.country = self.country[:constants.MAX_COUNTRY_LENGTH]
+
+    def __eq__(self, other) -> bool:
+        return isinstance(other, NodeModel) and other.node_id == self.node_id
+
+    def __hash__(self):
+        return hash(self.node_id)
