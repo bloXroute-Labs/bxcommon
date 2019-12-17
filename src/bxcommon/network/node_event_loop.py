@@ -142,7 +142,11 @@ class NodeEventLoop:
                 ))
             await asyncio.wait_for(conn_task, constants.CONNECTION_TIMEOUT)
         except (TimeoutError, asyncio.TimeoutError, CancelledError, ConnectionRefusedError) as e:
-            logger.info("Failed to connect to: {}, {}.", peer_info, e)
+            err = str(e)
+            if not err:
+                err = repr(e)
+
+            logger.info("Failed to connect to: {}, {}.", peer_info, err)
             self._node.handle_connection_closed(True, peer_info)
 
     def _iter_outbound_peers(self) -> Generator[ConnectionPeerInfo, None, None]:
