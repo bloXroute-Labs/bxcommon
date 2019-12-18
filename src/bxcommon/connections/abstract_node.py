@@ -112,7 +112,7 @@ class AbstractNode:
         self._transaction_sync_timeout_alarm_id = self.alarm_queue.register_alarm(
             constants.TX_SERVICE_CHECK_NETWORKS_SYNCED_S, self._transaction_sync_timeout)
 
-        self.requester = ThreadedRequestService(self.alarm_queue, constants.THREADED_STAT_SLEEP_INTERVAL)
+        self.requester = ThreadedRequestService(self.alarm_queue, constants.THREADED_STATS_SLEEP_INTERVAL_S)
 
     def get_sdn_address(self):
         """
@@ -197,7 +197,6 @@ class AbstractNode:
         logger.debug("Processing updated outbound peers: {}.", outbound_peer_models)
 
         # Remove peers not in updated list or from command-line args.
-        remove_peers = []
         old_peers = self.outbound_peers
 
         # TODO: remove casting to set once the type of outbound peer model is verified globally

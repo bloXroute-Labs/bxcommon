@@ -1,6 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor, Future, CancelledError
 from typing import Callable, Any
+
 from bxutils import logging
+
+from bxcommon import constants
 from bxcommon.utils.alarm_queue import AlarmQueue
 
 logger = logging.get_logger(__name__)
@@ -22,7 +25,7 @@ class ThreadedRequestService:
             cls._instance = super(ThreadedRequestService, cls).__new__(cls)
             cls._instance.logger = logger
             cls._instance.alarm_queue = alarm_queue
-            cls._instance.thread_pool = ThreadPoolExecutor()
+            cls._instance.thread_pool = ThreadPoolExecutor(max_workers=constants.THREAD_POOL_WORKER_COUNT)
             cls._instance.timeout = timeout
         return cls._instance
 

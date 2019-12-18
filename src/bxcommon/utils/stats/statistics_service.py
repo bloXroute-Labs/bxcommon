@@ -124,8 +124,8 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
         with self._lock:
             alive = self._alive
         while sleep_time > 0 and alive:
-            time.sleep(constants.THREADED_STAT_SLEEP_INTERVAL)
-            sleep_time -= constants.THREADED_STAT_SLEEP_INTERVAL
+            time.sleep(constants.THREADED_STATS_SLEEP_INTERVAL_S)
+            sleep_time -= constants.THREADED_STATS_SLEEP_INTERVAL_S
             with self._lock:
                 alive = self._alive
         else:

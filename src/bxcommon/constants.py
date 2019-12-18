@@ -1,4 +1,5 @@
 import platform
+import os
 import socket
 
 from bxcommon.utils import crypto
@@ -145,7 +146,9 @@ THROUGHPUT_STATS_LOOK_BACK = 5
 INFO_STATS_INTERVAL_S = 60 * 60
 
 # how often the threaded stats services check for termination
-THREADED_STAT_SLEEP_INTERVAL = 1
+THREADED_STATS_SLEEP_INTERVAL_S = 1
+
+THREAD_POOL_WORKER_COUNT = (os.cpu_count() or 1) * 5
 
 # TODO: turn this number up to 60 minutes after we've done some testing to ensure that this is ok
 MEMORY_STATS_INTERVAL_S = 5 * 60

@@ -1,15 +1,15 @@
 import status
+import json
+from typing import Optional, Dict, Any, Union, List
 from urllib3 import Retry, HTTPResponse
 from urllib3.exceptions import HTTPError
 from urllib3.poolmanager import PoolManager
 from urllib3.util import parse_url
 from ssl import SSLContext
-from typing import Optional, Dict, Any, Union, List
 
 from bxcommon.utils import json_utils
 from bxutils import logging
 from bxcommon import constants
-import json
 
 # recursive types are not supported: https://github.com/python/typing/issues/182
 
@@ -31,6 +31,7 @@ def reset_pool(ssl_context: Optional[SSLContext] = None):
     global http_pool_manager
     url = parse_url(_url)
     http_pool_manager = PoolManager(
+        num_pools=constants.THREAD_POOL_WORKER_COUNT,
         host=url.host,
         port=url.port,
         retries=Retry(
