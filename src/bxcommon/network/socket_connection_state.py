@@ -6,3 +6,4 @@ class SocketConnectionState(Flag):
     INITIALIZED = auto()
     MARK_FOR_CLOSE = auto()
     DO_NOT_RETRY = auto()
+    HALT_RECEIVE = auto()

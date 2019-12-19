@@ -45,7 +45,8 @@ class SocketConnectionProtocol(Protocol):
         return f"{self.__class__.__name__} <{self.endpoint}, {self.direction.name}>"
 
     def data_received(self, data: bytes) -> None:
-        self._node.on_bytes_received(self.file_no, data)
+        if self.is_receivable():
+            self._node.on_bytes_received(self.file_no, data)
 
     def connection_made(self, transport: BaseTransport) -> None:
         self.transport = typing.cast(Transport, transport)
@@ -64,7 +65,12 @@ class SocketConnectionProtocol(Protocol):
         if not self._should_retry:
             self.state |= SocketConnectionState.DO_NOT_RETRY
         if exc is not None:
-            logger.info("[{}] - lost connection due to an error: {}, closing connection.", self, exc)
+            logger.info(
+                "[{}] - lost connection due to an error: {}, closing connection, should_retry: {}.",
+                self,
+                exc,
+                self._should_retry
+            )
         else:
             logger.debug("[{}] - lost connection with peer, should_retry: {}.", self, self._should_retry)
         self._node.on_connection_closed(self.file_no)
@@ -79,7 +85,7 @@ class SocketConnectionProtocol(Protocol):
         logger.trace("[{}] - resumed writing.", self)
 
     def send(self) -> None:
-        while self.state & SocketConnectionState.INITIALIZED and self.is_alive() and self.can_send:
+        while self.is_sendable():
             data = self._node.get_bytes_to_send(self.file_no)
             if not data:
                 break
@@ -90,23 +96,30 @@ class SocketConnectionProtocol(Protocol):
     def pause_reading(self) -> None:
         if self.is_alive():
             assert self.transport is not None, "Connection is broken!"
-            self.transport.pause_reading()
+            self.state |= SocketConnectionState.HALT_RECEIVE
             logger.trace("[{}] - paused reading.", self)
 
     def resume_reading(self) -> None:
         if self.is_alive():
             assert self.transport is not None, "Connection is broken!"
-            self.transport.resume_reading()
+            self.state &= ~SocketConnectionState.HALT_RECEIVE
             logger.trace("[{}] - resumed writing.", self)
 
     def mark_for_close(self, should_retry: bool = True) -> None:
+        self.state |= SocketConnectionState.MARK_FOR_CLOSE
         self._should_retry = should_retry
         assert self.transport is not None, "Connection is broken!"
         self.transport.close()
         logger.debug("[{}] - marked for close, retrying: {}.", self, should_retry)
 
     def is_alive(self) -> bool:
-        return not self.state & SocketConnectionState.MARK_FOR_CLOSE
+        return SocketConnectionState.MARK_FOR_CLOSE not in self.state
+
+    def is_receivable(self) -> bool:
+        return self.is_alive() and SocketConnectionState.HALT_RECEIVE not in self.state
+
+    def is_sendable(self) -> bool:
+        return self.is_alive() and SocketConnectionState.INITIALIZED in self.state and self.can_send
 
     def get_peer_certificate(self) -> Certificate:
         assert self.transport is not None, "Connection is broken!"
