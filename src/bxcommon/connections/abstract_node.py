@@ -432,7 +432,7 @@ class AbstractNode:
             return
         assert self.NODE_TYPE is not None
         sock = connection.socket_connection
-        if sock.is_ssl and isinstance(connection, InternalNodeConnection):
+        if sock.is_ssl:
             cert = sock.get_peer_certificate()
             node_type = extensions_factory.get_node_type(cert)
             try:
@@ -447,6 +447,9 @@ class AbstractNode:
             account_id = extensions_factory.get_account_id(cert)
             self.connection_pool.update_connection_type(connection, connection_type)
             connection.on_connection_authenticated(peer_id, connection_type, account_id)
+            logger.debug("Connection: {} was successfully authenticated.", connection)
+        else:
+            logger.debug("Skipping authentication on connection: {} since it's not using SSL.", connection)
 
     def _destroy_conn(self, conn: AbstractConnection):
         """

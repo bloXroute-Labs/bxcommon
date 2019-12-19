@@ -94,6 +94,8 @@ class AbstractConnection(Generic[Node]):
         self.peer_model: Optional[OutboundPeerModel] = None
 
         self.pong_timeout_alarm_id = None
+        self._is_authenticated = False
+        self.account_id: Optional[str] = None
 
         self.log_debug("Connection initialized.")
 
@@ -516,6 +518,15 @@ class AbstractConnection(Generic[Node]):
         if self.pong_timeout_alarm_id is not None:
             self.node.alarm_queue.unregister_alarm(self.pong_timeout_alarm_id)
             self.pong_timeout_alarm_id = None
+
+    def on_connection_authenticated(
+            self, peer_id: str, connection_type: ConnectionType, account_id: Optional[str]
+    ) -> None:
+        self.peer_id = peer_id
+        self.CONNECTION_TYPE = connection_type  # pyre-ignore
+        self.account_id = account_id
+        self._is_authenticated = True
+        self.on_connection_established()
 
     def _pong_msg_timeout(self):
         self.log_error("Connection appears to be broken. Peer did not reply to PING message within allocated time. "

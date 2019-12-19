@@ -1,5 +1,6 @@
 import asyncio
 import socket
+import functools
 from asyncio import CancelledError, Future
 from asyncio.events import AbstractServer
 from ssl import SSLContext
@@ -99,9 +100,8 @@ class NodeEventLoop:
         server_futures = []
         for endpoint in endpoints:
             ssl_ctx = self._get_ssl_context(endpoint)
-            is_ssl = ssl_ctx is not None
             server_future = loop.create_server(
-                lambda: SocketConnectionProtocol(self._node, is_ssl=is_ssl),
+                functools.partial(self._protocol_factory, endpoint, True),
                 endpoint.ip_address,
                 endpoint.port,
                 family=socket.AF_INET,
@@ -110,6 +110,7 @@ class NodeEventLoop:
                 ssl=ssl_ctx
             )
             server_futures.append(server_future)
+        logger.debug("Starting listening on: {}.", endpoints)
         return await asyncio.gather(*server_futures)
 
     async def _connect_to_target(
@@ -122,9 +123,8 @@ class NodeEventLoop:
         try:
             if peer_info.transport_protocol == TransportLayerProtocol.TCP:
                 ssl_ctx = self._get_ssl_context(target_endpoint)
-                is_ssl = ssl_ctx is not None
                 conn_task = loop.create_task(loop.create_connection(
-                    lambda: SocketConnectionProtocol(self._node, target_endpoint, is_ssl=is_ssl),
+                    functools.partial(self._protocol_factory, target_endpoint),
                     target_endpoint.ip_address,
                     target_endpoint.port,
                     family=socket.AF_INET,
@@ -137,7 +137,7 @@ class NodeEventLoop:
                     family=socket.AF_INET
                 ))
             await asyncio.wait_for(conn_task, constants.CONNECTION_TIMEOUT)
-        except (TimeoutError, asyncio.TimeoutError, CancelledError, ConnectionRefusedError) as e:
+        except (TimeoutError, asyncio.TimeoutError, CancelledError, ConnectionRefusedError, ConnectionResetError) as e:
             err = str(e)
             if not err:
                 err = repr(e)
@@ -175,3 +175,12 @@ class NodeEventLoop:
         else:
             timeout = min(timeout, constants.MAX_EVENT_LOOP_TIMEOUT)
         await asyncio.sleep(timeout)
+
+    def _protocol_factory(self, endpoint: IpEndpoint, is_server: bool = False) -> SocketConnectionProtocol:
+        if is_server:
+            target_endpoint = None
+        else:
+            target_endpoint = endpoint
+        return SocketConnectionProtocol(
+            self._node, target_endpoint, is_ssl=endpoint.port in utils_constants.SSL_PORT_RANGE
+        )
