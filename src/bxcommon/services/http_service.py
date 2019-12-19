@@ -18,31 +18,18 @@ jsonT = Union[Dict[str, Any], List[Any]]
 logger = logging.get_logger(__name__)
 
 _url = constants.SDN_ROOT_URL
-http_pool_manager: PoolManager = PoolManager()
+_ssl_context: Optional[SSLContext] = None
 
 
 def set_root_url(sdn_url: str, ssl_context: Optional[SSLContext] = None):
     global _url
     _url = sdn_url
-    reset_pool(ssl_context)
+    update_http_ssl_context(ssl_context)
 
 
-def reset_pool(ssl_context: Optional[SSLContext] = None):
-    global http_pool_manager
-    url = parse_url(_url)
-    http_pool_manager = PoolManager(
-        num_pools=constants.THREAD_POOL_WORKER_COUNT,
-        host=url.host,
-        port=url.port,
-        retries=Retry(
-            connect=constants.HTTP_REQUEST_RETRIES_COUNT,
-            read=constants.HTTP_REQUEST_RETRIES_COUNT,
-            redirect=constants.HTTP_REQUEST_RETRIES_COUNT,
-            backoff_factor=constants.HTTP_REQUEST_BACKOFF_FACTOR
-        ),
-        ssl_context=ssl_context,
-        assert_hostname=False
-    )
+def update_http_ssl_context(ssl_context: Optional[SSLContext] = None):
+    global _ssl_context
+    _ssl_context = ssl_context
 
 
 def post_json(endpoint: str, payload=None) -> Optional[jsonT]:
@@ -80,6 +67,20 @@ def _http_request(method: str,
                   endpoint: str,
                   **kwargs) -> Optional[jsonT]:
     url = build_url(endpoint)
+    _url = parse_url(url)
+    http_pool_manager: PoolManager = PoolManager(
+        num_pools=constants.HTTP_POOL_MANAGER_COUNT,
+        host=_url.host,
+        port=_url.port,
+        retries=Retry(
+            connect=constants.HTTP_REQUEST_RETRIES_COUNT,
+            read=constants.HTTP_REQUEST_RETRIES_COUNT,
+            redirect=constants.HTTP_REQUEST_RETRIES_COUNT,
+            backoff_factor=constants.HTTP_REQUEST_BACKOFF_FACTOR
+        ),
+        ssl_context=_ssl_context,
+        assert_hostname=False
+    )
     try:
         logger.trace("HTTP {0} to {1}", method, url)
         response = http_pool_manager.request(

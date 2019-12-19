@@ -143,4 +143,4 @@ def register_node(node_model: NodeModel) -> NodeModel:
 
 
 def reset_pool(ssl_context: SSLContext):
-    http_service.reset_pool(ssl_context)
+    http_service.update_http_ssl_context(ssl_context)
