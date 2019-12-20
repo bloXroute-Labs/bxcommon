@@ -330,7 +330,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
             "is_consensus": True,
             "sync_port": 10001,
             "http_info_port": 10002,
-            "cons_port": 10003,
+            "consensus_port": 10003,
             "cap": bytes(32),
             "blockchain_nonce": 0,
             "relay": True,
