@@ -2,11 +2,13 @@ import time
 from abc import ABCMeta
 from collections import defaultdict
 from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Optional, Union
+from asyncio import Future
+import asyncio
 
 from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
-from bxcommon.exceptions import PayloadLenError, UnauthorizedMessageError
+from bxcommon.exceptions import PayloadLenError, UnauthorizedMessageError, ConnectionStateError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
@@ -96,6 +98,8 @@ class AbstractConnection(Generic[Node]):
         self.pong_timeout_alarm_id = None
         self._is_authenticated = False
         self.account_id: Optional[str] = None
+
+        self._close_waiter: Optional[Future] = None
 
         self.log_debug("Connection initialized.")
 
@@ -443,6 +447,9 @@ class AbstractConnection(Generic[Node]):
         Marks a connection for close, so AbstractNode can dispose of this class.
         Use this where possible for a clean shutdown.
         """
+        loop = asyncio.get_event_loop()
+        self._close_waiter = loop.create_future()
+
         if should_retry is None:
             should_retry = self.from_me
 
@@ -453,7 +460,8 @@ class AbstractConnection(Generic[Node]):
         """
         Performs any need operations after connection object has been discarded by the AbstractNode.
         """
-        pass
+        if self._close_waiter is not None:
+            self._close_waiter.set_result(True)
 
     def clean_up_current_msg(self, payload_len: int, msg_is_in_input_buffer: bool) -> None:
         """
@@ -527,6 +535,16 @@ class AbstractConnection(Generic[Node]):
         self.account_id = account_id
         self._is_authenticated = True
         self.on_connection_established()
+
+    async def wait_closed(self):
+        if self._close_waiter is not None:
+            await self._close_waiter
+            self._close_waiter = None
+        else:
+            await asyncio.sleep(0)
+
+        if self.is_alive():
+            raise ConnectionStateError("Connection is still alive after closed", self)
 
     def _pong_msg_timeout(self):
         self.log_error("Connection appears to be broken. Peer did not reply to PING message within allocated time. "

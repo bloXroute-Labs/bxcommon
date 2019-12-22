@@ -49,7 +49,7 @@ class NodeEventLoop:
             await self.close()
 
     async def close(self) -> None:
-        self._node.close()
+        await self._node.close()
 
     def stop(self) -> None:
         self._stop_requested = True

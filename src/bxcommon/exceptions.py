@@ -4,6 +4,10 @@
 #
 # Exceptions
 #
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from bxcommon.connections.abstract_connection import AbstractConnection
 
 
 class ParseError(Exception):
@@ -42,3 +46,9 @@ class TerminationError(Exception):
 
 class DecryptionError(Exception):
     pass
+
+
+class ConnectionStateError(Exception):
+    def __init__(self, msg: str, conn: "AbstractConnection"):
+        self.msg = msg
+        self.conn = conn

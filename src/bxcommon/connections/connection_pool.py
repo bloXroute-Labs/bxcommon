@@ -166,6 +166,9 @@ class ConnectionPool:
             if conn is not None:
                 yield fileno, conn
 
+    def __repr__(self) -> str:
+        return repr(list(self.by_ipport.values()))
+
     def __iter__(self):
         """
         Iterates through all of the connection objects in this connection pool.

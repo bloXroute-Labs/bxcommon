@@ -2,6 +2,7 @@ from typing import Optional, List
 from mock import patch, MagicMock
 
 from bxcommon.models.node_type import NodeType
+from bxcommon.test_utils.helpers import async_test
 from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
@@ -146,10 +147,11 @@ class AbstractNodeTest(AbstractTestCase):
         self.node.on_bytes_sent(self.fileno, advance_by)
         self.assertEqual(advance_by, self.connection.outputbuf.index)
 
-    def test_close(self):
+    @async_test
+    async def test_close(self):
         self.node.connection_pool.add(self.fileno, self.ip, self.port, self.connection)
         self.assertIn(self.connection, self.node.connection_pool.by_fileno)
-        self.node.close()
+        await self.node.close()
         self.assertNotIn(self.connection, self.node.connection_pool.by_fileno)
         self.connection.dispose.assert_called_once()
 

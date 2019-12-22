@@ -281,12 +281,12 @@ class AbstractNode:
         """
         return self.should_force_exit
 
-    def close(self):
+    async def close(self):
         logger.error("Node is closing! Closing everything.")
-        self.close_all_connections()
+        await self.close_all_connections()
         self.cleanup_memory_stats_logging()
 
-    def close_all_connections(self):
+    async def close_all_connections(self):
         """
         Closes all connections from the node
         """
