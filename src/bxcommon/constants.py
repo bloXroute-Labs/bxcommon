@@ -237,7 +237,7 @@ TRANSACTION_SERVICE_TRANSACTIONS_HISTOGRAM_BUCKETS = 36
 # https://urllib3.readthedocs.io/en/latest/reference/urllib3.util.html#module-urllib3.util.retry
 HTTP_REQUEST_RETRIES_COUNT: int = 3
 HTTP_REQUEST_BACKOFF_FACTOR: float = 0.5
-HTTP_REQUEST_TIMEOUT: int = 4
+HTTP_REQUEST_TIMEOUT: int = 5
 HTTP_HEADERS = {"Content-Type": "application/json"}
 
 MAX_EVENT_LOOP_TIMEOUT: float = 0.05
