@@ -31,7 +31,7 @@ class NodeModel:
     sid_end: int = None
 
     sid_expire_time: int = None
-    last_pong_time: int = 0
+    last_pong_time: float = 0
     is_gateway_miner: bool = False
     is_internal_gateway: bool = False
 
