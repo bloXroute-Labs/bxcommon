@@ -1,11 +1,10 @@
 import time
 from abc import ABCMeta
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection, Node
 from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.blocks_short_ids_serializer import BlockShortIds
@@ -56,6 +55,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
         self.can_send_pings = True
         self.ping_message_timestamps = ExpiringDict(self.node.alarm_queue, constants.REQUEST_EXPIRATION_TIME)
+        self._sync_ping_latencies: Dict[int, Optional[float]] = {}
+        self._nonce_to_network_num: Dict[int, int] = {}
         self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)
 
     def disable_buffering(self):
@@ -158,14 +159,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         """
         Send a ping (and reschedule if called from alarm queue)
         """
-        if self.can_send_pings and self.is_alive():
-            nonce = nonce_generator.get_nonce()
-            msg = PingMessage(nonce=nonce)
-            self.enqueue_msg(msg)
-            self.ping_message_timestamps.add(nonce, time.time())
-
-            self.schedule_pong_timeout()
-
+        if self._send_ping() is not None:
             return self.ping_interval_s
         return constants.CANCEL_ALARMS
 
@@ -178,6 +172,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
         if nonce in self.ping_message_timestamps.contents:
             request_msg_timestamp = self.ping_message_timestamps.contents[nonce]
             request_response_time = time.time() - request_msg_timestamp
+            if nonce in self._nonce_to_network_num:
+                self._sync_ping_latencies[self._nonce_to_network_num[nonce]] = request_response_time
             self.log_trace("Pong for nonce {} had response time: {}", msg.nonce(), request_response_time)
             hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
         elif nonce is not None:
@@ -233,6 +229,13 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.enqueue_msg(TxServiceSyncReqMessage(network_num))
 
     def send_tx_service_sync_complete(self, network_num: int):
+        if network_num in self._sync_ping_latencies:
+            del self._sync_ping_latencies[network_num]
+        self._nonce_to_network_num = {
+            nonce: other_network_num for nonce,  other_network_num in self._nonce_to_network_num.items()
+            if other_network_num != network_num
+        }
+
         self.enqueue_msg(TxServiceSyncCompleteMessage(network_num))
 
     def send_tx_service_sync_blocks_short_ids(self, network_num: int):
@@ -248,32 +251,63 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
     def send_tx_service_sync_txs(self, network_num: int, tx_service_snap: List[Sha256Hash], duration: float = 0,
                                  msgs_count: int = 0, total_tx_count: int = 0, sending_tx_msgs_start_time: float = 0):
+        sync_ping_latency = self._sync_ping_latencies.get(network_num, 0.0)
         if (time.time() - sending_tx_msgs_start_time) < constants.SENDING_TX_MSGS_TIMEOUT_MS:
-            if tx_service_snap:
+            if tx_service_snap and sync_ping_latency is not None:
                 start = time.time()
                 txs_content_short_ids = self._create_txs_service_msg(network_num, tx_service_snap)
                 self.enqueue_msg(TxServiceSyncTxsMessage(network_num, txs_content_short_ids))
+                nonce = self._send_ping()
+                if nonce is not None:
+                    self._nonce_to_network_num[nonce] = network_num
+                    self._sync_ping_latencies[network_num] = None
                 duration += time.time() - start
                 msgs_count += 1
                 total_tx_count += len(txs_content_short_ids)
             # checks again if tx_snap in case we still have msgs to send, else no need to wait
-            # TX_SERVICE_SYNC_TXS_S seconds
+            # for the next interval.
             if tx_service_snap:
+                if sync_ping_latency is None:
+                    next_interval = constants.TX_SERVICE_SYNC_TXS_S
+                else:
+                    next_interval = max(sync_ping_latency * 0.5, constants.TX_SERVICE_SYNC_TXS_S)
                 self.node.alarm_queue.register_alarm(
-                    constants.TX_SERVICE_SYNC_TXS_S, self.send_tx_service_sync_txs, network_num, tx_service_snap,
+                    next_interval, self.send_tx_service_sync_txs, network_num, tx_service_snap,
                     duration, msgs_count, total_tx_count, sending_tx_msgs_start_time
                 )
             else:  # if all txs were sent, send complete msg
-                self.log_trace("Sending {} transactions and {} messages took {:.3f} seconds.",
-                               total_tx_count, msgs_count, duration)
+                self.log_debug(
+                    "Sending {} transactions and {} messages of network: {} took {:.3f} seconds.",
+                    total_tx_count,
+                    msgs_count,
+                    network_num,
+                    duration
+                )
                 self.send_tx_service_sync_complete(network_num)
         else:  # if time is up - upgrade this node as synced - giving up
-            self.log_trace("Sending {} transactions and {} messages took more than {} seconds. Giving up.",
-                           total_tx_count, msgs_count, constants.SENDING_TX_MSGS_TIMEOUT_MS)
+            self.log_debug(
+                "Sending {} transactions and {} messages of network: {} took more than {} seconds. Giving up.",
+                total_tx_count,
+                msgs_count,
+                network_num,
+                constants.SENDING_TX_MSGS_TIMEOUT_MS
+            )
             self.send_tx_service_sync_complete(network_num)
 
     def msg_tx_service_sync_complete(self, msg: TxServiceSyncCompleteMessage):
         network_num = msg.network_num()
         self.node.last_sync_message_received_by_network.pop(network_num, None)
         self.node.on_fully_updated_tx_service()
+
+    def _send_ping(self) -> Optional[int]:
+        if self.can_send_pings and self.is_alive():
+            nonce = nonce_generator.get_nonce()
+            msg = PingMessage(nonce=nonce)
+            self.enqueue_msg(msg)
+            self.ping_message_timestamps.add(nonce, time.time())
+
+            self.schedule_pong_timeout()
+            return nonce
+        else:
+            return None
 
