@@ -229,7 +229,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
                      parallelism_degree=1, cookie_file_path=COOKIE_FILE_PATH, blockchain_block_hold_timeout_s=30,
                      blockchain_block_recovery_timeout_s=30, stay_alive_duration=30 * 60, source_version="v1.1.1.1",
                      initial_liveliness_check=30, block_interval=600, continent="NA", country="United States",
-                     non_ssl_port: int = 9001, rpc_port: int = 28332,
+                     non_ssl_port: int = 9001, rpc_port: int = 28332, has_fully_updated_tx_service: bool = False,
+                     max_block_interval: int = 10,
                      **kwargs) -> Namespace:
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
@@ -289,14 +290,14 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
             str(parallelism_degree)
         ),
-        "max_block_interval": 10,
+        "max_block_interval": max_block_interval,
         "cookie_file_path": cookie_file_path,
         "config_update_interval": 60,
         "blockchain_message_ttl": 10,
         "remote_blockchain_message_ttl": 10,
         "stay_alive_duration": stay_alive_duration,
         "initial_liveliness_check": initial_liveliness_check,
-        "has_fully_updated_tx_service": False,
+        "has_fully_updated_tx_service": has_fully_updated_tx_service,
         "source_version": source_version,
         "require_blockchain_connection": True,
         "continent": continent,
