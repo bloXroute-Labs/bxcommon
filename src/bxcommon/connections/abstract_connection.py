@@ -23,6 +23,7 @@ from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.stats import hooks
 from bxutils import logging
+from bxutils.exceptions.connection_authentication_error import ConnectionAuthenticationError
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.log_record_type import LogRecordType
 
@@ -550,6 +551,11 @@ class AbstractConnection(Generic[Node]):
 
         if self.is_alive():
             raise ConnectionStateError("Connection is still alive after closed", self)
+
+    def validate_account_id(self, account_id: Optional[str]):
+        if self._is_authenticated and account_id != self.account_id:
+            raise ConnectionAuthenticationError(
+                f"Invalid account id {account_id} is different than connection account id: {self.account_id}")
 
     def _pong_msg_timeout(self):
         self.log_error("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
