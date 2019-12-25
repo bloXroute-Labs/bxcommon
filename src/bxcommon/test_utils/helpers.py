@@ -13,6 +13,7 @@ from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvi
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
 from bxcommon.models.node_type import NodeType
+from bxcommon.models.tx_quota_type_model import TxQuotaType
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
@@ -230,7 +231,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
                      blockchain_block_recovery_timeout_s=30, stay_alive_duration=30 * 60, source_version="v1.1.1.1",
                      initial_liveliness_check=30, block_interval=600, continent="NA", country="United States",
                      non_ssl_port: int = 9001, rpc_port: int = 28332, has_fully_updated_tx_service: bool = False,
-                     max_block_interval: int = 10,
+                     max_block_interval: int = 10, default_tx_quota_type: TxQuotaType = TxQuotaType.FREE_DAILY_QUOTA,
                      **kwargs) -> Namespace:
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
@@ -304,7 +305,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "country": country,
         "non_ssl_port": non_ssl_port,
         "rpc_port": rpc_port,
-        "rpc_host": constants.LOCALHOST
+        "rpc_host": constants.LOCALHOST,
+        "default_tx_quota_type": default_tx_quota_type
     })
 
     if include_default_btc_args:
