@@ -196,6 +196,13 @@ class NodeSSLService:
         logger.debug("{} successfully created SSL context for certificate: {}.", self, self.certificates[cert_type])
         return context
 
+    def get_node_id(self) -> str:
+        cert = self.get_certificate(SSLCertificateType.PRIVATE)
+        node_id = extensions_factory.get_node_id(cert)
+        if node_id is None:
+            raise TypeError(f"Node id is missing in private certificate: {cert}!")
+        return node_id
+
     def _store_cert(self, cert_type: SSLCertificateType, cert: Certificate) -> None:
         if not self._store_local:
             logger.debug("{} skip saving {} to local storage.", self, cert)
