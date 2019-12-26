@@ -555,10 +555,12 @@ class AbstractConnection(Generic[Node]):
         if self.is_alive():
             raise ConnectionStateError("Connection is still alive after closed", self)
 
-    def validate_account_id(self, account_id: Optional[str]):
+    def set_account_id(self, account_id: Optional[str]):
         if self._is_authenticated and account_id != self.account_id:
             raise ConnectionAuthenticationError(
                 f"Invalid account id {account_id} is different than connection account id: {self.account_id}")
+        elif not self._is_authenticated:
+            self.account_id = account_id
 
     def _pong_msg_timeout(self):
         self.log_error("Connection appears to be broken. Peer did not reply to PING message within allocated time. "

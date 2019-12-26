@@ -444,8 +444,8 @@ class AbstractNode:
             if peer_id is None:
                 raise ConnectionAuthenticationError(f"Peer ssl certificate ({cert}) does not contain a node id!")
             account_id = extensions_factory.get_account_id(cert)
-            self.connection_pool.update_connection_type(connection, connection_type)
             connection.on_connection_authenticated(peer_id, connection_type, account_id)
+            self.connection_pool.update_connection_type(connection, connection_type)
             logger.debug("Connection: {} was successfully authenticated.", connection)
         else:
             logger.debug("Skipping authentication on connection: {} since it's not using SSL.", connection)
