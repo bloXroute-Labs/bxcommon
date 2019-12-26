@@ -130,6 +130,9 @@ class AbstractConnection(Generic[Node]):
     def log_error(self, message, *args, **kwargs):
         self._log_message(LogLevel.ERROR, message, *args, **kwargs)
 
+    def log(self, level: LogLevel, message, *args, **kwargs):
+        self._log_message(level, message, *args, **kwargs)
+
     def is_active(self) -> bool:
         """
         Indicates whether the connection is established and ready for normal messages.

@@ -22,6 +22,7 @@ from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.version_message import VersionMessage
+from bxcommon.messages.bloxroute.notification_message import NotificationMessage, NotificationCode
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.helpers import create_input_buffer_with_bytes
@@ -286,3 +287,14 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(test_network_num, tx_message.network_num())
         self.assertEqual(tx_val, tx_message.tx_val())
         self.assertEqual(TxQuotaType.PAID_DAILY_QUOTA, tx_message.quota_type())
+
+    def test_notification_message(self):
+        notification_code = NotificationCode.QUOTA_DEPLETED
+        raw_message = bytes(1 for _ in range(5)).decode()
+
+        notification_message = self.create_message_successfully(
+            NotificationMessage(notification_code, raw_message),
+            NotificationMessage)
+
+        self.assertEqual(notification_code, notification_message.notification_code())
+        self.assertEqual(raw_message, notification_message.raw_message())
