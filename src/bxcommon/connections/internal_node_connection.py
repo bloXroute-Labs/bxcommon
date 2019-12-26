@@ -299,6 +299,10 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.node.last_sync_message_received_by_network.pop(network_num, None)
         self.node.on_fully_updated_tx_service()
 
+    def mark_for_close(self, should_retry: Optional[bool] = None):
+        super(InternalNodeConnection, self).mark_for_close(should_retry)
+        self.cancel_pong_timeout()
+
     def _send_ping(self) -> Optional[int]:
         if self.can_send_pings and self.is_alive():
             nonce = nonce_generator.get_nonce()
