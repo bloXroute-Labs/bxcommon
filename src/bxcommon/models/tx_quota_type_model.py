@@ -8,7 +8,3 @@ class TxQuotaType(SerializableFlag):
 
     def __str__(self):
         return self.name
-
-
-def from_string(quota_type: str) -> TxQuotaType:
-    return TxQuotaType[quota_type.upper()]
