@@ -25,14 +25,14 @@ message_factory_v1 = MessageFactoryV1()
 
 
 class VersionManager(AbstractVersionManager):
-    CURRENT_PROTOCOL_VERSION = 2
+    CURRENT_PROTOCOL_VERSION = 3
     VERSION_MESSAGE_MAIN_LENGTH = VERSIONED_HELLO_MSG_MIN_PAYLOAD_LEN
 
     def __init__(self):
         super(VersionManager, self).__init__()
         self.protocol_to_factory_mapping = {
-            1: message_factory_v1,
-            2: message_factory
+            2: message_factory_v1,
+            3: message_factory
         }
         self.protocol_to_converter_factory_mapping = {}
         self.version_message_command = b"hello"
@@ -50,12 +50,13 @@ class AbstractVersionManagerTest(AbstractTestCase):
         self.assertTrue(self.version_manager.is_protocol_supported(3))
 
     def test_get_message_factory_for_version(self):
-        self.assertEqual(message_factory_v1, self.version_manager.get_message_factory_for_version(1))
-        self.assertEqual(message_factory, self.version_manager.get_message_factory_for_version(2))
+        self.assertEqual(message_factory_v1, self.version_manager.get_message_factory_for_version(2))
+        self.assertEqual(message_factory, self.version_manager.get_message_factory_for_version(3))
+        self.assertEqual(message_factory, self.version_manager.get_message_factory_for_version(4))
         with self.assertRaises(ValueError):
             self.version_manager.get_message_factory_for_version(0)
         with self.assertRaises(NotImplementedError):
-            self.version_manager.get_message_factory_for_version(3)
+            self.version_manager.get_message_factory_for_version(1)
 
     def test_get_connection_protocol_version__wrong_message(self):
         wrong_message = BroadcastMessage(
