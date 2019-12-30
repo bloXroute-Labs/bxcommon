@@ -9,10 +9,10 @@ class NotificationCodeRange(IntEnum):
 
 
 class NotificationCode(IntEnum):
-    QUOTA_DEPLETED = 6400
-    QUOTA_DEPLETED_TX_BLOCKED = 6401
-    QUOTA_DEPLETED_TX_HANDLED_AS_FREE = 6402
-    QUOTA_NOT_SET_TX_HANDLED_AS_FREE = 6403
+    QUOTA_DEPLETED = 4400
+    QUOTA_DEPLETED_TX_BLOCKED = 4401
+    QUOTA_DEPLETED_TX_HANDLED_AS_FREE = 4402
+    QUOTA_NOT_SET_TX_HANDLED_AS_FREE = 4403
 
 # notifications are being formatted according to the provided format string
 # the formatting arguments (list) are as follows
