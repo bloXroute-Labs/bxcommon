@@ -75,6 +75,8 @@ class BlockStatEventType:
     BLOCK_RECOVERY_CANCELED = StatEventTypeSettings("BlockRecoveryCanceled")
     BLOCK_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockSentToBlockchainNode",
                                                           event_logic_flags=StatEventLogicFlags.SUMMARY)
+    BLOCK_HEADER_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockHeaderSentToBlockchainNode",
+                                                                 event_logic_flags=StatEventLogicFlags.SUMMARY)
     BLOCK_IGNORE_SEEN_BY_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockIgnoreSeenByBlockchainNode")
     ENC_BLOCK_KEY_SENT_FROM_GATEWAY_TO_NETWORK = StatEventTypeSettings("EncBlockKeySentFromGatewayToNetwork",
                                                                        event_logic_flags=StatEventLogicFlags.SUMMARY)
