@@ -23,7 +23,7 @@ class MemoryStatsService(ThreadedStatisticsService):
     def __init__(self, interval=0):
         self.sizer_obj = Sizer()
         super(MemoryStatsService, self).__init__("MemoryStats", interval=interval, look_back=5, reset=False,
-                                                 logger=logging.get_logger(LogRecordType.Memory))
+                                                 logger=logging.get_logger(LogRecordType.Memory, __name__))
 
     def set_node(self, node):
         super(MemoryStatsService, self).set_node(node)

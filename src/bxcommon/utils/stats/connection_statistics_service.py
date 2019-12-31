@@ -7,7 +7,7 @@ class _ConnectionStatisticsService(StatisticsEventService):
     def __init__(self):
         super(_ConnectionStatisticsService, self).__init__()
         self.name = "ConnectionState"
-        self.logger = logging.get_logger(LogRecordType.ConnectionState)
+        self.logger = logging.get_logger(LogRecordType.ConnectionState, __name__)
 
 
 connection_stats = _ConnectionStatisticsService()

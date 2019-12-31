@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from bxcommon.connections.abstract_node import AbstractNode
 
 logger = logging.get_logger(__name__)
-memory_logger = logging.get_logger(LogRecordType.BxMemory)
+memory_logger = logging.get_logger(LogRecordType.BxMemory, __name__)
 Node = TypeVar("Node", bound="AbstractNode")
 
 

@@ -105,13 +105,17 @@ def set_level(logger_names: List[Optional[str]], level: LogLevel) -> None:
 
 
 def set_log_levels(log_config: Dict[str, Union[LogLevel, str]]):
-    for log_name, custom_log_level in log_config.items():
-        try:
-            if isinstance(custom_log_level, str):
-                custom_log_level = log_level.from_string(custom_log_level)
-            logging.getLogger(log_name).setLevel(custom_log_level)
-        except (KeyError, AttributeError):
-            logger.error("Invalid Log Level Provided Ignore for path {}: {}", log_name, custom_log_level)
+    all_loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+
+    for logger_instance in all_loggers:
+        for log_name, custom_log_level in log_config.items():
+            if logger_instance.name.endswith(log_name):
+                try:
+                    if isinstance(custom_log_level, str):
+                        custom_log_level = log_level.from_string(custom_log_level)
+                    logging.getLogger(logger_instance.name).setLevel(custom_log_level)
+                except (KeyError, AttributeError):
+                    logger.error("Invalid Log Level Provided Ignore for path {}: {}", log_name, custom_log_level)
 
 
 def set_instance(logger_names: List[Optional[str]], instance: str):

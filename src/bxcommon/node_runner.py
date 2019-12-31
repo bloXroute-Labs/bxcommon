@@ -26,7 +26,7 @@ from bxcommon.connections.abstract_node import AbstractNode
 
 logger = logging.get_logger(__name__)
 
-LOGGER_NAMES = ["bxcommon", "bxutils", "stats", "bx"]
+LOGGER_NAMES = ["bxcommon", "bxutils"]
 THIRD_PARTY_LOGGERS = [LoggerConfig("urllib3", "%", LogLevel.WARNING)]
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())  # pyre-ignore

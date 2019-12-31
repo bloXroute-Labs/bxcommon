@@ -19,7 +19,7 @@ from bxcommon.utils.stats import hooks
 
 import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
-logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup)
+logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
 
 
 class ExtensionTransactionService(TransactionService):

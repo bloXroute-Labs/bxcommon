@@ -9,7 +9,7 @@ from bxutils import logging
 class NodeInfo(StatisticsService):
     def __init__(self, interval=0):
         super(NodeInfo, self).__init__("NodeInfo", interval=interval, look_back=0, reset=False,
-                                       logger=logging.get_logger(LogRecordType.NodeInfo))
+                                       logger=logging.get_logger(LogRecordType.NodeInfo, __name__))
 
     def get_info(self):
         payload = dict(self.node.opts.__dict__)

@@ -36,7 +36,7 @@ from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.extensions import extensions_factory
 
 logger = logging.get_logger(__name__)
-memory_logger = logging.get_logger(LogRecordType.BxMemory)
+memory_logger = logging.get_logger(LogRecordType.BxMemory, __name__)
 
 
 class DisconnectRequest(NamedTuple):

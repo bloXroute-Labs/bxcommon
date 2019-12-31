@@ -20,8 +20,8 @@ from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 
 logger = logging.get_logger(__name__)
-logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup)
-logger_tx_histogram = logging.get_logger(LogRecordType.TransactionHistogram)
+logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
+logger_tx_histogram = logging.get_logger(LogRecordType.TransactionHistogram, __name__)
 
 
 def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash]) -> Sha256Hash:

@@ -10,7 +10,7 @@ from bxcommon.utils.stats.peer_stats import PeerStats
 from bxcommon.utils.stats.statistics_service import StatisticsService, StatsIntervalData
 from bxutils.logging.log_record_type import LogRecordType
 
-logger = logging.get_logger(LogRecordType.Throughput)
+logger = logging.get_logger(LogRecordType.Throughput, __name__)
 
 
 class ThroughputIntervalData(StatsIntervalData):
