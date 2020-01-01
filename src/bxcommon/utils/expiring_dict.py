@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Mapping, Dict
+from typing import TypeVar, Generic, Optional, Dict
 
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.expiration_queue import ExpirationQueue
@@ -36,6 +36,8 @@ class ExpiringDict(Generic[KT, VT]):
         self._expiration_queue.remove_expired(remove_callback=self.remove_item)
         return 0
 
-    def remove_item(self, key):
+    def remove_item(self, key) -> Optional[VT]:
         if key in self.contents:
-            del self.contents[key]
+            return self.contents.pop(key)
+        else:
+            return None
