@@ -15,7 +15,6 @@ from bxcommon.utils.node_start_args import NodeStartArgs
 
 from bxutils import constants as utils_constants
 from bxutils import logging
-from bxutils.common import url_helper
 from bxutils.logging import log_config
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
@@ -235,20 +234,18 @@ def add_argument_parser_common(arg_parser: ArgumentParser):
     )
     arg_parser.add_argument(
         "--ca-cert-url",
-        help="The  URL for retrieving BDN ca certificate data (default: {})".format(
-            utils_constants.DEFAULT_PUBLIC_CA_URL
+        help="The URL for retrieving BDN ca certificate data (default: {})".format(
+            config.get_env_default(NodeStartArgs.CA_CERT_URL)
         ),
-        default=utils_constants.DEFAULT_PUBLIC_CA_URL,
+        default=config.get_env_default(NodeStartArgs.CA_CERT_URL),
         type=str
     )
-    data_dir = config.get_default_data_path()
-    private_ssl_base_url = url_helper.url_join("file:", data_dir)
     arg_parser.add_argument(
         "--private-ssl-base-url",
         help="The base URL for retrieving specific certificate data (default: {})".format(
-            private_ssl_base_url
+            config.get_env_default(NodeStartArgs.PRIVATE_SSL_BASE_URL)
         ),
-        default=private_ssl_base_url,
+        default=config.get_env_default(NodeStartArgs.PRIVATE_SSL_BASE_URL),
         type=str
     )
 
