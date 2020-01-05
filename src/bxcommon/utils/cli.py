@@ -10,8 +10,7 @@ from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_type import NodeType
 from bxcommon.services import http_service
 from bxcommon.services import sdn_http_service
-from bxcommon.utils import config, ip_resolver
-from bxcommon.utils import convert
+from bxcommon.utils import config, ip_resolver, convert, node_cache
 from bxcommon.utils.node_start_args import NodeStartArgs
 
 from bxutils import constants as utils_constants
@@ -292,8 +291,19 @@ def parse_blockchain_opts(opts, node_type: NodeType):
     opts_dict["blockchain_block_hold_timeout_s"] = network_info.block_hold_timeout_s
 
 
+def _set_blockchain_networks_from_cache(opts):
+    cache_info = node_cache.read(opts)
+    if cache_info:
+        opts.blockchain_networks = cache_info.blockchain_network
+    if not opts.blockchain_networks:
+        logger.warning("Cached info for blockchain_networks was empty")
+
+
 def set_blockchain_networks_info(opts):
     opts.blockchain_networks = sdn_http_service.fetch_blockchain_networks()
+    if not opts.blockchain_networks:
+        logger.warning("Empty list for blockchain networks from SDN, trying to obtain info from cache")
+        _set_blockchain_networks_from_cache(opts)
 
 
 def _get_blockchain_network_info(opts) -> BlockchainNetworkModel:

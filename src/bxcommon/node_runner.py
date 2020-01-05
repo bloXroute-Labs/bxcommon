@@ -19,8 +19,7 @@ from bxcommon.models.node_type import NodeType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.network.node_event_loop import NodeEventLoop
 from bxcommon.services import sdn_http_service
-from bxcommon.utils import cli, model_loader
-from bxcommon.utils import config
+from bxcommon.utils import cli, model_loader, config, node_cache
 from bxcommon.exceptions import TerminationError
 from bxcommon.connections.abstract_node import AbstractNode
 
@@ -95,7 +94,16 @@ def _run_node(opts, node_class, node_type, logger_names: Iterable[Optional[str]]
         if node_ssl_service.should_renew_node_certificate():
             temp_node_model.csr = ssl_serializer.serialize_csr(node_ssl_service.create_csr())
 
-        node_model = sdn_http_service.register_node(temp_node_model)
+        try:
+            node_model = sdn_http_service.register_node(temp_node_model)
+        except EnvironmentError as e:
+            logger.info("Unable to contact SDN to register node using {}, attempting to get information from cache", opts.sdn_url)
+            cache_info = node_cache.read(opts)
+            if not cache_info or not cache_info.node_model:
+                logger.fatal("Unable to reach the SDN and no local cache information was found. Unable to start the gateway")
+                exit(1)
+            node_model = cache_info.node_model
+
         if node_model.cert is not None:
             private_cert = ssl_serializer.deserialize_cert(node_model.cert)
             node_ssl_service.blocking_store_node_certificate(private_cert)
