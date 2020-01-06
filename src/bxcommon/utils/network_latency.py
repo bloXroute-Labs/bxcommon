@@ -25,7 +25,7 @@ def get_best_relay_by_ping_latency(relays: List[OutboundPeerModel]) -> OutboundP
     # if best_relay_by_latency's latency is less than RELAY_LATENCY_THRESHOLD_MS, select api's relay
     best_relay_node = relays[0] if best_relay_by_latency.latency < constants.NODE_LATENCY_THRESHOLD_MS else best_relay_by_latency.node
 
-    logger.debug(
+    logger.info(
         "First recommended relay from api is: {} with latency {} ms, "
         "fastest ping latency relay is: {} with latency {} ms, selected relay is: {}",
         relays[0].node_id, "".join([str(relay.latency) for relay in relays_ping_latency if relay.node == relays[0]]),
