@@ -4,7 +4,7 @@ from typing import Optional, Union
 from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.models.tx_quota_type_model import TxQuotaType
+from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.utils.object_hash import Sha256Hash
 
 
@@ -16,7 +16,7 @@ class TxMessage(AbstractBroadcastMessage):
     def __init__(self, message_hash: Optional[Sha256Hash] = None, network_num: Optional[int] = None,
                  source_id: str = "", short_id: int = constants.NULL_TX_SID,
                  tx_val: Union[bytearray, bytes, memoryview, None] = None,
-                 quota_type: Optional[TxQuotaType] = None,
+                 quota_type: Optional[QuotaType] = None,
                  buf: Optional[bytearray] = None):
         self._short_id = None
         self._tx_val: Optional[memoryview] = None
@@ -36,7 +36,7 @@ class TxMessage(AbstractBroadcastMessage):
             off += constants.SID_LEN
 
             if quota_type is None:
-                quota_type = TxQuotaType.FREE_DAILY_QUOTA
+                quota_type = QuotaType.FREE_DAILY_QUOTA
             struct.pack_into("<B", self.buf, off, quota_type.value)
             off += constants.QUOTA_FLAG_LEN
 
@@ -52,13 +52,13 @@ class TxMessage(AbstractBroadcastMessage):
             self._short_id, = struct.unpack_from("<L", self.buf, off)
         return self._short_id
 
-    def quota_type(self) -> TxQuotaType:
+    def quota_type(self) -> QuotaType:
         if self._tx_quota_type is None:
             off = self.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH + constants.SID_LEN - \
                   constants.CONTROL_FLAGS_LEN
 
             tx_quota_type_flag, = struct.unpack_from("<B", self.buf, off)
-            self._tx_quota_type = TxQuotaType(tx_quota_type_flag)
+            self._tx_quota_type = QuotaType(tx_quota_type_flag)
         assert self._tx_quota_type is not None
         return self._tx_quota_type
 

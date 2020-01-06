@@ -26,7 +26,7 @@ from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
-from bxcommon.models.tx_quota_type_model import TxQuotaType
+from bxcommon.models.quota_type_model import QuotaType
 from bxutils import logging
 
 logger = logging.get_logger(__name__)
@@ -195,7 +195,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
             tx_service.set_transaction_contents(tx_hash, tx_content_short_ids.tx_content)
             for short_id, quota_type in zip(tx_content_short_ids.short_ids, tx_content_short_ids.short_id_flags):
                 tx_service.assign_short_id(tx_hash, short_id)
-                if TxQuotaType.PAID_DAILY_QUOTA in quota_type:
+                if QuotaType.PAID_DAILY_QUOTA in quota_type:
                     tx_service.set_short_id_quota_type(short_id, quota_type)
 
     def _create_txs_service_msg(self, network_num: int, tx_service_snap: List[Sha256Hash]) -> List[TxContentShortIds]:

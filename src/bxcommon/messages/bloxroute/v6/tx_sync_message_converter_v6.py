@@ -5,7 +5,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyn
 from bxcommon.messages.bloxroute.v6.tx_service_sync_txs_message_v6 import TxServiceSyncTxsMessageV6, TxContentShortIdsV6
 from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
-from bxcommon.models.tx_quota_type_model import TxQuotaType
+from bxcommon.models.quota_type_model import QuotaType
 
 
 class _TxSyncMessageConverterV6(AbstractMessageConverter):
@@ -43,7 +43,7 @@ class _TxSyncMessageConverterV6(AbstractMessageConverter):
             TxContentShortIds(item.tx_hash,
                               item.tx_content,
                               item.short_ids,
-                              [TxQuotaType.FREE_DAILY_QUOTA for _ in item.short_ids]
+                              [QuotaType.FREE_DAILY_QUOTA for _ in item.short_ids]
                               ) for item in txs_content_short_ids_v6
         ]
         network_num = msg.network_num()

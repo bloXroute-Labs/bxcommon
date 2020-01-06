@@ -6,7 +6,7 @@ from bxutils import logging
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon import constants
-from bxcommon.models.tx_quota_type_model import TxQuotaType
+from bxcommon.models.quota_type_model import QuotaType
 
 logger = logging.get_logger(__name__)
 
@@ -15,7 +15,7 @@ class TxContentShortIds(NamedTuple):
     tx_hash: Sha256Hash
     tx_content: Optional[Union[bytearray, memoryview]]
     short_ids: List[int]
-    short_id_flags: List[TxQuotaType]
+    short_id_flags: List[QuotaType]
 
 
 def get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids: TxContentShortIds) -> int:
@@ -122,7 +122,7 @@ def deserialize_txs_content_short_ids_from_buffer(buffer: Union[bytearray, memor
             offset += constants.SID_LEN
         for _ in range(short_ids_count):
             short_id_flag, = struct.unpack_from("<B", buffer, offset)
-            short_id_flags.append(TxQuotaType(short_id_flag))
+            short_id_flags.append(QuotaType(short_id_flag))
             offset += constants.QUOTA_FLAG_LEN
         txs_content_short_ids.append(TxContentShortIds(tx_hash, tx_content, short_ids, short_id_flags))
 

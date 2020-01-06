@@ -12,7 +12,7 @@ from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.object_hash import Sha256Hash
-from bxcommon.models.tx_quota_type_model import TxQuotaType
+from bxcommon.models.quota_type_model import QuotaType
 
 NEW_VERSION_SOURCE_ID = uuid_pack.from_bytes(b"\x01" * 16)
 EMPTY_SOURCE_ID_STR = EMPTY_SOURCE_ID.decode()
@@ -25,7 +25,7 @@ class BloxrouteTxVersionManagerV6Test(AbstractTestCase):
         tx_contents = helpers.generate_bytes(250)
         network_num = 1234
         self._test_to_old_version(TxMessage(message_hash=tx_hash, network_num=network_num,
-                                            tx_val=tx_contents, quota_type=TxQuotaType.PAID_DAILY_QUOTA))
+                                            tx_val=tx_contents, quota_type=QuotaType.PAID_DAILY_QUOTA))
         self._test_to_new_version(TxMessageV6(message_hash=tx_hash, network_num=network_num, tx_val=tx_contents))
 
     def _test_to_old_version(self, new_version_msg: TxMessage):
@@ -60,7 +60,7 @@ class BloxrouteTxSyncVersionManagerV6Test(AbstractTestCase):
             tx_contents = helpers.generate_bytes(250)
             short_ids = [_get_next_fake_sid.__next__() for i in range(0, 1 + i % 7)]
             tx_content_short_ids.append(TxContentShortIds(tx_hash, tx_contents, short_ids,
-                                                          [TxQuotaType.FREE_DAILY_QUOTA for _ in short_ids]))
+                                                          [QuotaType.FREE_DAILY_QUOTA for _ in short_ids]))
             tx_content_short_ids_v6.append(TxContentShortIdsV6(tx_hash, tx_contents, short_ids))
         network_num = 1234
         new_version_msg = TxServiceSyncTxsMessage(network_num, tx_content_short_ids)

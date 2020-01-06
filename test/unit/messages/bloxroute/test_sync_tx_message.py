@@ -10,7 +10,7 @@ from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
-from bxcommon.models.tx_quota_type_model import TxQuotaType
+from bxcommon.models.quota_type_model import QuotaType
 
 
 class SyncTxServiceTest(MessageFactoryTestCase):

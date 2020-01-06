@@ -6,7 +6,7 @@ from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessag
 from bxcommon import constants
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, NODE_ID_SIZE_IN_BYTES, \
     BX_HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN, QUOTA_FLAG_LEN
-from bxcommon.models.tx_quota_type_model import TxQuotaType
+from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
@@ -279,14 +279,14 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                                                 source_id=self.NODE_ID,
                                                                 short_id=sid,
                                                                 tx_val=tx_val,
-                                                                quota_type=TxQuotaType.PAID_DAILY_QUOTA),
+                                                                quota_type=QuotaType.PAID_DAILY_QUOTA),
                                                       TxMessage)
         self.assertEqual(self.HASH, tx_message.tx_hash())
         self.assertEqual(self.NODE_ID, tx_message.source_id())
         self.assertEqual(sid, tx_message.short_id())
         self.assertEqual(test_network_num, tx_message.network_num())
         self.assertEqual(tx_val, tx_message.tx_val())
-        self.assertEqual(TxQuotaType.PAID_DAILY_QUOTA, tx_message.quota_type())
+        self.assertEqual(QuotaType.PAID_DAILY_QUOTA, tx_message.quota_type())
 
     def test_notification_message(self):
         notification_code = NotificationCode.QUOTA_DEPLETED

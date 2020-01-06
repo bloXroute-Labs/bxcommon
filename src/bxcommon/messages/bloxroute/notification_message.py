@@ -3,7 +3,8 @@ from typing import Union
 from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.models.notification_code import NotificationFormatting, NotificationCode, NotificationCodeRange
+from bxcommon.models.notification_code import NotificationCode, NotificationCodeRange
+from bxcommon.models.notification_code_formatting import NotificationFormatting
 from bxutils.logging.log_level import LogLevel
 
 

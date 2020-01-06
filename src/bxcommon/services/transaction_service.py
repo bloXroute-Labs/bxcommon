@@ -15,7 +15,7 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
-from bxcommon.models.tx_quota_type_model import TxQuotaType
+from bxcommon.models.quota_type_model import QuotaType
 from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 
@@ -80,7 +80,7 @@ class TransactionService:
     tx_assign_alarm_scheduled: bool
     network_num: int
     _short_id_to_tx_cache_key: Dict[int, str]
-    _short_id_to_tx_quota_flag: Dict[int, TxQuotaType]
+    _short_id_to_tx_quota_flag: Dict[int, QuotaType]
     _tx_cache_key_to_contents: Dict[str, Union[bytearray, memoryview]]
     _tx_cache_key_to_short_ids: Dict[str, Set[int]]
     _tx_assignment_expire_queue: ExpirationQueue
@@ -141,14 +141,14 @@ class TransactionService:
                 self._log_transaction_service_histogram
             )
 
-    def get_short_id_quota_type(self, short_id: int) -> TxQuotaType:
+    def get_short_id_quota_type(self, short_id: int) -> QuotaType:
         if short_id in self._short_id_to_tx_quota_flag:
             return self._short_id_to_tx_quota_flag[short_id]
         else:
-            return TxQuotaType.FREE_DAILY_QUOTA
+            return QuotaType.FREE_DAILY_QUOTA
 
-    def set_short_id_quota_type(self, short_id: int, tx_quota_type: TxQuotaType):
-        if TxQuotaType.PAID_DAILY_QUOTA in tx_quota_type:
+    def set_short_id_quota_type(self, short_id: int, tx_quota_type: QuotaType):
+        if QuotaType.PAID_DAILY_QUOTA in tx_quota_type:
             self._short_id_to_tx_quota_flag[short_id] = tx_quota_type
 
     def get_short_id(self, transaction_hash: Sha256Hash) -> int:
@@ -336,9 +336,9 @@ class TransactionService:
 
         if transaction_cache_key in self._tx_cache_key_to_short_ids:
             short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
-            short_id_flags = [self._short_id_to_tx_quota_flag.get(sid, TxQuotaType.FREE_DAILY_QUOTA) for sid in short_ids]
+            short_id_flags = [self._short_id_to_tx_quota_flag.get(sid, QuotaType.FREE_DAILY_QUOTA) for sid in short_ids]
             tx_flag = reduce(lambda x, y: x | y, short_id_flags)
-            if TxQuotaType.PAID_DAILY_QUOTA in tx_flag and not force:
+            if QuotaType.PAID_DAILY_QUOTA in tx_flag and not force:
                 return None
             else:
                 short_ids = self._tx_cache_key_to_short_ids.pop(transaction_cache_key)
@@ -381,9 +381,9 @@ class TransactionService:
             transaction_cache_key = self._short_id_to_tx_cache_key.get(short_id)
             if transaction_cache_key in self._tx_cache_key_to_short_ids:
                 short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
-                short_id_flags = [self._short_id_to_tx_quota_flag.get(sid, TxQuotaType.FREE_DAILY_QUOTA) for sid in short_ids]
+                short_id_flags = [self._short_id_to_tx_quota_flag.get(sid, QuotaType.FREE_DAILY_QUOTA) for sid in short_ids]
                 tx_flag = reduce(lambda x, y: x | y, short_id_flags)
-                if TxQuotaType.PAID_DAILY_QUOTA in tx_flag and not force:
+                if QuotaType.PAID_DAILY_QUOTA in tx_flag and not force:
                     return
             else:
                 short_ids = [short_id]
