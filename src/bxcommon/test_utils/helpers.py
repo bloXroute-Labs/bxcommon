@@ -306,6 +306,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "non_ssl_port": non_ssl_port,
         "rpc_port": rpc_port,
         "rpc_host": constants.LOCALHOST,
+        "rpc_user": "",
+        "rpc_password": "",
         "default_tx_quota_type": default_tx_quota_type
     })
 
