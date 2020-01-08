@@ -22,6 +22,7 @@ class LogRecordType(Enum):
     TransactionAuditSummary = "stats.transaction.audit.summary"
     BlockAudit = "stats.block.audit"
     BlockAuditSummary = "stats.block.audit.summary"
+    CustomerInfo = "stats.customer.info"
 
 
 
