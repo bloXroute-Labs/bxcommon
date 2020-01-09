@@ -61,6 +61,7 @@ class SocketConnectionProtocol(Protocol):
         logger.debug("[{}] - connection established successfully.", self)
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
+        mark_connection_for_close = SocketConnectionState.MARK_FOR_CLOSE not in self.state
         self.state |= SocketConnectionState.MARK_FOR_CLOSE
         if not self._should_retry:
             self.state |= SocketConnectionState.DO_NOT_RETRY
@@ -73,7 +74,7 @@ class SocketConnectionProtocol(Protocol):
             )
         else:
             logger.debug("[{}] - lost connection with peer, should_retry: {}.", self, self._should_retry)
-        self._node.on_connection_closed(self.file_no)
+        self._node.on_connection_closed(self.file_no, mark_connection_for_close)
 
     def pause_writing(self) -> None:
         self.can_send = False
@@ -106,6 +107,8 @@ class SocketConnectionProtocol(Protocol):
             logger.trace("[{}] - resumed writing.", self)
 
     def mark_for_close(self, should_retry: bool = True) -> None:
+        if SocketConnectionState.MARK_FOR_CLOSE in self.state:
+            return
         self.state |= SocketConnectionState.MARK_FOR_CLOSE
         self._should_retry = should_retry
         assert self.transport is not None, "Connection is broken!"

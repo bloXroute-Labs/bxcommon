@@ -175,12 +175,15 @@ class AbstractNode:
 
         return connection
 
-    def on_connection_closed(self, file_no: int):
+    def on_connection_closed(self, file_no: int, mark_connection_for_close: bool = False):
         conn = self.connection_pool.get_by_fileno(file_no)
 
         if conn is None:
             logger.debug("Unexpectedly closed connection not in pool. file_no: {}", file_no)
             return
+
+        if mark_connection_for_close:
+            conn.mark_for_close()
 
         logger.info("Closed connection: {}", conn)
         if conn.CONNECTION_TYPE == ConnectionType.BLOCKCHAIN_NODE:
