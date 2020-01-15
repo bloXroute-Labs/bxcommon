@@ -10,10 +10,6 @@ VT = TypeVar("VT")
 class ExpiringDict(Generic[KT, VT]):
     """
     Set with expiration time.
-
-    For determining if items are in the set, use "if item in expiring_set.contents".
-    __contains__ is intentionally not overwritten. This is a performance critical class,
-    and we're avoiding extra function call overhead.
     """
 
     contents: Dict[KT, VT]
@@ -27,7 +23,22 @@ class ExpiringDict(Generic[KT, VT]):
         self._expiration_queue = ExpirationQueue(expiration_time_s)
         self._expiration_time = expiration_time_s
 
-    def add(self, key, value):
+    def __contains__(self, item: KT):
+        return item in self.contents
+
+    def __setitem__(self, key: KT, value: VT):
+        if key in self.contents:
+            self.contents[key] = value
+        else:
+            self.add(key, value)
+
+    def __delitem__(self, key: KT):
+        del self.contents[key]
+
+    def __getitem__(self, item: KT) -> VT:
+        return self.contents[item]
+
+    def add(self, key: KT, value: VT):
         self.contents[key] = value
         self._expiration_queue.add(key)
         self._alarm_queue.register_approx_alarm(self._expiration_time * 2, self._expiration_time, self.cleanup)
@@ -36,7 +47,7 @@ class ExpiringDict(Generic[KT, VT]):
         self._expiration_queue.remove_expired(remove_callback=self.remove_item)
         return 0
 
-    def remove_item(self, key) -> Optional[VT]:
+    def remove_item(self, key: KT) -> Optional[VT]:
         if key in self.contents:
             return self.contents.pop(key)
         else:

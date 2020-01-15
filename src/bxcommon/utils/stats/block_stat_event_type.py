@@ -77,6 +77,8 @@ class BlockStatEventType:
                                                           event_logic_flags=StatEventLogicFlags.SUMMARY)
     BLOCK_HEADER_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockHeaderSentToBlockchainNode",
                                                                  event_logic_flags=StatEventLogicFlags.SUMMARY)
+    BLOCK_BODY_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockBodySentToBlockchainNode",
+                                                                 event_logic_flags=StatEventLogicFlags.SUMMARY)
     BLOCK_IGNORE_SEEN_BY_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockIgnoreSeenByBlockchainNode")
     ENC_BLOCK_KEY_SENT_FROM_GATEWAY_TO_NETWORK = StatEventTypeSettings("EncBlockKeySentFromGatewayToNetwork",
                                                                        event_logic_flags=StatEventLogicFlags.SUMMARY)
