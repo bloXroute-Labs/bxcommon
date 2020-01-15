@@ -47,7 +47,6 @@ def run_node(
                              enable_fluent_logger=opts.log_fluentd_enable,
                              fluentd_host=opts.log_fluentd_host,
                              third_party_loggers=THIRD_PARTY_LOGGERS)
-
     startup_param = sys.argv[1:]
     logger.info("Startup Parameters are: {}", " ".join(startup_param))
 
@@ -96,13 +95,22 @@ def _run_node(opts, node_class, node_type, logger_names: Iterable[Optional[str]]
 
         try:
             node_model = sdn_http_service.register_node(temp_node_model)
+        except ValueError as ve:
+            logger.fatal(ve)
+            exit(1)
         except EnvironmentError as e:
-            logger.info("Unable to contact SDN to register node using {}, attempting to get information from cache", opts.sdn_url)
+            logger.info("Unable to contact SDN to register node using {}, attempting to get information from cache",
+                        opts.sdn_url)
             cache_info = node_cache.read(opts)
             if not cache_info or not cache_info.node_model:
-                logger.fatal("Unable to reach the SDN and no local cache information was found. Unable to start the gateway")
+                logger.fatal(
+                    "Unable to reach the SDN and no local cache information was found. Unable to start the gateway")
                 exit(1)
             node_model = cache_info.node_model
+
+        if node_model.should_update_source_version:
+            logger.info("UPDATE AVAILABLE! An updated software version is available, please download and install the "
+                        "latest version")
 
         if node_model.cert is not None:
             private_cert = ssl_serializer.deserialize_cert(node_model.cert)

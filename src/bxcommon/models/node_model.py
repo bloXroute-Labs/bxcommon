@@ -86,6 +86,9 @@ class NodeModel:
 
     account_id: Optional[str] = None
 
+    latest_source_version: str = None
+    should_update_source_version: bool = False
+
     def __post_init__(self):
         self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
         # TODO: Remove network attribute, not being used

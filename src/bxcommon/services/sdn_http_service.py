@@ -148,7 +148,17 @@ def register_node(node_model: NodeModel) -> NodeModel:
     if not node_config:
         raise EnvironmentError("Unable to reach SDN and register this node. Please check connection.")
 
-    return model_loader.load_model(NodeModel, node_config)
+    registered_node_model = model_loader.load_model(NodeModel, node_config)
+
+    if not registered_node_model.source_version:
+        raise ValueError(f"Source version {node_model.source_version} is no longer supported. Please upgrade to the "
+                         f"latest version")
+
+    if registered_node_model.blockchain_network_num == -1:
+        raise ValueError(f"The blockchain network number {node_model.blockchain_network_num} does not exists. Please "
+                         f"check the blockchain network startup parameters")
+
+    return registered_node_model
 
 
 def reset_pool(ssl_context: SSLContext):
