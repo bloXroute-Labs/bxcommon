@@ -66,7 +66,7 @@ def fetch_remote_blockchain_peer(node_id: str) -> Optional[OutboundPeerModel]:
         logger.warning("BDN did not send the expected number of remote blockchain peers.")
         return None
     else:
-        logger.debug("Ordered potential remote blockchain peers: ", peers)
+        logger.debug("Ordered potential remote blockchain peers: {}", peers)
         return peers[0]
 
 
