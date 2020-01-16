@@ -2,6 +2,7 @@ import time
 from collections import defaultdict, OrderedDict, Counter, namedtuple
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator
 from functools import reduce
 
@@ -32,6 +33,15 @@ def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash
         return Sha256Hash(binary=transaction_hash)
 
     return Sha256Hash(binary=convert.hex_to_bytes(transaction_hash))
+
+
+class TxRemovalReason(Enum):
+    UNKNOWN = "Unknown"
+    BLOCK_CLEANUP = "BlockCleanup"
+    EXTENSION_BLOCK_CLEANUP = "ExtensionBlockCleanup"
+    MEMORY_LIMIT = "MemoryLimit"
+    EXPIRATION = "Expiration"
+    MEMPOOL_SYNC = "MempoolSync"
 
 
 @dataclass
@@ -346,7 +356,7 @@ class TransactionService:
             for short_id_flag, short_id in zip(short_id_flags, short_ids):
                 tx_stats.add_tx_by_hash_event(
                     transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
-                    self.network_num, short_id, reason="RemoveByTransactionHash"
+                    self.network_num, short_id, reason=TxRemovalReason.BLOCK_CLEANUP.value
                 )
                 removed_sids += 1
                 if short_id in self._short_id_to_tx_cache_key:
@@ -370,12 +380,14 @@ class TransactionService:
     def remove_transaction_by_short_id(self,
                                        short_id: int,
                                        remove_related_short_ids: bool = False,
-                                       force: bool = True):
+                                       force: bool = True,
+                                       removal_reason: TxRemovalReason = TxRemovalReason.UNKNOWN):
         """
         Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
         :param short_id: short id to clean up
         :param remove_related_short_ids: remove all other short id for the same tx
         :param force: when false, cleanup will ignore tx / sids marked with quota flag
+        :param removal_reason:
         """
         if short_id in self._short_id_to_tx_cache_key:
             transaction_cache_key = self._short_id_to_tx_cache_key.get(short_id)
@@ -395,7 +407,7 @@ class TransactionService:
             transaction_hash = self._tx_cache_key_to_hash(transaction_cache_key)
             tx_stats.add_tx_by_hash_event(
                 transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
-                self.network_num, short_id, reason="RemoveByShortId"
+                self.network_num, short_id, reason=removal_reason.value
             )
             # Only clear mapping and txhash_to_contents if last SID assignment
             if len(short_ids) == 1 or remove_related_short_ids:
@@ -403,7 +415,7 @@ class TransactionService:
                     if dup_short_id != short_id:
                         tx_stats.add_tx_by_hash_event(
                             transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
-                            self.network_num, dup_short_id, reason="RemoveRelatedShortId"
+                            self.network_num, dup_short_id, reason=removal_reason.value
                         )
                         if dup_short_id in self._short_id_to_tx_cache_key:
                             del self._short_id_to_tx_cache_key[dup_short_id]
@@ -529,7 +541,8 @@ class TransactionService:
         """
         logger.debug("Expiring old short id assignments. Total entries: {}",
                      len(self._tx_assignment_expire_queue))
-        self._tx_assignment_expire_queue.remove_expired(remove_callback=self.remove_transaction_by_short_id, force=True)
+        self._tx_assignment_expire_queue.remove_expired(remove_callback=self.remove_transaction_by_short_id, force=True,
+                                                        removal_reason=TxRemovalReason.EXPIRATION)
         logger.debug("Finished cleaning up short ids. Entries remaining: {}",
                      len(self._tx_assignment_expire_queue))
         if len(self._tx_assignment_expire_queue) > 0:
@@ -558,7 +571,8 @@ class TransactionService:
             _, final_short_ids = self._short_ids_seen_in_block.popitem(last=False)
 
             for short_id in final_short_ids:
-                self.remove_transaction_by_short_id(short_id, remove_related_short_ids=True, force=True)
+                self.remove_transaction_by_short_id(short_id, remove_related_short_ids=True, force=True,
+                                                    removal_reason=TxRemovalReason.BLOCK_CLEANUP)
 
         logger_memory_cleanup.statistics(
             {
@@ -769,7 +783,8 @@ class TransactionService:
         removed_tx_count = 0
 
         while self._is_exceeding_memory_limit() and self._tx_assignment_expire_queue:
-            self._tx_assignment_expire_queue.remove_oldest(remove_callback=self.remove_transaction_by_short_id)
+            self._tx_assignment_expire_queue.remove_oldest(remove_callback=self.remove_transaction_by_short_id,
+                                                           removal_reason=TxRemovalReason.MEMORY_LIMIT)
             removed_tx_count += 1
         if self._is_exceeding_memory_limit() and not self._tx_assignment_expire_queue:
             logger.warning("Memory management failure. There appears to be a lack of short ids in the node."

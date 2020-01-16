@@ -87,7 +87,7 @@ class ExpirationQueue(Generic[T]):
         assert oldest_item is not None
         return self.queue[oldest_item]
 
-    def remove_oldest(self, remove_callback: Optional[Callable[[T], None]] = None):
+    def remove_oldest(self, remove_callback: Optional[Callable[[T], None]] = None, *args, **kwargs):
         """
         Remove one oldest item from the queue
         :param remove_callback: reference to a callback function that is being called when item is removed
@@ -96,4 +96,4 @@ class ExpirationQueue(Generic[T]):
             item, timestamp = self.queue.popitem(last=False)
 
             if remove_callback is not None:
-                remove_callback(item)
+                remove_callback(item, *args, **kwargs)
