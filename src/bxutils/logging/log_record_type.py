@@ -20,6 +20,7 @@ class LogRecordType(Enum):
     TransactionHistogram = "bx.transaction.histogram"
     TransactionAudit = "stats.transaction.audit"
     TransactionAuditSummary = "stats.transaction.audit.summary"
+    TransactionStatus = "transaction.status"
     BlockAudit = "stats.block.audit"
     BlockAuditSummary = "stats.block.audit.summary"
     CustomerInfo = "stats.customer.info"
