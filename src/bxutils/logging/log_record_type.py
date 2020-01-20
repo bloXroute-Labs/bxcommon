@@ -24,6 +24,10 @@ class LogRecordType(Enum):
     BlockAudit = "stats.block.audit"
     BlockAuditSummary = "stats.block.audit.summary"
     CustomerInfo = "stats.customer.info"
-    ExecutionTimerInfo = "stats.execution.timer.info"
+    ExecutionTimerInfo = "stats.execution.timer.info"    
+    
+    RoutingService = "routing.service"
+
+
 
 
