@@ -308,7 +308,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "rpc_host": constants.LOCALHOST,
         "rpc_user": "",
         "rpc_password": "",
-        "default_tx_quota_type": default_tx_quota_type
+        "default_tx_quota_type": default_tx_quota_type,
+        "should_update_source_version": False
     })
 
     if include_default_btc_args:
