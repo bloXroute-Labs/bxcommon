@@ -14,6 +14,16 @@ REGISTRATION_DIR_NAME: str = SSLCertificateType.REGISTRATION_ONLY.name.lower()
 PRIVATE_DIR_NAME: str = SSLCertificateType.PRIVATE.name.lower()
 
 
+def get_cert_file_name(node_type: NodeType) -> str:
+    node_name = node_type.name.lower()
+    return constants.SSL_CERT_FILE_FORMAT.format(node_name)
+
+
+def get_key_file_name(node_type: NodeType) -> str:
+    node_name = node_type.name.lower()
+    return constants.SSL_KEY_FILE_FORMAT.format(node_name)
+
+
 def create_storage_info(
             *,
             node_type: NodeType,
@@ -47,8 +57,8 @@ def create_storage_info(
     else:
         ca_key_info = None
 
-    registration_cert_name = constants.SSL_CERT_FILE_FORMAT.format(node_name)
-    registration_key_name = constants.SSL_KEY_FILE_FORMAT.format(node_name)
+    cert_file_name = get_cert_file_name(node_type)
+    key_file_name = get_key_file_name(node_type)
     return SSLStorageInfo(
         node_ssl_directory,
         SSLCertificateInfo(
@@ -62,23 +72,24 @@ def create_storage_info(
         SSLCertificateInfo(
             SSLFileInfo(
                 private_dir_name,
-                constants.SSL_CERT_FILE_FORMAT.format(node_name)
+                cert_file_name
             ),
             SSLFileInfo(
                 private_dir_name,
-                constants.SSL_KEY_FILE_FORMAT.format(node_name)
+                key_file_name
             )
         ),
         SSLCertificateInfo(
             SSLFileInfo(
                 registration_dir_name,
-                registration_cert_name,
-                url_helper.url_join(node_base_url, registration_dir_name, registration_cert_name)
+                cert_file_name,
+                url_helper.url_join(node_base_url, registration_dir_name, cert_file_name)
             ),
             SSLFileInfo(
                 registration_dir_name,
-                registration_key_name,
-                url_helper.url_join(node_base_url, registration_dir_name, registration_key_name)
+                key_file_name,
+                url_helper.url_join(node_base_url, registration_dir_name, key_file_name)
             )
         )
     )
+

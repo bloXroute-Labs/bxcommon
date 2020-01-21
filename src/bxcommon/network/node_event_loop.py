@@ -99,7 +99,9 @@ class NodeEventLoop:
         endpoints = self._node.server_endpoints
         server_futures = []
         for endpoint in endpoints:
-            ssl_ctx = self._get_ssl_context(endpoint)
+            ssl_ctx = None
+            if endpoint.port in utils_constants.SSL_PORT_RANGE:
+                ssl_ctx = self._node.get_server_ssl_ctx()
             server_future = loop.create_server(
                 functools.partial(self._protocol_factory, endpoint, True),
                 endpoint.ip_address,
@@ -122,7 +124,7 @@ class NodeEventLoop:
         target_endpoint = peer_info.endpoint
         try:
             if peer_info.transport_protocol == TransportLayerProtocol.TCP:
-                ssl_ctx = self._get_ssl_context(target_endpoint)
+                ssl_ctx = self._get_target_ssl_context(target_endpoint, peer_info.connection_type)
                 conn_task = loop.create_task(loop.create_connection(
                     functools.partial(self._protocol_factory, target_endpoint),
                     target_endpoint.ip_address,
@@ -161,9 +163,9 @@ class NodeEventLoop:
             self._connect_to_target(peer_info) for peer_info in connections_info
         ]
 
-    def _get_ssl_context(self, endpoint: IpEndpoint) -> Optional[SSLContext]:
+    def _get_target_ssl_context(self, endpoint: IpEndpoint, connection_type: ConnectionType) -> Optional[SSLContext]:
         if endpoint.port in utils_constants.SSL_PORT_RANGE:
-            return self._node.node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
+            return self._node.get_target_ssl_ctx(endpoint, connection_type)
         else:
             return None
 

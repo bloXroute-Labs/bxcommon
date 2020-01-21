@@ -4,6 +4,7 @@ import time
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from collections import defaultdict
+from ssl import SSLContext
 from typing import List, Optional, Tuple, Dict, NamedTuple, Union, Set
 
 from bxcommon import constants
@@ -35,6 +36,7 @@ from bxutils.exceptions.connection_authentication_error import ConnectionAuthent
 from bxutils.logging import LogRecordType
 from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.extensions import extensions_factory
+from bxutils.ssl.ssl_certificate_type import SSLCertificateType
 
 logger = logging.get_logger(__name__)
 memory_logger = logging.get_logger(LogRecordType.BxMemory, __name__)
@@ -418,6 +420,13 @@ class AbstractNode:
                                             peer_ip, peer_port, connection_type)
         else:
             self.on_failed_connection_retry(peer_ip, peer_port, connection_type)
+
+    def get_server_ssl_ctx(self) -> SSLContext:
+        return self.node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
+
+    def get_target_ssl_ctx(self, endpoint: IpEndpoint, connection_type: ConnectionType) -> SSLContext:
+        logger.trace("Fetching SSL certificate for: {} ({}).", endpoint, connection_type)
+        return self.node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
 
     @abstractmethod
     def _sync_tx_services(self):

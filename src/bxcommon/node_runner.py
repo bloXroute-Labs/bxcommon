@@ -3,14 +3,14 @@ import uvloop
 import sys
 
 from datetime import datetime
-from typing import Iterable, Optional, Type, Union
+from typing import Iterable, Optional, Type, Union, Callable
 from argparse import Namespace
 
 from bxutils import logging
 from bxutils.logging import log_config, LoggerConfig
 from bxutils.logging.log_level import LogLevel
 from bxutils.services.node_ssl_service import NodeSSLService
-from bxutils.ssl.data.ssl_data_factory import create_storage_info
+from bxutils.ssl.data import ssl_data_factory
 from bxutils.ssl import ssl_serializer
 from bxutils.ssl.ssl_certificate_type import SSLCertificateType
 
@@ -32,12 +32,25 @@ asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())  # pyre-ignore
 asyncio.set_event_loop(uvloop.new_event_loop())
 
 
+def default_ssl_service_factory(
+        node_type: NodeType, ca_cert_url: str, private_ssl_base_url: str, data_dir: str
+) -> NodeSSLService:
+    storage_info = ssl_data_factory.create_storage_info(
+        node_type=node_type,
+        ca_cert_url=ca_cert_url,
+        private_ssl_base_url=private_ssl_base_url,
+        data_dir=data_dir
+    )
+    return NodeSSLService(node_type, storage_info)
+
+
 def run_node(
         process_id_file_path: str,
         opts: Union[Namespace, CommonOpts],
         node_class: Type[AbstractNode],
         node_type: Optional[NodeType] = None,
-        logger_names: Iterable[Optional[str]] = tuple(LOGGER_NAMES)
+        logger_names: Iterable[Optional[str]] = tuple(LOGGER_NAMES),
+        ssl_service_factory: Callable[[NodeType, str, str, str], NodeSSLService] = default_ssl_service_factory
 ):
     opts.logger_names = logger_names
     log_config.setup_logging(opts.log_format,
@@ -63,7 +76,7 @@ def run_node(
                 "Initialized task thread pool parallelism degree to {}.",
                 task_pool_proxy.get_pool_size()
             )
-        _run_node(opts, node_class, node_type, logger_names)
+        _run_node(opts, node_class, node_type, logger_names, ssl_service_factory=ssl_service_factory)
     except TerminationError:
         logger.fatal("Node terminated")
     except Exception as e:
@@ -73,13 +86,21 @@ def run_node(
             handler.close()
 
 
-def _run_node(opts, node_class, node_type, logger_names: Iterable[Optional[str]]):
+def _run_node(
+        opts,
+        node_class,
+        node_type,
+        logger_names: Iterable[Optional[str]],
+        ssl_service_factory: Callable[[NodeType, str, str, str], NodeSSLService] = default_ssl_service_factory
+):
     node_model = None
     if opts.node_id:
         # Test network, get pre-configured peers from the SDN.
         node_model = sdn_http_service.fetch_node_attributes(opts.node_id)
 
-    node_ssl_service = _init_ssl_service(node_type, opts.ca_cert_url, opts.private_ssl_base_url, opts.data_dir)
+    node_ssl_service = _init_ssl_service(
+        node_type, opts.ca_cert_url, opts.private_ssl_base_url, opts.data_dir, ssl_service_factory=ssl_service_factory
+    )
 
     cli.set_blockchain_networks_info(opts)
     cli.parse_blockchain_opts(opts, node_type)
@@ -138,16 +159,14 @@ def _run_node(opts, node_class, node_type, logger_names: Iterable[Optional[str]]
     loop.run_until_complete(node_event_loop.run())
 
 
-def _init_ssl_service(node_type: NodeType,
-                      ca_cert_url: str,
-                      private_ssl_base_url: str,
-                      data_dir: str) -> NodeSSLService:
-    storage_info = create_storage_info(node_type=node_type,
-                                       ca_cert_url=ca_cert_url,
-                                       private_ssl_base_url=private_ssl_base_url,
-                                       data_dir=data_dir
-                                       )
-    node_ssl_service = NodeSSLService(node_type, storage_info)
+def _init_ssl_service(
+        node_type: NodeType,
+        ca_cert_url: str,
+        private_ssl_base_url: str,
+        data_dir: str,
+        ssl_service_factory: Callable[[NodeType, str, str, str], NodeSSLService] = default_ssl_service_factory
+) -> NodeSSLService:
+    node_ssl_service = ssl_service_factory(node_type, ca_cert_url, private_ssl_base_url, data_dir)
     node_ssl_service.blocking_load()
 
     if node_ssl_service.has_valid_certificate(SSLCertificateType.PRIVATE):
