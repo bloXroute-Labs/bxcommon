@@ -15,7 +15,7 @@ class NodeModel:
 
 
     # Whether the node is online.
-    online: bool = False
+    online: Optional[bool] = False
 
     # Whether node has active connection with SDN
     sdn_connection_alive: bool = False
