@@ -9,4 +9,4 @@ class ConnectionState(IntFlag):
     ESTABLISHED = INITIALIZED | HELLO_RECVD | HELLO_ACKD
 
     def __str__(self):
-        return self.name
+        return str(self.name)

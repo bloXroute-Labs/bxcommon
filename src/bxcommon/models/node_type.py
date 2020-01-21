@@ -16,9 +16,6 @@ class NodeType(SerializableFlag):
     API = enum.auto()
     API_SOCKET = enum.auto()
 
-    def __str__(self):
-        return self.name
-
     def get_subtypes(self) -> Iterable["NodeType"]:
         for subtype in self.__class__:
             if subtype in self:
