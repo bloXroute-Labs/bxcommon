@@ -1,8 +1,6 @@
 import time
 from typing import List, Optional, Dict, Any, cast
 
-from bxutils import logging
-
 from bxcommon.constants import SdnRoutes
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
@@ -10,6 +8,7 @@ from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.services import http_service
 from bxcommon.utils import model_loader, json_utils, ip_resolver
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -128,6 +127,14 @@ def submit_node_txs_sync_in_network(node_id: str, networks: List[int]):
     # TODO: Send these events over socket connection instead of HTTP
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_SYNCED_IN_NETWORK,
                                      tx_sync_networks=networks))
+
+
+def submit_notify_online_event(node_id: str):
+    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.NOTIFY_ONLINE))
+
+
+def submit_notify_offline_event(node_id: str):
+    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.NOTIFY_OFFLINE))
 
 
 def delete_gateway_inbound_connection(node_id: str, peer_id: str):

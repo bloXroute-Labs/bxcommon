@@ -9,10 +9,12 @@ class NodeModel:
                  is_internal_gateway=None, source_version=None, protocol_version=None, blockchain_network_num=None,
                  blockchain_ip=None, blockchain_port=None, node_public_key=None, hostname=None, sdn_id=None,
                  os_version=None, continent=None, country=None, split_relays=None, idx: int = None,
-                 has_fully_updated_tx_service=False, node_start_time=None, baseline_route_redundancy: int = 0):
+                 has_fully_updated_tx_service=False, node_start_time=None, baseline_route_redundancy: int = 0,
+                 sdn_connection_alive = False ):
         self.external_port = external_port
         self.network = network
         self.online = online
+        self.sdn_connection_alive = sdn_connection_alive
         self.node_id = node_id
         self.sid_start = sid_start
         self.sid_end = sid_end

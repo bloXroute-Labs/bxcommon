@@ -283,10 +283,15 @@ class AbstractNode:
 
     def close(self):
         logger.error("Node is closing! Closing everything.")
-
-        for _fileno, conn in self.connection_pool.items():
-            self._destroy_conn(conn, force_destroy=True)
+        self.close_all_connections()
         self.cleanup_memory_stats_logging()
+
+    def close_all_connections(self):
+        """
+        Closes all connections from the node
+        """
+        for _, conn in self.connection_pool.items():
+            self._destroy_conn(conn, force_destroy=True)
 
     def broadcast(self, msg: AbstractMessage, broadcasting_conn: Optional[AbstractConnection] = None,
                   prepend_to_queue: bool = False, connection_types: Optional[List[ConnectionType]] = None) \
@@ -393,6 +398,9 @@ class AbstractNode:
             self.alarm_queue.register_alarm(self._get_next_retry_timeout(peer_ip, peer_port),
                                             self._retry_init_client_socket,
                                             peer_ip, peer_port, conn.CONNECTION_TYPE)
+
+            if conn.CONNECTION_TYPE == ConnectionType.SDN:
+                sdn_http_service.submit_notify_online_event(self.opts.node_id)
         else:
             self.on_failed_connection_retry(peer_ip, peer_port, conn.CONNECTION_TYPE)
 
