@@ -25,6 +25,7 @@ jobs:
             cd ~/ws
             python -m virtualenv venv
             . venv/bin/activate
+            pip install pip==18.1
             pip install -r bxcommon/requirements.txt
             pip install -r bxcommon/requirements-dev.txt
       - restore_cache: # restores saved dependency cache if the Branch key template or requirements.txt files have not changed since the previous run
