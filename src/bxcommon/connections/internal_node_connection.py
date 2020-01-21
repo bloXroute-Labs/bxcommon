@@ -5,6 +5,7 @@ from typing import List, Optional, Dict
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection, Node
 from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.blocks_short_ids_serializer import BlockShortIds
@@ -19,6 +20,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServi
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
+from bxcommon.models.node_type import NodeType
 from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 from bxcommon.utils import nonce_generator
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
@@ -295,8 +297,14 @@ class InternalNodeConnection(AbstractConnection[Node]):
             self.send_tx_service_sync_complete(network_num)
 
     def msg_tx_service_sync_complete(self, msg: TxServiceSyncCompleteMessage):
+        if self.node.NODE_TYPE in NodeType.GATEWAY and self.CONNECTION_TYPE & ConnectionType.RELAY_BLOCK:
+            return
         network_num = msg.network_num()
         self.node.last_sync_message_received_by_network.pop(network_num, None)
+        self.log_info(
+            "{} is ready and operational. it took {:.3f} seconds to complete tx service sync.",
+            self.node.NODE_TYPE, time.time() - self.node.start_sync_time
+        )
         self.node.on_fully_updated_tx_service()
 
     def mark_for_close(self, should_retry: Optional[bool] = None):

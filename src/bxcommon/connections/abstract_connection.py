@@ -146,12 +146,13 @@ class AbstractConnection(Generic[Node]):
         return self.socket_connection.is_alive()
 
     def on_connection_established(self):
-        self.state |= ConnectionState.ESTABLISHED
-        self.log_info("Connection established.")
+        if ConnectionState.ESTABLISHED not in self.state:
+            self.state |= ConnectionState.ESTABLISHED
+            self.log_info("Connection established.")
 
-        # Reset num_retries when a connection established in order to support resetting the Fibonnaci logic
-        # to determine next retry
-        self.node.num_retries_by_ip[(self.peer_ip, self.peer_port)] = 0
+            # Reset num_retries when a connection established in order to support resetting the Fibonnaci logic
+            # to determine next retry
+            self.node.num_retries_by_ip[(self.peer_ip, self.peer_port)] = 0
 
     def add_received_bytes(self, bytes_received: int):
         """

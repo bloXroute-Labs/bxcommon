@@ -1,3 +1,4 @@
+import time
 from typing import Optional, List
 from mock import patch, MagicMock
 
@@ -54,7 +55,7 @@ class TestNode(AbstractNode):
         pass
 
     def _sync_tx_services(self):
-        pass
+        self.start_sync_time = time.time()
 
     def _transaction_sync_timeout(self):
         pass

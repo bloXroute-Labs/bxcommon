@@ -1,5 +1,6 @@
 import os
 import signal
+import time
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from collections import defaultdict
@@ -104,6 +105,7 @@ class AbstractNode:
 
         self.last_sync_message_received_by_network: Dict[int, float] = {}
 
+        self.start_sync_time = time.time()
         opts.has_fully_updated_tx_service = False
         self.alarm_queue.register_alarm(constants.TX_SERVICE_SYNC_PROGRESS_S, self._sync_tx_services)
         self._check_sync_relay_connections_alarm_id = self.alarm_queue.register_alarm(
@@ -419,7 +421,7 @@ class AbstractNode:
 
     @abstractmethod
     def _sync_tx_services(self):
-        pass
+        self.start_sync_time = time.time()
 
     @abstractmethod
     def _transaction_sync_timeout(self):
@@ -493,7 +495,7 @@ class AbstractNode:
         return conn_obj
 
     def on_fully_updated_tx_service(self):
-        logger.info("Synced transaction state with BDN.")
+        logger.debug("Synced transaction state with BDN.")
         self.opts.has_fully_updated_tx_service = True
 
     def _connection_timeout(self, conn: AbstractConnection) -> int:
