@@ -185,10 +185,10 @@ class AbstractNode:
         if mark_connection_for_close:
             conn.mark_for_close()
 
-        logger.info("Closed connection: {}", conn)
-        if conn.CONNECTION_TYPE == ConnectionType.BLOCKCHAIN_NODE:
-            logger.info("Unable to connect to blockchain node on IP {} and port {}. Check that blockchain IP and port "
-                        "are correct!", conn.peer_ip, conn.peer_port)
+        if not conn.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED:
+            logger.info("Failed to connect to: {}.", conn)
+        else:
+            logger.info("Closed connection: {}", conn)
         self._destroy_conn(conn)
 
     def on_updated_peers(self, outbound_peer_models: Set[OutboundPeerModel]):
@@ -477,7 +477,7 @@ class AbstractNode:
         conn_obj = self.build_connection(socket_connection)
         ip, port = socket_connection.endpoint
         if conn_obj is not None:
-            logger.info("Connecting to: {}...", conn_obj)
+            logger.debug("Connecting to: {}...", conn_obj)
 
             self.alarm_queue.register_alarm(constants.CONNECTION_TIMEOUT, self._connection_timeout, conn_obj)
             self.connection_pool.add(socket_connection.file_no, ip, port, conn_obj)
