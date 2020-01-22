@@ -302,7 +302,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         network_num = msg.network_num()
         self.node.last_sync_message_received_by_network.pop(network_num, None)
         self.log_info(
-            "{} is ready and operational. it took {:.3f} seconds to complete tx service sync.",
+            "{} is ready and operational. It took {:.3f} seconds to complete transaction state with BDN.",
             self.node.NODE_TYPE, time.time() - self.node.start_sync_time
         )
         self.node.on_fully_updated_tx_service()
