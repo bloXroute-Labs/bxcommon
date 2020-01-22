@@ -13,7 +13,6 @@ class NodeModel:
     non_ssl_port: int = 0
     external_ip: str = None
 
-
     # Whether the node is online.
     online: Optional[bool] = False
 
@@ -29,6 +28,8 @@ class NodeModel:
     # The starting and ending Transaction Short ID range, inclusive.
     sid_start: int = None
     sid_end: int = None
+    next_sid_start: Optional[int] = None
+    next_sid_end: Optional[int] = None
 
     sid_expire_time: int = None
     last_pong_time: float = 0

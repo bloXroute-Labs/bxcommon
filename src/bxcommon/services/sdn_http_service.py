@@ -95,6 +95,10 @@ def fetch_blockchain_networks() -> List[BlockchainNetworkModel]:
     return blockchain_networks
 
 
+def submit_sid_space_switch(node_id: str) -> None:
+    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.SID_SPACE_SWITCH))
+
+
 def submit_sid_space_full_event(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.SID_SPACE_FULL))
 
