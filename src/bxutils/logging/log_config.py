@@ -50,9 +50,13 @@ def create_logger(
     """
     if log_format == LogFormat.PLAIN:
         if log_level <= LogLevel.DEBUG:
-            formatter = CustomFormatter(fmt=constants.DEBUG_LOG_FORMAT_PATTERN, style=style)
+            formatter = CustomFormatter(fmt=constants.DEBUG_LOG_FORMAT_PATTERN,
+                                        datefmt=constants.PLAIN_LOG_DATE_FORMAT_PATTERN,
+                                        style=style)
         else:
-            formatter = CustomFormatter(fmt=constants.INFO_LOG_FORMAT_PATTERN, style=style)
+            formatter = CustomFormatter(fmt=constants.INFO_LOG_FORMAT_PATTERN,
+                                        datefmt=constants.PLAIN_LOG_DATE_FORMAT_PATTERN,
+                                        style=style)
     elif handler_type == HandlerType.Fluent:
         formatter = FluentJSONFormatter(style=style)
     elif log_format == LogFormat.JSON:

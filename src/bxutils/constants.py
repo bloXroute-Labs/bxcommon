@@ -34,6 +34,7 @@ DEFAULT_LOG_LEVEL = LogLevel.INFO
 #                       the record is emitted
 DEBUG_LOG_FORMAT_PATTERN = "%(asctime)s - %(process)d - %(name)s - %(levelname)s - %(message)s"
 INFO_LOG_FORMAT_PATTERN = "%(asctime)s - %(levelname)s - %(message)s"
+PLAIN_LOG_DATE_FORMAT_PATTERN = "%Y-%m-%dT%H:%M:%S.%f %z"
 DEFAULT_LOG_FORMAT = LogFormat.PLAIN
 FLUENTD_HOST = "fluentd"
 FLUENTD_PORT = 24224

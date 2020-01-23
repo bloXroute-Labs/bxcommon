@@ -105,7 +105,7 @@ class CustomFormatter(AbstractFormatter):
     def formatTime(self, record, datefmt=None) -> str:
         ct = datetime.fromtimestamp(record.created)
         if datefmt:
-            s = ct.strftime(datefmt)
+            s = ct.astimezone().strftime(datefmt)
         else:
             s = ct.isoformat()
         return s
