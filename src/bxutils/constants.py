@@ -5,6 +5,8 @@ from bxutils.logging.log_level import LogLevel
 from bxutils.logging.fluentd_overflow_handler_type import OverflowHandlerType
 
 DEFAULT_LOG_LEVEL = LogLevel.INFO
+DEFAULT_STATS_LOG_LEVEL = LogLevel.FATAL
+STATS_LOGGER_NAMES = ["stats", "bx"]
 
 # Log Format from Python3 Logging Package
 #

@@ -179,5 +179,9 @@ def setup_logging(
     log_level_config = {}
     for logger_name in default_logger_names:
         log_level_config[logger_name] = default_log_level
+
+    for stats_logger_name in constants.STATS_LOGGER_NAMES:
+        log_level_config[stats_logger_name] = constants.DEFAULT_STATS_LOG_LEVEL
+
     log_level_config.update(log_level_overrides)
     set_log_levels(log_level_config)
