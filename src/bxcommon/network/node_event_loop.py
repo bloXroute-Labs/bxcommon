@@ -139,7 +139,14 @@ class NodeEventLoop:
                     family=socket.AF_INET
                 ))
             await asyncio.wait_for(conn_task, constants.CONNECTION_TIMEOUT)
-        except (TimeoutError, asyncio.TimeoutError, CancelledError, ConnectionRefusedError, ConnectionResetError) as e:
+        except (
+            TimeoutError,
+            asyncio.TimeoutError,
+            CancelledError,
+            ConnectionRefusedError,
+            ConnectionResetError,
+            OSError,
+        ) as e:
             err = str(e)
             if not err:
                 err = repr(e)
