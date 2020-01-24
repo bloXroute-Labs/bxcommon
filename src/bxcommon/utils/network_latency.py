@@ -3,57 +3,83 @@ from typing import List
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.utils import ping_latency
+from bxcommon.utils.ping_latency import NodeLatencyInfo
 from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
 
-def get_best_relay_by_ping_latency(relays: List[OutboundPeerModel]) -> OutboundPeerModel:
+def get_best_relays_by_ping_latency_one_per_country(relays: List[OutboundPeerModel], countries_count: int) -> List[
+    OutboundPeerModel]:
     """
     get best relay by pinging each relay and check its latency calculate with its inbound peers
-    :param relays:
+    :param relays: list of relays
+    :param countries_count: number of countries to return best relay for (one per country)
     :return:
     """
     if len(relays) == 1:
         logger.debug("First (and only) recommended relay from api is: {}".format(relays[0]))
-        return relays[0]
+        return relays
 
     relays_ping_latency = ping_latency.get_ping_latencies(relays)
     sorted_ping_latencies = sorted(relays_ping_latency, key=lambda relay_ts: relay_ts.latency)
-    best_relay_by_latency = _get_best_relay(sorted_ping_latencies, relays)
+    best_relays_by_latency = _get_best_relay_latencies_one_per_country(sorted_ping_latencies, relays, countries_count)
+    logger.trace("Best relays by latency by country ({}): {}", countries_count, best_relays_by_latency)
 
     # if best_relay_by_latency's latency is less than RELAY_LATENCY_THRESHOLD_MS, select api's relay
-    best_relay_node = relays[0] if best_relay_by_latency.latency < constants.NODE_LATENCY_THRESHOLD_MS else best_relay_by_latency.node
+    best_relay_node = relays[0] if best_relays_by_latency[0].latency < constants.NODE_LATENCY_THRESHOLD_MS else \
+        best_relays_by_latency[0].node
 
     logger.info(
-        "First recommended relay from api is: {} with latency {} ms. "
-        "Fastest ping latency relay is: {} with latency {} ms. Selected relay is: {}. Received relays from api: {}",
-        relays[0].ip, "".join([str(relay.latency) for relay in relays_ping_latency if relay.node == relays[0]]),
-        sorted_ping_latencies[0].node.ip, sorted_ping_latencies[0].latency,
-        best_relay_node.ip,
+        "First recommended relay from api is: {} with latency {} ms, "
+        "fastest ping latency relay is: {} with latency {} ms, selected relay is: {}.  Received relays from api: {}",
+        relays[0].node_id, "".join([str(relay.latency) for relay in relays_ping_latency if relay.node == relays[0]]),
+        sorted_ping_latencies[0].node.node_id, sorted_ping_latencies[0].latency,
+        best_relay_node.node_id,
         ", ".join(
-            [f"{relay_latency.node.ip} with latency {relay_latency.latency} ms" for relay_latency in relays_ping_latency]
+            [f"{relay_latency.node.ip} with latency {relay_latency.latency} ms" for relay_latency in
+             relays_ping_latency]
         )
-
     )
 
-    return best_relay_node
+    result_relays = [best_relay_node]
+
+    for extra_relay_latencies in best_relays_by_latency:
+        if extra_relay_latencies.node.node_id != best_relay_node.node_id and \
+                extra_relay_latencies.node.get_country() != best_relay_node.get_country():
+            result_relays.append(extra_relay_latencies.node)
+
+    logger.info(f"Selected best relay peers by country ({countries_count}): {result_relays}")
+
+    return result_relays
 
 
-def _get_best_relay(
-        sorted_ping_latencies: List[ping_latency.NodeLatencyInfo], relays: List[OutboundPeerModel]
-) -> ping_latency.NodeLatencyInfo:
+def _get_best_relay_latencies_one_per_country(
+        sorted_ping_latencies: List[NodeLatencyInfo], relays: List[OutboundPeerModel], countries_count: int
+) -> List[NodeLatencyInfo]:
+    fastest_latencies_by_country = {}
+    best_latencies_by_country = {}
+    ping_latency_threshold_by_country = {}
 
-    fastest_relay = sorted_ping_latencies[0]
-    return_best_relay = fastest_relay
-    ping_latency_threshold = constants.FASTEST_PING_LATENCY_THRESHOLD_PERCENT * fastest_relay.latency
+    for relay_latency in sorted_ping_latencies:
+        relay = relay_latency.node
+        relay_country = relay.get_country()
 
-    for relay in sorted_ping_latencies[1:]:
-        if relay.latency - fastest_relay.latency < ping_latency_threshold and \
-                relays.index(relay.node) < relays.index(return_best_relay.node):
-                return_best_relay = relay
-        else:
-            break
+        if relay_country not in fastest_latencies_by_country:
+            fastest_latencies_by_country[relay_country] = relay_latency
+            best_latencies_by_country[relay_country] = relay_latency
+            ping_latency_threshold_by_country[
+                relay_country] = constants.FASTEST_PING_LATENCY_THRESHOLD_PERCENT * relay_latency.latency
+        elif relay_latency.latency - fastest_latencies_by_country[relay_country].latency < \
+                ping_latency_threshold_by_country[relay_country] and \
+                relays.index(relay_latency.node) < relays.index(best_latencies_by_country[relay_country].node):
+            best_latencies_by_country[relay_country] = relay_latency
 
-    return return_best_relay
+    sorted_latencies_by_country = list(
+        map(lambda dic_item: dic_item[1],
+            sorted(best_latencies_by_country.items(), key=lambda dic_item: dic_item[1].latency)))
 
+    if countries_count > len(sorted_latencies_by_country):
+        return sorted_latencies_by_country
+    else:
+        return sorted_latencies_by_country[:countries_count]

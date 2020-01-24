@@ -1,15 +1,17 @@
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
-from collections import namedtuple
-
-from bxutils import logging
+from typing import List, NamedTuple
 
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
-NodeLatencyInfo = namedtuple("NodeLatencyInfo", ["node", "latency"])
+
+
+class NodeLatencyInfo(NamedTuple):
+    node: OutboundPeerModel
+    latency: float
 
 
 def get_ping_latency(outbound_peer: OutboundPeerModel) -> NodeLatencyInfo:

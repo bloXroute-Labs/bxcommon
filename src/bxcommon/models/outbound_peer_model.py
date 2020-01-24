@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, Any, List
 
+from bxcommon import constants
 from bxcommon.models.node_type import NodeType
 
 
@@ -25,6 +26,12 @@ class OutboundPeerModel:
         self.is_internal_gateway = is_internal_gateway
         self.node_type = node_type
         self.attributes = attributes
+
+    def get_country(self):
+        if constants.NODE_COUNTRY_ATTRIBUTE_NAME in self.attributes:
+            return self.attributes[constants.NODE_COUNTRY_ATTRIBUTE_NAME]
+
+        return None
 
     def __str__(self):
         return "({}, {}, {}, {}, {}, {})".format(self.node_type, self.ip, self.port, self.node_id,
