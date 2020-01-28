@@ -567,28 +567,12 @@ class TransactionService:
         self._short_ids_seen_in_block[wrapped_block_hash] = short_ids
 
         if len(self._short_ids_seen_in_block) >= self._final_tx_confirmations_count:
-            tx_before_cleanup = self.get_tx_hash_to_contents_len()
-            short_id_count_before_cleanup = self.get_short_id_count()
-            final_block_hash, final_short_ids = self._short_ids_seen_in_block.popitem(last=False)
+
+            _, final_short_ids = self._short_ids_seen_in_block.popitem(last=False)
 
             for short_id in final_short_ids:
                 self.remove_transaction_by_short_id(short_id, remove_related_short_ids=True, force=True,
                                                     removal_reason=TxRemovalReason.BLOCK_CLEANUP)
-            tx_after_cleanup = self.get_tx_hash_to_contents_len()
-            short_id_count_after_cleanup = self.get_short_id_count()
-            logger_memory_cleanup.statistics(
-                {
-                    "type": "BlockTransactionsCleanup",
-                    "block_hash": repr(final_block_hash),
-                    "block_transactions_count": len(final_short_ids),
-                    "tx_hash_to_contents_len_before_cleanup": tx_before_cleanup,
-                    "tx_hash_to_contents_len_after_cleanup": tx_after_cleanup,
-                    "short_id_count_before_cleanup": short_id_count_before_cleanup,
-                    "short_id_count_after_cleanup": short_id_count_after_cleanup,
-                    "cleanup_mechanism": "seen_unconfirmed_block",
-
-                }
-            )
 
         logger_memory_cleanup.statistics(
             {
@@ -627,7 +611,6 @@ class TransactionService:
                 "tx_hash_to_contents_len_after_cleanup": tx_after_cleanup,
                 "short_id_count_before_cleanup": short_id_count_before_cleanup,
                 "short_id_count_after_cleanup": short_id_count_after_cleanup,
-                "cleanup_mechanism": "block_confirmed_by_gateway",
             }
         )
 
