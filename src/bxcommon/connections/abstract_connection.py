@@ -564,7 +564,7 @@ class AbstractConnection(Generic[Node]):
             self.account_id = account_id
 
     def _pong_msg_timeout(self):
-        self.log_error("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
+        self.log_info("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
                        "Closing connection.")
         self.mark_for_close()
         self.pong_timeout_alarm_id = None
