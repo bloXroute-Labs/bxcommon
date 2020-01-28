@@ -115,7 +115,7 @@ class AbstractNode:
         self._transaction_sync_timeout_alarm_id = self.alarm_queue.register_alarm(
             constants.TX_SERVICE_CHECK_NETWORKS_SYNCED_S, self._transaction_sync_timeout)
 
-        self.requester = ThreadedRequestService(self.alarm_queue, constants.THREADED_STATS_SLEEP_INTERVAL_S)
+        self.requester = ThreadedRequestService(self.alarm_queue, constants.THREADED_HTTP_POOL_SLEEP_INTERVAL_S)
 
     def get_sdn_address(self):
         """

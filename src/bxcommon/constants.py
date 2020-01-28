@@ -149,6 +149,7 @@ INFO_STATS_INTERVAL_S = 60 * 60
 THREADED_STATS_SLEEP_INTERVAL_S = 1
 
 THREAD_POOL_WORKER_COUNT = (os.cpu_count() or 1) * 5
+THREADED_HTTP_POOL_SLEEP_INTERVAL_S = 60
 HTTP_POOL_MANAGER_COUNT = 1
 
 # TODO: turn this number up to 60 minutes after we've done some testing to ensure that this is ok
