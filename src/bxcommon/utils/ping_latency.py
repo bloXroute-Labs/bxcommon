@@ -26,12 +26,12 @@ def get_ping_latency(outbound_peer: OutboundPeerModel) -> NodeLatencyInfo:
             ping_latency = float(output.split("time=", 1)[1].split("ms", 1)[0])
         else:
             ping_latency = constants.PING_TIMEOUT_S * 1000
-            logger.warning("Could not ping {}.", outbound_peer.ip)
+            logger.warning("Could not ping {} {}.", outbound_peer.node_type, outbound_peer.ip)
     except subprocess.TimeoutExpired:
         ping_latency = constants.PING_TIMEOUT_S * 1000
-        logger.warning("Ping to {} timed out.", outbound_peer.ip)
+        logger.warning("Ping to {} {} timed out.", outbound_peer.node_type, outbound_peer.ip)
     except Exception as ex:
-        logger.error("Ping to {} triggered an error: {}.", outbound_peer.ip, ex)
+        logger.error("Ping to {} {} triggered an error: {}.", outbound_peer.node_type, outbound_peer.ip, ex)
         ping_latency = constants.PING_TIMEOUT_S * 1000
 
     return NodeLatencyInfo(outbound_peer, ping_latency)

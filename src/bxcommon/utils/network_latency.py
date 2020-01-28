@@ -31,14 +31,14 @@ def get_best_relays_by_ping_latency_one_per_country(relays: List[OutboundPeerMod
         best_relays_by_latency[0].node
 
     logger.info(
-        "First recommended relay from api is: {} with latency {} ms, "
-        "fastest ping latency relay is: {} with latency {} ms, selected relay is: {}.  Received relays from api: {}",
-        relays[0].node_id, "".join([str(relay.latency) for relay in relays_ping_latency if relay.node == relays[0]]),
-        sorted_ping_latencies[0].node.node_id, sorted_ping_latencies[0].latency,
-        best_relay_node.node_id,
+        "First recommended relay from api is: {} with {}, "
+        "fastest ping latency relay is: {} with {}, selected relay is: {}.  Received relays from api: {}",
+        relays[0].ip, "".join([_format_latency(relay.latency) for relay in relays_ping_latency if relay.node == relays[0]]),
+        sorted_ping_latencies[0].node.ip, _format_latency(sorted_ping_latencies[0].latency),
+        best_relay_node.ip,
         ", ".join(
-            [f"{relay_latency.node.ip} with latency {relay_latency.latency} ms" for relay_latency in
-             relays_ping_latency]
+            [f"{relay_latency.node.ip} with {_format_latency(relay_latency.latency)}"
+             for relay_latency in relays_ping_latency]
         )
     )
 
@@ -49,7 +49,9 @@ def get_best_relays_by_ping_latency_one_per_country(relays: List[OutboundPeerMod
                 extra_relay_latencies.node.get_country() != best_relay_node.get_country():
             result_relays.append(extra_relay_latencies.node)
 
-    logger.info(f"Selected best relay peers by country ({countries_count}): {result_relays}")
+    if len(result_relays) > 1:
+        logger.info("Selected backup relays: {}",
+                    ", ".join([f"{backup.ip} from {backup.get_country()}" for backup in result_relays[1:]]))
 
     return result_relays
 
@@ -83,3 +85,10 @@ def _get_best_relay_latencies_one_per_country(
         return sorted_latencies_by_country
     else:
         return sorted_latencies_by_country[:countries_count]
+
+
+def _format_latency(latency_ms: float) -> str:
+    if latency_ms < constants.PING_TIMEOUT_S * 2000:
+        return f"latency {latency_ms} ms"
+
+    return "latency timeout"
