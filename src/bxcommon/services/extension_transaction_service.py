@@ -57,6 +57,7 @@ class ExtensionTransactionService(TransactionService):
         result = self.proxy.track_seen_short_ids(wrapped_block_hash, tpe.UIntList(short_ids))
         removed_contents_size, dup_sids = result
         self.update_removed_transactions(removed_contents_size, dup_sids)
+
         logger_memory_cleanup.statistics(
             {
                 "type": "MemoryCleanup",

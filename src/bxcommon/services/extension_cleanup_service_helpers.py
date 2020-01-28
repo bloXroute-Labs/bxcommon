@@ -14,7 +14,7 @@ from bxcommon.messages.bloxroute.abstract_cleanup_message import AbstractCleanup
 import task_pool_executor as tpe   # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
 logger = logging.get_logger(LogRecordType.TransactionCleanup, __name__)
-
+logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
 
 def contents_cleanup(transaction_service: TransactionService,
                      block_confirmation_message: AbstractCleanupMessage,
@@ -25,9 +25,17 @@ def contents_cleanup(transaction_service: TransactionService,
     tx_service = typing.cast(ExtensionTransactionService, transaction_service)
     cleanup_task = cleanup_tasks.borrow_task()
     cleanup_task.init(tpe.InputBytes(block_confirmation_message.buf), tx_service.proxy)
+
+    tx_before_cleanup = transaction_service.get_tx_hash_to_contents_len()
+    short_id_count_before_cleanup = transaction_service.get_short_id_count()
+
     task_pool_proxy.run_task(cleanup_task)
+    tx_after_cleanup = transaction_service.get_tx_hash_to_contents_len()
+    short_id_count_after_cleanup = transaction_service.get_short_id_count()
+
     short_ids = cleanup_task.short_ids()
     total_content_removed = cleanup_task.total_content_removed()
+
     tx_count = cleanup_task.tx_count()
     message_hash = block_confirmation_message.message_hash()
     tx_service.update_removed_transactions(total_content_removed, short_ids)
@@ -35,6 +43,19 @@ def contents_cleanup(transaction_service: TransactionService,
     end_datetime = datetime.utcnow()
     end_time = time.time()
     duration = end_time - start_time
+    logger_memory_cleanup.statistics(
+
+        {
+            "type": "BlockTransactionsCleanup",
+            "block_hash": repr(message_hash),
+            "block_transactions_count": block_confirmation_message._tx_hashes_count + block_confirmation_message._sids_count,
+            "tx_hash_to_contents_len_before_cleanup": tx_before_cleanup,
+            "tx_hash_to_contents_len_after_cleanup": tx_after_cleanup,
+            "short_id_count_before_cleanup": short_id_count_before_cleanup,
+            "short_id_count_after_cleanup": short_id_count_after_cleanup,
+            "cleanup_mechanism": "block_confirmation_message_received",
+        }
+    )
     logger.statistics(
         {
             "type": "MemoryCleanup",
