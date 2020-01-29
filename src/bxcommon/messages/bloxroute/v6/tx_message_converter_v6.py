@@ -51,8 +51,7 @@ class _TxMessageConverterV6(AbstractMessageConverter):
 
         new_msg_bytes = bytearray(AbstractBloxrouteMessage.HEADER_LENGTH + new_payload_len)
         new_msg_bytes[:self._LEFT_BREAKPOINT] = msg.rawbytes()[:self._LEFT_BREAKPOINT]
-        new_msg_bytes[:self._LEFT_BREAKPOINT:self._RIGHT_BREAKPOINT] = \
-            bytearray(self._RIGHT_BREAKPOINT-self._LEFT_BREAKPOINT)
+        new_msg_bytes[self._LEFT_BREAKPOINT:self._RIGHT_BREAKPOINT] = bytearray(self._RIGHT_BREAKPOINT-self._LEFT_BREAKPOINT)
         new_msg_bytes[self._RIGHT_BREAKPOINT:] = msg.rawbytes()[self._LEFT_BREAKPOINT:]
 
         return AbstractBloxrouteMessage.initialize_class(new_msg_class, new_msg_bytes, (msg_type, new_payload_len))
