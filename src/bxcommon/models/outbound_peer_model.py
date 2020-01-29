@@ -13,6 +13,7 @@ class OutboundPeerModel:
     is_internal_gateway: bool
     node_type:  Optional[NodeType]
     attributes: Dict[Any, Any]
+    non_ssl_port: Optional[int]
 
     def __init__(self, ip: str = None, port: int = None, node_id: Optional[str] = None,
                  is_internal_gateway: bool = False, attributes: Dict[Any, Any] = None,
