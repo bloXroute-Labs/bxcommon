@@ -38,15 +38,9 @@ class AbstractVersionManager:
         if not self.is_protocol_supported(protocol_version):
             raise ValueError("Protocol of version {} is not supported.".format(protocol_version))
         if protocol_version not in self.protocol_to_factory_mapping:
-            if protocol_version > self.CURRENT_PROTOCOL_VERSION:
-                logger.debug(
-                    "Got message protocol {} that is higher the current version {}. Using current protocol version",
-                    protocol_version, self.CURRENT_PROTOCOL_VERSION)
-                protocol_version = self.CURRENT_PROTOCOL_VERSION
-            else:
-                logger.error("Got a message with version {}. Should be supported, but not in factory mapping.",
-                             protocol_version)
-                raise NotImplementedError()
+            logger.error("Got a message with version {}. Should be supported, but not in factory mapping.",
+                         protocol_version)
+            raise NotImplementedError()
 
         return self.protocol_to_factory_mapping[protocol_version]
 
@@ -248,10 +242,9 @@ class AbstractVersionManager:
                     msg="Received some kind of bitcoin peering message: {}. "
                         "Ignoring and closing connection.".format(command),
                     is_known=True)
-            raise NonVersionMessageError(
-                msg="Received an unknown nonversion hello message of type {}. "
-                    "Ignoring and closing connection.".format(command),
-                is_known=False)
+            logger.debug("Received message of type {} instead of hello message. Use current version of protocol {}.",
+                         command, self.CURRENT_PROTOCOL_VERSION)
+            return self.CURRENT_PROTOCOL_VERSION
 
         if payload_len < self.VERSION_MESSAGE_MAIN_LENGTH:
             return 1

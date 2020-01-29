@@ -52,11 +52,10 @@ class AbstractVersionManagerTest(AbstractTestCase):
     def test_get_message_factory_for_version(self):
         self.assertEqual(message_factory_v1, self.version_manager.get_message_factory_for_version(2))
         self.assertEqual(message_factory, self.version_manager.get_message_factory_for_version(3))
-        self.assertEqual(message_factory, self.version_manager.get_message_factory_for_version(4))
         with self.assertRaises(ValueError):
             self.version_manager.get_message_factory_for_version(0)
         with self.assertRaises(NotImplementedError):
-            self.version_manager.get_message_factory_for_version(1)
+            self.version_manager.get_message_factory_for_version(4)
 
     def test_get_connection_protocol_version__wrong_message(self):
         wrong_message = BroadcastMessage(
@@ -66,8 +65,7 @@ class AbstractVersionManagerTest(AbstractTestCase):
             blob=bytearray(1))
         input_buffer = InputBuffer()
         input_buffer.add_bytes(wrong_message.rawbytes())
-        with self.assertRaises(NonVersionMessageError):
-            self.version_manager.get_connection_protocol_version(input_buffer)
+        self.assertEqual(3, self.version_manager.get_connection_protocol_version(input_buffer))
 
     def test_get_connection_protocol_version__v4(self):
         hello_msg_v4 = HelloMessageV4(
