@@ -2,7 +2,7 @@ import status
 import json
 from typing import Optional, Dict, Any, Union, List
 from urllib3 import Retry, HTTPResponse
-from urllib3.exceptions import HTTPError
+from urllib3.exceptions import HTTPError, MaxRetryError
 from urllib3.poolmanager import PoolManager
 from urllib3.util import parse_url
 from ssl import SSLContext
@@ -19,6 +19,10 @@ logger = logging.get_logger(__name__)
 
 _url = constants.SDN_ROOT_URL
 _ssl_context: Optional[SSLContext] = None
+
+METHODS_WHITELIST = frozenset(
+    ["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST", "PATCH"]
+)
 
 
 def set_root_url(sdn_url: str, ssl_context: Optional[SSLContext] = None):
@@ -63,34 +67,39 @@ def raise_for_status(res: HTTPResponse) -> None:
         raise HTTPError("{}:{}", res.status, res.reason)
 
 
-def _http_request(method: str,
-                  endpoint: str,
-                  **kwargs) -> Optional[jsonT]:
+def _http_request(method: str, endpoint: str, **kwargs) -> Optional[jsonT]:
     url = build_url(endpoint)
-    _url = parse_url(url)
-    http_pool_manager: PoolManager = PoolManager(
-        num_pools=constants.HTTP_POOL_MANAGER_COUNT,
-        host=_url.host,
-        port=_url.port,
-        retries=Retry(
+    parsed_url = parse_url(url)
+    pm_args = {
+        "num_pools": constants.HTTP_POOL_MANAGER_COUNT,
+        "host": parsed_url.host,
+        "port": parsed_url.port,
+        "retries": Retry(
             connect=constants.HTTP_REQUEST_RETRIES_COUNT,
             read=constants.HTTP_REQUEST_RETRIES_COUNT,
             redirect=constants.HTTP_REQUEST_RETRIES_COUNT,
-            backoff_factor=constants.HTTP_REQUEST_BACKOFF_FACTOR
+            backoff_factor=constants.HTTP_REQUEST_BACKOFF_FACTOR,
+            method_whitelist=METHODS_WHITELIST
         ),
-        ssl_context=_ssl_context,
-        assert_hostname=False
-    )
+        "ssl_context": _ssl_context,
+    }
+    if _ssl_context is not None:
+        pm_args["assert_hostname"] = False
+    http_pool_manager: PoolManager = PoolManager(**pm_args)
     try:
         logger.trace("HTTP {0} to {1}", method, url)
         response = http_pool_manager.request(
             method=method,
             url=url,
             timeout=constants.HTTP_REQUEST_TIMEOUT,
-            **kwargs)
+            **kwargs
+        )
         raise_for_status(response)
+    except MaxRetryError as e:
+        logger.info("{} to {} failed due to: {}.", method, url, e)
+        return None
     except Exception as e:
-        logger.error("{0} to {1} returned error: {2}", method, url, e)
+        logger.error("{} to {} returned error: {}.", method, url, e)
         return None
 
     return json.loads(response.data)

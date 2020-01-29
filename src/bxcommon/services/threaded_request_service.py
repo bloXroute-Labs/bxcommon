@@ -53,7 +53,7 @@ class ThreadedRequestService:
         if not task.done():
             if task.running():
                 # pyre-ignore
-                self.logger.warning("Threaded request was enqueued more than {} minute(s) ago and hasn't"
+                self.logger.warning("Threaded request was enqueued more than {} second(s) ago and hasn't"
                                     " finished yet: {}", self.timeout, extra_info)
             else:
                 # pyre-ignore
