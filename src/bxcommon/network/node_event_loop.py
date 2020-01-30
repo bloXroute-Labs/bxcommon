@@ -1,6 +1,7 @@
 import asyncio
 import socket
 import functools
+import signal
 from asyncio import CancelledError, Future
 from asyncio.events import AbstractServer
 from ssl import SSLContext
@@ -14,7 +15,6 @@ from bxcommon.network.peer_info import ConnectionPeerInfo
 from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
 from bxutils import logging, constants as utils_constants
-from bxutils.ssl.ssl_certificate_type import SSLCertificateType
 
 logger = logging.get_logger(__name__)
 
@@ -41,17 +41,22 @@ class NodeEventLoop:
         self._stop_requested = False
         loop = asyncio.get_event_loop()
         self._started = loop.create_future()
+        loop.add_signal_handler(signal.SIGTERM, self.stop)
+        loop.add_signal_handler(signal.SIGINT, self.stop)
+        loop.add_signal_handler(signal.SIGSEGV, self.stop)
 
     async def run(self) -> None:
         try:
             await self._run()
-        finally:
-            await self.close()
+        except Exception as e:
+            logger.exception("Unhandled error raised: {}.", e)
 
     async def close(self) -> None:
         await self._node.close()
 
     def stop(self) -> None:
+        logger.info("Stopping node event loop due to a termination request.")
+        self._node.should_force_exit = True
         self._stop_requested = True
 
     async def wait_started(self) -> None:
@@ -75,10 +80,10 @@ class NodeEventLoop:
                     run_until_other_completed(self._process_new_connections_requests, connection_future, node_future)
                 )
                 if self._node.force_exit():
-                    self.stop()
-                    logger.info("Ending event loop. Shutdown has been requested manually.")
+                    logger.info("Ending event loop. Shutdown has been requested.")
                     break
         finally:
+            await self.close()
             for server in node_servers:
                 server.close()
 
@@ -95,7 +100,7 @@ class NodeEventLoop:
             await asyncio.gather(*connection_futures)
 
     async def _create_servers(self) -> List[AbstractServer]:
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         endpoints = self._node.server_endpoints
         server_futures = []
         for endpoint in endpoints:
@@ -120,12 +125,12 @@ class NodeEventLoop:
             peer_info: ConnectionPeerInfo
     ) -> None:
         logger.debug("Connecting to {}.", peer_info)
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         target_endpoint = peer_info.endpoint
         try:
             if peer_info.transport_protocol == TransportLayerProtocol.TCP:
                 ssl_ctx = self._get_target_ssl_context(target_endpoint, peer_info.connection_type)
-                conn_task = loop.create_task(loop.create_connection(
+                conn_task = asyncio.ensure_future(loop.create_connection(
                     functools.partial(self._protocol_factory, target_endpoint),
                     target_endpoint.ip_address,
                     target_endpoint.port,
@@ -133,7 +138,7 @@ class NodeEventLoop:
                     ssl=ssl_ctx
                 ))
             else:
-                conn_task = loop.create_task(loop.create_datagram_endpoint(
+                conn_task = asyncio.ensure_future(loop.create_datagram_endpoint(
                     lambda: SocketConnectionProtocol(self._node, target_endpoint, is_ssl=False),
                     remote_addr=(target_endpoint.ip_address, target_endpoint.port),
                     family=socket.AF_INET

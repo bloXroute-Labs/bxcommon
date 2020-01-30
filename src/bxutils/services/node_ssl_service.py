@@ -96,7 +96,7 @@ class NodeSSLService:
         """
         Load the service in a non blocking manner.
         """
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         # TODO : convert to proper async
         await loop.run_in_executor(None, self.blocking_load)
 
@@ -161,7 +161,7 @@ class NodeSSLService:
         Store a node private certificate in a non blocking manner
         :param cert: the node private certificate to be stored.
         """
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         # TODO : convert to proper async
         await loop.run_in_executor(None, self.blocking_store_node_certificate, cert)
 

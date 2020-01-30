@@ -1,5 +1,5 @@
+import asyncio
 import os
-import signal
 import time
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
@@ -71,11 +71,6 @@ class AbstractNode:
         self.should_force_exit = False
 
         self.num_retries_by_ip: Dict[Tuple[str, int], int] = defaultdict(int)
-
-        # Handle termination gracefully
-        signal.signal(signal.SIGTERM, self._kill_node)
-        signal.signal(signal.SIGINT, self._kill_node)
-        signal.signal(signal.SIGSEGV, self._kill_node)
 
         # Event handling queue for delayed events
         self.alarm_queue = AlarmQueue()
@@ -288,8 +283,12 @@ class AbstractNode:
         return self.should_force_exit
 
     async def close(self):
-        logger.error("Node is closing! Closing everything.")
-        await self.close_all_connections()
+        logger.info("Node is closing! Closing everything.")
+        shutdown_task = asyncio.ensure_future(self.close_all_connections())
+        try:
+            await asyncio.wait_for(shutdown_task, constants.NODE_SHUTDOWN_TIMEOUT_S)
+        except Exception as e:
+            logger.exception("Node shutdown failed due to an error: {}, force closing!", e)
         self.cleanup_memory_stats_logging()
 
     async def close_all_connections(self):
