@@ -13,6 +13,7 @@ from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
 from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
+from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
@@ -331,7 +332,10 @@ class AbstractConnection(Generic[Node]):
                     return
 
             except MessageValidationError as e:
-                self.log_warning("Message validation failed for {} message: {}.", msg_type, e.msg)
+                if self.node.NODE_TYPE not in NodeType.GATEWAY_TYPE:
+                    self.log_warning("Message validation failed for {} message: {}.", msg_type, e.msg)
+                else:
+                    self.log_debug("Message validation failed for {} message: {}.", msg_type, e.msg)
                 self.log_debug("Failed message bytes: {}",
                                self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
 
