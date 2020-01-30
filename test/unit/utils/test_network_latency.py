@@ -142,7 +142,8 @@ class NetworkLatencyTests(unittest.TestCase):
         self.assertEqual("3", best_relays[1].node_id)
 
     @patch("bxcommon.utils.ping_latency.get_ping_latencies")
-    def test_get_ping_latencies_first_peer_optimal_from_the_same_country_as_fatest(self, mock_get_ping_latencies):
+    @patch("bxcommon.utils.ping_latency.get_ping_latency")
+    def test_get_ping_latencies_first_peer_optimal_from_the_same_country_as_fastest(self, mock_get_ping_latency, mock_get_ping_latencies):
         relays = [OutboundPeerModel("34.227.149.148", node_id="0", attributes={"country": "China"}),
                   OutboundPeerModel("35.198.90.230", node_id="1", attributes={"country": "China"}),
                   OutboundPeerModel("52.221.211.38", node_id="2", attributes={"country": "China"}),
@@ -153,6 +154,7 @@ class NetworkLatencyTests(unittest.TestCase):
             [NodeLatencyInfo(relays[4], 100), NodeLatencyInfo(relays[1], 0),
              NodeLatencyInfo(relays[3], 109), NodeLatencyInfo(relays[2], 10),
              NodeLatencyInfo(relays[0], 1)]
+        mock_get_ping_latency.return_value = NodeLatencyInfo(relays[0], 1)
         best_relays = network_latency.get_best_relays_by_ping_latency_one_per_country(relays, 2)
         self.assertEqual(2, len(best_relays))
         self.assertEqual("0", best_relays[0].node_id)

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
@@ -26,9 +26,11 @@ def get_best_relays_by_ping_latency_one_per_country(relays: List[OutboundPeerMod
     best_relays_by_latency = _get_best_relay_latencies_one_per_country(sorted_ping_latencies, relays, countries_count)
     logger.trace("Best relays by latency by country ({}): {}", countries_count, best_relays_by_latency)
 
-    # if best_relay_by_latency's latency is less than RELAY_LATENCY_THRESHOLD_MS, select api's relay
-    best_relay_node = relays[0] if best_relays_by_latency[0].latency < constants.NODE_LATENCY_THRESHOLD_MS else \
-        best_relays_by_latency[0].node
+    # if the absolute between fastest relay and recommended relay latency is less than RELAY_LATENCY_THRESHOLD_MS, select api's relay
+    first_recommended_relay_latency = _get_node_latency_from_list(relays_ping_latency, relays[0].node_id)
+    best_relay_node = relays[0] \
+        if abs(best_relays_by_latency[0].latency - first_recommended_relay_latency) < constants.NODE_LATENCY_THRESHOLD_MS \
+        else best_relays_by_latency[0].node
 
     logger.info(
         "First recommended relay from api is: {} with {}, "
@@ -44,10 +46,11 @@ def get_best_relays_by_ping_latency_one_per_country(relays: List[OutboundPeerMod
 
     result_relays = [best_relay_node]
 
-    for extra_relay_latencies in best_relays_by_latency:
-        if extra_relay_latencies.node.node_id != best_relay_node.node_id and \
-                extra_relay_latencies.node.get_country() != best_relay_node.get_country():
-            result_relays.append(extra_relay_latencies.node)
+    if countries_count > 1:
+        for extra_relay_latencies in best_relays_by_latency:
+            if extra_relay_latencies.node.node_id != best_relay_node.node_id and \
+                    extra_relay_latencies.node.get_country() != best_relay_node.get_country():
+                result_relays.append(extra_relay_latencies.node)
 
     if len(result_relays) > 1:
         logger.info("Selected backup relays: {}",
@@ -92,3 +95,10 @@ def _format_latency(latency_ms: float) -> str:
         return f"latency {latency_ms} ms"
 
     return "latency timeout"
+
+
+def _get_node_latency_from_list(node_latencies: List[NodeLatencyInfo], node_id: Optional[str]) -> float:
+    for node_latency in node_latencies:
+        if node_latency.node.node_id == node_id:
+            return node_latency.latency
+    return constants.PING_INTERVAL_S * 1000
