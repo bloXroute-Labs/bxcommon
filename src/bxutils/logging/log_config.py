@@ -122,6 +122,14 @@ def set_log_levels(log_config: Dict[str, Union[LogLevel, str]]):
                     logger.error("Invalid Log Level Provided Ignore for path {}: {}", log_name, custom_log_level)
 
 
+def lazy_set_log_level(log_overrides):
+    log_configs = {}
+    for stats_logger_name in constants.STATS_LOGGER_NAMES:
+        log_configs[stats_logger_name] = constants.DEFAULT_STATS_LOG_LEVEL
+    log_configs.update(log_overrides)
+    set_log_levels(log_configs)
+
+
 def set_instance(logger_names: List[Optional[str]], instance: str):
     logger_names.append(None)  # make sure we also set the instance on the root logger
     for logger_name in logger_names:

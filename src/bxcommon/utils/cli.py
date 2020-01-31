@@ -221,7 +221,7 @@ def add_argument_parser_logging(arg_parser: ArgumentParser):
     arg_parser.add_argument(
         "--log-level-overrides",
         help="override log level for namespace stats=INFO,bxcommon.connections=WARNING",
-        default={"stats": "NOTSET", "bx": "NOTSET"},
+        default={},
         type=log_config.str_to_log_options
     )
 

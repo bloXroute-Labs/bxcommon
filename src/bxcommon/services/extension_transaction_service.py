@@ -1,12 +1,9 @@
-from typing import Any
 from datetime import datetime
-from typing import List
+from typing import Any, List
 
-from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
-from bxcommon.utils.stats.transaction_statistics_service import tx_stats
-from bxutils import logging
-from bxutils.logging.log_record_type import LogRecordType
+import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
+from bxcommon import constants
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.services.transaction_service import TxRemovalReason
 from bxcommon.utils import memory_utils
@@ -15,10 +12,12 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
 from bxcommon.utils.proxy.default_map_proxy import DefaultMapProxy
 from bxcommon.utils.proxy.map_proxy import MapProxy
-from bxcommon import constants
 from bxcommon.utils.stats import hooks
-
-import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
+from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
+from bxcommon.utils.stats.transaction_statistics_service import tx_stats
+from bxutils import logging
+from bxutils.logging import log_config
+from bxutils.logging.log_record_type import LogRecordType
 
 logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
 
@@ -27,6 +26,10 @@ class ExtensionTransactionService(TransactionService):
 
     def __init__(self, node, network_num):
         super(ExtensionTransactionService, self).__init__(node, network_num)
+
+        # Log levels need to be set again to include the loggers created in this conditionally imported class
+        log_config.lazy_set_log_level(node.opts.log_level_overrides)
+
         self.proxy = tpe.TransactionService(
             task_pool_proxy.get_pool_size(),
             node.opts.tx_mem_pool_bucket_size,
