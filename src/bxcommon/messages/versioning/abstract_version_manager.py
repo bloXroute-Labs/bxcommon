@@ -37,7 +37,8 @@ class AbstractVersionManager:
         if not self.is_protocol_supported(protocol_version):
             raise ValueError("Protocol of version {} is not supported.".format(protocol_version))
         if protocol_version not in self.protocol_to_factory_mapping:
-            logger.error("Got a message of type {}. Should be supported, but not in factory mapping.", protocol_version)
+            logger.error("Got a message with version {}. Should be supported, but not in factory mapping.",
+                         protocol_version)
             raise NotImplementedError()
 
         return self.protocol_to_factory_mapping[protocol_version]
@@ -230,7 +231,7 @@ class AbstractVersionManager:
 
         if command != self.version_message_command:
             logger.debug("Received a nonversion hello message of type {}. Ignoring and closing connection.", command)
-            return self.MIN_SUPPORTED_PROTOCOL_VERSION - 1
+            return self.CURRENT_PROTOCOL_VERSION
 
         if payload_len < self.VERSION_MESSAGE_MAIN_LENGTH:
             return 1

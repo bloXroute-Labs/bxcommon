@@ -72,7 +72,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         """
 
         # Outgoing connections use current version of protocol and message factory
-        if self.from_me or self.state & ConnectionState.HELLO_RECVD:
+        if self.state & ConnectionState.HELLO_RECVD:
             return True
 
         protocol_version = self.version_manager.get_connection_protocol_version(self.inputbuf)
@@ -88,6 +88,12 @@ class InternalNodeConnection(AbstractConnection[Node]):
             )
             self.mark_for_close()
             return False
+
+        if protocol_version > self.version_manager.CURRENT_PROTOCOL_VERSION:
+            logger.debug(
+                "Got message protocol {} that is higher the current version {}. Using current protocol version",
+                protocol_version, self.version_manager.CURRENT_PROTOCOL_VERSION)
+            protocol_version = self.version_manager.CURRENT_PROTOCOL_VERSION
 
         self.protocol_version = protocol_version
         self.message_factory = self.version_manager.get_message_factory_for_version(protocol_version)
