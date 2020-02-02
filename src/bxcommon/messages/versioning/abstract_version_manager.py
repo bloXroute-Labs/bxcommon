@@ -218,6 +218,9 @@ class AbstractVersionManager:
             raise TypeError("Argument input_buffer expected to have type InputBuffer but was {}"
                             .format(type(input_buffer)))
 
+        if input_buffer.length < constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF + constants.VERSION_NUM_LEN:
+            return self.CURRENT_PROTOCOL_VERSION
+        
         header_buf = input_buffer.peek_message(VersionMessage.HEADER_LENGTH)
 
         if header_buf[:constants.STARTING_SEQUENCE_BYTES_LEN] == constants.STARTING_SEQUENCE_BYTES:
