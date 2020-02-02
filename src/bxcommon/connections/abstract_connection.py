@@ -567,6 +567,9 @@ class AbstractConnection(Generic[Node]):
         elif not self._is_authenticated:
             self.account_id = account_id
 
+    def get_backlog_size(self) -> int:
+        return self.socket_connection.get_write_buffer_size() + self.outputbuf.length
+
     def _pong_msg_timeout(self):
         self.log_info("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
                        "Closing connection.")

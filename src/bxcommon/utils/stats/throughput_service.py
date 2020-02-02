@@ -1,13 +1,13 @@
-from typing import Optional, Union
 from collections import defaultdict
-
-from bxcommon.network.network_direction import NetworkDirection
-from bxutils import logging
+from typing import Optional, Union
 
 from bxcommon import constants
+from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.utils.stats.measurement_type import MeasurementType
 from bxcommon.utils.stats.peer_stats import PeerStats
-from bxcommon.utils.stats.statistics_service import StatisticsService, StatsIntervalData
+from bxcommon.utils.stats.statistics_service import StatisticsService, \
+    StatsIntervalData
+from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 
 logger = logging.get_logger(LogRecordType.Throughput, __name__)
@@ -92,10 +92,12 @@ class ThroughputStatistics(StatisticsService):
         )
         for conn in self.interval_data.node.connection_pool:
             payload["node_peers"].append(
-                {"peer_address": "%s:%d" % (conn.peer_ip, conn.peer_port),
-                 "peer_id": conn.peer_id,
-                 "output_buffer_length": conn.outputbuf.length
-                 })
+                {
+                    "peer_address": "%s:%d" % (conn.peer_ip, conn.peer_port),
+                    "peer_id": conn.peer_id,
+                    "output_buffer_length": conn.get_backlog_size()
+                 }
+            )
         payload["peer_stats"] = list(self.interval_data.peer_to_stats.values())
         return payload
 

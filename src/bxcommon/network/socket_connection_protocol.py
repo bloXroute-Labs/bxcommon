@@ -27,7 +27,12 @@ class SocketConnectionProtocol(Protocol):
     _node: "AbstractNode"
     _should_retry: bool
 
-    def __init__(self, node: "AbstractNode", endpoint: Optional[IpEndpoint] = None, is_ssl: bool = True):
+    def __init__(
+        self,
+        node: "AbstractNode",
+        endpoint: Optional[IpEndpoint] = None,
+        is_ssl: bool = True,
+    ):
         self._node = node
         self.transport: Optional[Transport] = None
         self.file_no = -1
@@ -52,7 +57,9 @@ class SocketConnectionProtocol(Protocol):
         self.transport = typing.cast(Transport, transport)
         self.file_no = self.transport.get_extra_info("socket").fileno()
         if self.direction == NetworkDirection.INBOUND:
-            self.endpoint = IpEndpoint(*self.transport.get_extra_info("peername"))
+            self.endpoint = IpEndpoint(
+                *self.transport.get_extra_info("peername")
+            )
             logger.debug("[{}] - accepted connection.", self)
         self._node.on_connection_added(self)
         self.state = SocketConnectionState.INITIALIZED
@@ -61,7 +68,9 @@ class SocketConnectionProtocol(Protocol):
         logger.debug("[{}] - connection established successfully.", self)
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
-        mark_connection_for_close = SocketConnectionState.MARK_FOR_CLOSE not in self.state
+        mark_connection_for_close = (
+            SocketConnectionState.MARK_FOR_CLOSE not in self.state
+        )
         self.state |= SocketConnectionState.MARK_FOR_CLOSE
         if not self._should_retry:
             self.state |= SocketConnectionState.DO_NOT_RETRY
@@ -70,10 +79,14 @@ class SocketConnectionProtocol(Protocol):
                 "[{}] - lost connection due to an error: {}, closing connection, should_retry: {}.",
                 self,
                 exc,
-                self._should_retry
+                self._should_retry,
             )
         else:
-            logger.debug("[{}] - lost connection with peer, should_retry: {}.", self, self._should_retry)
+            logger.debug(
+                "[{}] - lost connection with peer, should_retry: {}.",
+                self,
+                self._should_retry,
+            )
         self._node.on_connection_closed(self.file_no, mark_connection_for_close)
 
     def pause_writing(self) -> None:
@@ -113,16 +126,25 @@ class SocketConnectionProtocol(Protocol):
         self._should_retry = should_retry
         assert self.transport is not None, "Connection is broken!"
         self.transport.close()
-        logger.debug("[{}] - marked for close, retrying: {}.", self, should_retry)
+        logger.debug(
+            "[{}] - marked for close, retrying: {}.", self, should_retry
+        )
 
     def is_alive(self) -> bool:
         return SocketConnectionState.MARK_FOR_CLOSE not in self.state
 
     def is_receivable(self) -> bool:
-        return self.is_alive() and SocketConnectionState.HALT_RECEIVE not in self.state
+        return (
+            self.is_alive()
+            and SocketConnectionState.HALT_RECEIVE not in self.state
+        )
 
     def is_sendable(self) -> bool:
-        return self.is_alive() and SocketConnectionState.INITIALIZED in self.state and self.can_send
+        return (
+            self.is_alive()
+            and SocketConnectionState.INITIALIZED in self.state
+            and self.can_send
+        )
 
     def get_peer_certificate(self) -> Certificate:
         assert self.transport is not None, "Connection is broken!"
@@ -130,3 +152,7 @@ class SocketConnectionProtocol(Protocol):
             return ssl_certificate_factory.get_transport_cert(self.transport)
         except ValueError as e:
             raise TypeError("Socket is not SSL type!") from e
+
+    def get_write_buffer_size(self) -> int:
+        assert self.transport is not None, "Connection is broken!"
+        return self.transport.get_write_buffer_size()
