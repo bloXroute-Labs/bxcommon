@@ -60,5 +60,8 @@ class MockSocketConnection(SocketConnectionProtocol):
         super(MockSocketConnection, self).mark_for_close(should_retry)
         self.connection_lost(None)
 
+    def get_write_buffer_size(self) -> int:
+        return 0
+
 
 
