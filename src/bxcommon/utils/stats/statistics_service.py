@@ -147,7 +147,7 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
                 runtime = 0
             else:
                 runtime = time.time() - start_time
-                logger.debug("Recording {} stats took {} seconds".format(self.name, runtime))
+                logger.info("Recording {} stats took {} seconds".format(self.name, runtime))
 
             sleep_time = self.interval - runtime
             alive = self.sleep_and_check_alive(sleep_time)
