@@ -92,6 +92,23 @@ class CommonOpts:
         self.private_ssl_base_url = opts.private_ssl_base_url
         self.non_ssl_port = opts.non_ssl_port
 
+        # Validation
+        self.validate_external_ip()
+
+    def validate_external_ip(self):
+        if self.external_ip:
+            if self.external_ip == constants.LOCALHOST:
+                logger.fatal(
+                    "The specified external IP is localhost, which is not an external IP. Try omitting this argument",
+                    exc_info=False)
+                exit(1)
+
+            if any([self.external_ip.startswith(pre) for pre in constants.PRIVATE_IP_PREFIXES]):
+                logger.fatal(
+                    "The specified external IP is a known private IP address. Try omitting this argument",
+                    exc_info=False)
+                exit(1)
+
 
 def get_argument_parser() -> argparse.ArgumentParser:
     arg_parser = argparse.ArgumentParser(add_help=False)
