@@ -112,7 +112,9 @@ class AbstractNode:
         self._transaction_sync_timeout_alarm_id = self.alarm_queue.register_alarm(
             constants.TX_SERVICE_CHECK_NETWORKS_SYNCED_S, self._transaction_sync_timeout)
 
-        self.requester = ThreadedRequestService(self.alarm_queue, constants.THREADED_HTTP_POOL_SLEEP_INTERVAL_S)
+        self.requester = ThreadedRequestService(
+            self.NODE_TYPE.name.lower(), self.alarm_queue, constants.THREADED_HTTP_POOL_SLEEP_INTERVAL_S
+        )
 
         self.profiler = Profiler()
         self.profiler_enabled = False
@@ -296,6 +298,7 @@ class AbstractNode:
             await asyncio.wait_for(shutdown_task, constants.NODE_SHUTDOWN_TIMEOUT_S)
         except Exception as e:
             logger.exception("Node shutdown failed due to an error: {}, force closing!", e)
+        self.requester.close()
         self.cleanup_memory_stats_logging()
 
     async def close_all_connections(self):
@@ -414,7 +417,7 @@ class AbstractNode:
         return connection.on_input_received()
 
     async def init(self) -> None:
-        pass
+        self.requester.start()
 
     def handle_connection_closed(self, should_retry: bool, peer_info: ConnectionPeerInfo) -> None:
         self.pending_connection_attempts.discard(peer_info)

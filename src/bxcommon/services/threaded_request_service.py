@@ -1,10 +1,11 @@
-from concurrent.futures import ThreadPoolExecutor, Future, CancelledError
+from concurrent.futures import Future, CancelledError
 from typing import Callable, Any
 
 from bxutils import logging
 
 from bxcommon import constants
 from bxcommon.utils.alarm_queue import AlarmQueue
+from bxcommon.utils.concurrency.thread_pool import ThreadPool
 
 logger = logging.get_logger(__name__)
 
@@ -13,21 +14,25 @@ class ThreadedRequestService:
     """
     Single point for threaded requests with associated alarms
     """
-    thread_pool: ThreadPoolExecutor
-    _instance = None
+    thread_pool: ThreadPool
 
-    def __new__(cls, alarm_queue: AlarmQueue, timeout: int):
+    def __init__(self, name_prefix: str, alarm_queue: AlarmQueue, timeout: int):
         """
         :param alarm_queue: taken from the node that is using the http service
         :param timeout: timeout for the alarm.
         """
-        if cls._instance is None:
-            cls._instance = super(ThreadedRequestService, cls).__new__(cls)
-            cls._instance.logger = logger
-            cls._instance.alarm_queue = alarm_queue
-            cls._instance.thread_pool = ThreadPoolExecutor(max_workers=constants.THREAD_POOL_WORKER_COUNT)
-            cls._instance.timeout = timeout
-        return cls._instance
+        self.alarm_queue = alarm_queue
+        self.thread_pool = ThreadPool(
+            constants.THREAD_POOL_WORKER_COUNT, "{}_threaded_request_service".format(name_prefix)
+        )
+        self.timeout = timeout
+
+    def start(self) -> None:
+        self.thread_pool.start()
+
+    def close(self) -> None:
+        self.thread_pool.stop()
+        self.thread_pool.close()
 
     def send_threaded_request(self, request: Callable[..., None], *args: Any) -> None:
         """
@@ -37,10 +42,8 @@ class ThreadedRequestService:
         :param request: function that we need to execute in a separate thread
         :param args: list of arguments for the function
         """
-        # pyre-ignore
-        self.logger.trace("Starting thread for request.")
+        logger.trace("Starting thread for request.")
         task = self.thread_pool.submit(request, *args)
-        # pyre-ignore
         self.alarm_queue.register_alarm(self.timeout, self._threaded_post_alarm, task, request, *args)
 
     def _threaded_post_alarm(self, task: Future, request: Callable[..., None], *args: Any) -> None:
@@ -52,22 +55,17 @@ class ThreadedRequestService:
         extra_info = "{}, {}".format(request, args)
         if not task.done():
             if task.running():
-                # pyre-ignore
-                self.logger.warning("Threaded request was enqueued more than {} second(s) ago and hasn't"
-                                    " finished yet: {}", self.timeout, extra_info)
+                logger.warning("Threaded request was enqueued more than {} second(s) ago and hasn't"
+                               " finished yet: {}", self.timeout, extra_info)
             else:
-                # pyre-ignore
-                self.logger.warning("Threaded request hasn't started running yet, cancelling: {}", extra_info)
+                logger.warning("Threaded request hasn't started running yet, cancelling: {}", extra_info)
                 task.cancel()
         else:
             try:
                 result = task.result()
-                # pyre-ignore
-                self.logger.trace("Task {} completed with result: {}", extra_info, result)
+                logger.trace("Task {} completed with result: {}", extra_info, result)
             except CancelledError as e:
-                # pyre-ignore
-                self.logger.error("Task: {} with values: {} was cancelled: {}", task, extra_info, e, exc_info=True)
+                logger.error("Task: {} with values: {} was cancelled: {}", task, extra_info, e, exc_info=True)
             except Exception as e:
-                # pyre-ignore
-                self.logger.error("Task: {} with values: {} failed due to error: {}", task, extra_info, e, exc_info=True)
+                logger.error("Task: {} with values: {} failed due to error: {}", task, extra_info, e, exc_info=True)
 
