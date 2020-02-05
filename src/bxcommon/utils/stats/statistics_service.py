@@ -13,7 +13,7 @@ from bxcommon import constants
 
 
 logger = logging.get_logger(__name__)
-
+task_duration_logger = logging.get_logger(LogRecordType.TaskDuration, __name__)
 
 # TODO replace with dataclass
 class StatsIntervalData(object):
@@ -147,7 +147,13 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
                 runtime = 0
             else:
                 runtime = time.time() - start_time
-                logger.info("Recording {} stats took {} seconds".format(self.name, runtime))
-
+                task_duration_logger.statistics(
+                    {
+                        "type": "TaskDuration",
+                        "task": self.name,
+                        "duration": runtime,
+                        "node_id": self.node.opts.node_id
+                    }
+                )
             sleep_time = self.interval - runtime
             alive = self.sleep_and_check_alive(sleep_time)
