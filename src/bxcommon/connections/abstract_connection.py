@@ -218,8 +218,6 @@ class AbstractConnection(Generic[Node]):
             if self.message_tracker:
                 self.message_tracker.append_message(len(msg_bytes), full_message)
 
-        # TODO: temporary fix for some situations where, see https://bloxroute.atlassian.net/browse/BX-1153
-        self.socket_connection.can_send = True
         self.socket_connection.send()
 
     def pre_process_msg(self):
@@ -568,7 +566,10 @@ class AbstractConnection(Generic[Node]):
             self.account_id = account_id
 
     def get_backlog_size(self) -> int:
-        return self.socket_connection.get_write_buffer_size() + self.outputbuf.length
+        output_buffer_backlog = self.outputbuf.length
+        socket_buffer_backlog = self.socket_connection.get_write_buffer_size()
+        self.log_trace("Output backlog: {}, socket backlog: {}", output_buffer_backlog, socket_buffer_backlog)
+        return output_buffer_backlog + socket_buffer_backlog
 
     def _pong_msg_timeout(self):
         self.log_info("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
