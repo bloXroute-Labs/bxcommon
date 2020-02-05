@@ -17,8 +17,8 @@ class TransactionStatisticsServiceTest(AbstractTestCase):
     def setUp(self):
         self.node = MockNode(helpers.get_common_opts(8888))
         tx_stats.set_node(self.node)
-        tx_stats.configure_network(1, 0.5)
-        tx_stats.configure_network(2, 50)
+        tx_stats.configure_network(1, 0.5, 0.06)
+        tx_stats.configure_network(2, 50, 60)
 
     def test_should_log_event_tx_hash(self):
 

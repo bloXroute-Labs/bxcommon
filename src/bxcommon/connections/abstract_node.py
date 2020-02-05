@@ -393,7 +393,9 @@ class AbstractNode:
 
         blockchain_networks: List[BlockchainNetworkModel] = opts.blockchain_networks
         for blockchain_network in blockchain_networks:
-            tx_stats.configure_network(blockchain_network.network_num, blockchain_network.tx_percent_to_log)
+            tx_stats.configure_network(blockchain_network.network_num,
+                                       blockchain_network.tx_percent_to_log_by_hash,
+                                       blockchain_network.tx_percent_to_log_by_sid)
 
     def dump_memory_usage(self):
         total_mem_usage = memory_utils.get_app_memory_usage()
