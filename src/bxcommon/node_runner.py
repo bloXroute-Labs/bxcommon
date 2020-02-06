@@ -148,7 +148,7 @@ def _run_node(
     if not hasattr(opts, "outbound_peers"):
         opts.__dict__["outbound_peers"] = []
 
-    logger.debug({"type": "node_init", "Data": opts})
+    logger.debug({"type": "node_init", "data": opts})
 
     # Start main loop
     node = node_class(opts, node_ssl_service)
