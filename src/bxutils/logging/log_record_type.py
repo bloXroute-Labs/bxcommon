@@ -27,6 +27,7 @@ class LogRecordType(Enum):
     ExecutionTimerInfo = "stats.execution.timer.info"    
     TaskDuration = "stats.task_duration"
     RoutingService = "routing.service"
+    ConnectionHealth = "stats.connection_health"
 
 
 
