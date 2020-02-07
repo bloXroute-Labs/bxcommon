@@ -138,6 +138,7 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
         """
         alive = self.sleep_and_check_alive(self.interval)
         while alive:
+            start_date_time = datetime.utcnow()
             start_time = time.time()
             try:
                 record_fn()
@@ -150,6 +151,7 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
                 task_duration_logger.statistics(
                     {
                         "type": "TaskDuration",
+                        "start_date_time": start_date_time,
                         "task": self.name,
                         "duration": runtime,
                         "node_id": self.node.opts.node_id
