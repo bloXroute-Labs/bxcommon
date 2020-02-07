@@ -546,7 +546,6 @@ class AbstractConnection(Generic[Node]):
         self.CONNECTION_TYPE = connection_type  # pyre-ignore
         self.account_id = account_id
         self._is_authenticated = True
-        self.on_connection_established()
 
     async def wait_closed(self):
         if self._close_waiter is not None:
