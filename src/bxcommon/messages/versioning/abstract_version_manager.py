@@ -5,7 +5,6 @@ from bxutils import logging
 
 from bxcommon import constants
 from bxcommon.constants import VERSION_NUM_LEN
-from bxcommon.messages.bloxroute.v4.version_message_v4 import VersionMessageV4
 from bxcommon.messages.bloxroute.version_message import VersionMessage
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
@@ -227,8 +226,8 @@ class AbstractVersionManager:
             command, payload_len = VersionMessage.unpack(header_buf)
             header_len = VersionMessage.HEADER_LENGTH
         else:
-            command, payload_len = VersionMessageV4.unpack(header_buf)
-            header_len = VersionMessageV4.HEADER_LENGTH
+            command = ""
+            payload_len = 0
 
         if command != self.version_message_command:
             if constants.HTTP_MESSAGE in command:

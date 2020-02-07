@@ -1,83 +1,159 @@
-from bxcommon import constants
-from bxcommon.constants import EMPTY_SOURCE_ID, QUOTA_FLAG_LEN
-from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
-from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
-from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
+from bxcommon.constants import EMPTY_SOURCE_ID
+from bxcommon.messages.bloxroute.ack_message import AckMessage
+from bxcommon.messages.bloxroute.block_confirmation_message import (
+    BlockConfirmationMessage,
+)
+from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
+from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
+from bxcommon.messages.bloxroute.hello_message import HelloMessage
+from bxcommon.messages.bloxroute.key_message import KeyMessage
+from bxcommon.messages.bloxroute.notification_message import NotificationMessage
+from bxcommon.messages.bloxroute.ping_message import PingMessage
+from bxcommon.messages.bloxroute.pong_message import PongMessage
+from bxcommon.messages.bloxroute.transaction_cleanup_message import (
+    TransactionCleanupMessage,
+)
 from bxcommon.messages.bloxroute.tx_message import TxMessage
-from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage, TxContentShortIds
-from bxcommon.messages.bloxroute.v6.tx_message_converter_v6 import tx_message_converter_v6
+from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import (
+    TxServiceSyncBlocksShortIdsMessage,
+)
+from bxcommon.messages.bloxroute.tx_service_sync_complete_message import (
+    TxServiceSyncCompleteMessage,
+)
+from bxcommon.messages.bloxroute.tx_service_sync_req_message import (
+    TxServiceSyncReqMessage,
+)
+from bxcommon.messages.bloxroute.tx_service_sync_txs_message import (
+    TxServiceSyncTxsMessage,
+)
+from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v6.tx_message_v6 import TxMessageV6
-from bxcommon.messages.bloxroute.v6.tx_service_sync_txs_message_v6 import TxServiceSyncTxsMessageV6, TxContentShortIdsV6
-from bxcommon.test_utils import helpers
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-from bxcommon.utils import crypto, uuid_pack
-from bxcommon.utils.object_hash import Sha256Hash
+from bxcommon.messages.bloxroute.v6.tx_service_sync_txs_message_v6 import (
+    TxServiceSyncTxsMessageV6,
+    TxContentShortIdsV6,
+)
 from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.test_utils.abstract_bloxroute_version_manager_test import (
+    AbstractBloxrouteVersionManagerTest,
+)
+from bxcommon.utils import uuid_pack
 
 NEW_VERSION_SOURCE_ID = uuid_pack.from_bytes(b"\x01" * 16)
 EMPTY_SOURCE_ID_STR = EMPTY_SOURCE_ID.decode()
 
 
-class BloxrouteTxVersionManagerV6Test(AbstractTestCase):
+class BloxrouteVersionManagerV6Test(
+    AbstractBloxrouteVersionManagerTest[
+        HelloMessage,
+        AckMessage,
+        PingMessage,
+        PongMessage,
+        BroadcastMessage,
+        TxMessageV6,
+        GetTxsMessage,
+        TxsMessage,
+        KeyMessage,
+        TxServiceSyncReqMessage,
+        TxServiceSyncBlocksShortIdsMessage,
+        TxServiceSyncTxsMessageV6,
+        TxServiceSyncCompleteMessage,
+        BlockConfirmationMessage,
+        TransactionCleanupMessage,
+        NotificationMessage,
+    ]
+):
+    def version_to_test(self) -> int:
+        return 6
 
-    def test_tx_message(self):
-        tx_hash = Sha256Hash(helpers.generate_bytes(crypto.SHA256_HASH_LEN))
-        tx_contents = helpers.generate_bytes(250)
-        network_num = 1234
-        self._test_to_old_version(TxMessage(message_hash=tx_hash, network_num=network_num,
-                                            tx_val=tx_contents, quota_type=QuotaType.PAID_DAILY_QUOTA))
-        self._test_to_new_version(TxMessageV6(message_hash=tx_hash, network_num=network_num, tx_val=tx_contents))
+    def old_tx_message(self, original_message: TxMessage) -> TxMessageV6:
+        return TxMessageV6(
+            original_message.message_hash(),
+            original_message.network_num(),
+            original_message.source_id(),
+            original_message.short_id(),
+            original_message.tx_val(),
+        )
 
-    def _test_to_old_version(self, new_version_msg: TxMessage):
-        old_version_msg = bloxroute_version_manager.convert_message_to_older_version(6, new_version_msg)
-        self._validate_messages_match(old_version_msg, new_version_msg)
+    def old_txtxs_message(
+        self, original_message: TxServiceSyncTxsMessage
+    ) -> TxServiceSyncTxsMessageV6:
+        return TxServiceSyncTxsMessageV6(
+            original_message.network_num(),
+            [
+                TxContentShortIdsV6(
+                    tx_content_short_ids.tx_hash,
+                    tx_content_short_ids.tx_content,
+                    tx_content_short_ids.short_ids,
+                )
+                for tx_content_short_ids in original_message.txs_content_short_ids()
+            ],
+        )
 
-    def _test_to_new_version(self, old_version_msg: TxMessageV6):
-        new_version_msg: AbstractBroadcastMessage = \
-            bloxroute_version_manager.convert_message_from_older_version(6, old_version_msg)
-        self._validate_messages_match(old_version_msg, new_version_msg)
-        self.assertEqual(EMPTY_SOURCE_ID_STR, new_version_msg.source_id())
+    def compare_tx_current_to_old(
+        self,
+        converted_old_message: TxMessageV6,
+        original_old_message: TxMessageV6,
+    ):
+        self.assert_attributes_equal(
+            original_old_message,
+            converted_old_message,
+            ["message_hash", "tx_val", "source_id", "network_num"],
+        )
 
-    def _validate_messages_match(self, old_version_msg, new_version_msg):
-        self.assertEqual(old_version_msg.msg_type(), new_version_msg.msg_type())
-        self.assertEqual(old_version_msg.payload_len(), new_version_msg.payload_len() - QUOTA_FLAG_LEN)
-        self.assertEqual(old_version_msg.rawbytes()[
-                         AbstractBloxrouteMessage.HEADER_LENGTH:tx_message_converter_v6._LEFT_BREAKPOINT],
-                         new_version_msg.rawbytes()[
-                         AbstractBloxrouteMessage.HEADER_LENGTH:tx_message_converter_v6._LEFT_BREAKPOINT])
-        self.assertEqual(old_version_msg.rawbytes()[tx_message_converter_v6._LEFT_BREAKPOINT:],
-                         new_version_msg.rawbytes()[tx_message_converter_v6._RIGHT_BREAKPOINT:])
+    def compare_tx_old_to_current(
+        self,
+        converted_current_message: TxMessage,
+        original_current_message: TxMessage,
+    ):
+        self.assertEqual(
+            QuotaType.FREE_DAILY_QUOTA, converted_current_message.quota_type()
+        )
+        self.assert_attributes_equal(
+            original_current_message,
+            converted_current_message,
+            ["message_hash", "tx_val", "source_id", "network_num"],
+        )
 
+    def compare_txtxs_current_to_old(
+        self,
+        converted_old_message: TxServiceSyncTxsMessageV6,
+        original_old_message: TxServiceSyncTxsMessageV6,
+    ):
+        self.assert_attributes_equal(
+            original_old_message,
+            converted_old_message,
+            ["network_num", "txs_content_short_ids"],
+        )
 
-class BloxrouteTxSyncVersionManagerV6Test(AbstractTestCase):
+    def compare_txtxs_old_to_current(
+        self,
+        converted_current_message: TxServiceSyncTxsMessage,
+        original_current_message: TxServiceSyncTxsMessage,
+    ):
+        self.assert_attributes_equal(
+            original_current_message, converted_current_message, ["network_num"]
+        )
+        original_txs_content_short_ids = (
+            original_current_message.txs_content_short_ids()
+        )
+        converted_txs_content_short_ids = (
+            converted_current_message.txs_content_short_ids()
+        )
+        self.assertEqual(
+            len(original_txs_content_short_ids),
+            len(converted_txs_content_short_ids),
+        )
+        for i in range(len(original_txs_content_short_ids)):
+            original = original_txs_content_short_ids[i]
+            converted = converted_txs_content_short_ids[i]
 
-    def test_tx_sync_message(self):
-        _get_next_fake_sid = (i for i in range(1, 100000))
-        tx_content_short_ids_v6 = []
-        tx_content_short_ids = []
-        for i in range(100):
-            tx_hash = Sha256Hash(helpers.generate_bytes(crypto.SHA256_HASH_LEN))
-            tx_contents = helpers.generate_bytes(250)
-            short_ids = [_get_next_fake_sid.__next__() for i in range(0, 1 + i % 7)]
-            tx_content_short_ids.append(TxContentShortIds(tx_hash, tx_contents, short_ids,
-                                                          [QuotaType.FREE_DAILY_QUOTA for _ in short_ids]))
-            tx_content_short_ids_v6.append(TxContentShortIdsV6(tx_hash, tx_contents, short_ids))
-        network_num = 1234
-        new_version_msg = TxServiceSyncTxsMessage(network_num, tx_content_short_ids)
-        old_version_msg = TxServiceSyncTxsMessageV6(network_num, tx_content_short_ids_v6)
-
-        converted_to_old_version = bloxroute_version_manager.convert_message_to_older_version(6, new_version_msg)
-        converted_to_new_version = bloxroute_version_manager.convert_message_from_older_version(6, old_version_msg)
-
-        self.validate_message(converted_to_old_version, new_version_msg)
-        self.validate_message(old_version_msg, converted_to_new_version)
-
-    def validate_message(self, old_version_msg, new_version_msg):
-        self.assertEqual(old_version_msg.msg_type(), new_version_msg.msg_type())
-        self.assertEqual(old_version_msg.network_num(), new_version_msg.network_num())
-        self.assertEqual(old_version_msg.tx_count(), new_version_msg.tx_count())
-
-        for old_item, new_item in zip(old_version_msg.txs_content_short_ids(), new_version_msg.txs_content_short_ids()):
-            self.assertEqual(old_item.tx_hash, new_item.tx_hash)
-            self.assertEqual(old_item.tx_content, new_item.tx_content)
-            self.assertEqual(old_item.short_ids, new_item.short_ids)
+            self.assertEqual(original.tx_hash, converted.tx_hash)
+            self.assertEqual(original.tx_content, converted.tx_content)
+            self.assertEqual(original.short_ids, converted.short_ids)
+            self.assertEqual(
+                [
+                    QuotaType.FREE_DAILY_QUOTA
+                    for _ in range(len(converted.short_id_flags))
+                ],
+                converted.short_id_flags,
+            )

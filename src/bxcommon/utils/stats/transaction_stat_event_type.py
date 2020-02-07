@@ -2,7 +2,7 @@ from bxcommon.utils.stats.stat_event_logic_flags import StatEventLogicFlags
 from bxcommon.utils.stats.stat_event_type_settings import StatEventTypeSettings
 
 
-class TransactionStatEventType(object):
+class TransactionStatEventType:
     TX_RECEIVED_FROM_BLOCKCHAIN_NODE = StatEventTypeSettings("TxReceivedFromBlockchainNode",
                                                              event_logic_flags=StatEventLogicFlags.SUMMARY)
     TX_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = StatEventTypeSettings("TxReceivedFromBlockchainNodeIgnoreSeen")
@@ -16,6 +16,7 @@ class TransactionStatEventType(object):
     TX_RECEIVED_BY_RELAY_FROM_PEER = StatEventTypeSettings("TxReceivedByRelayFromPeer",
                                                            event_logic_flags=StatEventLogicFlags.SUMMARY)
     TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_SEEN = StatEventTypeSettings("TxReceivedByRelayFromPeerIgnoreSeen")
+    TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_EXPIRED = StatEventTypeSettings("TxReceivedByRelayFromPeerIgnoreExpired")
     TX_SHORT_ID_ASSIGNED_BY_RELAY = StatEventTypeSettings("TxShortIdAssignedByRelay")
     TX_SHORT_ID_STORED_BY_GATEWAY = StatEventTypeSettings("TxShortIdStoredByGateway")
     TX_SHORT_ID_EMPTY_IN_MSG_FROM_RELAY = StatEventTypeSettings("TxShortIdEmptyInMsgFromRelay")

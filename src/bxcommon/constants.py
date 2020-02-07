@@ -38,6 +38,7 @@ OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME = 0.05
 # The unsigned integer transaction SID representing null.
 # If changing, also change in bxapi/constants.py
 NULL_TX_SID = 0
+NULL_TX_TIMESTAMP = 0
 UNKNOWN_TRANSACTION_HASH: Sha256Hash = Sha256Hash(bytearray(b"\xff" * crypto.SHA256_HASH_LEN))
 # </editor-fold>
 

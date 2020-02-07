@@ -4,9 +4,7 @@ from bxcommon.constants import VERSIONED_HELLO_MSG_MIN_PAYLOAD_LEN
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
-from bxcommon.messages.bloxroute.v4.hello_message_v4 import HelloMessageV4
 from bxcommon.messages.versioning.abstract_version_manager import AbstractVersionManager
-from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
 from bxcommon.utils import crypto
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.object_hash import Sha256Hash
@@ -68,11 +66,11 @@ class AbstractVersionManagerTest(AbstractTestCase):
         self.assertEqual(3, self.version_manager.get_connection_protocol_version(input_buffer))
 
     def test_get_connection_protocol_version__v4(self):
-        hello_msg_v4 = HelloMessageV4(
+        hello_msg = HelloMessage(
             protocol_version=4,
             network_num=constants.DEFAULT_NETWORK_NUM)
         input_buffer = InputBuffer()
-        input_buffer.add_bytes(hello_msg_v4.rawbytes())
+        input_buffer.add_bytes(hello_msg.rawbytes())
 
         self.assertEqual(4, self.version_manager.get_connection_protocol_version(input_buffer))
 

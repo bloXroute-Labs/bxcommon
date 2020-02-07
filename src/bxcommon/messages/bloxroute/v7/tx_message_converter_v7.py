@@ -12,16 +12,15 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import (
     BloxrouteMessageType,
 )
 from bxcommon.messages.bloxroute.tx_message import TxMessage
-from bxcommon.messages.bloxroute.v6.tx_message_v6 import TxMessageV6
+from bxcommon.messages.bloxroute.v7.tx_message_v7 import TxMessageV7
 from bxcommon.messages.versioning.abstract_message_converter import (
     AbstractMessageConverter,
 )
-from bxcommon.models.quota_type_model import QuotaType
 
 
-class _TxMessageConverterV6(AbstractMessageConverter):
+class _TxMessageConverterV7(AbstractMessageConverter):
     _MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING = {
-        BloxrouteMessageType.TRANSACTION: TxMessageV6
+        BloxrouteMessageType.TRANSACTION: TxMessageV7
     }
 
     _MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING = {
@@ -33,7 +32,9 @@ class _TxMessageConverterV6(AbstractMessageConverter):
         + AbstractBroadcastMessage.PAYLOAD_LENGTH
         - constants.CONTROL_FLAGS_LEN
     )
-    _LEFT_BREAKPOINT = _BASE_LENGTH + constants.SID_LEN
+    _LEFT_BREAKPOINT = (
+        _BASE_LENGTH + constants.SID_LEN + constants.QUOTA_FLAG_LEN
+    )
     _RIGHT_BREAKPOINT = (
         _BASE_LENGTH
         + constants.SID_LEN
@@ -48,16 +49,15 @@ class _TxMessageConverterV6(AbstractMessageConverter):
 
         if msg_type not in self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING:
             raise ValueError(
-                f"Tried to convert unexpected new message type to v6: {msg_type}"
+                f"Tried to convert unexpected new "
+                f"message type to v7: {msg_type}"
             )
 
         old_version_msg_class = self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING[
             msg_type
         ]
         old_version_payload_len = (
-            msg.payload_len()
-            - constants.QUOTA_FLAG_LEN
-            - constants.UL_INT_SIZE_IN_BYTES
+            msg.payload_len() - constants.UL_INT_SIZE_IN_BYTES
         )
 
         old_version_msg_bytes = bytearray(
@@ -71,13 +71,6 @@ class _TxMessageConverterV6(AbstractMessageConverter):
             self._RIGHT_BREAKPOINT :
         ]
 
-        struct.pack_into(
-            "<12sL",
-            old_version_msg_bytes,
-            AbstractBloxrouteMessage.STARTING_BYTES_LEN,
-            msg_type,
-            old_version_payload_len,
-        )
         return AbstractBloxrouteMessage.initialize_class(
             old_version_msg_class,
             old_version_msg_bytes,
@@ -91,15 +84,12 @@ class _TxMessageConverterV6(AbstractMessageConverter):
 
         if msg_type not in self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING:
             raise ValueError(
-                f"Tried to convert unexpected old message type to v6: {msg_type}"
+                f"Tried to convert unexpected old message type to "
+                f"v7: {msg_type}"
             )
 
         new_msg_class = self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING[msg_type]
-        new_payload_len = (
-            msg.payload_len()
-            + constants.QUOTA_FLAG_LEN
-            + constants.UL_INT_SIZE_IN_BYTES
-        )
+        new_payload_len = msg.payload_len() + constants.UL_INT_SIZE_IN_BYTES
 
         new_msg_bytes = bytearray(
             AbstractBloxrouteMessage.HEADER_LENGTH + new_payload_len
@@ -108,19 +98,7 @@ class _TxMessageConverterV6(AbstractMessageConverter):
             : self._LEFT_BREAKPOINT
         ]
 
-        struct.pack_into(
-            "<B",
-            new_msg_bytes,
-            self._LEFT_BREAKPOINT,
-            QuotaType.FREE_DAILY_QUOTA.value,
-        )
-        struct.pack_into(
-            "<L",
-            new_msg_bytes,
-            self._LEFT_BREAKPOINT + constants.QUOTA_FLAG_LEN,
-            0,
-        )
-
+        struct.pack_into("<L", new_msg_bytes, self._LEFT_BREAKPOINT, 0)
         new_msg_bytes[self._RIGHT_BREAKPOINT :] = msg.rawbytes()[
             self._LEFT_BREAKPOINT :
         ]
@@ -156,4 +134,4 @@ class _TxMessageConverterV6(AbstractMessageConverter):
         raise NotImplementedError
 
 
-tx_message_converter_v6 = _TxMessageConverterV6()
+tx_message_converter_v7 = _TxMessageConverterV7()
