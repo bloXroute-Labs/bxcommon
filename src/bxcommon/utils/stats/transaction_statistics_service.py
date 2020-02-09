@@ -63,7 +63,7 @@ class _TransactionStatisticsService(StatisticsEventService):
         should_log_short_id = False
         # exclude short_id == 0 as well
         if short_id:
-            should_log_short_id = float(short_id % 1000 - 1) / 10 <= percent_to_log
+            should_log_short_id = float(short_id % 10000 + 1) / 10 <= percent_to_log
 
         return should_log_tx_hash or should_log_short_id
 

@@ -33,7 +33,7 @@ class TransactionStatisticsServiceTest(AbstractTestCase):
         self._test_should_log_event(255, 1, 100, False)
         self._test_should_log_event(255, 1, 999, False)
         self._test_should_log_event(255, 1, 10, False)
-        self._test_should_log_event(255, 1, 5, True)
+        self._test_should_log_event(255, 1, 5, False)
         self._test_should_log_event(255, 1, 1, True)
 
     def test_should_log_event_network_num(self):
