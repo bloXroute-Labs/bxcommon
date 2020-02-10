@@ -226,7 +226,7 @@ class AbstractVersionManager:
             command, payload_len = VersionMessage.unpack(header_buf)
             header_len = VersionMessage.HEADER_LENGTH
         else:
-            command = ""
+            command = constants.MSG_NULL_BYTE
             payload_len = 0
 
         if command != self.version_message_command:
