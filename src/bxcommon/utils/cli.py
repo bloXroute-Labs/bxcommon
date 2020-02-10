@@ -3,6 +3,8 @@ from argparse import Namespace
 from dataclasses import dataclass
 from typing import Dict
 from argparse import ArgumentParser
+from urllib.parse import urlparse
+from ipaddress import ip_address
 
 from bxcommon import constants
 from bxcommon.constants import ALL_NETWORK_NUM
@@ -55,7 +57,6 @@ class CommonOpts:
     source_version: int
     ca_cert_url: str
     private_ssl_base_url: str
-    non_ssl_port: int
 
     def __init__(self, opts: Namespace):
         self.external_ip = opts.external_ip
@@ -96,18 +97,16 @@ class CommonOpts:
         self.validate_external_ip()
 
     def validate_external_ip(self):
-        if self.external_ip:
-            if self.external_ip == constants.LOCALHOST:
-                logger.fatal(
-                    "The specified external IP is localhost, which is not an external IP. Try omitting this argument",
-                    exc_info=False)
-                exit(1)
-
-            if any([self.external_ip.startswith(pre) for pre in constants.PRIVATE_IP_PREFIXES]):
-                logger.fatal(
-                    "The specified external IP is a known private IP address. Try omitting this argument",
-                    exc_info=False)
-                exit(1)
+        parsed_sdn_url = urlparse(self.sdn_url)
+        sdn_host = parsed_sdn_url.netloc.split(":")[0]
+        sdn_ip = ip_address(ip_resolver.blocking_resolve_ip(sdn_host))
+        if not sdn_ip.is_private and self.external_ip and ip_address(self.external_ip).is_private:
+            logger.fatal(
+                "The specified external IP ({}) is a known private IP address. Try omitting this argument",
+                self.external_ip,
+                exc_info=False
+            )
+            exit(1)
 
 
 def get_argument_parser() -> argparse.ArgumentParser:
