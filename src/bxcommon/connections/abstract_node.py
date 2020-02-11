@@ -588,10 +588,4 @@ class AbstractNode:
                      self.num_retries_by_ip[(ip, port)])
         self.enqueue_connection(ip, port, connection_type)
 
-        # In case of connection retry to SDN - no need to resync transactions on this node, just update
-        # 'has_fully_updated_tx_service' attribute on SDN since it was set to false when the connection was
-        # lost.
-        if connection_type == ConnectionType.SDN:
-            self.on_fully_updated_tx_service()
-
         return 0
