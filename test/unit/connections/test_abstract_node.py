@@ -303,11 +303,11 @@ class AbstractNodeTest(AbstractTestCase):
         logger_mock.statistics.assert_called_once()
 
     def _assert_socket_connected(self):
-        self.assertFalse(self.socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE)
+        self.assertFalse(SocketConnectionState.MARK_FOR_CLOSE in self.socket_connection.state)
 
     def _assert_socket_disconnected(self, should_retry: bool):
-        self.assertTrue(self.socket_connection.state & SocketConnectionState.MARK_FOR_CLOSE)
+        self.assertTrue(SocketConnectionState.MARK_FOR_CLOSE in self.socket_connection.state)
         if should_retry:
-            self.assertFalse(self.socket_connection.state & SocketConnectionState.DO_NOT_RETRY)
+            self.assertFalse(SocketConnectionState.DO_NOT_RETRY in self.socket_connection.state)
         else:
-            self.assertTrue(self.socket_connection.state & SocketConnectionState.DO_NOT_RETRY)
+            self.assertTrue(SocketConnectionState.DO_NOT_RETRY in self.socket_connection.state)

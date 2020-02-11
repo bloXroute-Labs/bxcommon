@@ -20,14 +20,14 @@ class TestAbstractBloxrouteMessage(AbstractTestCase):
         self.assertEqual(payload_len, message.payload_len())
         self.assertEqual(payload_len, len(message.payload()))
 
-        self.assertTrue(message.get_control_flags() & BloxrouteMessageControlFlags.VALID)
+        self.assertTrue(BloxrouteMessageControlFlags.VALID in BloxrouteMessageControlFlags(message.get_control_flags()))
 
         message.remove_control_flag(BloxrouteMessageControlFlags.VALID)
-        self.assertFalse(message.get_control_flags() & BloxrouteMessageControlFlags.VALID)
+        self.assertFalse(BloxrouteMessageControlFlags.VALID in BloxrouteMessageControlFlags(message.get_control_flags()))
 
         message.set_control_flag(BloxrouteMessageControlFlags.VALID)
-        self.assertTrue(message.get_control_flags() & BloxrouteMessageControlFlags.VALID)
+        self.assertTrue(BloxrouteMessageControlFlags.VALID in BloxrouteMessageControlFlags(message.get_control_flags()))
 
         # Trying set already set flag
         message.set_control_flag(BloxrouteMessageControlFlags.VALID)
-        self.assertTrue(message.get_control_flags() & BloxrouteMessageControlFlags.VALID)
+        self.assertTrue(BloxrouteMessageControlFlags.VALID in BloxrouteMessageControlFlags(message.get_control_flags()))

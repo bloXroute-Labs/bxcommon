@@ -88,6 +88,6 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
 
         control_flag_byte = input_buffer[header_len + payload_len - 1:header_len + payload_len]
 
-        if not control_flag_byte[0] & BloxrouteMessageControlFlags.VALID:
+        if BloxrouteMessageControlFlags.VALID not in BloxrouteMessageControlFlags(control_flag_byte[0]):
             raise MessageValidationError(
                 "Control flags byte does not have VALID flag set. Value: {}.".format(control_flag_byte))

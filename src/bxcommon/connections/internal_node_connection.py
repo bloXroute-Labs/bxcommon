@@ -78,7 +78,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         """
 
         # Outgoing connections use current version of protocol and message factory
-        if self.state & ConnectionState.HELLO_RECVD:
+        if ConnectionState.HELLO_RECVD in self.state:
             return True
 
         protocol_version = self.version_manager.get_connection_protocol_version(self.inputbuf)
@@ -303,7 +303,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
             self.send_tx_service_sync_complete(network_num)
 
     def msg_tx_service_sync_complete(self, msg: TxServiceSyncCompleteMessage):
-        if self.node.NODE_TYPE in NodeType.GATEWAY and self.CONNECTION_TYPE & ConnectionType.RELAY_BLOCK:
+        if self.node.NODE_TYPE in NodeType.GATEWAY and ConnectionType.RELAY_BLOCK in self.CONNECTION_TYPE:
             return
         network_num = msg.network_num()
         self.node.last_sync_message_received_by_network.pop(network_num, None)

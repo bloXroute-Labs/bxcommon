@@ -191,7 +191,7 @@ class AbstractNode:
         if mark_connection_for_close:
             conn.mark_for_close()
 
-        if not conn.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED:
+        if ConnectionState.ESTABLISHED not in conn.state:
             logger.info("Failed to connect to: {}.", conn)
         else:
             logger.info("Closed connection: {}", conn)
@@ -348,7 +348,7 @@ class AbstractNode:
         at the maximum of constants.MAX_CONNECT_RETRIES, but some connections should be always retried
         unless there's some fatal socket error.
         """
-        is_sdn = bool(connection_type & ConnectionType.SDN)
+        is_sdn = ConnectionType.SDN in connection_type
         return is_sdn or self.num_retries_by_ip[(ip, port)] < constants.MAX_CONNECT_RETRIES
 
     def init_throughput_logging(self):
@@ -512,7 +512,7 @@ class AbstractNode:
 
         :param conn connection to destroy
         """
-        should_retry = not bool(conn.socket_connection.state & SocketConnectionState.DO_NOT_RETRY)
+        should_retry = SocketConnectionState.DO_NOT_RETRY not in conn.socket_connection.state
 
         logger.debug("Breaking connection to {}. Attempting retry: {}", conn, should_retry)
         conn.dispose()
@@ -550,7 +550,7 @@ class AbstractNode:
 
         logger.trace("Checking connection status: {}", conn)
 
-        if conn.state & ConnectionState.ESTABLISHED:
+        if ConnectionState.ESTABLISHED in conn.state:
             logger.trace("Connection is still established: {}", conn)
 
             return constants.CANCEL_ALARMS

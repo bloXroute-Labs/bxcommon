@@ -1,8 +1,9 @@
-from enum import auto, IntFlag
+from enum import auto
 
+from bxcommon.models.serializable_flag import SerializableFlag
 
 # IntFlag allows comparison with ints, which is not as strict as Flag, but allows easier unit testing.
-class ConnectionType(IntFlag):
+class ConnectionType(SerializableFlag):
     NONE = 0
     SDN = auto()
     BLOCKCHAIN_NODE = auto()

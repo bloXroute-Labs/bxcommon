@@ -132,7 +132,7 @@ class ConnectionPool:
             del self.by_ipport[(conn.peer_ip, conn.peer_port)]
 
         for connection_type in self.by_connection_type:
-            if connection_type & conn.CONNECTION_TYPE:
+            if connection_type in conn.CONNECTION_TYPE:
                 self.by_connection_type[connection_type].discard(conn)
 
         # Decrement the count- if it's 0, we delete the key.

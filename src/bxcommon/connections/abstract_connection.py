@@ -138,7 +138,7 @@ class AbstractConnection(Generic[Node]):
         """
         Indicates whether the connection is established and ready for normal messages.
         """
-        return self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED and self.is_alive()
+        return ConnectionState.ESTABLISHED in self.state and self.is_alive()
 
     def is_alive(self) -> bool:
         """
@@ -278,7 +278,7 @@ class AbstractConnection(Generic[Node]):
                     continue
 
                 # Full messages must be one of the handshake messages if the connection isn't established yet.
-                if not (self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED) \
+                if ConnectionState.ESTABLISHED not in self.state \
                         and msg_type not in self.hello_messages:
                     self.log_warning("Received unexpected message ({}) before handshake completed. Closing.",
                                      msg_type)

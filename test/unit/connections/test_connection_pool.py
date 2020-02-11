@@ -1,6 +1,7 @@
 import uuid
-from enum import Flag, auto
+from enum import auto
 
+from bxcommon.models.serializable_flag import SerializableFlag
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.connections.connection_pool import ConnectionPool
 from bxcommon.connections.connection_type import ConnectionType
@@ -142,7 +143,7 @@ class ConnectionPoolTest(AbstractTestCase):
 
     # noinspection PyTypeChecker
     def test_delete_removes_multiple_types(self):
-        class TestConnectionType(Flag):
+        class TestConnectionType(SerializableFlag):
             A = auto()
             B = auto()
             AB = A | B

@@ -14,13 +14,8 @@ from bxcommon.utils import memory_utils
 from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
 
 
-class MockConnectionType(IntFlag):
-    MOCK = ConnectionType.INTERNAL_GATEWAY << 1
-    NOT_MOCK = ConnectionType.INTERNAL_GATEWAY << 2
-
-
 class MockConnection(AbstractConnection, SpecialMemoryProperties):
-    CONNECTION_TYPE = MockConnectionType.MOCK
+    CONNECTION_TYPE = ConnectionType.EXTERNAL_GATEWAY
 
     def __init__(self, sock: SocketConnectionProtocol, node):
         self.socket_connection = sock
