@@ -198,6 +198,9 @@ DUMP_REMOVED_SHORT_IDS_PATH = "/app/bxcommon/debug/removed-short-ids"
 
 CLEAN_UP_SEEN_SHORT_IDS_DELAY_S = 10
 
+REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S = 6 * 60 * 60
+REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S = 10
+
 # </editor-fold>
 
 # <editor-fold desc="Default Values">

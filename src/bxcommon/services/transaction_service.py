@@ -1,13 +1,14 @@
 import time
-from collections import defaultdict, OrderedDict, Counter, namedtuple
+from collections import defaultdict, OrderedDict, Counter
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator
 from functools import reduce
+from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import memory_utils, convert, json_utils
 from bxcommon.utils.expiration_queue import ExpirationQueue
@@ -16,7 +17,6 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
-from bxcommon.models.quota_type_model import QuotaType
 from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 
@@ -94,6 +94,7 @@ class TransactionService:
     _tx_cache_key_to_contents: Dict[str, Union[bytearray, memoryview]]
     _tx_cache_key_to_short_ids: Dict[str, Set[int]]
     _tx_assignment_expire_queue: ExpirationQueue
+    _tx_hash_to_time_removed: OrderedDict
 
     MAX_ID = 2 ** 32
     SHORT_ID_SIZE = 4
@@ -127,11 +128,13 @@ class TransactionService:
         self._short_id_to_tx_cache_key = {}
         self._tx_cache_key_to_contents = {}
         self._tx_assignment_expire_queue: ExpirationQueue[int] = ExpirationQueue(node.opts.sid_expire_time)
+        self._tx_hash_to_time_removed = OrderedDict()
 
         self._final_tx_confirmations_count = self._get_final_tx_confirmations_count()
         self._tx_content_memory_limit = self._get_tx_contents_memory_limit()
         logger.debug("Memory limit for transaction service by network number {} is {} bytes.",
                      self.network_num, self._tx_content_memory_limit)
+        self._removed_txs_hashes_expiration_time_s = self._get_removed_transactions_history_expiration_time_s()
 
         # short ids seen in block ordered by them block hash
         self._short_ids_seen_in_block: OrderedDict[Sha256Hash, List[int]] = OrderedDict()
@@ -150,6 +153,11 @@ class TransactionService:
                 constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S,
                 self._log_transaction_service_histogram
             )
+
+        self.node.alarm_queue.register_alarm(
+            constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S,
+            self._cleanup_removed_transactions_history
+        )
 
     def get_short_id_quota_type(self, short_id: int) -> QuotaType:
         if short_id in self._short_id_to_tx_quota_flag:
@@ -291,6 +299,14 @@ class TransactionService:
         """
         return short_id in self._short_id_to_tx_cache_key
 
+    def removed_transaction(self, transaction_hash: Sha256Hash) -> bool:
+        """
+        Check if transaction was seen and removed from cache
+        :param transaction_hash: transaction hash
+        :return: Boolean indicating in transaction was seen
+        """
+        return self._tx_hash_to_cache_key(transaction_hash) in self._tx_hash_to_time_removed
+
     def assign_short_id(self, transaction_hash: Sha256Hash, short_id: int):
         """
         Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
@@ -373,6 +389,9 @@ class TransactionService:
             self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
             del self._tx_cache_key_to_contents[transaction_cache_key]
             removed_txns += 1
+
+        self._tx_hash_to_time_removed[transaction_cache_key] = time.time()
+
         logger.trace("Removed transaction: {}, with {} associated short ids and {} contents.", transaction_hash,
                      removed_sids, removed_txns)
         return short_ids
@@ -393,7 +412,8 @@ class TransactionService:
             transaction_cache_key = self._short_id_to_tx_cache_key.get(short_id)
             if transaction_cache_key in self._tx_cache_key_to_short_ids:
                 short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
-                short_id_flags = [self._short_id_to_tx_quota_flag.get(sid, QuotaType.FREE_DAILY_QUOTA) for sid in short_ids]
+                short_id_flags = [self._short_id_to_tx_quota_flag.get(sid, QuotaType.FREE_DAILY_QUOTA) for sid in
+                                  short_ids]
                 tx_flag = reduce(lambda x, y: x | y, short_id_flags)
                 if QuotaType.PAID_DAILY_QUOTA in tx_flag and not force:
                     return
@@ -426,6 +446,7 @@ class TransactionService:
                 if transaction_cache_key in self._tx_cache_key_to_contents:
                     self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
                     del self._tx_cache_key_to_contents[transaction_cache_key]
+                    self._tx_hash_to_time_removed[transaction_cache_key] = time.time()
 
                 # Delete short ids from _tx_cache_key_to_short_ids after iterating short_ids.
                 # Otherwise extension implementation disposes short_ids list after this line
@@ -710,6 +731,17 @@ class TransactionService:
             size_type=size_type
         )
 
+        hooks.add_obj_mem_stats(
+            class_name,
+            self.network_num,
+            self._tx_hash_to_time_removed,
+            "tx_hash_to_time_removed",
+            self.get_collection_mem_stats(self._tx_hash_to_time_removed),
+            object_item_count=len(self._tx_hash_to_time_removed),
+            object_type=memory_utils.ObjectType.BASE,
+            size_type=size_type
+        )
+
     def get_object_type(self, collection_obj: Any):
         return memory_utils.ObjectType.BASE
 
@@ -808,6 +840,20 @@ class TransactionService:
                        self.network_num, self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT)
 
         return self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT
+
+    def _get_removed_transactions_history_expiration_time_s(self) -> int:
+        """
+        Returns configuration value of expiration time for transaction hashes removed from cache
+        """
+        for blockchain_network in self.node.opts.blockchain_networks:
+            if blockchain_network.network_num == self.network_num:
+                return blockchain_network.removed_transactions_history_expiration_s
+
+        logger.warning("Could not determine expiration time for transaction removed from cache for network number {}. "
+                       "Using default {}.",
+                       self.network_num, constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S)
+
+        return constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S
 
     def _get_tx_contents_memory_limit(self) -> int:
         """
@@ -911,3 +957,35 @@ class TransactionService:
         )
         return constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S
 
+    def _cleanup_removed_transactions_history(self):
+        """
+        Removes expired items from the queue
+        :param current_time: time to use as current time for expiration
+        :param remove_callback: reference to a callback function that is being called when item is removed
+        :param args: arguments to pass into the callback method
+        :param kwargs: keyword args to pass into the callback method
+        """
+        logger.debug("Starting to cleanup transaction cache history.")
+
+        current_time = time.time()
+        history_len_before = len(self._tx_hash_to_time_removed)
+
+        if self._tx_hash_to_time_removed:
+
+            oldest_tx = next(iter(self._tx_hash_to_time_removed))
+
+            while self._tx_hash_to_time_removed and \
+                    current_time - self._tx_hash_to_time_removed[oldest_tx] > self._removed_txs_hashes_expiration_time_s:
+
+                del self._tx_hash_to_time_removed[oldest_tx]
+
+                if not self._tx_hash_to_time_removed:
+                    break
+
+                oldest_tx = next(iter(self._tx_hash_to_time_removed))
+
+        history_len_after = len(self._tx_hash_to_time_removed)
+        logger.debug("Finished cleanup transaction cache history. Size before: {}. Size after: {}.",
+                     history_len_before, history_len_after)
+
+        return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S

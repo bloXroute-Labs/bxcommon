@@ -51,6 +51,10 @@ class ExtensionTransactionService(TransactionService):
         )
         self._tx_not_seen_in_blocks = self.proxy.tx_not_seen_in_blocks()
 
+        self._tx_hash_to_time_removed = MapProxy(
+            self.proxy.tx_hash_to_time_removed(), raw_encoder, raw_encoder
+        )
+
     def track_seen_short_ids(self, block_hash, short_ids: List[int]) -> None:
         start_datetime = datetime.now()
         super(ExtensionTransactionService, self).track_seen_short_ids(block_hash, short_ids)

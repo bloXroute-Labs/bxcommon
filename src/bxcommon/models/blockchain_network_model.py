@@ -25,4 +25,5 @@ class BlockchainNetworkModel:
     block_confirmations_count: int = constants.BLOCK_CONFIRMATIONS_COUNT
     tx_percent_to_log_by_hash: float = constants.TRANSACTIONS_BY_HASH_PERCENTAGE_TO_LOG_STATS_FOR
     tx_percent_to_log_by_sid: float = constants.TRANSACTIONS_BY_SID_PERCENTAGE_TO_LOG_STATS_FOR
+    removed_transactions_history_expiration_s: int = constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S
     sdn_id: str = None
