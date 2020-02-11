@@ -307,22 +307,495 @@ class AbstractBloxrouteVersionManagerTest(
 
     # <editor-fold desc="TEST CASES and COMPARISONS FUNCTIONS">
 
-    # TODO: the rest of these needs to be filled out. Will do so in a follow-up
-    # PR
+    def compare_hello_current_to_old(
+        self, converted_old_message: M1, original_old_message: M1,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_hello_old_to_current(
+        self,
+        converted_current_message: HelloMessage,
+        original_current_message: HelloMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_hello_message(self):
+        current_message = self.hello_message()
+        old_message = self.old_hello_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M1, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_hello_current_to_old(current_to_old_message, old_message)
+        self.compare_hello_old_to_current(
+            old_to_current_message, current_message
+        )
+
+    def compare_ack_current_to_old(
+        self, converted_old_message: M2, original_old_message: M2,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_ack_old_to_current(
+        self,
+        converted_current_message: AckMessage,
+        original_current_message: AckMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_ack_message(self):
+        current_message = self.ack_message()
+        old_message = self.old_ack_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M2, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_ack_current_to_old(current_to_old_message, old_message)
+        self.compare_ack_old_to_current(old_to_current_message, current_message)
+
+    def compare_ping_current_to_old(
+        self, converted_old_message: M3, original_old_message: M3,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_ping_old_to_current(
+        self,
+        converted_current_message: PingMessage,
+        original_current_message: PingMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_ping_message(self):
+        current_message = self.ping_message()
+        old_message = self.old_ping_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M3, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_ping_current_to_old(current_to_old_message, old_message)
+        self.compare_ping_old_to_current(
+            old_to_current_message, current_message
+        )
+
+    def compare_pong_current_to_old(
+        self, converted_old_message: M4, original_old_message: M4,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_pong_old_to_current(
+        self,
+        converted_current_message: PongMessage,
+        original_current_message: PongMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_pong_message(self):
+        current_message = self.pong_message()
+        old_message = self.old_pong_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M4, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_pong_current_to_old(current_to_old_message, old_message)
+        self.compare_pong_old_to_current(
+            old_to_current_message, current_message
+        )
+
+    def compare_broadcast_current_to_old(
+        self, converted_old_message: M5, original_old_message: M5,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_broadcast_old_to_current(
+        self,
+        converted_current_message: BroadcastMessage,
+        original_current_message: BroadcastMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_broadcast_message(self):
+        current_message = self.broadcast_message()
+        old_message = self.old_broadcast_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M5, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_broadcast_current_to_old(
+            current_to_old_message, old_message
+        )
+        self.compare_broadcast_old_to_current(
+            old_to_current_message, current_message
+        )
+
+    def compare_tx_current_to_old(
+        self, converted_old_message: M6, original_old_message: M6,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_tx_old_to_current(
+        self,
+        converted_current_message: TxMessage,
+        original_current_message: TxMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_tx_message(self):
+        current_message = self.tx_message()
+        old_message = self.old_tx_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M6, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_tx_current_to_old(current_to_old_message, old_message)
+        self.compare_tx_old_to_current(old_to_current_message, current_message)
+
+    def compare_gettxs_current_to_old(
+        self, converted_old_message: M7, original_old_message: M7,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_gettxs_old_to_current(
+        self,
+        converted_current_message: GetTxsMessage,
+        original_current_message: GetTxsMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_gettxs_message(self):
+        current_message = self.gettxs_message()
+        old_message = self.old_gettxs_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M7, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_gettxs_current_to_old(current_to_old_message, old_message)
+        self.compare_gettxs_old_to_current(
+            old_to_current_message, current_message
+        )
+
+    def compare_txs_current_to_old(
+        self, converted_old_message: M8, original_old_message: M8,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_txs_old_to_current(
+        self,
+        converted_current_message: TxsMessage,
+        original_current_message: TxsMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_txs_message(self):
+        current_message = self.txs_message()
+        old_message = self.old_txs_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M8, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_txs_current_to_old(current_to_old_message, old_message)
+        self.compare_txs_old_to_current(old_to_current_message, current_message)
+
+    def compare_key_current_to_old(
+        self, converted_old_message: M9, original_old_message: M9,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_key_old_to_current(
+        self,
+        converted_current_message: KeyMessage,
+        original_current_message: KeyMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_key_message(self):
+        current_message = self.key_message()
+        old_message = self.old_key_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M9, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_key_current_to_old(current_to_old_message, old_message)
+        self.compare_key_old_to_current(old_to_current_message, current_message)
+
+    def compare_txstart_current_to_old(
+        self, converted_old_message: M10, original_old_message: M10,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_txstart_old_to_current(
+        self,
+        converted_current_message: TxServiceSyncReqMessage,
+        original_current_message: TxServiceSyncReqMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_txstart_message(self):
+        current_message = self.txstart_message()
+        old_message = self.old_txstart_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M10, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_txstart_current_to_old(current_to_old_message, old_message)
+        self.compare_txstart_old_to_current(
+            old_to_current_message, current_message
+        )
+
+    def compare_txblock_current_to_old(
+        self, converted_old_message: M11, original_old_message: M11,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_txblock_old_to_current(
+        self,
+        converted_current_message: TxServiceSyncBlocksShortIdsMessage,
+        original_current_message: TxServiceSyncBlocksShortIdsMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_txblock_message(self):
+        current_message = self.txblock_message()
+        old_message = self.old_txblock_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M11, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_txblock_current_to_old(current_to_old_message, old_message)
+        self.compare_txblock_old_to_current(
+            old_to_current_message, current_message
+        )
+
+    def compare_txtxs_current_to_old(
+        self, converted_old_message: M12, original_old_message: M12,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_txtxs_old_to_current(
+        self,
+        converted_current_message: TxServiceSyncTxsMessage,
+        original_current_message: TxServiceSyncTxsMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_txtxs_message(self):
+        current_message = self.txtxs_message()
+        old_message = self.old_txtxs_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M12, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_txtxs_current_to_old(current_to_old_message, old_message)
+        self.compare_txtxs_old_to_current(
+            old_to_current_message, current_message
+        )
+
+    def compare_txdone_current_to_old(
+        self, converted_old_message: M13, original_old_message: M13,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_txdone_old_to_current(
+        self,
+        converted_current_message: TxServiceSyncCompleteMessage,
+        original_current_message: TxServiceSyncCompleteMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_txdone_message(self):
+        current_message = self.txdone_message()
+        old_message = self.old_txdone_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M13, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_txdone_current_to_old(current_to_old_message, old_message)
+        self.compare_txdone_old_to_current(
+            old_to_current_message, current_message
+        )
+
+    def compare_blkcnfrm_current_to_old(
+        self, converted_old_message: M14, original_old_message: M14,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
+
+    def compare_blkcnfrm_old_to_current(
+        self,
+        converted_current_message: BlockConfirmationMessage,
+        original_current_message: BlockConfirmationMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
+
+    def test_blkcnfrm_message(self):
+        current_message = self.blkcnfrm_message()
+        old_message = self.old_blkcnfrm_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(
+            current_message, old_message
+        )
+        old_to_current_message = cast(
+            M14, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_blkcnfrm_current_to_old(
+            current_to_old_message, old_message
+        )
+        self.compare_blkcnfrm_old_to_current(
+            old_to_current_message, current_message
+        )
 
     def compare_txclnup_current_to_old(
-        self,
-        converted_old_message: M15,
-        original_old_message: M15,
+        self, converted_old_message: M15, original_old_message: M15,
     ):
-        pass
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
 
     def compare_txclnup_old_to_current(
         self,
         converted_current_message: TransactionCleanupMessage,
         original_current_message: TransactionCleanupMessage,
     ):
-        pass
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
 
     def test_txclnup_message(self):
         current_message = self.txclnup_message()
@@ -336,21 +809,27 @@ class AbstractBloxrouteVersionManagerTest(
         )
 
         self.compare_txclnup_current_to_old(current_to_old_message, old_message)
-        self.compare_txclnup_old_to_current(old_to_current_message, current_message)
+        self.compare_txclnup_old_to_current(
+            old_to_current_message, current_message
+        )
 
     def compare_notify_current_to_old(
-        self,
-        converted_old_message: M16,
-        original_old_message: M16,
+        self, converted_old_message: M16, original_old_message: M16,
     ):
-        pass
+        self.assertEqual(
+            original_old_message.rawbytes(),
+            converted_old_message.rawbytes(),
+        )
 
     def compare_notify_old_to_current(
         self,
         converted_current_message: NotificationMessage,
         original_current_message: NotificationMessage,
     ):
-        pass
+        self.assertEqual(
+            original_current_message.rawbytes(),
+            converted_current_message.rawbytes(),
+        )
 
     def test_notify_message(self):
         current_message = self.notify_message()
@@ -364,59 +843,7 @@ class AbstractBloxrouteVersionManagerTest(
         )
 
         self.compare_notify_current_to_old(current_to_old_message, old_message)
-        self.compare_notify_old_to_current(old_to_current_message, current_message)
-
-    def compare_tx_current_to_old(
-        self, converted_old_message: M6, original_old_message: M6,
-    ):
-        pass
-
-    def compare_tx_old_to_current(
-        self,
-        converted_current_message: TxMessage,
-        original_current_message: TxMessage,
-    ):
-        pass
-
-    def test_tx_message(self):
-        current_message = self.tx_message()
-        old_message = self.old_tx_message(current_message)
-
-        current_to_old_message = self._convert_to_older_version(
-            current_message, old_message
-        )
-        old_to_current_message = cast(
-            M16, self._convert_to_current_version(old_message, current_message),
-        )
-
-        self.compare_tx_current_to_old(current_to_old_message, old_message)
-        self.compare_tx_old_to_current(old_to_current_message, current_message)
-
-    def compare_txtxs_current_to_old(
-        self, converted_old_message: M12, original_old_message: M12,
-    ):
-        pass
-
-    def compare_txtxs_old_to_current(
-        self,
-        converted_current_message: TxServiceSyncTxsMessage,
-        original_current_message: TxServiceSyncTxsMessage,
-    ):
-        pass
-
-    def test_txtxs_message(self):
-        current_message = self.txtxs_message()
-        old_message = self.old_txtxs_message(current_message)
-
-        current_to_old_message = self._convert_to_older_version(
-            current_message, old_message
-        )
-        old_to_current_message = cast(
-            M16, self._convert_to_current_version(old_message, current_message),
-        )
-
-        self.compare_txtxs_current_to_old(current_to_old_message, old_message)
-        self.compare_txtxs_old_to_current(
+        self.compare_notify_old_to_current(
             old_to_current_message, current_message
         )
 
@@ -534,5 +961,3 @@ class AbstractBloxrouteVersionManagerTest(
         return method()
 
     # </editor-fold>
-
-

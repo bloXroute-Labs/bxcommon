@@ -1,4 +1,3 @@
-from bxcommon.constants import EMPTY_SOURCE_ID
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import (
     BlockConfirmationMessage,
@@ -36,10 +35,6 @@ from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import (
     AbstractBloxrouteVersionManagerTest,
 )
-from bxcommon.utils import uuid_pack
-
-NEW_VERSION_SOURCE_ID = uuid_pack.from_bytes(b"\x01" * 16)
-EMPTY_SOURCE_ID_STR = EMPTY_SOURCE_ID.decode()
 
 
 class BloxrouteVersionManagerV6Test(
