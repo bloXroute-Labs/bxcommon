@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from typing import Any, List
 
@@ -19,6 +20,7 @@ from bxutils import logging
 from bxutils.logging import log_config
 from bxutils.logging.log_record_type import LogRecordType
 
+logger = logging.get_logger(__name__)
 logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
 
 
@@ -184,3 +186,15 @@ class ExtensionTransactionService(TransactionService):
     def _clear(self):
         super(ExtensionTransactionService, self)._clear()
         self.proxy.clear_short_ids_seen_in_block()
+
+    def _cleanup_removed_transactions_history(self):
+        logger.debug("Starting to cleanup transaction cache history.")
+        history_len_before = len(self._tx_hash_to_time_removed)
+        self._tx_hash_to_time_removed.map_obj.cleanup_removed_hashes_history(
+            time.time(), self._removed_txs_hashes_expiration_time_s
+        )
+        history_len_after = len(self._tx_hash_to_time_removed)
+        logger.debug("Finished cleanup transaction cache history. Size before: {}. Size after: {}.",
+                     history_len_before, history_len_after)
+
+        return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S
