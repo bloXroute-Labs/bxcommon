@@ -4,6 +4,8 @@ from typing import Deque, Optional, TYPE_CHECKING
 
 from bxcommon.messages.abstract_block_message import AbstractBlockMessage
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.messages.bloxroute.tx_message import TxMessage
+from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
 from bxutils.logging.log_level import LogLevel
 
@@ -26,9 +28,17 @@ class MessageTrackerEntry:
 
     def message_log_level(self) -> LogLevel:
         if self.message:
+            if isinstance(self.message, TxMessage):
+                if tx_stats.should_log_event_for_tx(
+                    self.message.tx_hash().binary,
+                    self.message.network_num(),
+                    self.message.short_id()
+                ):
+                    return LogLevel.DEBUG
+
             return self.message.log_level()
-        else:
-            return LogLevel.DEBUG
+
+        return LogLevel.DEBUG
 
     def __repr__(self):
         return "MessageTrackerEntry<message: {}, sent_bytes: {}, length: {}>".format(

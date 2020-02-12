@@ -32,7 +32,7 @@ class _TransactionStatisticsService(StatisticsEventService):
                              short_id: Optional[int] = None, start_date_time: Optional[datetime.datetime] = None,
                              end_date_time: Optional[datetime.datetime] = None, **kwargs):
         tx_hash = tx_hash.binary
-        if self._should_log_event_for_tx(tx_hash, network_num, short_id):
+        if self.should_log_event_for_tx(tx_hash, network_num, short_id):
             self.log_event(tx_event_settings, convert.bytes_to_hex(tx_hash), start_date_time, end_date_time,
                            short_id=short_id, network_num=network_num, **kwargs)
 
@@ -54,7 +54,7 @@ class _TransactionStatisticsService(StatisticsEventService):
             self.log_event(tx_event_settings, short_ids, start_date_time, end_date_time, network_num=network_num,
                            **kwargs)
 
-    def _should_log_event_for_tx(self, tx_hash_bytes: bytearray, network_num: int, short_id: Optional[int]):
+    def should_log_event_for_tx(self, tx_hash_bytes: bytearray, network_num: int, short_id: Optional[int]):
         percent_to_log_by_tx_hash = self.log_percentage_for_hash_by_network_num[network_num]
         percent_to_log_by_sid = self.log_percentage_for_sid_by_network_num[network_num]
         if percent_to_log_by_tx_hash <= 0 and percent_to_log_by_sid <= 0:
