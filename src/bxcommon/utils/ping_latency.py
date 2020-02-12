@@ -1,5 +1,5 @@
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
+from bxcommon.utils.concurrency.thread_pool import ThreadPool
 from typing import List, NamedTuple
 
 from bxcommon import constants
@@ -38,7 +38,7 @@ def get_ping_latency(outbound_peer: OutboundPeerModel) -> NodeLatencyInfo:
 
 
 def get_ping_latencies(outbound_peers: List[OutboundPeerModel]) -> List[NodeLatencyInfo]:
-    with ThreadPoolExecutor() as executor:
+    with ThreadPool(len(outbound_peers), "ping") as executor:
         futures = [executor.submit(get_ping_latency, ip) for ip in outbound_peers]
         results = [future.result() for future in futures]
     return results

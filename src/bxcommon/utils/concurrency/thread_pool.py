@@ -40,6 +40,14 @@ class ThreadPool:
             thread.daemon = True
             self._threads.append(thread)
 
+    def __enter__(self):
+        if not self._started:
+            self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def start(self) -> None:
         for thread in self._threads:
             thread.start()
