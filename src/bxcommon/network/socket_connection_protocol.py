@@ -155,4 +155,7 @@ class SocketConnectionProtocol(Protocol):
 
     def get_write_buffer_size(self) -> int:
         assert self.transport is not None, "Connection is broken!"
-        return self.transport.get_write_buffer_size()
+        if self.transport.is_closing():
+            return 0
+        else:
+            return self.transport.get_write_buffer_size()
