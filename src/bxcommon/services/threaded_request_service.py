@@ -1,5 +1,6 @@
+import functools
 from concurrent.futures import Future, CancelledError
-from typing import Callable, Any
+from typing import Callable, Any, Optional
 
 from bxutils import logging
 
@@ -34,17 +35,28 @@ class ThreadedRequestService:
         self.thread_pool.stop()
         self.thread_pool.close()
 
-    def send_threaded_request(self, request: Callable[..., None], *args: Any) -> None:
+    def send_threaded_request(self, request: Callable[..., None], *args: Any,
+                              done_callback: Optional[Callable[[Future], Any]] = None
+                              ) -> Future:
         """
         Submit a function to be executed in a separate thread in a thread pool,
         and set up an alarm to verify the correct result of the function
 
         :param request: function that we need to execute in a separate thread
         :param args: list of arguments for the function
+        :param done_callback: Callback when the future is done
         """
         logger.trace("Starting thread for request.")
         task = self.thread_pool.submit(request, *args)
+        if done_callback:
+            main_thread_callback = functools.partial(
+                self.alarm_queue.register_alarm,
+                constants.MIN_SLEEP_TIMEOUT,
+                done_callback
+            )
+            task.add_done_callback(main_thread_callback)
         self.alarm_queue.register_alarm(self.timeout, self._threaded_post_alarm, task, request, *args)
+        return task
 
     def _threaded_post_alarm(self, task: Future, request: Callable[..., None], *args: Any) -> None:
         """
