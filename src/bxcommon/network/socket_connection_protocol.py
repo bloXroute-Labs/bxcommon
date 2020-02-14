@@ -99,13 +99,26 @@ class SocketConnectionProtocol(Protocol):
         logger.trace("[{}] - resumed writing.", self)
 
     def send(self) -> None:
+        total_bytes_sent = 0
+
         while self.is_sendable():
             data = self._node.get_bytes_to_send(self.file_no)
             if not data:
                 break
             assert self.transport is not None, "Connection is broken!"
+
+            transport_buffer_size = self.transport.get_write_buffer_size()
+            total_transport_buffer_size = transport_buffer_size + len(data)
+
             self.transport.write(data)
             self._node.on_bytes_sent(self.file_no, len(data))
+
+            bytes_sent = total_transport_buffer_size - self.transport.get_write_buffer_size()
+            total_bytes_sent += bytes_sent
+
+            self._node.on_bytes_written_to_socket(self.file_no, bytes_sent)
+
+        logger.trace("[{}] - sent {} bytes.", self, total_bytes_sent)
 
     def pause_reading(self) -> None:
         if self.is_alive():
