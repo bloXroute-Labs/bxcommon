@@ -42,6 +42,7 @@ from bxutils.ssl.ssl_certificate_type import SSLCertificateType
 
 logger = logging.get_logger(__name__)
 memory_logger = logging.get_logger(LogRecordType.BxMemory, __name__)
+performance_troubleshooting_logger = logging.get_logger(LogRecordType.PerformanceTroubleshooting, __name__)
 
 
 class DisconnectRequest(NamedTuple):
@@ -118,6 +119,9 @@ class AbstractNode:
 
         self.profiler = Profiler()
         self.profiler_enabled = False
+
+        self._last_responsiveness_check_log_time = None
+        self.alarm_queue.register_alarm(constants.RESPONSIVENESS_CHECK_INTERVAL_S, self._responsiveness_check_log)
 
     def get_sdn_address(self):
         """
@@ -598,3 +602,19 @@ class AbstractNode:
         self.enqueue_connection(ip, port, connection_type)
 
         return 0
+
+    def _responsiveness_check_log(self):
+        current_time = time.time()
+
+        if self._last_responsiveness_check_log_time:
+            time_since_last_log = current_time - self._last_responsiveness_check_log_time
+            delay = time_since_last_log - constants.RESPONSIVENESS_CHECK_INTERVAL_S
+
+            if delay > constants.RESPONSIVENESS_CHECK_DELAY_WARN_THRESHOLD_S:
+                performance_troubleshooting_logger.debug("Responsiveness check was delayed by {:.2f} s.", delay)
+
+        performance_troubleshooting_logger.trace("Responsiveness check")
+        self._last_responsiveness_check_log_time = current_time
+
+        return constants.RESPONSIVENESS_CHECK_INTERVAL_S
+
