@@ -224,7 +224,11 @@ class AbstractNode:
         for peer in outbound_peer_models:
             peer_ip = peer.ip
             peer_port = peer.port
-            if not self.connection_pool.has_connection(peer_ip, peer_port):
+            if not self.connection_pool.has_connection(
+                peer_ip,
+                peer_port,
+                peer.node_id
+            ):
                 self.enqueue_connection(
                     peer_ip, peer_port, convert.peer_node_to_connection_type(self.NODE_TYPE, peer.node_type)
                 )

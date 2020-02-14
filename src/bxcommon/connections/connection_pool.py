@@ -74,7 +74,9 @@ class ConnectionPool:
         if node_id:
             self.by_node_id[node_id].add(conn)
 
-    def has_connection(self, ip, port):
+    def has_connection(self, ip: str, port: int, node_id: Optional[str] = None):
+        if node_id is not None and node_id in self.by_node_id:
+            return True
         return (ip, port) in self.by_ipport
 
     def get_by_connection_type(self, connection_type: ConnectionType) -> Set[AbstractConnection]:
