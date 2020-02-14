@@ -1,6 +1,7 @@
 import random
 import time
 from typing import TypeVar, Type
+from datetime import datetime
 
 from bxcommon import constants
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, \
@@ -10,6 +11,7 @@ from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.bloxroute.abstract_broadcast_message import \
     AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
+from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import \
     BlockConfirmationMessage
 from bxcommon.messages.bloxroute.block_holding_message import \
@@ -112,6 +114,11 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                            sum(UL_INT_SIZE_IN_BYTES + SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES +
                                len(tx.contents) for tx in txs) + constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(TxsMessage(txs), TxsMessage.MESSAGE_TYPE, expected_length)
+
+        expected_length = constants.DOUBLE_SIZE_IN_BYTES + (4 * constants.UL_SHORT_SIZE_IN_BYTES) + \
+                          constants.CONTROL_FLAGS_LEN
+        self.get_message_preview_successfully(BdnPerformanceStatsMessage(time.time(), 100, 200, 300, 400),
+                                              BdnPerformanceStatsMessage.MESSAGE_TYPE, expected_length)
 
     def test_message_preview_incomplete(self):
         message = HelloMessage(protocol_version=1, network_num=2)
@@ -352,3 +359,24 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
 
         self.assertEqual(notification_code, notification_message.notification_code())
         self.assertEqual(raw_message, notification_message.raw_message())
+
+    def test_bdn_performance_stats_message(self):
+        start_time = time.time()
+        new_blocks_received_from_blockchain_node = 100
+        new_blocks_received_from_bdn = 200
+        new_tx_received_from_blockchain_node = 300
+        new_tx_received_from_bdn = 400
+
+        bdn_stats_msg = \
+            self.create_message_successfully(BdnPerformanceStatsMessage(start_time,
+                                                                        new_blocks_received_from_blockchain_node,
+                                                                        new_blocks_received_from_bdn,
+                                                                        new_tx_received_from_blockchain_node,
+                                                                        new_tx_received_from_bdn),
+                                             BdnPerformanceStatsMessage)
+
+        self.assertEqual(datetime.fromtimestamp(start_time), bdn_stats_msg.interval_start_time())
+        self.assertEqual(new_blocks_received_from_blockchain_node, bdn_stats_msg.new_blocks_from_blockchain_node())
+        self.assertEqual(new_blocks_received_from_bdn, bdn_stats_msg.new_blocks_from_bdn())
+        self.assertEqual(new_tx_received_from_blockchain_node, bdn_stats_msg.new_tx_from_blockchain_node())
+        self.assertEqual(new_tx_received_from_bdn, bdn_stats_msg.new_tx_from_bdn())

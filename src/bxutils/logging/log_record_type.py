@@ -5,6 +5,7 @@ class LogRecordType(Enum):
     Stats = "stats"
     BX = "bx"
     BlockInfo = "stats.blocks.events"
+    BdnPerformanceStats = "stats.bdn_performance"
     TransactionInfo = "stats.transactions.events"
     TransactionStats = "stats.transactions.summary"
     Throughput = "stats.throughput"

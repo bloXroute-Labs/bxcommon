@@ -18,3 +18,4 @@ class BloxrouteMessageType(object):
     BLOCK_CONFIRMATION = b"blkcnfrm"
     TRANSACTION_CLEANUP = b"txclnup"
     NOTIFICATION = b"notify"
+    BDN_PERFORMANCE_STATS = b"bdnstats"
