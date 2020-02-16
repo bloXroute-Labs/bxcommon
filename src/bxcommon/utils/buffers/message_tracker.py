@@ -102,7 +102,7 @@ class MessageTracker:
                     "Sent {} to socket. Took {:.2f}ms. "
                     "{} bytes remaining on buffer.",
                     sent_message.message,
-                    1000 * (time.time() - sent_message.queued_time),
+                    time.time() - sent_message.queued_time,
                     self.bytes_remaining,
                 )
                 bytes_left -= sent_message.length - sent_message.sent_bytes
@@ -116,7 +116,7 @@ class MessageTracker:
                     in_progress_message.sent_bytes,
                     in_progress_message.length,
                     in_progress_message.message,
-                    1000 * (time.time() - in_progress_message.queued_time),
+                    time.time() - in_progress_message.queued_time,
                     self.bytes_remaining,
                 )
                 bytes_left = 0

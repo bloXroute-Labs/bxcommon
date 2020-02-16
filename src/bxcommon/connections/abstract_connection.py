@@ -544,7 +544,8 @@ class AbstractConnection(Generic[Node]):
             self, peer_id: str, connection_type: ConnectionType, account_id: Optional[str]
     ) -> None:
         self.peer_id = peer_id
-        self.CONNECTION_TYPE = connection_type  # pyre-ignore
+        if self.CONNECTION_TYPE != connection_type:
+            self.node.connection_pool.update_connection_type(self, connection_type)
         self.account_id = account_id
         self._is_authenticated = True
 

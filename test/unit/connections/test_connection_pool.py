@@ -57,23 +57,29 @@ class ConnectionPoolTest(AbstractTestCase):
         self.assertEqual(self.conn1, self.conn_pool1.get_by_ipport(self.ip1, self.port2))
         self.assertFalse(self.conn_pool1.has_connection(self.ip1, self.port1))
 
-    def test_update_connnection_type(self):
+    def test_update_connection_type(self):
+        self.conn1.CONNECTION_TYPE = ConnectionType.RELAY_ALL
+        self.conn2.CONNECTION_TYPE = ConnectionType.INTERNAL_GATEWAY
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
         self.conn_pool1.add(self.fileno2, self.ip2, self.port2, self.conn2)
 
         mock_connections = self.conn_pool1.get_by_connection_type(self.conn1.CONNECTION_TYPE)
         self.assertIn(self.conn1, mock_connections)
-        self.assertIn(self.conn2, mock_connections)
+        self.assertNotIn(self.conn2, mock_connections)
 
-        self.conn_pool1.update_connection_type(self.conn1, ConnectionType.RELAY_TRANSACTION)
+        self.conn_pool1.update_connection_type(self.conn1, ConnectionType.EXTERNAL_GATEWAY)
 
         mock_connections = self.conn_pool1.get_by_connection_type(self.conn2.CONNECTION_TYPE)
         self.assertNotIn(self.conn1, mock_connections)
         self.assertIn(self.conn2, mock_connections)
 
-        relay_connections = self.conn_pool1.get_by_connection_type(self.conn1.CONNECTION_TYPE)
-        self.assertIn(self.conn1, relay_connections)
-        self.assertNotIn(self.conn2, relay_connections)
+        mock_connections = self.conn_pool1.get_by_connection_type(self.conn1.CONNECTION_TYPE)
+        self.assertIn(self.conn1, mock_connections)
+        self.assertNotIn(self.conn2, mock_connections)
+
+        mock_connections = self.conn_pool1.get_by_connection_type(ConnectionType.RELAY_TRANSACTION)
+        self.assertNotIn(self.conn1, mock_connections)
+        self.assertNotIn(self.conn2, mock_connections)
 
     def test_has_connection(self):
         self._add_connections()
@@ -116,6 +122,14 @@ class ConnectionPoolTest(AbstractTestCase):
         self.assertIn(self.conn1, gateway_and_relay_block_connections)
         self.assertIn(self.conn3, gateway_and_relay_block_connections)
 
+        relay_transaction_connections = self.conn_pool1.get_by_connection_types([
+            ConnectionType.RELAY_TRANSACTION
+        ])
+
+        self.assertEqual(1, len(relay_transaction_connections))
+        self.assertNotIn(self.conn1, relay_transaction_connections)
+        self.assertIn(self.conn3, relay_transaction_connections)
+
     def test_get_by_fileno(self):
         self._add_connections()
         self.assertEqual(self.conn1, self.conn_pool1.get_by_fileno(self.fileno1))
@@ -131,15 +145,21 @@ class ConnectionPoolTest(AbstractTestCase):
         self.assertEqual(0, self.conn_pool1.get_num_conn_by_ip("222.222.222.222"))
 
     def test_delete(self):
+        self.conn1.CONNECTION_TYPE = ConnectionType.RELAY_TRANSACTION
+        self.conn2.CONNECTION_TYPE = ConnectionType.RELAY_ALL
+        self.conn3.CONNECTION_TYPE = ConnectionType.EXTERNAL_GATEWAY
+
         self._add_connections()
         self.conn_pool1.delete(self.conn1)
         self.assertIsNone(self.conn_pool1.get_by_fileno(self.fileno1))
+        self.assertEqual(0, len(self.conn_pool1.by_connection_type[self.conn1.CONNECTION_TYPE]))
         with self.assertRaises(KeyError):
             self.conn_pool1.get_by_ipport(self.ip1, self.port1)
 
         self.conn_pool1.delete(self.conn2)
         self.assertIsNone(self.conn_pool1.get_by_fileno(self.fileno2))
         self.assertEqual(1, self.conn_pool1.count_conn_by_ip[self.ip2])
+        self.assertEqual(0, len(self.conn_pool1.by_connection_type[self.conn2.CONNECTION_TYPE]))
 
     # noinspection PyTypeChecker
     def test_delete_removes_multiple_types(self):

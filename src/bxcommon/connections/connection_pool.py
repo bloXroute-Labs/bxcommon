@@ -133,9 +133,11 @@ class ConnectionPool:
         if ipport in self.by_ipport and self.by_ipport[ipport].file_no == conn.file_no:
             del self.by_ipport[(conn.peer_ip, conn.peer_port)]
 
-        for connection_type in self.by_connection_type:
-            if connection_type in conn.CONNECTION_TYPE:
-                self.by_connection_type[connection_type].discard(conn)
+        if conn.CONNECTION_TYPE in self.by_connection_type:
+            if len(self.by_connection_type[conn.CONNECTION_TYPE]) == 1:
+                del self.by_connection_type[conn.CONNECTION_TYPE]
+            else:
+                self.by_connection_type[conn.CONNECTION_TYPE].discard(conn)
 
         # Decrement the count- if it's 0, we delete the key.
         if self.count_conn_by_ip[conn.peer_ip] == 1:
