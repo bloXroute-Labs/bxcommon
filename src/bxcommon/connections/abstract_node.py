@@ -281,15 +281,6 @@ class AbstractNode:
 
         conn.advance_sent_bytes(bytes_sent)
 
-    def on_bytes_written_to_socket(self, file_no: int, bytes_written: int):
-        conn = self.connection_pool.get_by_fileno(file_no)
-
-        if conn is None:
-            logger.debug("Bytes written call for connection not in pool. file_no: {0}", file_no)
-            return
-
-        conn.advance_bytes_written_to_socket(bytes_written)
-
     def fire_alarms(self) -> float:
         time_to_next = self.alarm_queue.fire_ready_alarms()
         if time_to_next is not None:
