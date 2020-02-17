@@ -1,8 +1,9 @@
 import typing
-from asyncio import Protocol, BaseTransport, Transport
+from asyncio import BaseTransport, Transport, BufferedProtocol
 from typing import TYPE_CHECKING, Optional
 from cryptography.x509 import Certificate
 
+from bxcommon import constants
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.network.socket_connection_state import SocketConnectionState
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 logger = logging.get_logger(__name__)
 
 
-class SocketConnectionProtocol(Protocol):
+class SocketConnectionProtocol(BufferedProtocol):
     transport: Optional[Transport]
     file_no: int
     endpoint: IpEndpoint
@@ -26,6 +27,7 @@ class SocketConnectionProtocol(Protocol):
     is_ssl: bool
     _node: "AbstractNode"
     _should_retry: bool
+    _receive_buf: bytearray
 
     def __init__(
         self,
@@ -45,13 +47,17 @@ class SocketConnectionProtocol(Protocol):
         self.state = SocketConnectionState.CONNECTING
         self._should_retry = self.direction == NetworkDirection.OUTBOUND
         self.is_ssl = is_ssl
+        self._receive_buf = bytearray(constants.RECV_BUFSIZE)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} <{self.endpoint}, {self.direction.name}>"
 
-    def data_received(self, data: bytes) -> None:
+    def get_buffer(self, _suggested_size: int):
+        return self._receive_buf
+
+    def buffer_updated(self, bytes_len: int):
         if self.is_receivable():
-            self._node.on_bytes_received(self.file_no, data)
+            self._node.on_bytes_received(self.file_no, self._receive_buf[:bytes_len])
 
     def connection_made(self, transport: BaseTransport) -> None:
         self.transport = typing.cast(Transport, transport)
