@@ -173,8 +173,9 @@ class AbstractConnection(Generic[Node]):
     def advance_sent_bytes(self, bytes_sent):
         self.advance_bytes_on_buffer(self.outputbuf, bytes_sent)
 
+    def advance_bytes_written_to_socket(self, bytes_written: int):
         if self.message_tracker:
-            self.message_tracker.advance_bytes(bytes_sent)
+            self.message_tracker.advance_bytes(bytes_written)
 
     def enqueue_msg(self, msg: AbstractMessage, prepend: bool = False):
         """

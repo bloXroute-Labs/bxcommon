@@ -23,7 +23,8 @@ from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
 from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 from bxcommon.network.socket_connection_state import SocketConnectionState
-from bxcommon.services.broadcast_service import BroadcastService, BroadcastOptions
+from bxcommon.services.broadcast_service import BroadcastService, \
+    BroadcastOptions
 from bxcommon.services.threaded_request_service import ThreadedRequestService
 from bxcommon.utils import memory_utils, json_utils, convert
 from bxcommon.utils.alarm_queue import AlarmQueue
@@ -34,7 +35,8 @@ from bxcommon.utils.stats.node_info_service import node_info_statistics
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
-from bxutils.exceptions.connection_authentication_error import ConnectionAuthenticationError
+from bxutils.exceptions.connection_authentication_error import \
+    ConnectionAuthenticationError
 from bxutils.logging import LogRecordType
 from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.extensions import extensions_factory
@@ -280,6 +282,17 @@ class AbstractNode:
             return
 
         conn.advance_sent_bytes(bytes_sent)
+
+    def on_bytes_written_to_socket(self, file_no: int, bytes_written: int):
+        conn = self.connection_pool.get_by_fileno(file_no)
+
+        if conn is None:
+            logger.debug(
+                "Bytes written call for connection not in pool: {}",
+                file_no
+            )
+
+        conn.advance_bytes_written_to_socket(bytes_written)
 
     def fire_alarms(self) -> float:
         time_to_next = self.alarm_queue.fire_ready_alarms()

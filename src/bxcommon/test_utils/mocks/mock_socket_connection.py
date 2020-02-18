@@ -33,6 +33,7 @@ class MockSocketConnection(SocketConnectionProtocol):
         self.socket_opts: Dict[Tuple[int, int], Any] = default_socket_opts
 
         self.transport.write = self.socket_instance_send
+        self.transport.get_write_buffer_size = MagicMock(return_value=0)
 
     def fileno(self) -> int:
         return self.file_no

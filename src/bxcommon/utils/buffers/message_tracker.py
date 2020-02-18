@@ -17,14 +17,21 @@ if TYPE_CHECKING:
 
 class MessageTrackerEntry:
     message: Optional[AbstractMessage]
+    label: Optional[str]
     sent_bytes: int = 0
     length: int
     queued_time: float
 
-    def __init__(self, message: Optional[AbstractMessage], length: int):
+    def __init__(
+        self,
+        message: Optional[AbstractMessage],
+        length: int,
+        label: Optional[str],
+    ):
         self.message = message
         self.length = length
         self.queued_time = time.time()
+        self.label = label
 
     def message_log_level(self) -> LogLevel:
         if self.message:
@@ -32,7 +39,7 @@ class MessageTrackerEntry:
                 if tx_stats.should_log_event_for_tx(
                     self.message.tx_hash().binary,
                     self.message.network_num(),
-                    self.message.short_id()
+                    self.message.short_id(),
                 ):
                     return LogLevel.DEBUG
 
@@ -40,9 +47,25 @@ class MessageTrackerEntry:
 
         return LogLevel.DEBUG
 
+    def as_str(self):
+        base = "Message"
+
+        if self.message is None and self.label is not None:
+            base = self.label
+        if self.message is not None and self.label is None:
+            base = self.message
+        if self.message is not None and self.label is not None:
+            base = f"{self.message}({self.label})"
+
+        return f"{base}(len: {self.length})"
+
     def __repr__(self):
-        return "MessageTrackerEntry<message: {}, sent_bytes: {}, length: {}>".format(
-            self.message, self.sent_bytes, self.length
+        return (
+            f"MessageTrackerEntry<"
+            f"message: {self.message}, "
+            f"sent_bytes: {self.sent_bytes}, "
+            f"length: {self.length},"
+            f"label: {self.label}>"
         )
 
 
@@ -88,10 +111,12 @@ class MessageTracker:
                 self.connection.log_debug(
                     "Message tracker somehow got out of sync. "
                     "Attempted to send {} bytes when none left in tracker. "
-                    "Disabling further tracking.",
+                    "Resetting. ",
                     bytes_left,
                 )
-                self.is_working = False
+                self.bytes_remaining = 0
+                self.messages.clear()
+                return
 
             if bytes_left >= (
                 self.messages[0].length - self.messages[0].sent_bytes
@@ -101,7 +126,7 @@ class MessageTracker:
                     sent_message.message_log_level(),
                     "Sent {} to socket. Took {:.2f}ms. "
                     "{} bytes remaining on buffer.",
-                    sent_message.message,
+                    sent_message.as_str(),
                     time.time() - sent_message.queued_time,
                     self.bytes_remaining,
                 )
@@ -115,14 +140,17 @@ class MessageTracker:
                     "Elapsed time: {:.2f}ms. {} bytes remaining on buffer.",
                     in_progress_message.sent_bytes,
                     in_progress_message.length,
-                    in_progress_message.message,
+                    in_progress_message.as_str,
                     time.time() - in_progress_message.queued_time,
                     self.bytes_remaining,
                 )
                 bytes_left = 0
 
     def append_message(
-        self, num_bytes: int, message: Optional[AbstractMessage]
+        self,
+        num_bytes: int,
+        message: Optional[AbstractMessage],
+        label: Optional[str] = None,
     ):
         """
         Appends a message entry to the tracker.
@@ -134,11 +162,14 @@ class MessageTracker:
         if not self.is_working:
             return
 
-        self.messages.append(MessageTrackerEntry(message, num_bytes))
+        self.messages.append(MessageTrackerEntry(message, num_bytes, label))
         self.bytes_remaining += num_bytes
 
     def prepend_message(
-        self, num_bytes: int, message: Optional[AbstractMessage]
+        self,
+        num_bytes: int,
+        message: Optional[AbstractMessage],
+        label: Optional[str] = None,
     ):
         """
         Appends a message entry to the tracker.
@@ -152,10 +183,12 @@ class MessageTracker:
 
         if self.messages and self.messages[0].sent_bytes != 0:
             in_progress_message = self.messages.popleft()
-            self.messages.appendleft(MessageTrackerEntry(message, num_bytes))
+            self.messages.appendleft(
+                MessageTrackerEntry(message, num_bytes, label)
+            )
             self.messages.appendleft(in_progress_message)
         else:
-            self.messages.append(MessageTrackerEntry(message, num_bytes))
+            self.messages.append(MessageTrackerEntry(message, num_bytes, label))
 
         self.bytes_remaining += num_bytes
 
@@ -191,5 +224,5 @@ class MessageTracker:
                 "{}ms.",
                 entry_removed.length,
                 entry_removed.message,
-                1000 * (time.time() - entry_removed.queued_time)
+                1000 * (time.time() - entry_removed.queued_time),
             )

@@ -27,6 +27,7 @@ class SocketConnectionProtocol(BufferedProtocol):
     is_ssl: bool
     _node: "AbstractNode"
     _should_retry: bool
+    _initial_bytes: Optional[int]  # bytes for message tracker to ignore for handshake
     _receive_buf: bytearray
 
     def __init__(
@@ -45,8 +46,9 @@ class SocketConnectionProtocol(BufferedProtocol):
             self.direction = NetworkDirection.OUTBOUND
         self.can_send = False
         self.state = SocketConnectionState.CONNECTING
-        self._should_retry = self.direction == NetworkDirection.OUTBOUND
         self.is_ssl = is_ssl
+        self._should_retry = self.direction == NetworkDirection.OUTBOUND
+        self._initial_bytes = None
         self._receive_buf = bytearray(constants.RECV_BUFSIZE)
 
     def __repr__(self) -> str:
@@ -105,6 +107,7 @@ class SocketConnectionProtocol(BufferedProtocol):
         logger.trace("[{}] - resumed writing.", self)
 
     def send(self) -> None:
+        total_bytes_sent = 0
 
         while self.is_sendable():
             data = self._node.get_bytes_to_send(self.file_no)
@@ -112,8 +115,25 @@ class SocketConnectionProtocol(BufferedProtocol):
                 break
             assert self.transport is not None, "Connection is broken!"
 
+            transport_buffer_size = self.transport.get_write_buffer_size()
+            total_transport_buffer_size = transport_buffer_size + len(data)
+            if self._initial_bytes is None:
+                self._initial_bytes = transport_buffer_size
+
             self.transport.write(data)
             self._node.on_bytes_sent(self.file_no, len(data))
+
+            bytes_sent = total_transport_buffer_size - self.transport.get_write_buffer_size()
+            total_bytes_sent += bytes_sent
+
+            remaining_initial_bytes = max(0, self._initial_bytes - bytes_sent)
+            bytes_sent -= self._initial_bytes
+            self._initial_bytes = remaining_initial_bytes
+
+            self._node.on_bytes_written_to_socket(self.file_no, bytes_sent)
+
+        if total_bytes_sent:
+            logger.trace("[{}] - sent {} bytes", self, total_bytes_sent)
 
     def pause_reading(self) -> None:
         if self.is_alive():
