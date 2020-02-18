@@ -226,15 +226,15 @@ class AbstractVersionManager:
             command, payload_len = VersionMessage.unpack(header_buf)
             header_len = VersionMessage.HEADER_LENGTH
         else:
-            command = constants.MSG_NULL_BYTE
-            payload_len = 0
+            command = bytearray(header_buf[:constants.MSG_TYPE_LEN])
+            payload_len = constants.MSG_TYPE_LEN
 
         if command != self.version_message_command:
             if constants.HTTP_MESSAGE in command:
                 raise NonVersionMessageError(
                     msg="Instead of a version hello message, we received an HTTP request: {} with payload length: {} "
                     "Ignoring and closing connection. "
-                    .format(command, payload_len),
+                    .format(header_buf, payload_len),
                     is_known=True)
             elif command in constants.BITCOIN_MESSAGES:
                 raise NonVersionMessageError(
