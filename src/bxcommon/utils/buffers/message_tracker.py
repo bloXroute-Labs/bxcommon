@@ -21,6 +21,7 @@ class MessageTrackerEntry:
     sent_bytes: int = 0
     length: int
     queued_time: float
+    last_operation_time: float
 
     def __init__(
         self,
@@ -31,6 +32,7 @@ class MessageTrackerEntry:
         self.message = message
         self.length = length
         self.queued_time = time.time()
+        self.last_operation_time = None
         self.label = label
 
     def message_log_level(self) -> LogLevel:
@@ -118,6 +120,8 @@ class MessageTracker:
                 self.messages.clear()
                 return
 
+
+            curr_time = time.time()
             if bytes_left >= (
                 self.messages[0].length - self.messages[0].sent_bytes
             ):
@@ -125,9 +129,15 @@ class MessageTracker:
                 self.connection.log(
                     sent_message.message_log_level(),
                     "Sent {} to socket. Took {:.2f}ms. "
+                    "last sent operation took {:.2f}ms. "
                     "{} bytes remaining on buffer.",
                     sent_message.as_str(),
-                    time.time() - sent_message.queued_time,
+                    1000 * (curr_time - sent_message.queued_time),
+                    1000 * (curr_time -
+                            sent_message.last_operation_time
+                            if sent_message.last_operation_time
+                            else curr_time
+                            ),
                     self.bytes_remaining,
                 )
                 bytes_left -= sent_message.length - sent_message.sent_bytes
@@ -137,13 +147,20 @@ class MessageTracker:
                 self.connection.log(
                     in_progress_message.message_log_level(),
                     "Sent {} out of {} bytes of {} to socket. "
+                    "Last send operation took {:.2f}ms. "
                     "Elapsed time: {:.2f}ms. {} bytes remaining on buffer.",
                     in_progress_message.sent_bytes,
                     in_progress_message.length,
                     in_progress_message.as_str,
-                    time.time() - in_progress_message.queued_time,
+                    1000 * (curr_time - in_progress_message.queued_time),
+                    1000 * (curr_time -
+                            in_progress_message.last_operation_time
+                            if in_progress_message.last_operation_time
+                            else curr_time
+                            ),
                     self.bytes_remaining,
                 )
+                in_progress_message.last_operation_time = curr_time
                 bytes_left = 0
 
     def append_message(
@@ -213,6 +230,7 @@ class MessageTracker:
                 index -= 1
                 break
 
+        curr_time = time.time()
         while len(self.messages) > index:
             entry_removed = self.messages.pop()
             self.bytes_remaining -= (
@@ -220,9 +238,15 @@ class MessageTracker:
             )
             self.connection.log(
                 entry_removed.message_log_level(),
-                "Removed {} bytes of {} from buffer. Message was queued for "
-                "{}ms.",
+                "Removed {} bytes of {} from buffer. "
+                "Message was queued for {:.2f}ms."
+                "Last operation was {:.2f}ms ago",
                 entry_removed.length,
                 entry_removed.message,
-                1000 * (time.time() - entry_removed.queued_time),
+                1000 * (curr_time - entry_removed.queued_time),
+                1000 * (curr_time -
+                        entry_removed.last_operation_time
+                        if entry_removed.last_operation_time
+                        else curr_time
+                        ),
             )
