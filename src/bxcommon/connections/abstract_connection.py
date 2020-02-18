@@ -1,9 +1,9 @@
+import asyncio
 import time
 from abc import ABCMeta
+from asyncio import Future
 from collections import defaultdict
 from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Optional, Union
-from asyncio import Future
-import asyncio
 
 from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
@@ -17,7 +17,7 @@ from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
-from bxcommon.utils import convert
+from bxcommon.utils import convert, performance_utils
 from bxcommon.utils import memory_utils
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.message_tracker import MessageTracker
@@ -34,6 +34,7 @@ if TYPE_CHECKING:
 
 logger = logging.get_logger(__name__)
 memory_logger = logging.get_logger(LogRecordType.BxMemory, __name__)
+msg_handling_logger = logging.get_logger(LogRecordType.MessageHandlingTroubleshooting, __name__)
 Node = TypeVar("Node", bound="AbstractNode")
 
 
@@ -281,7 +282,7 @@ class AbstractConnection(Generic[Node]):
 
                 # Full messages must be one of the handshake messages if the connection isn't established yet.
                 if ConnectionState.ESTABLISHED not in self.state \
-                        and msg_type not in self.hello_messages:
+                    and msg_type not in self.hello_messages:
                     self.log_warning("Received unexpected message ({}) before handshake completed. Closing.",
                                      msg_type)
                     self.mark_for_close()
@@ -303,8 +304,14 @@ class AbstractConnection(Generic[Node]):
 
                 if msg_type in self.message_handlers:
                     msg_handler = self.message_handlers[msg_type]
-                    msg_handler(msg)
 
+                    handler_start = time.time()
+                    msg_handler(msg)
+                    performance_utils.log_operation_duration(msg_handling_logger,
+                                                             "Single message handler",
+                                                             handler_start,
+                                                             constants.MSG_HANDLERS_CYCLE_DURATION_WARN_THRESHOLD_S,
+                                                             connection=self, handler=msg_handler, message=msg)
                 messages_processed[msg_type] += 1
 
             # TODO: Investigate possible solutions to recover from PayloadLenError errors
@@ -351,7 +358,8 @@ class AbstractConnection(Generic[Node]):
 
             except NonVersionMessageError as e:
                 if e.is_known:
-                    self.log_debug("Received invalid handshake request on {}:{}, {}", self.peer_ip, self.peer_port, e.msg)
+                    self.log_debug("Received invalid handshake request on {}:{}, {}", self.peer_ip, self.peer_port,
+                                   e.msg)
                 else:
                     self.log_warning("Invalid handshake request on {}:{}. Rejecting the connection. {}",
                                      self.peer_ip, self.peer_port, e.msg)
@@ -387,8 +395,11 @@ class AbstractConnection(Generic[Node]):
             else:
                 self.num_bad_messages = 0
 
-        time_elapsed = time.time() - start_time
-        self.log_trace("Processed {} messages in {:.2f} seconds", messages_processed, time_elapsed)
+        performance_utils.log_operation_duration(msg_handling_logger,
+                                                 "Message handlers",
+                                                 start_time,
+                                                 constants.MSG_HANDLERS_DURATION_WARN_THRESHOLD_S,
+                                                 connection=self, count=messages_processed)
 
     def pop_next_message(self, payload_len):
         """
@@ -542,7 +553,7 @@ class AbstractConnection(Generic[Node]):
             self.pong_timeout_alarm_id = None
 
     def on_connection_authenticated(
-            self, peer_id: str, connection_type: ConnectionType, account_id: Optional[str]
+        self, peer_id: str, connection_type: ConnectionType, account_id: Optional[str]
     ) -> None:
         self.peer_id = peer_id
         if self.CONNECTION_TYPE != connection_type:
@@ -575,7 +586,7 @@ class AbstractConnection(Generic[Node]):
 
     def _pong_msg_timeout(self):
         self.log_info("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
-                       "Closing connection.")
+                      "Closing connection.")
         self.mark_for_close()
         self.pong_timeout_alarm_id = None
 

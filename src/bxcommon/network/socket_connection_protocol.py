@@ -1,20 +1,24 @@
+import time
 import typing
 from asyncio import BaseTransport, Transport, BufferedProtocol
 from typing import TYPE_CHECKING, Optional
+
 from cryptography.x509 import Certificate
 
 from bxcommon import constants
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.network.socket_connection_state import SocketConnectionState
-
+from bxcommon.utils import performance_utils
 from bxutils import logging
+from bxutils.logging import LogRecordType
 from bxutils.ssl import ssl_certificate_factory
 
 if TYPE_CHECKING:
     from bxcommon.connections.abstract_node import AbstractNode
 
 logger = logging.get_logger(__name__)
+network_troubleshooting_logger = logging.get_logger(LogRecordType.NetworkTroubleshooting, __name__)
 
 
 class SocketConnectionProtocol(BufferedProtocol):
@@ -50,14 +54,22 @@ class SocketConnectionProtocol(BufferedProtocol):
         self._should_retry = self.direction == NetworkDirection.OUTBOUND
         self._initial_bytes = None
         self._receive_buf = bytearray(constants.RECV_BUFSIZE)
+        self._read_start_time = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} <{self.endpoint}, {self.direction.name}>"
 
     def get_buffer(self, _suggested_size: int):
+        self._read_start_time = time.time()
         return self._receive_buf
 
     def buffer_updated(self, bytes_len: int):
+        assert self._read_start_time is not None
+        performance_utils.log_operation_duration(network_troubleshooting_logger,
+                                                 "Read bytes", self._read_start_time,
+                                                 constants.NETWORK_OPERATION_CYCLE_DURATION_WARN_THRESHOLD_S,
+                                                 connection=self, bytes_len=bytes_len)
+
         if self.is_receivable():
             self._node.on_bytes_received(self.file_no, self._receive_buf[:bytes_len])
 
@@ -107,9 +119,12 @@ class SocketConnectionProtocol(BufferedProtocol):
         logger.trace("[{}] - resumed writing.", self)
 
     def send(self) -> None:
+        send_start = time.time()
         total_bytes_sent = 0
 
         while self.is_sendable():
+            send_cycle_start = time.time()
+
             data = self._node.get_bytes_to_send(self.file_no)
             if not data:
                 break
@@ -132,8 +147,18 @@ class SocketConnectionProtocol(BufferedProtocol):
 
             self._node.on_bytes_written_to_socket(self.file_no, bytes_sent)
 
+            performance_utils.log_operation_duration(network_troubleshooting_logger,
+                                                     "Send bytes cycle", send_cycle_start,
+                                                     constants.NETWORK_OPERATION_CYCLE_DURATION_WARN_THRESHOLD_S,
+                                                     connection=self, bytes_sent=bytes_sent)
+
         if total_bytes_sent:
             logger.trace("[{}] - sent {} bytes", self, total_bytes_sent)
+
+            performance_utils.log_operation_duration(network_troubleshooting_logger,
+                                                     "Send bytes", send_start,
+                                                     constants.NETWORK_OPERATION_DURATION_WARN_THRESHOLD_S,
+                                                     connection=self, total_bytes_sent=total_bytes_sent)
 
     def pause_reading(self) -> None:
         if self.is_alive():

@@ -1,12 +1,15 @@
 import time
 from heapq import heappop, heappush
 from threading import RLock
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from bxcommon import constants
+from bxcommon.utils import performance_utils
 from bxutils import logging
+from bxutils.logging import LogRecordType
 
 logger = logging.get_logger(__name__)
+alarm_troubleshooting_logger = logging.get_logger(LogRecordType.AlarmTroubleshooting, __name__)
 
 
 class Alarm:
@@ -164,6 +167,7 @@ class AlarmQueue(object):
             return
 
         curr_time = time.time()
+        alarms_count = 0
 
         with self.lock:
             while self.alarms and self.alarms[0].fire_time <= curr_time:
@@ -174,12 +178,14 @@ class AlarmQueue(object):
                     try:
                         start_time = time.time()
                         next_delay = alarm.fire()
-                        end_time = time.time()
+                        alarms_count += 1
                     except Exception as e:
                         logger.exception("Alarm {} could not fire and failed with exception: {}", alarm, e)
                     else:
-                        if end_time - start_time > constants.WARN_ALARM_EXECUTION_DURATION:
-                            logger.debug("{} took {} seconds to execute.", alarm, end_time - start_time)
+                        performance_utils.log_operation_duration(alarm_troubleshooting_logger,
+                                                                 "Single alarm", start_time,
+                                                                 constants.WARN_ALARM_EXECUTION_DURATION,
+                                                                 alarm=alarm)
 
                         if next_delay is not None and next_delay > 0:
                             next_time = time.time() + next_delay
@@ -196,6 +202,11 @@ class AlarmQueue(object):
 
                             if not alarm_heap:
                                 del self.approx_alarms_scheduled[alarm.fn]
+
+        performance_utils.log_operation_duration(alarm_troubleshooting_logger,
+                                                 "Alarms", curr_time,
+                                                 constants.WARN_ALL_ALARMS_EXECUTION_DURATION,
+                                                 count=alarms_count)
 
     def fire_ready_alarms(self) -> Optional[float]:
         """
