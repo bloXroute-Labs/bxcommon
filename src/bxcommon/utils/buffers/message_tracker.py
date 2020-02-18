@@ -32,7 +32,7 @@ class MessageTrackerEntry:
         self.message = message
         self.length = length
         self.queued_time = time.time()
-        self.last_operation_time = None
+        self.last_operation_time = 0.0
         self.label = label
 
     def message_log_level(self) -> LogLevel:
@@ -120,7 +120,6 @@ class MessageTracker:
                 self.messages.clear()
                 return
 
-
             curr_time = time.time()
             if bytes_left >= (
                 self.messages[0].length - self.messages[0].sent_bytes
@@ -136,7 +135,7 @@ class MessageTracker:
                     1000 * (curr_time -
                             sent_message.last_operation_time
                             if sent_message.last_operation_time
-                            else curr_time
+                            else 0
                             ),
                     self.bytes_remaining,
                 )
@@ -156,7 +155,7 @@ class MessageTracker:
                     1000 * (curr_time -
                             in_progress_message.last_operation_time
                             if in_progress_message.last_operation_time
-                            else curr_time
+                            else 0
                             ),
                     self.bytes_remaining,
                 )
@@ -247,6 +246,6 @@ class MessageTracker:
                 1000 * (curr_time -
                         entry_removed.last_operation_time
                         if entry_removed.last_operation_time
-                        else curr_time
+                        else 0
                         ),
             )
