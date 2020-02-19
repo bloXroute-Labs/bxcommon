@@ -148,7 +148,7 @@ class AbstractConnection(Generic[Node]):
         return self.socket_connection.is_alive()
 
     def on_connection_established(self):
-        if ConnectionState.ESTABLISHED not in self.state:
+        if not self.is_active():
             self.state |= ConnectionState.ESTABLISHED
             self.log_info("Connection established.")
 
