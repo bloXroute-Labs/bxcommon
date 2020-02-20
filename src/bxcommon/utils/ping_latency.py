@@ -20,16 +20,17 @@ def get_ping_latency(outbound_peer: OutboundPeerModel) -> NodeLatencyInfo:
     :param outbound_peer: peer to ping
     """
     try:
-        res = subprocess.Popen(["ping", "-c", "1", outbound_peer.ip], stdout=subprocess.PIPE)
-        if res:
-            output = res.communicate(timeout=constants.PING_TIMEOUT_S)[0].decode()
-            ping_latency = float(output.split("time=", 1)[1].split("ms", 1)[0])
-        else:
-            ping_latency = constants.PING_TIMEOUT_S * 1000
-            logger.debug("Could not ping {} {}.", outbound_peer.node_type, outbound_peer.ip)
-    except subprocess.TimeoutExpired:
-        ping_latency = constants.PING_TIMEOUT_S * 1000
-        logger.debug("Ping to {} {} timed out.", outbound_peer.node_type, outbound_peer.ip)
+        with subprocess.Popen(["ping", "-c", "1", outbound_peer.ip], stdout=subprocess.PIPE) as proc:
+            try:
+                if proc:
+                    output = proc.communicate(timeout=constants.PING_TIMEOUT_S)[0].decode()
+                    ping_latency = float(output.split("time=", 1)[1].split("ms", 1)[0])
+                else:
+                    ping_latency = constants.PING_TIMEOUT_S * 1000
+                    logger.debug("Could not ping {} {}.", outbound_peer.node_type, outbound_peer.ip)
+            except subprocess.TimeoutExpired:
+                ping_latency = constants.PING_TIMEOUT_S * 1000
+                logger.debug("Ping to {} {} timed out.", outbound_peer.node_type, outbound_peer.ip)
     except Exception as ex:
         logger.error("Ping to {} {} triggered an error: {}.", outbound_peer.node_type, outbound_peer.ip, ex)
         ping_latency = constants.PING_TIMEOUT_S * 1000
