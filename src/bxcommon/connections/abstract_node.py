@@ -19,9 +19,9 @@ from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
-from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
@@ -149,7 +149,7 @@ class AbstractNode:
         pass
 
     @abstractmethod
-    def build_connection(self, socket_connection: SocketConnectionProtocol) -> Optional[AbstractConnection]:
+    def build_connection(self, socket_connection: AbstractSocketConnectionProtocol) -> Optional[AbstractConnection]:
         pass
 
     @abstractmethod
@@ -159,7 +159,7 @@ class AbstractNode:
     def connection_exists(self, ip: str, port: int) -> bool:
         return self.connection_pool.has_connection(ip, port)
 
-    def on_connection_added(self, socket_connection: SocketConnectionProtocol) -> Optional[AbstractConnection]:
+    def on_connection_added(self, socket_connection: AbstractSocketConnectionProtocol) -> Optional[AbstractConnection]:
         """
         Notifies the node that a connection is coming in.
         """
@@ -331,7 +331,7 @@ class AbstractNode:
 
     def broadcast(self, msg: AbstractMessage, broadcasting_conn: Optional[AbstractConnection] = None,
                   prepend_to_queue: bool = False, connection_types: Optional[List[ConnectionType]] = None) \
-            -> List[AbstractConnection]:
+        -> List[AbstractConnection]:
         """
         Broadcasts message msg to connections of the specified type except requester.
         """
@@ -540,7 +540,8 @@ class AbstractNode:
         self.connection_pool.delete(conn)
         self.handle_connection_closed(should_retry, ConnectionPeerInfo(conn.endpoint, conn.CONNECTION_TYPE))
 
-    def _initialize_connection(self, socket_connection: SocketConnectionProtocol) -> Optional[AbstractConnection]:
+    def _initialize_connection(self, socket_connection: AbstractSocketConnectionProtocol) -> Optional[
+        AbstractConnection]:
         conn_obj = self.build_connection(socket_connection)
         ip, port = socket_connection.endpoint
         if conn_obj is not None:
@@ -625,4 +626,3 @@ class AbstractNode:
         self._last_responsiveness_check_log_time = current_time
 
         return constants.RESPONSIVENESS_CHECK_INTERVAL_S
-

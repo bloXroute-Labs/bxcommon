@@ -1,0 +1,19 @@
+from asyncio import Protocol
+from typing import Optional
+
+from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
+from bxcommon.network.ip_endpoint import IpEndpoint
+
+
+class SocketConnectionProtocolPy36(AbstractSocketConnectionProtocol, Protocol):
+    def __init__(
+        self,
+        node: "AbstractNode",
+        endpoint: Optional[IpEndpoint] = None,
+        is_ssl: bool = True,
+    ):
+        AbstractSocketConnectionProtocol.__init__(self, node, endpoint, is_ssl)
+
+    def data_received(self, data: bytes) -> None:
+        if self.is_receivable():
+            self._node.on_bytes_received(self.file_no, data)

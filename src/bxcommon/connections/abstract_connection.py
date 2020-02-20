@@ -15,8 +15,8 @@ from bxcommon.messages.validation.message_validation_error import MessageValidat
 from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.network_direction import NetworkDirection
-from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 from bxcommon.utils import convert, performance_utils
 from bxcommon.utils import memory_utils
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -44,9 +44,9 @@ class AbstractConnection(Generic[Node]):
     CONNECTION_TYPE: ClassVar[ConnectionType] = ConnectionType.NONE
     node: Node
 
-    def __init__(self, socket_connection: SocketConnectionProtocol, node: Node):
-        if not isinstance(socket_connection, SocketConnectionProtocol):
-            raise ValueError("SocketConnection type is expected for socket_connection arg but was {0}."
+    def __init__(self, socket_connection: AbstractSocketConnectionProtocol, node: Node):
+        if not isinstance(socket_connection, AbstractSocketConnectionProtocol):
+            raise ValueError("AbstractSocketConnectionProtocol type is expected for socket_connection arg but was {0}."
                              .format(type(socket_connection)))
 
         self.socket_connection = socket_connection

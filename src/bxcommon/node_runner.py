@@ -64,6 +64,8 @@ def run_node(
     startup_param = sys.argv[1:]
     logger.info("Startup Parameters are: {}", " ".join(startup_param))
 
+    _verify_environment()
+
     if node_type is None:
         node_type = node_class.NODE_TYPE
 
@@ -177,3 +179,9 @@ def _init_ssl_service(
 
     sdn_http_service.reset_pool(ssl_context)
     return node_ssl_service
+
+
+def _verify_environment():
+    if sys.version.startswith("3.6."):
+        logger.warning("Python 3.6 environment is detected. Degraded performance is expected. "
+                       "Upgrade to Python 3.7 or above for improved performance.")

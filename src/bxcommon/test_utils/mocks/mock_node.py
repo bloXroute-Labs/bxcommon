@@ -1,5 +1,6 @@
 from argparse import Namespace
 from typing import List, Optional
+
 from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
@@ -7,17 +8,15 @@ from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import DEFAULT_NETWORK_NUM
 from bxcommon.models.node_type import NodeType
-from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
+from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.services.broadcast_service import BroadcastService
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
 from bxcommon.utils.alarm_queue import AlarmQueue
-
 from bxutils.services.node_ssl_service import NodeSSLService
 
 
 class MockNode(AbstractNode):
-
     NODE_TYPE = NodeType.RELAY
 
     def __init__(self, opts: Namespace, node_ssl_service: Optional[NodeSSLService] = None):
@@ -32,7 +31,8 @@ class MockNode(AbstractNode):
         self._tx_service = TransactionService(self, self.network_num)
         self._tx_services = {}
 
-    def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, connection_types=None) -> List[AbstractConnection]:
+    def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, connection_types=None) -> List[
+        AbstractConnection]:
         self.broadcast_messages.append(msg)
         return []
 
@@ -48,7 +48,7 @@ class MockNode(AbstractNode):
     def send_request_for_relay_peers(self):
         pass
 
-    def build_connection(self, socket_connection: SocketConnectionProtocol) -> Optional[AbstractConnection]:
+    def build_connection(self, socket_connection: AbstractSocketConnectionProtocol) -> Optional[AbstractConnection]:
         pass
 
     def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:

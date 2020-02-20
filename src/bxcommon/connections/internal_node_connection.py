@@ -21,14 +21,14 @@ from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyn
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.models.node_type import NodeType
-from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
+from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.utils import nonce_generator
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
-from bxcommon.models.quota_type_model import QuotaType
 from bxutils import logging
 
 logger = logging.get_logger(__name__)
@@ -37,7 +37,7 @@ logger = logging.get_logger(__name__)
 class InternalNodeConnection(AbstractConnection[Node]):
     __metaclass__ = ABCMeta
 
-    def __init__(self, sock: SocketConnectionProtocol, node: Node):
+    def __init__(self, sock: AbstractSocketConnectionProtocol, node: Node):
         super(InternalNodeConnection, self).__init__(sock, node)
 
         # Enable buffering only on internal connections
@@ -240,7 +240,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         if network_num in self._sync_ping_latencies:
             del self._sync_ping_latencies[network_num]
         self._nonce_to_network_num = {
-            nonce: other_network_num for nonce,  other_network_num in self._nonce_to_network_num.items()
+            nonce: other_network_num for nonce, other_network_num in self._nonce_to_network_num.items()
             if other_network_num != network_num
         }
 
@@ -328,4 +328,3 @@ class InternalNodeConnection(AbstractConnection[Node]):
             return nonce
         else:
             return None
-

@@ -2,6 +2,7 @@ import asyncio
 import functools
 import signal
 import socket
+import sys
 from asyncio import CancelledError, Future
 from asyncio.events import AbstractServer
 from ssl import SSLContext
@@ -10,9 +11,11 @@ from typing import Iterator, List, Coroutine, Generator, Callable, Awaitable, Op
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_type import ConnectionType
+from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
 from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
+from bxcommon.network.socket_connection_protocol_py36 import SocketConnectionProtocolPy36
 from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
 from bxutils import logging, constants as utils_constants
 
@@ -20,7 +23,7 @@ logger = logging.get_logger(__name__)
 
 
 async def run_until_other_completed(
-        callback: Callable[..., Awaitable], tsk_future: Future, wait_future: Future
+    callback: Callable[..., Awaitable], tsk_future: Future, wait_future: Future
 ) -> None:
     done = False
     future_to_set: Optional[Future] = tsk_future
@@ -108,7 +111,7 @@ class NodeEventLoop:
             if endpoint.port in utils_constants.SSL_PORT_RANGE:
                 ssl_ctx = self._node.get_server_ssl_ctx()
             server_future = loop.create_server(
-                functools.partial(self._protocol_factory, endpoint, True), # pyre-ignore SocketConnectionProtocol inherits BaseProtocol
+                functools.partial(self._protocol_factory, endpoint, True),
                 endpoint.ip_address,
                 endpoint.port,
                 family=socket.AF_INET,
@@ -121,8 +124,8 @@ class NodeEventLoop:
         return await asyncio.gather(*server_futures)
 
     async def _connect_to_target(
-            self,
-            peer_info: ConnectionPeerInfo
+        self,
+        peer_info: ConnectionPeerInfo
     ) -> None:
         logger.debug("Connecting to {}.", peer_info)
         loop = asyncio.get_event_loop()
@@ -131,7 +134,7 @@ class NodeEventLoop:
             if peer_info.transport_protocol == TransportLayerProtocol.TCP:
                 ssl_ctx = self._get_target_ssl_context(target_endpoint, peer_info.connection_type)
                 conn_task = asyncio.ensure_future(loop.create_connection(
-                    functools.partial(self._protocol_factory, target_endpoint), # pyre-ignore SocketConnectionProtocol inherits BaseProtocol
+                    functools.partial(self._protocol_factory, target_endpoint),
                     target_endpoint.ip_address,
                     target_endpoint.port,
                     family=socket.AF_INET,
@@ -139,18 +142,18 @@ class NodeEventLoop:
                 ))
             else:
                 conn_task = asyncio.ensure_future(loop.create_datagram_endpoint(
-                    lambda: SocketConnectionProtocol(self._node, target_endpoint, is_ssl=False), # pyre-ignore SocketConnectionProtocol inherits BaseProtocol
+                    functools.partial(self._protocol_factory, target_endpoint, is_ssl=False),
                     remote_addr=(target_endpoint.ip_address, target_endpoint.port),
                     family=socket.AF_INET
                 ))
             await asyncio.wait_for(conn_task, constants.CONNECTION_TIMEOUT)
         except (
-                TimeoutError,
-                asyncio.TimeoutError,
-                CancelledError,
-                ConnectionRefusedError,
-                ConnectionResetError,
-                OSError,
+            TimeoutError,
+            asyncio.TimeoutError,
+            CancelledError,
+            ConnectionRefusedError,
+            ConnectionResetError,
+            OSError,
         ) as e:
             err = str(e)
             if not err:
@@ -169,7 +172,7 @@ class NodeEventLoop:
             yield peer_info
 
     def _gather_connections(
-            self, connections_info: Iterator[ConnectionPeerInfo]
+        self, connections_info: Iterator[ConnectionPeerInfo]
     ) -> List[Coroutine]:
         return [
             self._connect_to_target(peer_info) for peer_info in connections_info
@@ -190,12 +193,16 @@ class NodeEventLoop:
             timeout = min(timeout, constants.MAX_EVENT_LOOP_TIMEOUT)
         await asyncio.sleep(timeout)
 
-    def _protocol_factory(self, endpoint: IpEndpoint, is_server: bool = False) -> SocketConnectionProtocol:
+    def _protocol_factory(self, endpoint: IpEndpoint, is_server: bool = False,
+                          is_ssl: Optional[bool] = None) -> AbstractSocketConnectionProtocol:
         if is_server:
             target_endpoint = None
         else:
             target_endpoint = endpoint
 
-        return SocketConnectionProtocol(
-            self._node, target_endpoint, is_ssl=endpoint.port in utils_constants.SSL_PORT_RANGE
-        )
+        protocol_cls = SocketConnectionProtocolPy36 if sys.version.startswith("3.6.") else SocketConnectionProtocol
+
+        if is_ssl is None:
+            is_ssl = endpoint.port in utils_constants.SSL_PORT_RANGE
+
+        return protocol_cls(self._node, target_endpoint, is_ssl=is_ssl)  # pyre-ignore Instantiate class
