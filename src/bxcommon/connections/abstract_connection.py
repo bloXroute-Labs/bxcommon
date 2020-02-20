@@ -12,6 +12,7 @@ from bxcommon.exceptions import PayloadLenError, UnauthorizedMessageError, Conne
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
+from bxcommon.messages.validation.control_flag_validation_error import ControlFlagValidationError
 from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
@@ -339,8 +340,19 @@ class AbstractConnection(Generic[Node]):
                     return
 
             except MessageValidationError as e:
+
                 if self.node.NODE_TYPE not in NodeType.GATEWAY_TYPE:
-                    self.log_warning("Message validation failed for {} message: {}.", msg_type, e.msg)
+
+                    if isinstance(e, ControlFlagValidationError):
+
+                        if e.is_cancelled_cut_through:
+                            self.log_debug(
+                                "Message validation failed for {} message: {}. Probably cut-through cancellation",
+                                msg_type, e.msg)
+                        else:
+                            self.log_warning("Message validation failed for {} message: {}.", msg_type, e.msg)
+                    else:
+                        self.log_warning("Message validation failed for {} message: {}.", msg_type, e.msg)
                 else:
                     self.log_debug("Message validation failed for {} message: {}.", msg_type, e.msg)
                 self.log_debug("Failed message bytes: {}",

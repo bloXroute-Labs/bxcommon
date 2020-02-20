@@ -5,6 +5,7 @@ from bxcommon.messages.bloxroute.bloxroute_message_control_flags import Bloxrout
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.bloxroute_message_validator import BloxrouteMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
+from bxcommon.messages.validation.control_flag_validation_error import ControlFlagValidationError
 from bxcommon.messages.validation.message_size_validation_settings import MessageSizeValidationSettings
 from bxcommon.test_utils import helpers
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -106,7 +107,7 @@ class TestBloxrouteMessageValidator(AbstractTestCase):
         payload_len = message_len - constants.STARTING_SEQUENCE_BYTES_LEN - constants.BX_HDR_COMMON_OFF
 
         # valid payload len
-        self.assertRaises(MessageValidationError, self.message_validator.validate, True,
+        self.assertRaises(ControlFlagValidationError, self.message_validator.validate, True,
                           BloxrouteMessageType.TRANSACTION,
                           constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF, payload_len,
                           input_buffer)
