@@ -26,23 +26,20 @@ def get_best_relays_by_ping_latency_one_per_country(relays: List[OutboundPeerMod
     best_relays_by_latency = _get_best_relay_latencies_one_per_country(sorted_ping_latencies, relays, countries_count)
     logger.trace("Best relays by latency by country ({}): {}", countries_count, best_relays_by_latency)
 
-    # if the absolute between fastest relay and recommended relay latency is less than RELAY_LATENCY_THRESHOLD_MS, select api's relay
+    # if the absolute between fastest relay and recommended relay latency is less than RELAY_LATENCY_THRESHOLD_MS,
+    # select api's relay
     first_recommended_relay_latency = _get_node_latency_from_list(relays_ping_latency, relays[0].node_id)
     best_relay_node = relays[0] \
         if abs(best_relays_by_latency[0].latency - first_recommended_relay_latency) < constants.NODE_LATENCY_THRESHOLD_MS \
         else best_relays_by_latency[0].node
 
-    logger.info(
-        "First recommended relay from api is: {} with {}, "
-        "fastest ping latency relay is: {} with {}, selected relay is: {}.  Received relays from api: {}",
-        relays[0].ip, "".join([_format_latency(relay.latency) for relay in relays_ping_latency if relay.node == relays[0]]),
-        sorted_ping_latencies[0].node.ip, _format_latency(sorted_ping_latencies[0].latency),
-        best_relay_node.ip,
-        ", ".join(
-            [f"{relay_latency.node.ip} with {_format_latency(relay_latency.latency)}"
-             for relay_latency in relays_ping_latency]
-        )
-    )
+    logger.info("Latency results for potential relays: [{}]",
+                ", ".join([f"{relay_latency.node.ip} with {_format_latency(relay_latency.latency)}" for relay_latency in
+                          sorted_ping_latencies]))
+    logger.info("BDN recommended relay {} with {}. Gateway selected {}",
+                relays[0].ip,
+                "".join([_format_latency(relay.latency) for relay in relays_ping_latency if relay.node == relays[0]]),
+                best_relay_node.ip)
 
     result_relays = [best_relay_node]
 
