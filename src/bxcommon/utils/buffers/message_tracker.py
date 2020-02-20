@@ -131,12 +131,12 @@ class MessageTracker:
                     "last sent operation took {:.2f}ms. "
                     "{} bytes remaining on buffer.",
                     sent_message.as_str(),
-                    1000 * (curr_time - sent_message.queued_time),
                     1000 * (curr_time -
                             sent_message.last_operation_time
                             if sent_message.last_operation_time
                             else 0
                             ),
+                    1000 * (curr_time - sent_message.queued_time),
                     self.bytes_remaining,
                 )
                 bytes_left -= sent_message.length - sent_message.sent_bytes
@@ -151,12 +151,12 @@ class MessageTracker:
                     in_progress_message.sent_bytes,
                     in_progress_message.length,
                     in_progress_message.as_str,
-                    1000 * (curr_time - in_progress_message.queued_time),
                     1000 * (curr_time -
                             in_progress_message.last_operation_time
                             if in_progress_message.last_operation_time
                             else 0
                             ),
+                    1000 * (curr_time - in_progress_message.queued_time),
                     self.bytes_remaining,
                 )
                 in_progress_message.last_operation_time = curr_time
@@ -238,14 +238,14 @@ class MessageTracker:
             self.connection.log(
                 entry_removed.message_log_level(),
                 "Removed {} bytes of {} from buffer. "
-                "Message was queued for {:.2f}ms."
-                "Last operation was {:.2f}ms ago",
+                "Last operation was {:.2f}ms. ago. "
+                "Message was queued for {:.2f}ms.",
                 entry_removed.length,
                 entry_removed.message,
-                1000 * (curr_time - entry_removed.queued_time),
                 1000 * (curr_time -
                         entry_removed.last_operation_time
                         if entry_removed.last_operation_time
                         else 0
                         ),
+                1000 * (curr_time - entry_removed.queued_time),
             )
