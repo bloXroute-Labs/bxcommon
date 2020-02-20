@@ -29,10 +29,10 @@ class LogRecordType(Enum):
     TaskDuration = "stats.task_duration"
     RoutingService = "routing.service"
     ConnectionHealth = "stats.connection_health"
-    PerformanceTroubleshooting = "troubleshooting.performance"
-    MessageHandlingTroubleshooting = "troubleshooting.message_handling"
-    AlarmTroubleshooting = "troubleshooting.alarm"
-    NetworkTroubleshooting = "troubleshooting.network"
+    PerformanceTroubleshooting = "stats.performance.responsiveness"
+    MessageHandlingTroubleshooting = "stats.performance.message_handling"
+    AlarmTroubleshooting = "stats.performance.alarm"
+    NetworkTroubleshooting = "stats.performance.network"
 
 
 

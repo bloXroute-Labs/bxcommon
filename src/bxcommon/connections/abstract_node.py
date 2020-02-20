@@ -26,7 +26,7 @@ from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
 from bxcommon.services.threaded_request_service import ThreadedRequestService
-from bxcommon.utils import memory_utils, json_utils, convert
+from bxcommon.utils import memory_utils, json_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.config import get_data_file
 from bxcommon.utils.stats.block_statistics_service import block_stats
@@ -616,13 +616,13 @@ class AbstractNode:
         current_time = time.time()
 
         if self._last_responsiveness_check_log_time:
-            time_since_last_log = current_time - self._last_responsiveness_check_log_time
-            delay = time_since_last_log - constants.RESPONSIVENESS_CHECK_INTERVAL_S
+            performance_utils.log_operation_duration(
+                performance_troubleshooting_logger,
+                "Responsiveness Check",
+                current_time,
+                constants.RESPONSIVENESS_CHECK_DELAY_WARN_THRESHOLD_S
+            )
 
-            if delay > constants.RESPONSIVENESS_CHECK_DELAY_WARN_THRESHOLD_S:
-                performance_troubleshooting_logger.debug("Responsiveness check was delayed by {:.2f} s.", delay)
-
-        performance_troubleshooting_logger.trace("Responsiveness check")
         self._last_responsiveness_check_log_time = current_time
 
         return constants.RESPONSIVENESS_CHECK_INTERVAL_S
