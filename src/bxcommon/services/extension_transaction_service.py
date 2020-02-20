@@ -188,13 +188,21 @@ class ExtensionTransactionService(TransactionService):
         self.proxy.clear_short_ids_seen_in_block()
 
     def _cleanup_removed_transactions_history(self):
-        logger.debug("Starting to cleanup transaction cache history.")
+        logger.trace(
+            "Starting to cleanup transaction cache history for network "
+            "number: {}.",
+            self.network_num
+        )
         history_len_before = len(self._tx_hash_to_time_removed)
         self._tx_hash_to_time_removed.map_obj.cleanup_removed_hashes_history(
             time.time(), self._removed_txs_hashes_expiration_time_s
         )
         history_len_after = len(self._tx_hash_to_time_removed)
-        logger.debug("Finished cleanup transaction cache history. Size before: {}. Size after: {}.",
-                     history_len_before, history_len_after)
+        logger.trace(
+            "Finished cleanup transaction cache history. Size before: {}. "
+            "Size after: {}.",
+            history_len_before,
+            history_len_after
+        )
 
         return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S

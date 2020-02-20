@@ -448,18 +448,24 @@ class AbstractConnection(Generic[Node]):
             self.log_debug("Received hello message without peer id.")
         if self.peer_id is None:
             self.peer_id = msg.node_id()
-            self.node.connection_pool.index_conn_node_id(self.peer_id, self)
-        node_connections = self.node.connection_pool.get_by_node_id(self.peer_id)
-        # Checking for duplicate inbound connections:
-        # If we received a new connection attempt with the same peer id,
-        # we disconnect all inbound connections with the same id,
-        # since we can't tell for sure which connection is valid (the old or the new).
-        if len(node_connections) > 1:
-            for conn in node_connections:
-                if not conn.from_me:
-                    conn.log_warning("Received duplicate connection from: {}. Closing.", self.peer_id)
-                    conn.mark_for_close()
-            return
+
+        # This should only be necessary for pre1.6 connections.
+        if self.peer_id in self.node.connection_pool.by_node_id:
+            existing_connection = self.node.connection_pool.get_by_node_id(
+                self.peer_id
+            )
+            if existing_connection != self:
+                if self.from_me:
+                    self.mark_for_close()
+
+                if existing_connection.from_me:
+                    existing_connection.mark_for_close()
+
+                self.log_warning(
+                    "Discovered duplicate connections to node {}: {}. Closing.",
+                    self.peer_id,
+                    existing_connection
+                )
 
         self.enqueue_msg(self.ack_message)
         if self.is_active():

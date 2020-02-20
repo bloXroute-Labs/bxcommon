@@ -150,7 +150,7 @@ class MessageTracker:
                     "Elapsed time: {:.2f}ms. {} bytes remaining on buffer.",
                     in_progress_message.sent_bytes,
                     in_progress_message.length,
-                    in_progress_message.as_str,
+                    in_progress_message.as_str(),
                     1000 * (curr_time -
                             in_progress_message.last_operation_time
                             if in_progress_message.last_operation_time

@@ -63,9 +63,6 @@ class TestNode(AbstractNode):
     def _check_sync_relay_connections(self):
         pass
 
-    def _authenticate_connection(self, connection: Optional[AbstractConnection]) -> None:
-        pass
-
 
 class AbstractNodeTest(AbstractTestCase):
     def setUp(self):
@@ -95,7 +92,6 @@ class AbstractNodeTest(AbstractTestCase):
         self.node.on_connection_added(self.socket_connection)
 
         self.assertIsNone(self.node.connection_pool.get_by_fileno(self.fileno))
-        self._assert_socket_disconnected(False)
 
     def test_on_connection_added_unknown_connection_type(self):
         self.node.build_connection = MagicMock(return_value=None)

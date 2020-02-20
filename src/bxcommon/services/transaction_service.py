@@ -965,7 +965,11 @@ class TransactionService:
         :param args: arguments to pass into the callback method
         :param kwargs: keyword args to pass into the callback method
         """
-        logger.debug("Starting to cleanup transaction cache history.")
+        logger.trace(
+            "Starting to cleanup transaction cache history for network "
+            "number: {}.",
+            self.network_num
+        )
 
         current_time = time.time()
         history_len_before = len(self._tx_hash_to_time_removed)
@@ -985,7 +989,11 @@ class TransactionService:
                 oldest_tx = next(iter(self._tx_hash_to_time_removed))
 
         history_len_after = len(self._tx_hash_to_time_removed)
-        logger.debug("Finished cleanup transaction cache history. Size before: {}. Size after: {}.",
-                     history_len_before, history_len_after)
+        logger.trace(
+            "Finished cleanup transaction cache history. Size before: {}. "
+            "Size after: {}.",
+            history_len_before,
+            history_len_after
+        )
 
         return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S

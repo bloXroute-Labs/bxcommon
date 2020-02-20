@@ -21,7 +21,7 @@ class ConnectionPool:
     by_fileno: List[Optional[AbstractConnection]]
     by_ipport: Dict[Tuple[str, int], AbstractConnection]
     by_connection_type: Dict[ConnectionType, Set[AbstractConnection]]
-    by_node_id: Dict[str, Set[AbstractConnection]]
+    by_node_id: Dict[str, AbstractConnection]
     len_fileno: int
     count_conn_by_ip: Dict[str, int]
     num_peer_conn: int
@@ -30,7 +30,7 @@ class ConnectionPool:
         self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO
         self.by_ipport = {}
         self.by_connection_type = defaultdict(set)
-        self.by_node_id = defaultdict(set)
+        self.by_node_id = {}
         self.len_fileno = ConnectionPool.INITIAL_FILENO
         self.count_conn_by_ip = defaultdict(lambda: 0)
         self.num_peer_conn = 0
@@ -71,8 +71,7 @@ class ConnectionPool:
         self.index_conn_node_id(conn.peer_id, conn)
 
     def index_conn_node_id(self, node_id: str, conn: AbstractConnection) -> None:
-        if node_id:
-            self.by_node_id[node_id].add(conn)
+        self.by_node_id[node_id] = conn
 
     def has_connection(self, ip: str, port: int, node_id: Optional[str] = None):
         if node_id is not None and node_id in self.by_node_id:
@@ -108,7 +107,7 @@ class ConnectionPool:
             return self.count_conn_by_ip[ip]
         return 0
 
-    def get_by_node_id(self, node_id: str) -> Set[AbstractConnection]:
+    def get_by_node_id(self, node_id: str) -> AbstractConnection:
         """
         Returns list of connections where the peer_id matches the node id param
 
@@ -146,10 +145,7 @@ class ConnectionPool:
             self.count_conn_by_ip[conn.peer_ip] -= 1
 
         if conn.peer_id and conn.peer_id in self.by_node_id:
-            if len(self.get_by_node_id(conn.peer_id)) == 1:
-                del self.by_node_id[conn.peer_id]
-            else:
-                self.by_node_id[conn.peer_id].discard(conn)
+            del self.by_node_id[conn.peer_id]
 
     def delete_by_fileno(self, fileno):
         """

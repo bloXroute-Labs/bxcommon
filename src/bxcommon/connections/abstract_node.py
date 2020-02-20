@@ -52,6 +52,12 @@ class DisconnectRequest(NamedTuple):
     should_retry: bool
 
 
+class AuthenticatedPeerInfo(NamedTuple):
+    connection_type: ConnectionType
+    peer_id: str
+    account_id: Optional[str]
+
+
 class AbstractNode:
     __meta__ = ABCMeta
     FLUSH_SEND_BUFFERS_INTERVAL = constants.OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME * 2
@@ -156,8 +162,13 @@ class AbstractNode:
     def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:
         pass
 
-    def connection_exists(self, ip: str, port: int) -> bool:
-        return self.connection_pool.has_connection(ip, port)
+    def connection_exists(
+        self,
+        ip: str,
+        port: int,
+        peer_id: Optional[str] = None
+    ) -> bool:
+        return self.connection_pool.has_connection(ip, port, peer_id)
 
     def on_connection_added(self, socket_connection: AbstractSocketConnectionProtocol) -> Optional[AbstractConnection]:
         """
@@ -168,23 +179,58 @@ class AbstractNode:
             ConnectionPeerInfo(socket_connection.endpoint, AbstractConnection.CONNECTION_TYPE)
         )
         ip, port = socket_connection.endpoint
-        connection = None
-        if self.connection_exists(ip, port):
-            logger.debug("Duplicate connection attempted to: {0}:{1}. Dropping.", ip, port)
-            socket_connection.mark_for_close(should_retry=False)
-        else:
-            connection = self._initialize_connection(socket_connection)
+        peer_info = None
+        if socket_connection.is_ssl:
             try:
-                self._authenticate_connection(connection)
+                peer_info = self._get_socket_peer_info(
+                    socket_connection
+                )
             except ConnectionAuthenticationError as e:
-                if connection is not None:
-                    logger.warning("Failed to authenticate connection: {} due to an error: {}.", connection, e)
-                    connection.mark_for_close(should_retry=False)
-                    connection = None
-        if connection is not None:
-            connection.state |= ConnectionState.INITIALIZED
-            logger.debug("Successfully initialized connection: {}", connection)
+                logger.warning(
+                    "Failed to authenticate connection on {}:{}"
+                    "due to an error: {}.",
+                    ip,
+                    port,
+                    e
+                )
+                socket_connection.mark_for_close(should_retry=False)
+                return None
 
+            if self.connection_exists(ip, port, peer_info.peer_id):
+                logger.debug(
+                    "Duplicate connection attempted to: {}:{} (peer id: {}). "
+                    "Dropping.",
+                    ip,
+                    port,
+                    peer_info.peer_id
+                )
+                socket_connection.mark_for_close(should_retry=False)
+                return None
+        elif self.connection_exists(ip, port):
+            logger.debug(
+                "Duplicate connection attempt to {}:{}. Dropping.",
+                ip,
+                port,
+            )
+            socket_connection.mark_for_close(should_retry=False)
+            return None
+
+        connection = self._initialize_connection(socket_connection)
+        if connection is None:
+            return None
+
+        if peer_info is not None:
+            connection.on_connection_authenticated(
+                peer_info.peer_id,
+                peer_info.connection_type,
+                peer_info.account_id
+            )
+            self.connection_pool.index_conn_node_id(
+                peer_info.peer_id, connection
+            )
+
+        connection.state |= ConnectionState.INITIALIZED
+        logger.debug("Successfully initialized connection: {}", connection)
         return connection
 
     def on_connection_closed(self, file_no: int, mark_connection_for_close: bool = False):
@@ -217,7 +263,11 @@ class AbstractNode:
         remove_peers = set(old_peers) - set(outbound_peer_models) - set(self.opts.outbound_peers)
 
         for rem_peer in remove_peers:
-            if self.connection_pool.has_connection(rem_peer.ip, rem_peer.port):
+            if self.connection_pool.has_connection(
+                rem_peer.ip,
+                rem_peer.port,
+                rem_peer.node_id
+            ):
                 rem_conn = self.connection_pool.get_by_ipport(rem_peer.ip, rem_peer.port)
                 if rem_conn:
                     rem_conn.mark_for_close(False)
@@ -496,29 +546,27 @@ class AbstractNode:
     def _check_sync_relay_connections(self):
         pass
 
-    def _authenticate_connection(self, connection: Optional[AbstractConnection]) -> None:
-        if connection is None:
-            return
+    def _get_socket_peer_info(self, sock: AbstractSocketConnectionProtocol) -> AuthenticatedPeerInfo:
+        assert sock.is_ssl
         assert self.NODE_TYPE is not None
-        sock = connection.socket_connection
-        if sock.is_ssl:
-            cert = sock.get_peer_certificate()
-            node_type = extensions_factory.get_node_type(cert)
-            try:
-                connection_type = convert.peer_node_to_connection_type(self.NODE_TYPE, node_type)
-            except (KeyError, ValueError):
-                raise ConnectionAuthenticationError(
-                    f"Peer ssl certificate ({cert}) has an invalid node type: {node_type}!"
-                )
-            peer_id = extensions_factory.get_node_id(cert)
-            if peer_id is None:
-                raise ConnectionAuthenticationError(f"Peer ssl certificate ({cert}) does not contain a node id!")
-            account_id = extensions_factory.get_account_id(cert)
-            connection.on_connection_authenticated(peer_id, connection_type, account_id)
-            self.connection_pool.update_connection_type(connection, connection_type)
-            logger.debug("Connection: {} was successfully authenticated.", connection)
-        else:
-            logger.debug("Skipping authentication on connection: {} since it's not using SSL.", connection)
+
+        cert = sock.get_peer_certificate()
+        node_type = extensions_factory.get_node_type(cert)
+        try:
+            connection_type = convert.peer_node_to_connection_type(
+                self.NODE_TYPE, node_type
+            )
+        except (KeyError, ValueError):
+            raise ConnectionAuthenticationError(
+                f"Peer ssl certificate ({cert}) has an invalid node type: {node_type}!"
+            )
+        peer_id = extensions_factory.get_node_id(cert)
+        if peer_id is None:
+            raise ConnectionAuthenticationError(
+                f"Peer ssl certificate ({cert}) does not contain a node id!")
+
+        account_id = extensions_factory.get_account_id(cert)
+        return AuthenticatedPeerInfo(connection_type, peer_id, account_id)
 
     def _destroy_conn(self, conn: AbstractConnection):
         """

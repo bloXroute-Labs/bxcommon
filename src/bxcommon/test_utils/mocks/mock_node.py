@@ -62,6 +62,3 @@ class MockNode(AbstractNode):
 
     def _check_sync_relay_connections(self):
         pass
-
-    def _authenticate_connection(self, connection: Optional[AbstractConnection]) -> None:
-        pass
