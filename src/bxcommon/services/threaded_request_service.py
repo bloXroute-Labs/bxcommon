@@ -49,12 +49,7 @@ class ThreadedRequestService:
         logger.trace("Starting thread for request.")
         task = self.thread_pool.submit(request, *args)
         if done_callback:
-            main_thread_callback = functools.partial(
-                self.alarm_queue.register_alarm,
-                constants.MIN_SLEEP_TIMEOUT,
-                done_callback
-            )
-            task.add_done_callback(main_thread_callback)
+            task.add_done_callback(done_callback)
         self.alarm_queue.register_alarm(self.timeout, self._threaded_post_alarm, task, request, *args)
         return task
 

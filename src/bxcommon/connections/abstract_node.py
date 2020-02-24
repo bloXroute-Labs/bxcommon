@@ -131,6 +131,8 @@ class AbstractNode:
         self._last_responsiveness_check_log_time = None
         self.alarm_queue.register_alarm(constants.RESPONSIVENESS_CHECK_INTERVAL_S, self._responsiveness_check_log)
 
+        self.check_relay_alarm_id = None
+
     def get_sdn_address(self):
         """
         Placeholder for net event loop to get the sdn address (relay only).
