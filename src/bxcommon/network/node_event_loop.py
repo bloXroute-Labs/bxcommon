@@ -14,7 +14,6 @@ from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
-from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 from bxcommon.network.socket_connection_protocol_py36 import SocketConnectionProtocolPy36
 from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
 from bxutils import logging, constants as utils_constants
@@ -200,7 +199,11 @@ class NodeEventLoop:
         else:
             target_endpoint = endpoint
 
-        protocol_cls = SocketConnectionProtocolPy36 if sys.version.startswith("3.6.") else SocketConnectionProtocol
+        if sys.version.startswith("3.6."):
+            protocol_cls = SocketConnectionProtocolPy36
+        else:
+            from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
+            protocol_cls = SocketConnectionProtocol
 
         if is_ssl is None:
             is_ssl = endpoint.port in utils_constants.SSL_PORT_RANGE
