@@ -468,7 +468,7 @@ class AbstractConnection(Generic[Node]):
                 )
 
         self.enqueue_msg(self.ack_message)
-        if self.is_active():
+        if (ConnectionState.INITIALIZED | ConnectionState.HELLO_ACKD) in self.state:
             self.on_connection_established()
 
     def msg_ack(self, _msg):
@@ -476,7 +476,7 @@ class AbstractConnection(Generic[Node]):
         Handle an Ack Message
         """
         self.state |= ConnectionState.HELLO_ACKD
-        if self.is_active():
+        if (ConnectionState.INITIALIZED | ConnectionState.HELLO_RECVD) in self.state:
             self.on_connection_established()
 
     def msg_ping(self, msg):
