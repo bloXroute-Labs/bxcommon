@@ -624,7 +624,7 @@ class AbstractNode:
 
         if ConnectionState.ESTABLISHED in conn.state:
             logger.trace("Connection is still established: {}", conn)
-
+            self.num_retries_by_ip[(conn.peer_ip, conn.peer_port)] = 0
             return constants.CANCEL_ALARMS
 
         if not conn.is_alive():
