@@ -7,8 +7,6 @@ from collections import defaultdict
 from ssl import SSLContext
 from typing import List, Optional, Tuple, Dict, NamedTuple, Union, Set
 
-from pyinstrument import Profiler
-
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_pool import ConnectionPool
@@ -125,8 +123,6 @@ class AbstractNode:
             self.NODE_TYPE.name.lower(), self.alarm_queue, constants.THREADED_HTTP_POOL_SLEEP_INTERVAL_S
         )
 
-        self.profiler = Profiler()
-        self.profiler_enabled = False
 
         self._last_responsiveness_check_log_time = None
         self.alarm_queue.register_alarm(constants.RESPONSIVENESS_CHECK_INTERVAL_S, self._responsiveness_check_log)
@@ -364,8 +360,7 @@ class AbstractNode:
 
     async def close(self):
         logger.info("Node is closing! Closing everything.")
-        if self.profiler_enabled:
-            self.stop_profiler()
+
         shutdown_task = asyncio.ensure_future(self.close_all_connections())
         try:
             await asyncio.wait_for(shutdown_task, constants.NODE_SHUTDOWN_TIMEOUT_S)
@@ -512,29 +507,7 @@ class AbstractNode:
         logger.trace("Fetching SSL certificate for: {} ({}).", endpoint, connection_type)
         return self.node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
 
-    def start_profiler(self, duration_s: int):
-        if self.profiler_enabled:
-            logger.debug("Profiler is already running. Ignore.")
-            return
 
-        logger.info("Starting profiler to run for {} seconds.", duration_s)
-        self.profiler.start()
-        self.profiler_enabled = True
-        self.alarm_queue.register_alarm(duration_s, self.stop_profiler)
-
-    def stop_profiler(self):
-        if not self.profiler_enabled:
-            logger.debug("Profiler is not running. Ignore.")
-            return
-
-        logger.info("Stopping profiler.")
-        self.profiler.stop()
-        output_html = self.profiler.output_html()
-        profile_output_file = get_data_file(f"profile_{os.getpid()}_{time.time()}.html")
-        logger.info(f"Saving profiling output to the file {profile_output_file}")
-        with open(profile_output_file, "w") as profile_output_file:
-            profile_output_file.write(output_html)
-        self.profiler_enabled = False
 
     @abstractmethod
     def _sync_tx_services(self):
