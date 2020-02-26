@@ -642,8 +642,8 @@ class AbstractNode:
             performance_utils.log_operation_duration(
                 performance_troubleshooting_logger,
                 "Responsiveness Check",
-                current_time,
-                constants.RESPONSIVENESS_CHECK_DELAY_WARN_THRESHOLD_S
+                self._last_responsiveness_check_log_time,
+                constants.RESPONSIVENESS_CHECK_INTERVAL_S + constants.RESPONSIVENESS_CHECK_DELAY_WARN_THRESHOLD_S
             )
 
         self._last_responsiveness_check_log_time = current_time
