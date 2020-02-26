@@ -23,15 +23,17 @@ from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
-from bxcommon.utils import nonce_generator
+from bxcommon.utils import nonce_generator, performance_utils
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
 from bxutils import logging
+from bxutils.logging import LogRecordType
 
 logger = logging.get_logger(__name__)
+performance_troubleshooting_logger = logging.get_logger(LogRecordType.PerformanceTroubleshooting, __name__)
 
 
 class InternalNodeConnection(AbstractConnection[Node]):
@@ -253,6 +255,15 @@ class InternalNodeConnection(AbstractConnection[Node]):
             blocks_short_ids.append(BlockShortIds(block_hash, short_ids))
 
         block_short_ids_msg = TxServiceSyncBlocksShortIdsMessage(network_num, blocks_short_ids)
+        performance_utils.log_operation_duration(
+            performance_troubleshooting_logger,
+            "Create tx service sync block short ids message",
+            start_time,
+            constants.RESPONSIVENESS_CHECK_DELAY_WARN_THRESHOLD_S,
+            network_num=network_num,
+            connection=self,
+            blocks_short_ids_count=len(blocks_short_ids)
+        )
         duration = time.time() - start_time
         self.log_trace("Sending {} block short ids took {:.3f} seconds.", len(blocks_short_ids), duration)
         self.enqueue_msg(block_short_ids_msg)
@@ -264,6 +275,15 @@ class InternalNodeConnection(AbstractConnection[Node]):
             if tx_service_snap and sync_ping_latency is not None:
                 start = time.time()
                 txs_content_short_ids = self._create_txs_service_msg(network_num, tx_service_snap)
+                performance_utils.log_operation_duration(
+                    performance_troubleshooting_logger,
+                    "Create tx service sync message",
+                    start,
+                    constants.RESPONSIVENESS_CHECK_DELAY_WARN_THRESHOLD_S,
+                    network_num=network_num,
+                    connection=self,
+                    tx_count=len(txs_content_short_ids)
+                )
                 self.enqueue_msg(TxServiceSyncTxsMessage(network_num, txs_content_short_ids))
                 nonce = self._send_ping()
                 if nonce is not None:
