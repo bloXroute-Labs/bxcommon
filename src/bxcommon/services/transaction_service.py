@@ -148,11 +148,6 @@ class TransactionService:
                 constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S,
                 self._dump_removed_short_ids
             )
-        if constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S > 0:
-            self.node.alarm_queue.register_alarm(
-                constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S,
-                self._log_transaction_service_histogram
-            )
 
         self.node.alarm_queue.register_alarm(
             constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S,
@@ -930,6 +925,7 @@ class TransactionService:
         self._short_ids_seen_in_block.clear()
         self._total_tx_contents_size = 0
 
+    # TODO: remove this unused function
     def _log_transaction_service_histogram(self):
         """
         logs a histogram of the tracked transactions age,
