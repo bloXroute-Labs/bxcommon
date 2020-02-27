@@ -112,9 +112,7 @@ class ExtensionTransactionService(TransactionService):
             self._tx_not_seen_in_blocks,
             "tx_not_seen_in_blocks",
             self.get_collection_mem_stats(
-                self._tx_not_seen_in_blocks,
-                self._tx_not_seen_in_blocks.get_bytes_length()
-            ),
+                self._tx_not_seen_in_blocks),
             object_item_count=len(self._tx_not_seen_in_blocks),
             object_type=memory_utils.ObjectType.BASE,
             size_type=size_type

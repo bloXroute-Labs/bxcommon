@@ -536,8 +536,8 @@ class AbstractConnection(Generic[Node]):
             self.network_num,
             self.inputbuf,
             "input_buffer",
-            memory_utils.ObjectSize("input_buffer", memory_utils.get_special_size(self.inputbuf).size,
-                                    is_actual_size=True),
+            memory_utils.ObjectSize("input_buffer", 0,
+                                    is_actual_size=False),
             object_item_count=len(self.inputbuf.input_list),
             object_type=memory_utils.ObjectType.BASE,
             size_type=memory_utils.SizeType.TRUE
@@ -547,8 +547,8 @@ class AbstractConnection(Generic[Node]):
             self.network_num,
             self.outputbuf,
             "output_buffer",
-            memory_utils.ObjectSize("output_buffer", memory_utils.get_special_size(self.outputbuf).size,
-                                    is_actual_size=True),
+            memory_utils.ObjectSize("output_buffer", 0,
+                                    is_actual_size=False),
             object_item_count=len(self.outputbuf.output_msgs),
             object_type=memory_utils.ObjectType.BASE,
             size_type=memory_utils.SizeType.TRUE

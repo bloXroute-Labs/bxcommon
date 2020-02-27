@@ -10,6 +10,7 @@ from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
+from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils import memory_utils, convert, json_utils
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
@@ -730,7 +731,7 @@ class TransactionService:
             self.network_num,
             self._removed_short_ids,
             "removed_short_ids",
-            self.get_collection_mem_stats(self._removed_short_ids),
+            self.get_collection_mem_stats(self._removed_short_ids, len(self._removed_short_ids) * constants.SID_LEN),
             object_item_count=len(self._removed_short_ids),
             object_type=memory_utils.ObjectType.BASE,
             size_type=size_type
@@ -741,7 +742,8 @@ class TransactionService:
             self.network_num,
             self._tx_hash_to_time_removed,
             "tx_hash_to_time_removed",
-            self.get_collection_mem_stats(self._tx_hash_to_time_removed),
+            self.get_collection_mem_stats(self._tx_hash_to_time_removed,
+                                          len(self._tx_hash_to_time_removed) * SHA256_HASH_LEN),
             object_item_count=len(self._tx_hash_to_time_removed),
             object_type=memory_utils.ObjectType.BASE,
             size_type=size_type
