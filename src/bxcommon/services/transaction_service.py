@@ -523,8 +523,18 @@ class TransactionService:
 
         return self.get_tracked_seen_block_count(), total_short_ids_seen_in_blocks
 
-    def get_snapshot(self) -> List[Sha256Hash]:
-        return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in self._tx_cache_key_to_contents]
+    def get_snapshot(self, duration: float = 0) -> List[Sha256Hash]:
+        if duration > 0:
+            snapshot_cache_keys = set()
+            snapshot_start_from = time.time() - duration
+            for short_id, timestamp in self._tx_assignment_expire_queue.queue.items():
+                if timestamp > snapshot_start_from:
+                    snapshot_cache_keys.add(
+                        self._short_id_to_tx_cache_key[short_id]
+                    )
+            return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in snapshot_cache_keys]
+        else:
+            return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in self._tx_cache_key_to_contents]
 
     def get_tracked_blocks(self, skip_start: int = 0, skip_end: int = 0) -> Dict[Sha256Hash, int]:
         """

@@ -278,3 +278,6 @@ NODE_COUNTRY_ATTRIBUTE_NAME = "country"
 NODE_COUNTRY_CHINA = "China"
 
 NODE_SHUTDOWN_TIMEOUT_S = 30
+
+# tx gateway sync snapshot interval, 0 to snapshot the whole mempool
+GATEWAY_SYNC_TX_THRESHOLD_S = 30 * 60

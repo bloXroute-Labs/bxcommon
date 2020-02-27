@@ -27,3 +27,4 @@ class BlockchainNetworkModel:
     tx_percent_to_log_by_sid: float = constants.TRANSACTIONS_BY_SID_PERCENTAGE_TO_LOG_STATS_FOR
     removed_transactions_history_expiration_s: int = constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S
     sdn_id: str = None
+    tx_sync_interval_s: float = constants.GATEWAY_SYNC_TX_THRESHOLD_S
