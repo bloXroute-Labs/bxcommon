@@ -155,8 +155,8 @@ THREADED_HTTP_POOL_SLEEP_INTERVAL_S = 60
 HTTP_POOL_MANAGER_COUNT = 1
 
 # TODO: turn this number up to 60 minutes after we've done some testing to ensure that this is ok
-MEMORY_STATS_INTERVAL_S = 5 * 60
-MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES = 100 * 1024 * 1024
+MEMORY_STATS_INTERVAL_S = 30 * 60
+MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES = 5000 * 1024 * 1024
 
 # Percentage for transactions that will be logged by stats service. The value should be controlled by SDN in the future.
 TRANSACTIONS_BY_HASH_PERCENTAGE_TO_LOG_STATS_FOR = 0.1
