@@ -33,6 +33,7 @@ class LogRecordType(Enum):
     MessageHandlingTroubleshooting = "stats.performance.message_handling"
     AlarmTroubleshooting = "stats.performance.alarm"
     NetworkTroubleshooting = "stats.performance.network"
+    RoutingTableStats = "stats.routing"
 
 
 
