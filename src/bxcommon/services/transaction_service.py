@@ -572,8 +572,12 @@ class TransactionService:
         """
         logger.debug("Expiring old short id assignments. Total entries: {}",
                      len(self._tx_assignment_expire_queue))
-        self._tx_assignment_expire_queue.remove_expired(remove_callback=self.remove_transaction_by_short_id, force=True,
-                                                        removal_reason=TxRemovalReason.EXPIRATION)
+        self._tx_assignment_expire_queue.remove_expired(
+            remove_callback=self.remove_transaction_by_short_id,
+            limit=constants.MAX_EXPIRED_TXS_TO_REMOVE,
+            force=True,
+            removal_reason=TxRemovalReason.EXPIRATION
+        )
         logger.debug("Finished cleaning up short ids. Entries remaining: {}",
                      len(self._tx_assignment_expire_queue))
         if len(self._tx_assignment_expire_queue) > 0:

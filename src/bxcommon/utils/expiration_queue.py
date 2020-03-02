@@ -44,26 +44,40 @@ class ExpirationQueue(Generic[T]):
         if item in self.queue:
             del self.queue[item]
 
-    def remove_expired(self, current_time: Optional[float] = None,
-                       remove_callback: Optional[Callable[[T], None]] = None,
-                       *args,
-                       **kwargs):
+    def remove_expired(
+        self,
+        current_time: Optional[float] = None,
+        remove_callback: Optional[Callable[[T], None]] = None,
+        limit: Optional[int] = None,
+        *args,
+        **kwargs
+    ):
         """
         Removes expired items from the queue
         :param current_time: time to use as current time for expiration
         :param remove_callback: reference to a callback function that is being called when item is removed
+        :param limit: max number of entries to remove in one call
         :param args: arguments to pass into the callback method
         :param kwargs: keyword args to pass into the callback method
         """
         if current_time is None:
             current_time = time.time()
+        if limit is None:
+            limit = len(self.queue)
 
-        while len(self.queue) > 0 and \
-                current_time - self.get_oldest_item_timestamp() > self.time_to_live_sec:
+        iterations = 0
+        while (
+            len(self.queue) > 0 and
+            iterations < limit and
+            current_time - self.get_oldest_item_timestamp() > self.time_to_live_sec
+        ):
+            # noinspection PyArgumentList
             item, timestamp = self.queue.popitem(last=False)
 
             if remove_callback is not None:
                 remove_callback(item, *args, **kwargs)
+
+            iterations += 1
 
     def get_oldest(self) -> Optional[T]:
         """

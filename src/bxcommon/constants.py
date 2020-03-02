@@ -187,7 +187,7 @@ WARN_ALL_ALARMS_EXECUTION_DURATION = 0.5
 WARN_ALARM_EXECUTION_OFFSET = 5
 
 # Minimal expired transactions clean up task frequency
-MIN_CLEAN_UP_EXPIRED_TXS_TASK_INTERVAL_S = 1 * 60
+MIN_CLEAN_UP_EXPIRED_TXS_TASK_INTERVAL_S = 15
 
 # Duration to warn on if message processing takes longer than
 WARN_MESSAGE_PROCESSING_S = 0.1
@@ -257,6 +257,8 @@ HTTP_REQUEST_TIMEOUT: int = 5
 HTTP_HEADERS = {"Content-Type": "application/json"}
 
 MAX_EVENT_LOOP_TIMEOUT: float = 0.05
+
+MAX_EXPIRED_TXS_TO_REMOVE = 500
 
 # </editor-fold>
 
