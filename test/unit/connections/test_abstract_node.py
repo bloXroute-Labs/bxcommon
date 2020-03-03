@@ -54,7 +54,7 @@ class TestNode(AbstractNode):
     def send_request_for_relay_peers(self):
         pass
 
-    def _sync_tx_services(self):
+    def sync_tx_services(self):
         self.start_sync_time = time.time()
 
     def _transaction_sync_timeout(self):

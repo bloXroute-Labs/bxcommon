@@ -54,7 +54,7 @@ class MockNode(AbstractNode):
     def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:
         pass
 
-    def _sync_tx_services(self):
+    def sync_tx_services(self):
         pass
 
     def _transaction_sync_timeout(self):

@@ -26,7 +26,6 @@ from bxcommon.services.broadcast_service import BroadcastService, \
 from bxcommon.services.threaded_request_service import ThreadedRequestService
 from bxcommon.utils import memory_utils, json_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
-from bxcommon.utils.config import get_data_file
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
@@ -113,7 +112,7 @@ class AbstractNode:
 
         self.start_sync_time = time.time()
         opts.has_fully_updated_tx_service = False
-        self.alarm_queue.register_alarm(constants.TX_SERVICE_SYNC_PROGRESS_S, self._sync_tx_services)
+
         self._check_sync_relay_connections_alarm_id = self.alarm_queue.register_alarm(
             constants.LAST_MSG_FROM_RELAY_THRESHOLD_S, self._check_sync_relay_connections)
         self._transaction_sync_timeout_alarm_id = self.alarm_queue.register_alarm(
@@ -122,7 +121,6 @@ class AbstractNode:
         self.requester = ThreadedRequestService(
             self.NODE_TYPE.name.lower(), self.alarm_queue, constants.THREADED_HTTP_POOL_SLEEP_INTERVAL_S
         )
-
 
         self._last_responsiveness_check_log_time = None
         self.alarm_queue.register_alarm(constants.RESPONSIVENESS_CHECK_INTERVAL_S, self._responsiveness_check_log)
@@ -520,10 +518,8 @@ class AbstractNode:
         logger.trace("Fetching SSL certificate for: {} ({}).", endpoint, connection_type)
         return self.node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
 
-
-
     @abstractmethod
-    def _sync_tx_services(self):
+    def sync_tx_services(self):
         self.start_sync_time = time.time()
 
     @abstractmethod
