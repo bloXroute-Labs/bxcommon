@@ -153,7 +153,7 @@ def get_argument_parser() -> argparse.ArgumentParser:
                             help="Total memory usage of application when detailed memory report "
                                  "should be dumped to log (MB)",
                             type=int,
-                            default=(0.5 * 1024))
+                            default=(2 * 1024))
     arg_parser.add_argument("--dump-removed-short-ids",
                             help="Dump removed short ids to a file at a fixed interval",
                             type=convert.str_to_bool,
