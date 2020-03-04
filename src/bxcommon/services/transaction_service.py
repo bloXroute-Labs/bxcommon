@@ -534,7 +534,8 @@ class TransactionService:
                     if cache_key is not None:
                         snapshot_cache_keys.add(cache_key)
                     else:
-                        logger.warning("Short id: {} does not exist!", short_id)
+                        logger.debug("Short id: {} does not exist!", short_id)
+                        self._tx_assignment_expire_queue.remove(short_id)
             return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in snapshot_cache_keys]
         else:
             return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in self._tx_cache_key_to_contents]
