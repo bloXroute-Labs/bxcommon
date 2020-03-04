@@ -532,9 +532,7 @@ class TransactionService:
                 if timestamp > snapshot_start_from:
                     cache_key = self._short_id_to_tx_cache_key.get(short_id, None)
                     if cache_key is not None:
-                        snapshot_cache_keys.add(
-                            self._short_id_to_tx_cache_key[short_id]
-                        )
+                        snapshot_cache_keys.add(cache_key)
                     else:
                         logger.warning("Short id: {} does not exist!", short_id)
             return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in snapshot_cache_keys]
