@@ -36,7 +36,7 @@ def get_best_relays_by_ping_latency_one_per_country(relays: List[OutboundPeerMod
     logger.info("Latency results for potential relays: [{}]",
                 ", ".join([f"{relay_latency.node.ip} with {_format_latency(relay_latency.latency)}" for relay_latency in
                           sorted_ping_latencies]))
-    logger.info("BDN recommended relay {} with {}. Gateway selected {}",
+    logger.info("BDN recommended relay {} with {}. Node selected {}",
                 relays[0].ip,
                 "".join([_format_latency(relay.latency) for relay in relays_ping_latency if relay.node == relays[0]]),
                 best_relay_node.ip)
