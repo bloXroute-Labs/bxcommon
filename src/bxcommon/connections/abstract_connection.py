@@ -66,6 +66,8 @@ class AbstractConnection(Generic[Node]):
 
         if node.opts.track_detailed_sent_messages:
             self.message_tracker = MessageTracker(self)
+        else:
+            self.message_tracker = None
         self.outputbuf = OutputBuffer()
         self.inputbuf = InputBuffer()
         self.node = node

@@ -165,7 +165,7 @@ def get_argument_parser() -> argparse.ArgumentParser:
     arg_parser.add_argument("--enable-buffered-send", help="Enables buffering of sent byte to improve performance",
                             type=convert.str_to_bool, default=False)
     arg_parser.add_argument("--track-detailed-sent-messages", help="Enables tracking of messages written on socket",
-                            type=convert.str_to_bool, default=True)
+                            type=convert.str_to_bool, default=False)
     arg_parser.add_argument(
         "--use-extensions",
         help="If true than the node will use the extension module for "

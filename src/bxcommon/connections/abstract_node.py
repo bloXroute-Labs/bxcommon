@@ -29,6 +29,7 @@ from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
+from bxcommon.utils.stats.node_statistics_service import node_stats_service
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
@@ -83,6 +84,7 @@ class AbstractNode:
         # Event handling queue for delayed events
         self.alarm_queue = AlarmQueue()
 
+        self.init_node_status_logging()
         self.init_throughput_logging()
         self.init_node_info_logging()
         self.init_memory_stats_logging()
@@ -429,6 +431,10 @@ class AbstractNode:
         """
         is_sdn = ConnectionType.SDN in connection_type
         return is_sdn or self.num_retries_by_ip[(ip, port)] < constants.MAX_CONNECT_RETRIES
+
+    def init_node_status_logging(self):
+        node_stats_service.set_node(self)
+        self.alarm_queue.register_alarm(constants.FIRST_STATS_INTERVAL_S, node_stats_service.flush_info)
 
     def init_throughput_logging(self):
         throughput_statistics.set_node(self)

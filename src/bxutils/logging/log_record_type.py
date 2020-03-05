@@ -10,6 +10,7 @@ class LogRecordType(Enum):
     TransactionStats = "stats.transactions.summary"
     Throughput = "stats.throughput"
     Memory = "stats.memory"
+    NodeStatus = "stats.node.status"
     NodeInfo = "stats.node.info"
     NodeEvent = "stats.node.event"
     NetworkInfo = "stats.network.info"
@@ -25,7 +26,7 @@ class LogRecordType(Enum):
     BlockAudit = "stats.block.audit"
     BlockAuditSummary = "stats.block.audit.summary"
     CustomerInfo = "stats.customer.info"
-    ExecutionTimerInfo = "stats.execution.timer.info"    
+    ExecutionTimerInfo = "stats.execution.timer.info"
     TaskDuration = "stats.task_duration"
     RoutingService = "routing.service"
     ConnectionHealth = "stats.connection_health"
@@ -34,7 +35,4 @@ class LogRecordType(Enum):
     AlarmTroubleshooting = "stats.performance.alarm"
     NetworkTroubleshooting = "stats.performance.network"
     RoutingTableStats = "stats.routing"
-
-
-
-
+    GarbageCollection = "stats.gc"
