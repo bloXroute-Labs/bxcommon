@@ -44,6 +44,7 @@ class AbstractConnection(Generic[Node]):
 
     CONNECTION_TYPE: ClassVar[ConnectionType] = ConnectionType.NONE
     node: Node
+    message_tracker: Optional[MessageTracker]
 
     def __init__(self, socket_connection: AbstractSocketConnectionProtocol, node: Node):
         if not isinstance(socket_connection, AbstractSocketConnectionProtocol):
