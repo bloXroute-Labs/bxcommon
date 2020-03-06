@@ -24,7 +24,7 @@ def gc_callback(phase: str, info: Dict[str, Any]):
         _gc_start = None
 
         if node_stats_service.node is not None:
-            node_stats_service.log_gc_duration(duration)
+            node_stats_service.log_gc_duration(info["generation"], duration)
         gen0, gen1, gen2 = gc.get_count()
         if duration >= constants.GC_DURATION_WARN_THRESHOLD:
             logger.statistics(
