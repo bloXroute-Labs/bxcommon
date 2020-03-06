@@ -103,13 +103,10 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         logger.trace("[{}] - resumed writing.", self)
 
     def send(self) -> None:
-        send_start = time.time()
         total_bytes_sent = 0
         total_bytes_attempted_to_send = 0
 
         while self.is_sendable():
-            send_cycle_start = time.time()
-
             data = self._node.get_bytes_to_send(self.file_no)
             if not data:
                 break
@@ -133,22 +130,8 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
 
             self._node.on_bytes_written_to_socket(self.file_no, bytes_sent)
 
-            performance_utils.log_operation_duration(network_troubleshooting_logger,
-                                                     "Send bytes cycle", send_cycle_start,
-                                                     constants.NETWORK_OPERATION_CYCLE_DURATION_WARN_THRESHOLD_S,
-                                                     connection=self,
-                                                     bytes_attempted_to_send=len(data),
-                                                     bytes_sent=bytes_sent)
-
         if total_bytes_sent:
             logger.trace("[{}] - sent {} bytes", self, total_bytes_sent)
-
-            performance_utils.log_operation_duration(network_troubleshooting_logger,
-                                                     "Send bytes", send_start,
-                                                     constants.NETWORK_OPERATION_DURATION_WARN_THRESHOLD_S,
-                                                     connection=self,
-                                                     total_bytes_attempted_to_send=total_bytes_attempted_to_send,
-                                                     total_bytes_sent=total_bytes_sent)
 
     def pause_reading(self) -> None:
         if self.is_alive():

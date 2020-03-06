@@ -385,22 +385,10 @@ class AbstractNode:
         """
         Broadcasts message msg to connections of the specified type except requester.
         """
-        start_time = time.time()
         if connection_types is None:
             connection_types = [ConnectionType.RELAY_ALL]
         options = BroadcastOptions(broadcasting_conn, prepend_to_queue, connection_types)
         connections = self.broadcast_service.broadcast(msg, options)
-
-        if performance_troubleshooting_logger.isEnabledFor(logging.LogLevel.STATS):  # pyre-ignore
-            performance_utils.log_operation_duration(
-                performance_troubleshooting_logger,
-                "Broadcast",
-                start_time,
-                constants.MSG_HANDLERS_CYCLE_DURATION_WARN_THRESHOLD_S,
-                msg=repr(msg),
-                connections=[repr(conn) for conn in connections],
-                len=len(msg.rawbytes().tobytes())
-            )
         return connections
 
     def enqueue_connection(self, ip: str, port: int, connection_type: ConnectionType):
