@@ -1,4 +1,5 @@
 import asyncio
+import gc
 import os
 import time
 from abc import ABCMeta, abstractmethod
@@ -124,7 +125,9 @@ class AbstractNode:
             self.NODE_TYPE.name.lower(), self.alarm_queue, constants.THREADED_HTTP_POOL_SLEEP_INTERVAL_S
         )
 
-        self._last_responsiveness_check_log_time = None
+        self._last_responsiveness_check_log_time = time.time()
+        self._last_responsiveness_check_details = {}
+        self.gc_logging_enabled = False
         self.alarm_queue.register_alarm(constants.RESPONSIVENESS_CHECK_INTERVAL_S, self._responsiveness_check_log)
 
         self.check_relay_alarm_id = None
@@ -651,16 +654,40 @@ class AbstractNode:
         return 0
 
     def _responsiveness_check_log(self):
-        current_time = time.time()
+        details = ""
+        if self.gc_logging_enabled:
+            gen0_stats, gen1_stats, gen2_stats = gc.get_stats()
 
-        if self._last_responsiveness_check_log_time:
-            performance_utils.log_operation_duration(
-                performance_troubleshooting_logger,
-                "Responsiveness Check",
-                self._last_responsiveness_check_log_time,
-                constants.RESPONSIVENESS_CHECK_INTERVAL_S + constants.RESPONSIVENESS_CHECK_DELAY_WARN_THRESHOLD_S
+            last_gen0_collections = self._last_responsiveness_check_details.get(
+                "gen0_collections", 0
+            )
+            last_gen1_collections = self._last_responsiveness_check_details.get(
+                "gen1_collections", 0
+            )
+            last_gen2_collections = self._last_responsiveness_check_details.get(
+                "gen2_collections", 0
             )
 
-        self._last_responsiveness_check_log_time = current_time
+            gen0_diff = gen0_stats["collections"] - last_gen0_collections
+            gen1_diff = gen1_stats["collections"] - last_gen1_collections
+            gen2_diff = gen2_stats["collections"] - last_gen2_collections
 
+            details = (
+                f"gen0_collections: {gen0_diff}, gen1_collections: {gen1_diff}, "
+                f"gen2_collections: {gen2_diff}"
+            )
+            self._last_responsiveness_check_details.update({
+                "gen0_collections": gen0_stats["collections"],
+                "gen1_collections": gen1_stats["collections"],
+                "gen2_collections": gen2_stats["collections"],
+            })
+
+        performance_utils.log_operation_duration(
+            performance_troubleshooting_logger,
+            "Responsiveness Check",
+            self._last_responsiveness_check_log_time,
+            constants.RESPONSIVENESS_CHECK_INTERVAL_S + constants.RESPONSIVENESS_CHECK_DELAY_WARN_THRESHOLD_S,
+            details=details
+        )
+        self._last_responsiveness_check_log_time = time.time()
         return constants.RESPONSIVENESS_CHECK_INTERVAL_S
