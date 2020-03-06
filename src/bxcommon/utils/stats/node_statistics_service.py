@@ -51,7 +51,7 @@ class _NodeStatisticsService(StatisticsService):
             "garbage_collection": {
                 "uncollectable": len(gc.garbage),
                 "collection_counts": {
-                    f"gen{k}": v for k, v in self.interval_data.collection_counts
+                    f"gen{k}": v for k, v in self.interval_data.collection_counts.items()
                 },
                 "sizes": {
                     "gen0": gen0,
