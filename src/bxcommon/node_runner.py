@@ -65,7 +65,10 @@ def run_node(
         opts.log_level_overrides,
         enable_fluent_logger=opts.log_fluentd_enable,
         fluentd_host=opts.log_fluentd_host,
+        fluentd_queue_size=opts.log_fluentd_queue_size,
         third_party_loggers=THIRD_PARTY_LOGGERS,
+        fluent_log_level=opts.log_level_fluentd,
+        stdout_log_level=opts.log_level_stdout
     )
     startup_param = sys.argv[1:]
     logger.info("Startup Parameters are: {}", " ".join(startup_param))

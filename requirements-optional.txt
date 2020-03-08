@@ -1,2 +1,4 @@
 fluent_logger==0.9.3
+# TODO: create a pip package
+https://github.com/bloXroute-Labs/aiofluent/archive/master.zip
 pyinstrument==3.1.0

@@ -31,7 +31,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        log_config.create_logger(None, log_level=LogLevel.INFO)
+        log_config.create_logger(None, root_log_level=LogLevel.INFO)
 
     def setUp(self) -> None:
         self.mock_node = MockNode(

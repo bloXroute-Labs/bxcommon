@@ -4,6 +4,8 @@ import asyncio
 from argparse import Namespace
 from contextlib import closing
 from typing import Optional, TypeVar, Type, TYPE_CHECKING, List, Callable
+
+from bxutils.logging.log_level import LogLevel
 from mock import MagicMock
 
 from bxcommon import constants
@@ -212,7 +214,10 @@ def get_common_opts(port,
         "sync_tx_service": True,
         "source_version": "v1.0.0",
         "non_ssl_port": 3000,
-        "enable_node_cache": True
+        "enable_node_cache": True,
+        "log_fluentd_queue_size": 1000,
+        "log_level_fluentd": LogLevel.DEBUG,
+        "log_level_stdout": LogLevel.TRACE
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val
