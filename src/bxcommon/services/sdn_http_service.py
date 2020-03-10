@@ -44,11 +44,6 @@ def _fetch_peers(node_url: str, node_id=None) -> List[OutboundPeerModel]:
     return outbound_peers
 
 
-def fetch_potential_relay_peers(node_id: str) -> Optional[List[OutboundPeerModel]]:
-    node_url = SdnRoutes.node_potential_relays.format(node_id)
-    return _fetch_peers(node_url, node_id)
-
-
 def fetch_potential_relay_peers_by_network(node_id: str, network_num: int) -> Optional[List[OutboundPeerModel]]:
     node_url = SdnRoutes.node_potential_relays_by_network.format(node_id, network_num)
     return _fetch_peers(node_url, node_id)
