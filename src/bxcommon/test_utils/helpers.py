@@ -105,6 +105,8 @@ def get_queued_node_bytes(node: AbstractNode, fileno: int, message_type: str):
 
 def get_queued_node_messages(node: AbstractNode, fileno: int) -> List[AbstractMessage]:
     connection = node.connection_pool.get_by_fileno(fileno)
+    assert connection is not None
+    assert connection.message_factory is not None
     bytes_to_send = node.get_bytes_to_send(fileno)
     input_buffer = create_input_buffer_with_bytes(bytes_to_send)
 

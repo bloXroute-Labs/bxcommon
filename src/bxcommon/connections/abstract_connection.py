@@ -10,6 +10,7 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import PayloadLenError, UnauthorizedMessageError, ConnectionStateError
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
 from bxcommon.messages.validation.control_flag_validation_error import ControlFlagValidationError
@@ -83,7 +84,7 @@ class AbstractConnection(Generic[Node]):
 
         self.hello_messages = []
         self.header_size = 0
-        self.message_factory = None
+        self.message_factory: Optional[AbstractMessageFactory] = None
         self.message_handlers = None
 
         self.log_throughput = True
@@ -160,7 +161,7 @@ class AbstractConnection(Generic[Node]):
             # to determine next retry
             self.node.num_retries_by_ip[(self.peer_ip, self.peer_port)] = 0
 
-    def add_received_bytes(self, bytes_received: int):
+    def add_received_bytes(self, bytes_received: Union[bytearray, bytes]):
         """
         Adds bytes received from socket connection to input buffer
 

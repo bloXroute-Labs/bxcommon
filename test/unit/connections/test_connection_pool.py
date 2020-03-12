@@ -59,7 +59,9 @@ class ConnectionPoolTest(AbstractTestCase):
 
     def test_update_connection_type(self):
         self.conn1.CONNECTION_TYPE = ConnectionType.RELAY_ALL
+        self.conn1.peer_id = "1234"
         self.conn2.CONNECTION_TYPE = ConnectionType.INTERNAL_GATEWAY
+        self.conn2.peer_id = "2345"
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
         self.conn_pool1.add(self.fileno2, self.ip2, self.port2, self.conn2)
 
@@ -138,12 +140,6 @@ class ConnectionPoolTest(AbstractTestCase):
         self.assertIsNone(self.conn_pool1.get_by_fileno(7000))
         self.assertIsNone(self.conn_pool1.get_by_fileno(2))
 
-    def test_get_num_conn_by_ip(self):
-        self._add_connections()
-        self.assertEqual(1, self.conn_pool1.get_num_conn_by_ip(self.ip1))
-        self.assertEqual(2, self.conn_pool1.get_num_conn_by_ip(self.ip2))
-        self.assertEqual(0, self.conn_pool1.get_num_conn_by_ip("222.222.222.222"))
-
     def test_delete(self):
         self.conn1.CONNECTION_TYPE = ConnectionType.RELAY_TRANSACTION
         self.conn2.CONNECTION_TYPE = ConnectionType.RELAY_ALL
@@ -177,12 +173,6 @@ class ConnectionPoolTest(AbstractTestCase):
         self.conn_pool1.delete(conn)
         self.assertNotIn(conn, self.conn_pool1.get_by_connection_type(TestConnectionType.A))
         self.assertNotIn(conn, self.conn_pool1.get_by_connection_type(TestConnectionType.B))
-
-    def test_delete_by_fileno(self):
-        self._add_connections()
-        self.conn_pool1.delete_by_fileno(self.fileno1)
-        with self.assertRaises(KeyError):
-            self.conn_pool1.get_by_ipport(self.ip1, self.port1)
 
     def test_iter(self):
         self._add_connections()

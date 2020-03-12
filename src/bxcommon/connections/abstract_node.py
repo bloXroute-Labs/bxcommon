@@ -270,7 +270,9 @@ class AbstractNode:
                 rem_peer.port,
                 rem_peer.node_id
             ):
-                rem_conn = self.connection_pool.get_by_ipport(rem_peer.ip, rem_peer.port)
+                rem_conn = self.connection_pool.get_by_ipport(
+                    rem_peer.ip, rem_peer.port, rem_peer.node_id
+                )
                 if rem_conn:
                     rem_conn.mark_for_close(False)
 
