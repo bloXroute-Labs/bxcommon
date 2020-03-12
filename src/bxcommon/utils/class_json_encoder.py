@@ -7,6 +7,11 @@ from inspect import istraceback
 
 SPECIAL_ITERABLE_TYPES = (type(dict().values()), type(dict().keys()),)
 
+"""
+this module is deprecated, and will be removed in the next iteration.
+please use bxutils.encoding.json_encoder instead
+"""
+
 
 def is_iterable_no_collection(o):
     return isinstance(o, SPECIAL_ITERABLE_TYPES) or \

@@ -10,7 +10,7 @@ from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.models.node_model import NodeModel
 from bxcommon.utils import model_loader, config
-from bxcommon.utils.class_json_encoder import ClassJsonEncoder
+from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 
 logger = logging.get_logger(__name__)
 
@@ -57,7 +57,7 @@ def update(opts: Namespace, potential_relay_peers: List[OutboundPeerModel]):
 
     try:
         with open(config.get_data_file(opts.cookie_file_path), "w") as cookie_file:
-            json.dump(data, cookie_file, indent=4, cls=ClassJsonEncoder)
+            json.dump(data, cookie_file, indent=4, cls=EnhancedJSONEncoder)
     except Exception as ex:
         logger.error(f"Failed when tried to write to cache file: {opts.cookie_file_path} with exception: {ex}")
 

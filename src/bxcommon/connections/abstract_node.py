@@ -25,7 +25,8 @@ from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
 from bxcommon.services.threaded_request_service import ThreadedRequestService
-from bxcommon.utils import memory_utils, json_utils, convert, performance_utils
+from bxcommon.utils import memory_utils, convert, performance_utils
+from bxutils.encoding import json_encoder
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
@@ -480,7 +481,7 @@ class AbstractNode:
             node_size = memory_utils.get_detailed_object_size(self)
             memory_logger.statistics(
                 "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}",
-                total_mem_usage, self.next_report_mem_usage_bytes, json_utils.serialize(node_size))
+                total_mem_usage, self.next_report_mem_usage_bytes, json_encoder.to_json(node_size))
             self.next_report_mem_usage_bytes = total_mem_usage + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES
 
     def on_input_received(self, file_no: int) -> bool:

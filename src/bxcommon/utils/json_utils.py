@@ -11,5 +11,4 @@ def serialize(obj: Any) -> str:
     :param obj: object to serialize
     :return: JSON string
     """
-
     return json.dumps(obj, cls=ClassJsonEncoder)

@@ -11,7 +11,8 @@ from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils.crypto import SHA256_HASH_LEN
-from bxcommon.utils import memory_utils, convert, json_utils
+from bxcommon.utils import memory_utils, convert
+from bxutils.encoding import json_encoder
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_hash import Sha256Hash
@@ -808,7 +809,7 @@ class TransactionService:
         }
 
     def get_cache_state_str(self):
-        return json_utils.serialize(self.get_cache_state_json())
+        return json_encoder.to_json(self.get_cache_state_json())
 
     def _dump_removed_short_ids(self) -> int:
         if self._removed_short_ids:
