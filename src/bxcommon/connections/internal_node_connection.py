@@ -1,10 +1,11 @@
 import time
 from abc import ABCMeta
-from typing import List
+from typing import List, Optional, Dict
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection, Node
 from bxcommon.connections.connection_state import ConnectionState
+from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.blocks_short_ids_serializer import BlockShortIds
@@ -19,22 +20,27 @@ from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServi
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
-from bxcommon.utils import nonce_generator
+from bxcommon.models.node_type import NodeType
+from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
+from bxcommon.utils import nonce_generator, performance_utils
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
 from bxutils import logging
+from bxutils.logging import LogRecordType
 
 logger = logging.get_logger(__name__)
+performance_troubleshooting_logger = logging.get_logger(LogRecordType.PerformanceTroubleshooting, __name__)
 
 
 class InternalNodeConnection(AbstractConnection[Node]):
     __metaclass__ = ABCMeta
 
-    def __init__(self, sock, address, node, from_me=False):
-        super(InternalNodeConnection, self).__init__(sock, address, node, from_me)
+    def __init__(self, sock: AbstractSocketConnectionProtocol, node: Node):
+        super(InternalNodeConnection, self).__init__(sock, node)
 
         # Enable buffering only on internal connections
         self.enable_buffered_send = node.opts.enable_buffered_send
@@ -53,6 +59,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
         self.can_send_pings = True
         self.ping_message_timestamps = ExpiringDict(self.node.alarm_queue, constants.REQUEST_EXPIRATION_TIME)
+        self._sync_ping_latencies: Dict[int, Optional[float]] = {}
+        self._nonce_to_network_num: Dict[int, int] = {}
         self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)
 
     def disable_buffering(self):
@@ -72,7 +80,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         """
 
         # Outgoing connections use current version of protocol and message factory
-        if self.state & ConnectionState.HELLO_RECVD:
+        if ConnectionState.HELLO_RECVD in self.state:
             return True
 
         protocol_version = self.version_manager.get_connection_protocol_version(self.inputbuf)
@@ -98,7 +106,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.protocol_version = protocol_version
         self.message_factory = self.version_manager.get_message_factory_for_version(protocol_version)
 
-        self.log_trace("Detected incoming connection with protocol version {}".format(protocol_version))
+        self.log_trace("Setting connection protocol version to {}".format(protocol_version))
 
         return True
 
@@ -111,7 +119,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         return super(InternalNodeConnection, self).pre_process_msg()
 
     def enqueue_msg(self, msg, prepend=False):
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
+        if not self.is_alive():
             return
 
         if self.protocol_version < self.version_manager.CURRENT_PROTOCOL_VERSION:
@@ -134,7 +142,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
     def msg_hello(self, msg):
         super(InternalNodeConnection, self).msg_hello(msg)
 
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
+        if not self.is_alive():
             self.log_trace("Connection has been closed: {}, Ignoring: {} ", self, msg)
             return
 
@@ -161,11 +169,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         """
         Send a ping (and reschedule if called from alarm queue)
         """
-        if self.can_send_pings and not self.state & ConnectionState.MARK_FOR_CLOSE:
-            nonce = nonce_generator.get_nonce()
-            msg = PingMessage(nonce=nonce)
-            self.enqueue_msg(msg)
-            self.ping_message_timestamps.add(nonce, time.time())
+        if self._send_ping() is not None:
             return self.ping_interval_s
         return constants.CANCEL_ALARMS
 
@@ -178,10 +182,14 @@ class InternalNodeConnection(AbstractConnection[Node]):
         if nonce in self.ping_message_timestamps.contents:
             request_msg_timestamp = self.ping_message_timestamps.contents[nonce]
             request_response_time = time.time() - request_msg_timestamp
+            if nonce in self._nonce_to_network_num:
+                self._sync_ping_latencies[self._nonce_to_network_num[nonce]] = request_response_time
             self.log_trace("Pong for nonce {} had response time: {}", msg.nonce(), request_response_time)
             hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
         elif nonce is not None:
             self.log_debug("Pong message had no matching ping request. Nonce: {}", nonce)
+
+        self.cancel_pong_timeout()
 
     def msg_tx_service_sync_txs(self, msg: TxServiceSyncTxsMessage):
         """
@@ -195,19 +203,25 @@ class InternalNodeConnection(AbstractConnection[Node]):
         for tx_content_short_ids in txs_content_short_ids:
             tx_hash = tx_content_short_ids.tx_hash
             tx_service.set_transaction_contents(tx_hash, tx_content_short_ids.tx_content)
-            for short_id in tx_content_short_ids.short_ids:
+            for short_id, quota_type in zip(tx_content_short_ids.short_ids, tx_content_short_ids.short_id_flags):
                 tx_service.assign_short_id(tx_hash, short_id)
+                if QuotaType.PAID_DAILY_QUOTA in quota_type:
+                    tx_service.set_short_id_quota_type(short_id, quota_type)
 
     def _create_txs_service_msg(self, network_num: int, tx_service_snap: List[Sha256Hash]) -> List[TxContentShortIds]:
         txs_content_short_ids: List[TxContentShortIds] = []
         txs_msg_len = 0
-
+        tx_service = self.node.get_tx_service(network_num)
         while tx_service_snap:
             tx_hash = tx_service_snap.pop()
-            tx_content_short_ids = TxContentShortIds(
+            short_ids = tx_service.get_short_ids(tx_hash)
+            # TODO: evaluate short id quota type flag value
+            short_id_flags = [tx_service.get_short_id_quota_type(short_id) for short_id in short_ids]
+            tx_content_short_ids: TxContentShortIds = TxContentShortIds(
                 tx_hash,
                 self.node.get_tx_service(network_num).get_transaction_by_hash(tx_hash),
-                self.node.get_tx_service(network_num).get_short_ids(tx_hash)
+                list(short_ids),
+                short_id_flags
             )
 
             txs_msg_len += txs_serializer.get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids)
@@ -225,6 +239,13 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.enqueue_msg(TxServiceSyncReqMessage(network_num))
 
     def send_tx_service_sync_complete(self, network_num: int):
+        if network_num in self._sync_ping_latencies:
+            del self._sync_ping_latencies[network_num]
+        self._nonce_to_network_num = {
+            nonce: other_network_num for nonce, other_network_num in self._nonce_to_network_num.items()
+            if other_network_num != network_num
+        }
+
         self.enqueue_msg(TxServiceSyncCompleteMessage(network_num))
 
     def send_tx_service_sync_blocks_short_ids(self, network_num: int):
@@ -234,35 +255,96 @@ class InternalNodeConnection(AbstractConnection[Node]):
             blocks_short_ids.append(BlockShortIds(block_hash, short_ids))
 
         block_short_ids_msg = TxServiceSyncBlocksShortIdsMessage(network_num, blocks_short_ids)
+        performance_utils.log_operation_duration(
+            performance_troubleshooting_logger,
+            "Create tx service sync block short ids message",
+            start_time,
+            constants.RESPONSIVENESS_CHECK_DELAY_WARN_THRESHOLD_S,
+            network_num=network_num,
+            connection=self,
+            blocks_short_ids_count=len(blocks_short_ids)
+        )
         duration = time.time() - start_time
         self.log_trace("Sending {} block short ids took {:.3f} seconds.", len(blocks_short_ids), duration)
         self.enqueue_msg(block_short_ids_msg)
 
-    def send_tx_service_sync_txs(self, network_num: int, tx_service_snap: List[Sha256Hash], duration: float = 0, msgs_count: int = 0, total_tx_count: int = 0, sending_tx_msgs_start_time: float = 0):
+    def send_tx_service_sync_txs(self, network_num: int, tx_service_snap: List[Sha256Hash], duration: float = 0,
+                                 msgs_count: int = 0, total_tx_count: int = 0, sending_tx_msgs_start_time: float = 0):
+        sync_ping_latency = self._sync_ping_latencies.get(network_num, 0.0)
         if (time.time() - sending_tx_msgs_start_time) < constants.SENDING_TX_MSGS_TIMEOUT_MS:
-            if tx_service_snap:
+            if tx_service_snap and sync_ping_latency is not None:
                 start = time.time()
                 txs_content_short_ids = self._create_txs_service_msg(network_num, tx_service_snap)
+                performance_utils.log_operation_duration(
+                    performance_troubleshooting_logger,
+                    "Create tx service sync message",
+                    start,
+                    constants.RESPONSIVENESS_CHECK_DELAY_WARN_THRESHOLD_S,
+                    network_num=network_num,
+                    connection=self,
+                    tx_count=len(txs_content_short_ids)
+                )
                 self.enqueue_msg(TxServiceSyncTxsMessage(network_num, txs_content_short_ids))
+                nonce = self._send_ping()
+                if nonce is not None:
+                    self._nonce_to_network_num[nonce] = network_num
+                    self._sync_ping_latencies[network_num] = None
                 duration += time.time() - start
                 msgs_count += 1
                 total_tx_count += len(txs_content_short_ids)
             # checks again if tx_snap in case we still have msgs to send, else no need to wait
-            # TX_SERVICE_SYNC_TXS_S seconds
+            # for the next interval.
             if tx_service_snap:
+                if sync_ping_latency is None:
+                    next_interval = constants.TX_SERVICE_SYNC_TXS_S
+                else:
+                    next_interval = max(sync_ping_latency * 0.5, constants.TX_SERVICE_SYNC_TXS_S)
                 self.node.alarm_queue.register_alarm(
-                    constants.TX_SERVICE_SYNC_TXS_S, self.send_tx_service_sync_txs, network_num, tx_service_snap, duration, msgs_count, total_tx_count, sending_tx_msgs_start_time
+                    next_interval, self.send_tx_service_sync_txs, network_num, tx_service_snap,
+                    duration, msgs_count, total_tx_count, sending_tx_msgs_start_time
                 )
-            else:   # if all txs were sent, send complete msg
-                self.log_trace("Sending {} transactions and {} messages took {:.3f} seconds.",
-                               total_tx_count, msgs_count, duration)
+            else:  # if all txs were sent, send complete msg
+                self.log_debug(
+                    "Sending {} transactions and {} messages of network: {} took {:.3f} seconds.",
+                    total_tx_count,
+                    msgs_count,
+                    network_num,
+                    duration
+                )
                 self.send_tx_service_sync_complete(network_num)
-        else:   # if time is up - upgrade this node as synced - giving up
-            self.log_trace("Sending {} transactions and {} messages took more than {} seconds. Giving up.",
-                           total_tx_count, msgs_count, constants.SENDING_TX_MSGS_TIMEOUT_MS)
+        else:  # if time is up - upgrade this node as synced - giving up
+            self.log_debug(
+                "Sending {} transactions and {} messages of network: {} took more than {} seconds. Giving up.",
+                total_tx_count,
+                msgs_count,
+                network_num,
+                constants.SENDING_TX_MSGS_TIMEOUT_MS
+            )
             self.send_tx_service_sync_complete(network_num)
 
     def msg_tx_service_sync_complete(self, msg: TxServiceSyncCompleteMessage):
+        if self.node.NODE_TYPE in NodeType.GATEWAY and ConnectionType.RELAY_BLOCK in self.CONNECTION_TYPE:
+            return
         network_num = msg.network_num()
         self.node.last_sync_message_received_by_network.pop(network_num, None)
+        self.log_info(
+            "{} is ready and operational. It took {:.3f} seconds to complete transaction state with BDN.",
+            self.node.NODE_TYPE, time.time() - self.node.start_sync_time
+        )
         self.node.on_fully_updated_tx_service()
+
+    def mark_for_close(self, should_retry: Optional[bool] = None):
+        super(InternalNodeConnection, self).mark_for_close(should_retry)
+        self.cancel_pong_timeout()
+
+    def _send_ping(self) -> Optional[int]:
+        if self.can_send_pings and self.is_alive():
+            nonce = nonce_generator.get_nonce()
+            msg = PingMessage(nonce=nonce)
+            self.enqueue_msg(msg)
+            self.ping_message_timestamps.add(nonce, time.time())
+
+            self.schedule_pong_timeout()
+            return nonce
+        else:
+            return None

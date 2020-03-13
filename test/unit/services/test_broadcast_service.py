@@ -30,7 +30,7 @@ class BroadcastServiceTest(AbstractTestCase):
 
     def _add_connection(self, fileno: int, port: int, network_num: int,
                         connection_type=MockConnection.CONNECTION_TYPE) -> MockConnection:
-        conn = MockConnection(MockSocketConnection(fileno), (LOCALHOST, port), self.node)
+        conn = MockConnection(MockSocketConnection(fileno, ip_address=LOCALHOST, port=port), self.node)
         conn.network_num = network_num
         conn.state = ConnectionState.ESTABLISHED
         conn.CONNECTION_TYPE = connection_type
@@ -55,7 +55,7 @@ class BroadcastServiceTest(AbstractTestCase):
         relay_all_conn = self._add_connection(0, 9000, ALL_NETWORK_NUM, ConnectionType.RELAY_ALL)
         relay_block_conn = self._add_connection(1, 9001, ALL_NETWORK_NUM, ConnectionType.RELAY_BLOCK)
         relay_transaction_conn = self._add_connection(2, 9002, ALL_NETWORK_NUM, ConnectionType.RELAY_TRANSACTION)
-        gateway_conn = self._add_connection(3, 9003, ALL_NETWORK_NUM, ConnectionType.GATEWAY)
+        gateway_conn = self._add_connection(3, 9003, ALL_NETWORK_NUM, ConnectionType.EXTERNAL_GATEWAY)
 
         block_message = BroadcastMessage(Sha256Hash(helpers.generate_hash()), ALL_NETWORK_NUM, "", False,
                                          helpers.generate_bytearray(250))

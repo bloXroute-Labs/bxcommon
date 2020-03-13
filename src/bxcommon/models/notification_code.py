@@ -1,0 +1,18 @@
+from enum import IntEnum
+
+
+class NotificationCodeRange(IntEnum):
+    DEBUG = 2000  # <2000
+    INFO = 4000  # <4000
+    WARNING = 6000  # <6000
+    ERROR = 8000  # <8000
+
+
+class NotificationCode(IntEnum):
+    QUOTA_DEPLETED = 4400
+    QUOTA_DEPLETED_TX_BLOCKED = 4401
+    QUOTA_DEPLETED_TX_HANDLED_AS_FREE = 4402
+    QUOTA_NOT_SET_TX_HANDLED_AS_FREE = 4403
+
+    QUOTA_DEPLETED_BLOCK = 4500
+    QUOTA_DEPLETED_BLOCK_BLOCKED = 4501

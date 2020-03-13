@@ -2,10 +2,11 @@
 # of them obsolete.
 
 from dataclasses import dataclass
+
 from bxcommon.models.config.abstract_config_model import AbstractConfigModel
+from bxcommon.models.config.cron_config_model import CronConfigModel
 from bxcommon.models.config.log_config_model import LogConfigModel
 from bxcommon.models.config.stats_config_model import StatsConfigModel
-from bxcommon.models.config.cron_config_model import CronConfigModel
 
 
 @dataclass

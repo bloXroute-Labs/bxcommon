@@ -1,12 +1,15 @@
 import time
 from heapq import heappop, heappush
 from threading import RLock
-from typing import List
+from typing import List, Optional
 
 from bxcommon import constants
+from bxcommon.utils import performance_utils
 from bxutils import logging
+from bxutils.logging import LogRecordType
 
 logger = logging.get_logger(__name__)
+alarm_troubleshooting_logger = logging.get_logger(LogRecordType.AlarmTroubleshooting, __name__)
 
 
 class Alarm:
@@ -164,6 +167,7 @@ class AlarmQueue(object):
             return
 
         curr_time = time.time()
+        alarms_count = 0
 
         with self.lock:
             while self.alarms and self.alarms[0].fire_time <= curr_time:
@@ -174,12 +178,14 @@ class AlarmQueue(object):
                     try:
                         start_time = time.time()
                         next_delay = alarm.fire()
-                        end_time = time.time()
+                        alarms_count += 1
                     except Exception as e:
                         logger.exception("Alarm {} could not fire and failed with exception: {}", alarm, e)
                     else:
-                        if end_time - start_time > constants.WARN_ALARM_EXECUTION_DURATION:
-                            logger.debug("{} took {} seconds to execute.", alarm, end_time - start_time)
+                        performance_utils.log_operation_duration(alarm_troubleshooting_logger,
+                                                                 "Single alarm", start_time,
+                                                                 constants.WARN_ALARM_EXECUTION_DURATION,
+                                                                 alarm=alarm)
 
                         if next_delay is not None and next_delay > 0:
                             next_time = time.time() + next_delay
@@ -197,29 +203,32 @@ class AlarmQueue(object):
                             if not alarm_heap:
                                 del self.approx_alarms_scheduled[alarm.fn]
 
-    def fire_ready_alarms(self, has_alarm):
+        performance_utils.log_operation_duration(alarm_troubleshooting_logger,
+                                                 "Alarms", curr_time,
+                                                 constants.WARN_ALL_ALARMS_EXECUTION_DURATION,
+                                                 count=alarms_count)
+
+    def fire_ready_alarms(self) -> Optional[float]:
         """
         Fires ready alarm repeatedly until no more should be fired.
-        :param has_alarm: Force fire initial alarm. (what?)
         :return: time until next alarm, or None
         """
-        alarmq_empty, time_to_next_alarm = self.time_to_next_alarm()
+        time_to_next_alarm = self.time_to_next_alarm()
 
-        if has_alarm or (not alarmq_empty and time_to_next_alarm <= 0):
-            while not alarmq_empty and time_to_next_alarm <= 0:
-                self.fire_alarms()
-                alarmq_empty, time_to_next_alarm = self.time_to_next_alarm()
+        while time_to_next_alarm is not None and time_to_next_alarm <= 0:
+            self.fire_alarms()
+            time_to_next_alarm = self.time_to_next_alarm()
 
         return time_to_next_alarm
 
-    def time_to_next_alarm(self):
+    def time_to_next_alarm(self) -> Optional[float]:
         """
         Indicates if there's not an alarm on the queue and the timeout to the next one if there is.
         :return: (if alarm queue is empty, timeout to next alarm)
         """
         with self.lock:
             if not self.alarms:
-                return True, None
+                return None
 
             time_to_alarm = self.alarms[0].fire_time - time.time()
-            return False, time_to_alarm
+            return time_to_alarm

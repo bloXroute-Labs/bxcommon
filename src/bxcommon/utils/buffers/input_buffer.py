@@ -1,4 +1,5 @@
 from collections import deque
+from typing import Deque, Union
 from bxcommon.utils import memory_utils
 from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
 from typing import Set, Optional
@@ -6,47 +7,51 @@ from typing import Set, Optional
 
 class InputBuffer(SpecialMemoryProperties):
     def __init__(self):
-        self.input_list = deque()
+        self.input_list: Deque[Union[memoryview, bytearray, bytes]] = deque()
         self.length = 0
 
-    def endswith(self, suffix):
+    def endswith(self, suffix: Union[memoryview, bytearray, bytes]) -> bool:
         if not self.input_list:
             return False
 
-        if not isinstance(suffix, bytearray):
-            raise ValueError("Suffix must be a bytearray.")
+        if not isinstance(suffix, (memoryview, bytearray, bytes)):
+            raise ValueError(f"Suffix must be memoryview, bytearray or bytes, not {type(suffix)}.")
 
-        return self.input_list[-1].endswith(suffix)
+        end_slice = self.input_list[-1]
+        if len(end_slice) < len(suffix):
+            end_slice = self.get_slice(self.length - len(suffix), self.length)
+        if not isinstance(end_slice, bytearray):
+            end_slice = bytearray(end_slice)
+            self.input_list[-1] = end_slice
 
-    def add_bytes(self, piece):
+        return end_slice.endswith(suffix)  # pyre-ignore
+
+    def add_bytes(self, piece: Union[bytearray, bytes, memoryview]) -> None:
         """
-        Adds a bytearray to the end of the input buffer.
+        Adds a data bytes to the end of the input buffer.
         """
-        if not isinstance(piece, (bytearray, memoryview)):
-            raise ValueError("Piece must be a bytearray.")
+        if not isinstance(piece, (bytearray, memoryview, bytes)):
+            raise ValueError("Piece must be a bytearray, bytes or memoryview.")
         self.input_list.append(piece)
         self.length += len(piece)
 
-    def remove_bytes(self, num_bytes):
+    def remove_bytes(self, num_bytes: int) -> Union[bytearray, bytes, memoryview]:
         """
         Removes the first num_bytes bytes in the input buffer and returns them.
         """
         if num_bytes is None or num_bytes < 0:
             raise ValueError("Invalid num_bytes {}".format(num_bytes))
 
-        to_return = bytearray(0)
-        while self.input_list and num_bytes >= len(self.input_list[0]):
-            next_piece = self.input_list.popleft()
-            to_return.extend(next_piece)
-            num_bytes -= len(next_piece)
-            self.length -= len(next_piece)
+        self._shrink_if_needed(num_bytes, True)
 
-        assert self.input_list or num_bytes == 0
+        assert self.input_list or num_bytes == 0, f"Input buffer is empty and attempting to remove {num_bytes} bytes!"
 
-        if self.input_list:
-            to_return.extend(self.input_list[0][:num_bytes])
+        if self.input_list and num_bytes > 0:
+            to_return = self.input_list[0][:num_bytes]
             self.input_list[0] = self.input_list[0][num_bytes:]
             self.length -= num_bytes
+        else:
+            to_return = bytearray(0)
 
         return to_return
 
@@ -61,11 +66,7 @@ class InputBuffer(SpecialMemoryProperties):
 
         if bytes_to_peek == 0:
             return bytearray(0)
-
-        while bytes_to_peek > len(self.input_list[0]):
-            head = self.input_list.popleft()
-            head.extend(self.input_list.popleft())
-            self.input_list.appendleft(head)
+        self._shrink_if_needed(bytes_to_peek)
 
         return self.input_list[0]
 
@@ -82,11 +83,7 @@ class InputBuffer(SpecialMemoryProperties):
 
         # Combine all of the pieces in this slice into the first item on the list.
         # Since we will need to do so anyway when handing the message.
-        while end > len(self.input_list[0]) and len(self.input_list) > 1:
-            head = self.input_list.popleft()
-            head.extend(self.input_list.popleft())
-            self.input_list.appendleft(head)
-
+        self._shrink_if_needed(end)
         return self.input_list[0][start:end]
 
     def __len__(self):
@@ -111,3 +108,15 @@ class InputBuffer(SpecialMemoryProperties):
 
     def special_memory_size(self, ids: Optional[Set[int]] = None) -> SpecialTuple:
         return memory_utils.get_special_size(self.input_list, ids=ids)
+
+    def _shrink_if_needed(self, end: int, ensure_byte_array: bool = False) -> None:
+        if self.input_list:
+            head_message = self.input_list[0]
+            if end > len(head_message) or ensure_byte_array:
+                if isinstance(head_message, bytearray):
+                    head = self.input_list.popleft()
+                else:
+                    head = bytearray(self.input_list.popleft())
+                while end > len(head) and self.input_list:
+                    head.extend(self.input_list.popleft())  # pyre-ignore
+                self.input_list.appendleft(head)

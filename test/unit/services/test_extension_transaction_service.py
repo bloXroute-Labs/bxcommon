@@ -43,5 +43,11 @@ class ExtensionTransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_iter_timestamped_transaction_hashes_from_oldest(self):
         self._test_iter_timestamped_transaction_hashes_from_oldest()
 
+    def test_removed_transactions_history_by_hash(self):
+        self._test_removed_transactions_history_by_hash()
+
+    def test_removed_transactions_history_by_sid(self):
+        self._test_removed_transactions_history_by_sid()
+
     def _get_transaction_service(self) -> TransactionService:
         return ExtensionTransactionService(self.mock_node, 0)

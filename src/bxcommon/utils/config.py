@@ -3,21 +3,71 @@ import json
 import multiprocessing
 import os
 import re
+import shutil
+from os import path
+from pathlib import Path
+from sys import platform
 from typing import Dict, Any
 
 from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
+from bxutils import logging
+
+logger = logging.get_logger(__name__)
 
 _working_directory = ""
+_data_directory = ""
 
 
 def set_working_directory(working_directory: str):
+    """
+    Sets working directory of python application
+    :param working_directory: full name of working directory
+    """
     global _working_directory
     _working_directory = working_directory
 
 
+def set_data_directory(data_directory: str):
+    """
+    Sets the directory where configuration, state and log files are being stored
+    :param data_directory: full name of data directory
+    """
+    global _data_directory
+    _data_directory = data_directory
+    try:
+        os.makedirs(data_directory, exist_ok=True)
+    except Exception as ex:
+        logger.fatal("Unable to create data directory '{}'. Error: {}. Exiting.", data_directory, ex)
+        exit(1)
+
+
+def get_default_data_path():
+    """
+    Returns default data directory for configuration, state and log files
+    :return: default data directory
+    """
+
+    if platform == constants.PLATFORM_MAC:
+        return path.join(get_home_path(), "Library", "bloXroute")
+    else:
+        return path.join(get_home_path(), "bloxroute")
+
+
+def get_home_path():
+    """
+    Returns user home directory
+    :return: home directory
+    """
+    return str(Path.home())
+
+
 def get_relative_file(file_path: str) -> str:
     return os.path.join(_working_directory, file_path)
+
+
+def get_data_file(file_path: str) -> str:
+    return os.path.join(_data_directory, file_path)
 
 
 def log_pid(file_name):
@@ -96,7 +146,8 @@ def read_manifest(manifest_path: str) -> Dict[str, str]:
                 raise ValueError(f"Invalid version: {version}")
 
             if not all(params in manifest for params in constants.REQUIRED_PARAMS_IN_MANIFEST):
-                missing_params_str = ", ".join([item for item in constants.REQUIRED_PARAMS_IN_MANIFEST if item not in manifest])
+                missing_params_str = ", ".join(
+                    [item for item in constants.REQUIRED_PARAMS_IN_MANIFEST if item not in manifest])
                 raise ValueError(f"Missing attributes: {missing_params_str}")
 
             return manifest
@@ -109,3 +160,11 @@ def append_manifest_args(opts_dict: Dict[Any, Any]):
     manifest = read_manifest(manifest_path)
     opts_dict.update(manifest)
     opts_dict.update({constants.PROTOCOL_VERSION: bloxroute_version_manager.CURRENT_PROTOCOL_VERSION})
+
+
+def init_file_in_data_dir(file_name: str):
+    relative_file_name = get_relative_file(file_name)
+    data_dir_file_name = get_data_file(file_name)
+
+    if os.path.exists(relative_file_name) and not os.path.exists(data_dir_file_name):
+        shutil.copyfile(relative_file_name, data_dir_file_name)

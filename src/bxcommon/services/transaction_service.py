@@ -2,11 +2,15 @@ import time
 from collections import defaultdict, OrderedDict, Counter
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
+from functools import reduce
 from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
+from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils import memory_utils, convert, json_utils
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
@@ -18,8 +22,8 @@ from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 
 logger = logging.get_logger(__name__)
-logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup)
-logger_tx_histogram = logging.get_logger(LogRecordType.TransactionHistogram)
+logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
+logger_tx_histogram = logging.get_logger(LogRecordType.TransactionHistogram, __name__)
 
 
 def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash]) -> Sha256Hash:
@@ -30,6 +34,15 @@ def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash
         return Sha256Hash(binary=transaction_hash)
 
     return Sha256Hash(binary=convert.hex_to_bytes(transaction_hash))
+
+
+class TxRemovalReason(Enum):
+    UNKNOWN = "Unknown"
+    BLOCK_CLEANUP = "BlockCleanup"
+    EXTENSION_BLOCK_CLEANUP = "ExtensionBlockCleanup"
+    MEMORY_LIMIT = "MemoryLimit"
+    EXPIRATION = "Expiration"
+    MEMPOOL_SYNC = "MempoolSync"
 
 
 @dataclass
@@ -69,6 +82,7 @@ class TransactionService:
     network_num: network number that current transaction service serves
     _tx_cache_key_to_short_ids: mapping of transaction long hashes to (potentially multiple) short ids
     _short_id_to_tx_cache_key: mapping of short id to transaction long hashes
+    _short_id_to_tx_quota_flag: mapping of short id to transaction quota type
     _tx_cache_key_to_contents: mapping of transaction long hashes to transaction contents
     _tx_assignment_expire_queue: expiration time of short ids
     """
@@ -77,9 +91,11 @@ class TransactionService:
     tx_assign_alarm_scheduled: bool
     network_num: int
     _short_id_to_tx_cache_key: Dict[int, str]
+    _short_id_to_tx_quota_flag: Dict[int, QuotaType]
     _tx_cache_key_to_contents: Dict[str, Union[bytearray, memoryview]]
     _tx_cache_key_to_short_ids: Dict[str, Set[int]]
     _tx_assignment_expire_queue: ExpirationQueue
+    _tx_hash_to_time_removed: OrderedDict
 
     MAX_ID = 2 ** 32
     SHORT_ID_SIZE = 4
@@ -109,14 +125,17 @@ class TransactionService:
         self.tx_assign_alarm_scheduled = False
 
         self._tx_cache_key_to_short_ids = defaultdict(set)
+        self._short_id_to_tx_quota_flag = {}
         self._short_id_to_tx_cache_key = {}
         self._tx_cache_key_to_contents = {}
         self._tx_assignment_expire_queue: ExpirationQueue[int] = ExpirationQueue(node.opts.sid_expire_time)
+        self._tx_hash_to_time_removed = OrderedDict()
 
         self._final_tx_confirmations_count = self._get_final_tx_confirmations_count()
         self._tx_content_memory_limit = self._get_tx_contents_memory_limit()
         logger.debug("Memory limit for transaction service by network number {} is {} bytes.",
                      self.network_num, self._tx_content_memory_limit)
+        self._removed_txs_hashes_expiration_time_s = self._get_removed_transactions_history_expiration_time_s()
 
         # short ids seen in block ordered by them block hash
         self._short_ids_seen_in_block: OrderedDict[Sha256Hash, List[int]] = OrderedDict()
@@ -130,11 +149,21 @@ class TransactionService:
                 constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S,
                 self._dump_removed_short_ids
             )
-        if constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S > 0:
-            self.node.alarm_queue.register_alarm(
-                constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S,
-                self._log_transaction_service_histogram
-            )
+
+        self.node.alarm_queue.register_alarm(
+            constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S,
+            self._cleanup_removed_transactions_history
+        )
+
+    def get_short_id_quota_type(self, short_id: int) -> QuotaType:
+        if short_id in self._short_id_to_tx_quota_flag:
+            return self._short_id_to_tx_quota_flag[short_id]
+        else:
+            return QuotaType.FREE_DAILY_QUOTA
+
+    def set_short_id_quota_type(self, short_id: int, tx_quota_type: QuotaType):
+        if QuotaType.PAID_DAILY_QUOTA in tx_quota_type:
+            self._short_id_to_tx_quota_flag[short_id] = tx_quota_type
 
     def get_short_id(self, transaction_hash: Sha256Hash) -> int:
         """
@@ -266,6 +295,14 @@ class TransactionService:
         """
         return short_id in self._short_id_to_tx_cache_key
 
+    def removed_transaction(self, transaction_hash: Sha256Hash) -> bool:
+        """
+        Check if transaction was seen and removed from cache
+        :param transaction_hash: transaction hash
+        :return: Boolean indicating in transaction was seen
+        """
+        return self._tx_hash_to_cache_key(transaction_hash) in self._tx_hash_to_time_removed
+
     def assign_short_id(self, transaction_hash: Sha256Hash, short_id: int):
         """
         Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
@@ -309,25 +346,35 @@ class TransactionService:
 
         self._memory_limit_clean_up()
 
-    def remove_transaction_by_tx_hash(self, transaction_hash: Sha256Hash) -> Optional[Set[int]]:
+    def remove_transaction_by_tx_hash(self, transaction_hash: Sha256Hash, force: bool = True) -> Optional[Set[int]]:
         """
         Clean up mapping. Removes transaction contents and mapping.
         :param transaction_hash: tx hash to clean up
+        :param force: when false, cleanup will ignore tx / sids marked with quota flag
         """
         transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
         removed_sids = 0
         removed_txns = 0
 
         if transaction_cache_key in self._tx_cache_key_to_short_ids:
-            short_ids = self._tx_cache_key_to_short_ids.pop(transaction_cache_key)
-            for short_id in short_ids:
+            short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
+            short_id_flags = [self._short_id_to_tx_quota_flag.get(sid, QuotaType.FREE_DAILY_QUOTA) for sid in short_ids]
+            tx_flag = reduce(lambda x, y: x | y, short_id_flags)
+            if QuotaType.PAID_DAILY_QUOTA in tx_flag and not force:
+                return None
+            else:
+                short_ids = self._tx_cache_key_to_short_ids.pop(transaction_cache_key)
+
+            for short_id_flag, short_id in zip(short_id_flags, short_ids):
                 tx_stats.add_tx_by_hash_event(
                     transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
-                    self.network_num, short_id, reason="RemoveByTransactionHash"
+                    self.network_num, short_id, reason=TxRemovalReason.BLOCK_CLEANUP.value
                 )
                 removed_sids += 1
                 if short_id in self._short_id_to_tx_cache_key:
                     del self._short_id_to_tx_cache_key[short_id]
+                    if short_id in self._short_id_to_tx_quota_flag:
+                        del self._short_id_to_tx_quota_flag[short_id]
                 self._tx_assignment_expire_queue.remove(short_id)
                 if self.node.opts.dump_removed_short_ids:
                     self._removed_short_ids.add(short_id)
@@ -338,53 +385,72 @@ class TransactionService:
             self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
             del self._tx_cache_key_to_contents[transaction_cache_key]
             removed_txns += 1
+
+        self._tx_hash_to_time_removed[transaction_cache_key] = time.time()
+
         logger.trace("Removed transaction: {}, with {} associated short ids and {} contents.", transaction_hash,
                      removed_sids, removed_txns)
         return short_ids
 
-    def remove_transaction_by_short_id(self, short_id: int, remove_related_short_ids: bool = False):
+    def remove_transaction_by_short_id(self,
+                                       short_id: int,
+                                       remove_related_short_ids: bool = False,
+                                       force: bool = True,
+                                       removal_reason: TxRemovalReason = TxRemovalReason.UNKNOWN):
         """
         Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
         :param short_id: short id to clean up
+        :param remove_related_short_ids: remove all other short id for the same tx
+        :param force: when false, cleanup will ignore tx / sids marked with quota flag
+        :param removal_reason:
         """
         if short_id in self._short_id_to_tx_cache_key:
+            transaction_cache_key = self._short_id_to_tx_cache_key.get(short_id)
+            if transaction_cache_key in self._tx_cache_key_to_short_ids:
+                short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
+                short_id_flags = [self._short_id_to_tx_quota_flag.get(sid, QuotaType.FREE_DAILY_QUOTA) for sid in
+                                  short_ids]
+                tx_flag = reduce(lambda x, y: x | y, short_id_flags)
+                if QuotaType.PAID_DAILY_QUOTA in tx_flag and not force:
+                    return
+            else:
+                short_ids = [short_id]
+
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
 
-            transaction_cache_key = self._short_id_to_tx_cache_key.pop(short_id)
+            del self._short_id_to_tx_cache_key[short_id]
             transaction_hash = self._tx_cache_key_to_hash(transaction_cache_key)
             tx_stats.add_tx_by_hash_event(
                 transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
-                self.network_num, short_id, reason="RemoveByShortId"
+                self.network_num, short_id, reason=removal_reason.value
             )
-            if transaction_cache_key in self._tx_cache_key_to_short_ids:
-                short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
+            # Only clear mapping and txhash_to_contents if last SID assignment
+            if len(short_ids) == 1 or remove_related_short_ids:
+                for dup_short_id in short_ids:
+                    if dup_short_id != short_id:
+                        tx_stats.add_tx_by_hash_event(
+                            transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
+                            self.network_num, dup_short_id, reason=removal_reason.value
+                        )
+                        if dup_short_id in self._short_id_to_tx_cache_key:
+                            del self._short_id_to_tx_cache_key[dup_short_id]
+                        self._tx_assignment_expire_queue.remove(dup_short_id)
+                        if self.node.opts.dump_removed_short_ids:
+                            self._removed_short_ids.add(dup_short_id)
 
-                # Only clear mapping and txhash_to_contents if last SID assignment
-                if len(short_ids) == 1 or remove_related_short_ids:
-                    for dup_short_id in short_ids:
-                        if dup_short_id != short_id:
-                            tx_stats.add_tx_by_hash_event(
-                                transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
-                                self.network_num, dup_short_id, reason="RemoveRelatedShortId"
-                            )
-                            if dup_short_id in self._short_id_to_tx_cache_key:
-                                del self._short_id_to_tx_cache_key[dup_short_id]
-                            self._tx_assignment_expire_queue.remove(dup_short_id)
-                            if self.node.opts.dump_removed_short_ids:
-                                self._removed_short_ids.add(dup_short_id)
+                if transaction_cache_key in self._tx_cache_key_to_contents:
+                    self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
+                    del self._tx_cache_key_to_contents[transaction_cache_key]
+                    self._tx_hash_to_time_removed[transaction_cache_key] = time.time()
 
-                    if transaction_cache_key in self._tx_cache_key_to_contents:
-                        self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
-                        del self._tx_cache_key_to_contents[transaction_cache_key]
-
-                    # Delete short ids from _tx_cache_key_to_short_ids after iterating short_ids.
-                    # Otherwise extension implementation disposes short_ids list after this line
-                    del self._tx_cache_key_to_short_ids[transaction_cache_key]
-                    if not remove_related_short_ids:  # TODO : remove this after creating AbstractTransactionService
-                        self._track_seen_transaction(transaction_cache_key)
-                else:
-                    short_ids.remove(short_id)
+                # Delete short ids from _tx_cache_key_to_short_ids after iterating short_ids.
+                # Otherwise extension implementation disposes short_ids list after this line
+                del self._tx_cache_key_to_short_ids[transaction_cache_key]
+                if not remove_related_short_ids:  # TODO : remove this after creating AbstractTransactionService
+                    self._track_seen_transaction(transaction_cache_key)
+            else:
+                short_ids.remove(short_id)
 
         self._tx_assignment_expire_queue.remove(short_id)
 
@@ -458,8 +524,21 @@ class TransactionService:
 
         return self.get_tracked_seen_block_count(), total_short_ids_seen_in_blocks
 
-    def get_snapshot(self) -> List[Sha256Hash]:
-        return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in self._tx_cache_key_to_contents]
+    def get_snapshot(self, duration: float = 0) -> List[Sha256Hash]:
+        if duration > 0:
+            snapshot_cache_keys = set()
+            snapshot_start_from = time.time() - duration
+            for short_id, timestamp in self._tx_assignment_expire_queue.queue.items():
+                if timestamp > snapshot_start_from:
+                    cache_key = self._short_id_to_tx_cache_key.get(short_id, None)
+                    if cache_key is not None:
+                        snapshot_cache_keys.add(cache_key)
+                    else:
+                        logger.debug("Short id: {} does not exist!", short_id)
+                        self._tx_assignment_expire_queue.remove(short_id)
+            return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in snapshot_cache_keys]
+        else:
+            return [self._tx_cache_key_to_hash(tx_cache_key) for tx_cache_key in self._tx_cache_key_to_contents]
 
     def get_tracked_blocks(self, skip_start: int = 0, skip_end: int = 0) -> Dict[Sha256Hash, int]:
         """
@@ -492,7 +571,12 @@ class TransactionService:
         """
         logger.debug("Expiring old short id assignments. Total entries: {}",
                      len(self._tx_assignment_expire_queue))
-        self._tx_assignment_expire_queue.remove_expired(remove_callback=self.remove_transaction_by_short_id)
+        self._tx_assignment_expire_queue.remove_expired(
+            remove_callback=self.remove_transaction_by_short_id,
+            limit=constants.MAX_EXPIRED_TXS_TO_REMOVE,
+            force=True,
+            removal_reason=TxRemovalReason.EXPIRATION
+        )
         logger.debug("Finished cleaning up short ids. Entries remaining: {}",
                      len(self._tx_assignment_expire_queue))
         if len(self._tx_assignment_expire_queue) > 0:
@@ -521,7 +605,8 @@ class TransactionService:
             _, final_short_ids = self._short_ids_seen_in_block.popitem(last=False)
 
             for short_id in final_short_ids:
-                self.remove_transaction_by_short_id(short_id, remove_related_short_ids=True)
+                self.remove_transaction_by_short_id(short_id, remove_related_short_ids=True, force=True,
+                                                    removal_reason=TxRemovalReason.BLOCK_CLEANUP)
 
         logger_memory_cleanup.statistics(
             {
@@ -653,8 +738,20 @@ class TransactionService:
             self.network_num,
             self._removed_short_ids,
             "removed_short_ids",
-            self.get_collection_mem_stats(self._removed_short_ids),
+            self.get_collection_mem_stats(self._removed_short_ids, len(self._removed_short_ids) * constants.SID_LEN),
             object_item_count=len(self._removed_short_ids),
+            object_type=memory_utils.ObjectType.BASE,
+            size_type=size_type
+        )
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            self.network_num,
+            self._tx_hash_to_time_removed,
+            "tx_hash_to_time_removed",
+            self.get_collection_mem_stats(self._tx_hash_to_time_removed,
+                                          len(self._tx_hash_to_time_removed) * SHA256_HASH_LEN),
+            object_item_count=len(self._tx_hash_to_time_removed),
             object_type=memory_utils.ObjectType.BASE,
             size_type=size_type
         )
@@ -732,7 +829,8 @@ class TransactionService:
         removed_tx_count = 0
 
         while self._is_exceeding_memory_limit() and self._tx_assignment_expire_queue:
-            self._tx_assignment_expire_queue.remove_oldest(remove_callback=self.remove_transaction_by_short_id)
+            self._tx_assignment_expire_queue.remove_oldest(remove_callback=self.remove_transaction_by_short_id,
+                                                           removal_reason=TxRemovalReason.MEMORY_LIMIT)
             removed_tx_count += 1
         if self._is_exceeding_memory_limit() and not self._tx_assignment_expire_queue:
             logger.warning("Memory management failure. There appears to be a lack of short ids in the node."
@@ -756,6 +854,20 @@ class TransactionService:
                        self.network_num, self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT)
 
         return self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT
+
+    def _get_removed_transactions_history_expiration_time_s(self) -> int:
+        """
+        Returns configuration value of expiration time for transaction hashes removed from cache
+        """
+        for blockchain_network in self.node.opts.blockchain_networks:
+            if blockchain_network.network_num == self.network_num:
+                return blockchain_network.removed_transactions_history_expiration_s
+
+        logger.warning("Could not determine expiration time for transaction removed from cache for network number {}. "
+                       "Using default {}.",
+                       self.network_num, constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S)
+
+        return constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S
 
     def _get_tx_contents_memory_limit(self) -> int:
         """
@@ -832,6 +944,7 @@ class TransactionService:
         self._short_ids_seen_in_block.clear()
         self._total_tx_contents_size = 0
 
+    # TODO: remove this unused function
     def _log_transaction_service_histogram(self):
         """
         logs a histogram of the tracked transactions age,
@@ -859,3 +972,43 @@ class TransactionService:
         )
         return constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S
 
+    def _cleanup_removed_transactions_history(self):
+        """
+        Removes expired items from the queue
+        :param current_time: time to use as current time for expiration
+        :param remove_callback: reference to a callback function that is being called when item is removed
+        :param args: arguments to pass into the callback method
+        :param kwargs: keyword args to pass into the callback method
+        """
+        logger.trace(
+            "Starting to cleanup transaction cache history for network "
+            "number: {}.",
+            self.network_num
+        )
+
+        current_time = time.time()
+        history_len_before = len(self._tx_hash_to_time_removed)
+
+        if self._tx_hash_to_time_removed:
+
+            oldest_tx = next(iter(self._tx_hash_to_time_removed))
+
+            while self._tx_hash_to_time_removed and \
+                    current_time - self._tx_hash_to_time_removed[oldest_tx] > self._removed_txs_hashes_expiration_time_s:
+
+                del self._tx_hash_to_time_removed[oldest_tx]
+
+                if not self._tx_hash_to_time_removed:
+                    break
+
+                oldest_tx = next(iter(self._tx_hash_to_time_removed))
+
+        history_len_after = len(self._tx_hash_to_time_removed)
+        logger.trace(
+            "Finished cleanup transaction cache history. Size before: {}. "
+            "Size after: {}.",
+            history_len_before,
+            history_len_after
+        )
+
+        return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S

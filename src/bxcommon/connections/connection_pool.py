@@ -21,7 +21,7 @@ class ConnectionPool:
     by_fileno: List[Optional[AbstractConnection]]
     by_ipport: Dict[Tuple[str, int], AbstractConnection]
     by_connection_type: Dict[ConnectionType, Set[AbstractConnection]]
-    by_node_id: Dict[str, Set[AbstractConnection]]
+    by_node_id: Dict[str, AbstractConnection]
     len_fileno: int
     count_conn_by_ip: Dict[str, int]
     num_peer_conn: int
@@ -30,7 +30,7 @@ class ConnectionPool:
         self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO
         self.by_ipport = {}
         self.by_connection_type = defaultdict(set)
-        self.by_node_id = defaultdict(set)
+        self.by_node_id = {}
         self.len_fileno = ConnectionPool.INITIAL_FILENO
         self.count_conn_by_ip = defaultdict(lambda: 0)
         self.num_peer_conn = 0
@@ -67,14 +67,15 @@ class ConnectionPool:
     def update_connection_type(self, conn: AbstractConnection, connection_type: ConnectionType):
         self.delete(conn)
         conn.CONNECTION_TYPE = connection_type
-        self.add(conn.fileno, conn.peer_ip, conn.peer_port, conn)
+        self.add(conn.file_no, conn.peer_ip, conn.peer_port, conn)
         self.index_conn_node_id(conn.peer_id, conn)
 
     def index_conn_node_id(self, node_id: str, conn: AbstractConnection) -> None:
-        if node_id:
-            self.by_node_id[node_id].add(conn)
+        self.by_node_id[node_id] = conn
 
-    def has_connection(self, ip, port):
+    def has_connection(self, ip: str, port: int, node_id: Optional[str] = None):
+        if node_id is not None and node_id in self.by_node_id:
+            return True
         return (ip, port) in self.by_ipport
 
     def get_by_connection_type(self, connection_type: ConnectionType) -> Set[AbstractConnection]:
@@ -106,7 +107,7 @@ class ConnectionPool:
             return self.count_conn_by_ip[ip]
         return 0
 
-    def get_by_node_id(self, node_id: str) -> Set[AbstractConnection]:
+    def get_by_node_id(self, node_id: str) -> AbstractConnection:
         """
         Returns list of connections where the peer_id matches the node id param
 
@@ -123,17 +124,19 @@ class ConnectionPool:
         Delete connection from connection pool.
         """
         # Remove conn from the dictionaries
-        self.by_fileno[conn.fileno] = None
+        self.by_fileno[conn.file_no] = None
 
         # Connection might be replaced with new connection
         # Only delete from byipport if connection has the matching fileno
         ipport = (conn.peer_ip, conn.peer_port)
-        if ipport in self.by_ipport and self.by_ipport[ipport].fileno == conn.fileno:
+        if ipport in self.by_ipport and self.by_ipport[ipport].file_no == conn.file_no:
             del self.by_ipport[(conn.peer_ip, conn.peer_port)]
 
-        for connection_type in self.by_connection_type:
-            if connection_type & conn.CONNECTION_TYPE:
-                self.by_connection_type[connection_type].discard(conn)
+        if conn.CONNECTION_TYPE in self.by_connection_type:
+            if len(self.by_connection_type[conn.CONNECTION_TYPE]) == 1:
+                del self.by_connection_type[conn.CONNECTION_TYPE]
+            else:
+                self.by_connection_type[conn.CONNECTION_TYPE].discard(conn)
 
         # Decrement the count- if it's 0, we delete the key.
         if self.count_conn_by_ip[conn.peer_ip] == 1:
@@ -142,10 +145,7 @@ class ConnectionPool:
             self.count_conn_by_ip[conn.peer_ip] -= 1
 
         if conn.peer_id and conn.peer_id in self.by_node_id:
-            if len(self.get_by_node_id(conn.peer_id)) == 1:
-                del self.by_node_id[conn.peer_id]
-            else:
-                self.by_node_id[conn.peer_id].discard(conn)
+            del self.by_node_id[conn.peer_id]
 
     def delete_by_fileno(self, fileno):
         """
@@ -165,6 +165,9 @@ class ConnectionPool:
         for fileno, conn in enumerate(self.by_fileno):
             if conn is not None:
                 yield fileno, conn
+
+    def __repr__(self) -> str:
+        return repr(list(self.by_ipport.values()))
 
     def __iter__(self):
         """

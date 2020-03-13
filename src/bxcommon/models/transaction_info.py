@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Union, List
+from typing import List, NamedTuple, Optional, Union
 
 from bxcommon.utils.object_hash import Sha256Hash
 

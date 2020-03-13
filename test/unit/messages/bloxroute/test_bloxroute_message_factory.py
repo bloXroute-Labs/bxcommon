@@ -1,26 +1,39 @@
 import random
-
-from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
-from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
+import time
+from typing import TypeVar, Type
+from datetime import datetime
 
 from bxcommon import constants
-from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, NODE_ID_SIZE_IN_BYTES, \
-    BX_HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN
+from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, \
+    NODE_ID_SIZE_IN_BYTES, \
+    BX_HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN, QUOTA_FLAG_LEN
 from bxcommon.exceptions import PayloadLenError
+from bxcommon.messages.bloxroute.abstract_broadcast_message import \
+    AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
-from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
-from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
-from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
-from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
+from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
+from bxcommon.messages.bloxroute.block_confirmation_message import \
+    BlockConfirmationMessage
+from bxcommon.messages.bloxroute.block_holding_message import \
+    BlockHoldingMessage
+from bxcommon.messages.bloxroute.bloxroute_message_factory import \
+    bloxroute_message_factory
+from bxcommon.messages.bloxroute.bloxroute_version_manager import \
+    bloxroute_version_manager
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
+from bxcommon.messages.bloxroute.notification_message import \
+    NotificationMessage, NotificationCode
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
+from bxcommon.messages.bloxroute.transaction_cleanup_message import \
+    TransactionCleanupMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.version_message import VersionMessage
+from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.helpers import create_input_buffer_with_bytes
@@ -28,6 +41,8 @@ from bxcommon.test_utils.message_factory_test_case import MessageFactoryTestCase
 from bxcommon.utils import crypto
 from bxcommon.utils.crypto import SHA256_HASH_LEN, KEY_SIZE
 from bxcommon.utils.object_hash import Sha256Hash, NULL_SHA256_HASH
+
+T = TypeVar("T")
 
 
 class BloxrouteMessageFactory(MessageFactoryTestCase):
@@ -38,7 +53,11 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
     def get_message_factory(self):
         return bloxroute_message_factory
 
-    def create_message_successfully(self, message, message_type):
+    def create_message_successfully(
+        self,
+        message: T,
+        message_type: Type[T],
+    ) -> T:
         # check control flag
         result = super().create_message_successfully(message, message_type)
         self.assertEqual(1, result.rawbytes()[-1])
@@ -71,7 +90,9 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.get_message_preview_successfully(TxMessage(self.HASH, 1, self.NODE_ID, 12, blob),
                                               TxMessage.MESSAGE_TYPE,
                                               SHA256_HASH_LEN + NETWORK_NUM_LEN + UL_INT_SIZE_IN_BYTES +
-                                              constants.NODE_ID_SIZE_IN_BYTES + len(blob) + constants.CONTROL_FLAGS_LEN)
+                                              QUOTA_FLAG_LEN + constants.NODE_ID_SIZE_IN_BYTES + len(blob) +
+                                              constants.UL_INT_SIZE_IN_BYTES +
+                                              constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(KeyMessage(self.HASH, 1, self.NODE_ID,
                                                          bytearray(1 for _ in range(KEY_SIZE))),
                                               KeyMessage.MESSAGE_TYPE,
@@ -93,6 +114,11 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                            sum(UL_INT_SIZE_IN_BYTES + SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES +
                                len(tx.contents) for tx in txs) + constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(TxsMessage(txs), TxsMessage.MESSAGE_TYPE, expected_length)
+
+        expected_length = (2 * constants.DOUBLE_SIZE_IN_BYTES) + (4 * constants.UL_SHORT_SIZE_IN_BYTES) + \
+                          constants.CONTROL_FLAGS_LEN
+        self.get_message_preview_successfully(BdnPerformanceStatsMessage(time.time(), time.time(), 100, 200, 300, 400),
+                                              BdnPerformanceStatsMessage.MESSAGE_TYPE, expected_length)
 
     def test_message_preview_incomplete(self):
         message = HelloMessage(protocol_version=1, network_num=2)
@@ -264,6 +290,96 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(self.NETWORK_NUM, rebuilt_msg.network_num())
         self.assertEqual(self.NODE_ID, rebuilt_msg.source_id())
         self.assertNotEqual(NULL_SHA256_HASH, rebuilt_msg.message_hash())
-        print(rebuilt_msg.message_hash())
 
+    def test_tx_bx_message(self):
+        sid = 12
+        tx_val = bytes(1 for _ in range(5))
+        test_network_num = 4
 
+        timestamp = time.time() - 4
+        expected_tx_message = TxMessage(
+            self.HASH,
+            network_num=test_network_num,
+            source_id=self.NODE_ID,
+            short_id=sid,
+            tx_val=tx_val,
+            quota_type=QuotaType.PAID_DAILY_QUOTA,
+            timestamp=timestamp
+        )
+
+        tx_message = self.create_message_successfully(
+            expected_tx_message,
+            TxMessage)
+        self.assertEqual(self.HASH, tx_message.tx_hash())
+        self.assertEqual(self.NODE_ID, tx_message.source_id())
+        self.assertEqual(sid, tx_message.short_id())
+        self.assertEqual(test_network_num, tx_message.network_num())
+        self.assertEqual(tx_val, tx_message.tx_val())
+        self.assertEqual(QuotaType.PAID_DAILY_QUOTA, tx_message.quota_type())
+        self.assertEqual(int(timestamp), tx_message.timestamp())
+
+        new_timestamp = time.time() - 2
+        expected_tx_message.set_timestamp(new_timestamp)
+        self.assertEqual(int(new_timestamp), expected_tx_message.timestamp())
+
+        regenerated_tx_message = self.create_message_successfully(
+            expected_tx_message,
+            TxMessage
+        )
+        self.assertEqual(int(new_timestamp), regenerated_tx_message.timestamp())
+
+    def test_tx_bx_message_setting_attributes(self):
+        contents = helpers.generate_bytes(250)
+        timestamp = time.time()
+        tx_message = TxMessage(
+            self.HASH,
+            network_num=1,
+            source_id=self.NODE_ID,
+            short_id=2,
+            tx_val=contents,
+            quota_type=QuotaType.PAID_DAILY_QUOTA,
+            timestamp=timestamp
+        )
+        tx_message.clear_protected_fields()
+
+        rebuilt_tx_message = self.create_message_successfully(
+            tx_message,
+            TxMessage
+        )
+        self.assertEqual(constants.NULL_TX_SID, rebuilt_tx_message.short_id())
+        self.assertEqual(constants.NULL_TX_TIMESTAMP, rebuilt_tx_message.timestamp())
+
+    def test_notification_message(self):
+        notification_code = NotificationCode.QUOTA_DEPLETED
+        raw_message = bytes(1 for _ in range(5)).decode()
+
+        notification_message = self.create_message_successfully(
+            NotificationMessage(notification_code, raw_message),
+            NotificationMessage)
+
+        self.assertEqual(notification_code, notification_message.notification_code())
+        self.assertEqual(raw_message, notification_message.raw_message())
+
+    def test_bdn_performance_stats_message(self):
+        start_time = time.time()
+        new_blocks_received_from_blockchain_node = 100
+        new_blocks_received_from_bdn = 200
+        new_tx_received_from_blockchain_node = 300
+        new_tx_received_from_bdn = 400
+        end_time = time.time()
+
+        bdn_stats_msg = \
+            self.create_message_successfully(BdnPerformanceStatsMessage(start_time,
+                                                                        end_time,
+                                                                        new_blocks_received_from_blockchain_node,
+                                                                        new_blocks_received_from_bdn,
+                                                                        new_tx_received_from_blockchain_node,
+                                                                        new_tx_received_from_bdn),
+                                             BdnPerformanceStatsMessage)
+
+        self.assertEqual(datetime.fromtimestamp(start_time), bdn_stats_msg.interval_start_time())
+        self.assertEqual(datetime.fromtimestamp(end_time), bdn_stats_msg.interval_end_time())
+        self.assertEqual(new_blocks_received_from_blockchain_node, bdn_stats_msg.new_blocks_from_blockchain_node())
+        self.assertEqual(new_blocks_received_from_bdn, bdn_stats_msg.new_blocks_from_bdn())
+        self.assertEqual(new_tx_received_from_blockchain_node, bdn_stats_msg.new_tx_from_blockchain_node())
+        self.assertEqual(new_tx_received_from_bdn, bdn_stats_msg.new_tx_from_bdn())

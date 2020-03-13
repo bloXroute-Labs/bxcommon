@@ -1,14 +1,11 @@
-"""
-NOTE: A similar model loader exists in BXAPI - if making changes, check both for consistency
-"""
-
 # pyre-ignore-all-errors
 # This file does type manipulation that type checkers will not understand.
 
 import json
-import inspect
 from enum import Flag
-from typing import Dict, Type, TypeVar, Any, List, Optional, Union
+from typing import Dict, Type, TypeVar, Any, List, Optional, Union, Set
+
+import dataclasses
 
 from bxutils import logging
 
@@ -17,62 +14,48 @@ T = TypeVar("T")
 _TYPE_HANDLER_MAPPING = {}
 
 
-# TODO: Delete this once the bxcommon tests are updated. Not sure why they're failing.
-def load(model_class, model_params):
-    """
-    NOTE: A similar model loader exists in BXAPI - if making changes, check both for consistency
-
-    Ensures models are forward compatible - if attributes are added to models in future versions and these models saved
-    to Redis, this function ensures that only the attributes that the current version knows about are loaded
-    :param model_class: Model class to load into
-    :param model_params: Attributes to create the model with
-    :return: An instance of the passed in class instantiated with the given params
-    """
-    return model_class(**{key: model_params[key] for key in model_class().__dict__ if key in model_params})
-
-
 def load_model_from_json(model_class: Type[T], model_params: str) -> T:
-    return load_model(model_class, json.loads(model_params))
+    try:
+        model_dict = json.loads(model_params)
+        return load_model(model_class, model_dict)
+    except Exception:
+        logger.error("Failed when tried to load str to dict. model class: {} model params: {}", model_class,
+                     model_params)
+        raise
 
 
 def load_model(model_class: Type[T], model_params: Dict[str, Any]) -> T:
     """
     Ensures models are forward compatible - if attributes are added to models in future versions and these models saved
     to Redis, this function ensures that only the attributes that the current version knows about are loaded
-
-    :param model_class: Class of the model to load_model into
-    :param model_params: Attributes from the retrieved model to load_model
+    :param model_class: Class of the model to load into
+    :param model_params: Attributes from the retrieved model to load
     :return: instance of model class
     """
-    if hasattr(model_class, "__annotations__"):
+    try:
         attributes = {}
-        for attribute_name, attribute_type in model_class.__annotations__.items():
-            if attribute_name in model_params:
-                attributes[attribute_name] = _load_attribute(attribute_type, model_params[attribute_name])
+        for attribute in dataclasses.fields(model_class):
+            if attribute.name in model_params:
+                attributes[attribute.name] = _load_attribute(attribute.type, model_params[attribute.name])
         return model_class(**attributes)
-    else:
-        return load(model_class, model_params)
+    except Exception as e:
+        raise TypeError("Could not load model of type {} from data: {}".format(model_class, model_params)) from e
 
 
 def _load_attribute(attribute_type: Type[T], attribute_value: Any, cast_basic_values: bool = True) -> Optional[T]:
     """
     Loads an attribute and attempts to cast it to the correct class type.
-    For data classes, recurse and attempt to load_model the original model.
+    For data classes, recurse and attempt to load the original model.
     For Any types, None values, or Generic types, return the provided value as is.
     For built in `typing` types, special handling is generally required. List/Dict/... have been implemented for now.
+    For Flag enum types, use the Flag name for loading / writing.
     For basic types, construct the objects normally.
-
-    :param attribute_type: class of the attribute to load_model
+    :param attribute_type: class of the attribute to load
     :param attribute_value: attribute value to parse
     :param cast_basic_values: if to cast between str, int, etc.
     :return: instance of attribute value
     """
-    annotations = {}
-    try:
-        annotations = inspect.getfullargspec(attribute_type).annotations
-    except TypeError:
-        pass
-    if hasattr(attribute_type, "__annotations__") or annotations:
+    if hasattr(attribute_type, "__annotations__"):
         return load_model(attribute_type, attribute_value)
     elif attribute_type == Any or attribute_value is None or attribute_type.__class__ == TypeVar:
         return attribute_value
@@ -83,7 +66,7 @@ def _load_attribute(attribute_type: Type[T], attribute_value: Any, cast_basic_va
             raise NotImplementedError("Model loader is not capable of loading a {} type. Please implement a handler."
                                       .format(attribute_type.__origin__))
     elif issubclass(attribute_type, Flag):
-        return attribute_type[attribute_value]
+        return attribute_type[str(attribute_value)]
     else:
         if cast_basic_values:
             return attribute_type(attribute_value)
@@ -102,6 +85,17 @@ def _load_list(list_type: Type[T], list_value: Any) -> List:
 
     list_param = list_type.__args__[0]
     return [_load_attribute(list_param, list_entry) for list_entry in list_value]
+
+
+def _load_set(set_type: Type[T], set_value: Any) -> Set:
+    if isinstance(set_value, dict):
+        raise ValueError("Forcibly raising when trying to cast Dict to Set.")
+
+    if len(set_type.__args__) != 1:
+        raise ValueError("List type annotation requires 1 or 0 args.")
+
+    set_param = set_type.__args__[0]
+    return {_load_attribute(set_param, set_entry) for set_entry in set_value}
 
 
 def _load_dict(dict_type: Type[T], dict_value: Any) -> Dict:
@@ -143,6 +137,8 @@ def _load_union(union_type: Type[T], union_value: Any) -> Any:
 _TYPE_HANDLER_MAPPING = {
     list: _load_list,
     List: _load_list,
+    set: _load_set,
+    Set: _load_set,
     dict: _load_dict,
     Dict: _load_dict,
     Optional: _load_optional,

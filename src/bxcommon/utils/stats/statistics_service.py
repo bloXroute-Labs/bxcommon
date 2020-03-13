@@ -13,7 +13,7 @@ from bxcommon import constants
 
 
 logger = logging.get_logger(__name__)
-
+task_duration_logger = logging.get_logger(LogRecordType.TaskDuration, __name__)
 
 # TODO replace with dataclass
 class StatsIntervalData(object):
@@ -124,8 +124,8 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
         with self._lock:
             alive = self._alive
         while sleep_time > 0 and alive:
-            time.sleep(constants.THREADED_STAT_SLEEP_INTERVAL)
-            sleep_time -= constants.THREADED_STAT_SLEEP_INTERVAL
+            time.sleep(constants.THREADED_STATS_SLEEP_INTERVAL_S)
+            sleep_time -= constants.THREADED_STATS_SLEEP_INTERVAL_S
             with self._lock:
                 alive = self._alive
         else:
@@ -138,6 +138,7 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
         """
         alive = self.sleep_and_check_alive(self.interval)
         while alive:
+            start_date_time = datetime.utcnow()
             start_time = time.time()
             try:
                 record_fn()
@@ -147,7 +148,14 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
                 runtime = 0
             else:
                 runtime = time.time() - start_time
-                logger.debug("Recording {} stats took {} seconds".format(self.name, runtime))
-
+                task_duration_logger.statistics(
+                    {
+                        "type": "TaskDuration",
+                        "start_date_time": start_date_time,
+                        "task": self.name,
+                        "duration": runtime,
+                        "node_id": self.node.opts.node_id
+                    }
+                )
             sleep_time = self.interval - runtime
             alive = self.sleep_and_check_alive(sleep_time)

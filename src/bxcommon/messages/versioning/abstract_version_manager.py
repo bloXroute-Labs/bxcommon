@@ -5,9 +5,9 @@ from bxutils import logging
 
 from bxcommon import constants
 from bxcommon.constants import VERSION_NUM_LEN
-from bxcommon.messages.bloxroute.v4.version_message_v4 import VersionMessageV4
 from bxcommon.messages.bloxroute.version_message import VersionMessage
 from bxcommon.utils.buffers.input_buffer import InputBuffer
+from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
 
 logger = logging.get_logger(__name__)
 
@@ -218,19 +218,31 @@ class AbstractVersionManager:
                             .format(type(input_buffer)))
 
         if input_buffer.length < constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF + constants.VERSION_NUM_LEN:
-            return None
-
+            return self.CURRENT_PROTOCOL_VERSION
+        
         header_buf = input_buffer.peek_message(VersionMessage.HEADER_LENGTH)
 
         if header_buf[:constants.STARTING_SEQUENCE_BYTES_LEN] == constants.STARTING_SEQUENCE_BYTES:
             command, payload_len = VersionMessage.unpack(header_buf)
             header_len = VersionMessage.HEADER_LENGTH
         else:
-            command, payload_len = VersionMessageV4.unpack(header_buf)
-            header_len = VersionMessageV4.HEADER_LENGTH
+            command = bytearray(header_buf[:constants.MSG_TYPE_LEN])
+            payload_len = constants.MSG_TYPE_LEN
 
         if command != self.version_message_command:
-            logger.debug("Received a nonversion hello message of type {}. Ignoring and closing connection.", command)
+            if constants.HTTP_MESSAGE in command:
+                raise NonVersionMessageError(
+                    msg="Instead of a version hello message, we received an HTTP request: {} with payload length: {} "
+                    "Ignoring and closing connection. "
+                    .format(header_buf, payload_len),
+                    is_known=True)
+            elif command in constants.BITCOIN_MESSAGES:
+                raise NonVersionMessageError(
+                    msg="Received some kind of bitcoin peering message: {}. "
+                        "Ignoring and closing connection.".format(command),
+                    is_known=True)
+            logger.debug("Received message of type {} instead of hello message. Use current version of protocol {}.",
+                         command, self.CURRENT_PROTOCOL_VERSION)
             return self.CURRENT_PROTOCOL_VERSION
 
         if payload_len < self.VERSION_MESSAGE_MAIN_LENGTH:

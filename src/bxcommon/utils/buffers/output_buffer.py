@@ -65,7 +65,7 @@ class OutputBuffer(SpecialMemoryProperties):
         if not self.output_msgs:
             return OutputBuffer.EMPTY
 
-        return self.output_msgs[0][self.index:]
+        return memoryview(self.output_msgs[0])[self.index:]
 
     def advance_buffer(self, num_bytes: int):
         if num_bytes < 0:

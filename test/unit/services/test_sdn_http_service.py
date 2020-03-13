@@ -1,8 +1,8 @@
 import unittest
 
-from mock import mock
+import mock
 
-from bxcommon.connections.node_type import NodeType
+from bxcommon.models.node_type import NodeType
 from bxcommon.services import sdn_http_service
 from bxcommon.test_utils import helpers
 
@@ -14,7 +14,7 @@ class TestSdnHttpService(unittest.TestCase):
                 sdn_http_service.logger, "debug"):
             mock_node = {
                 "node_id": "aaa",
-                "node_type": NodeType.RELAY,
+                "node_type": str(NodeType.RELAY),
                 "external_ip": "foo",
                 "external_port": 123,
                 "garbage_attr": "garbage"

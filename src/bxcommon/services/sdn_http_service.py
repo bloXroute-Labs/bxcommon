@@ -1,4 +1,5 @@
 import time
+from ssl import SSLContext
 from typing import List, Optional, Dict, Any, cast
 
 from bxcommon.constants import SdnRoutes
@@ -58,13 +59,14 @@ def fetch_gateway_peers(node_id: str) -> Optional[List[OutboundPeerModel]]:
     return _fetch_peers(node_url, node_id)
 
 
-def fetch_remote_blockchain_peer(network_num: int) -> Optional[OutboundPeerModel]:
-    node_url = SdnRoutes.node_remote_blockchain.format(network_num)
-    peers = _fetch_peers(node_url)
-    if len(peers) != 1:
+def fetch_remote_blockchain_peer(node_id: str) -> Optional[OutboundPeerModel]:
+    node_url = SdnRoutes.node_remote_blockchain.format(node_id)
+    peers = _fetch_peers(node_url, node_id)
+    if len(peers) < 1:
         logger.warning("BDN did not send the expected number of remote blockchain peers.")
         return None
     else:
+        logger.debug("Ordered potential remote blockchain peers: {}", peers)
         return peers[0]
 
 
@@ -93,23 +95,19 @@ def fetch_blockchain_networks() -> List[BlockchainNetworkModel]:
     return blockchain_networks
 
 
+def submit_sid_space_switch(node_id: str) -> None:
+    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.SID_SPACE_SWITCH))
+
+
 def submit_sid_space_full_event(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.SID_SPACE_FULL))
-
-
-def submit_node_online_event(node_id: str) -> None:
-    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.ONLINE))
-
-
-def submit_node_offline_event(node_id: str) -> None:
-    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.OFFLINE))
 
 
 def submit_peer_connection_error_event(node_id: str, peer_ip: str, peer_port: int):
     submit_peer_connection_event(NodeEventType.PEER_CONN_ERR, node_id, peer_ip, peer_port)
 
 
-def submit_peer_connection_event(event_type: str, node_id: str, peer_ip: str, peer_port: int):
+def submit_peer_connection_event(event_type: NodeEventType, node_id: str, peer_ip: str, peer_port: int):
     submit_node_event(
         NodeEventModel(node_id=node_id, event_type=event_type, peer_ip=peer_ip, peer_port=peer_port))
 
@@ -118,15 +116,8 @@ def submit_gateway_inbound_connection(node_id: str, peer_id: str):
     http_service.post_json(SdnRoutes.gateway_inbound_connection.format(node_id), peer_id)
 
 
-def submit_sync_txs_event(node_id: str):
-    # TODO: Send these events over socket connection instead of HTTP
+def submit_tx_synced_event(node_id: str):
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_FULLY_SYNCED))
-
-
-def submit_node_txs_sync_in_network(node_id: str, networks: List[int]):
-    # TODO: Send these events over socket connection instead of HTTP
-    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_SYNCED_IN_NETWORK,
-                                     tx_sync_networks=networks))
 
 
 def submit_notify_online_event(node_id: str):
@@ -161,4 +152,18 @@ def register_node(node_model: NodeModel) -> NodeModel:
     if not node_config:
         raise EnvironmentError("Unable to reach SDN and register this node. Please check connection.")
 
-    return model_loader.load_model(NodeModel, node_config)
+    registered_node_model = model_loader.load_model(NodeModel, node_config)
+
+    if not registered_node_model.source_version:
+        raise ValueError(f"Source version {node_model.source_version} is no longer supported. Please upgrade to the "
+                         f"latest version")
+
+    if registered_node_model.blockchain_network_num == -1:
+        raise ValueError(f"The blockchain network number {node_model.blockchain_network_num} does not exists. Please "
+                         f"check the blockchain network startup parameters")
+
+    return registered_node_model
+
+
+def reset_pool(ssl_context: SSLContext):
+    http_service.update_http_ssl_context(ssl_context)

@@ -1,7 +1,8 @@
 # An enum that stores the different log levels
 import os
 from enum import Enum
-from logging import Formatter
+from typing import Dict, Any
+from logging import Formatter, LogRecord
 import json
 from datetime import datetime
 
@@ -58,7 +59,10 @@ class AbstractFormatter(Formatter):
 
 class JSONFormatter(AbstractFormatter):
 
-    def format(self, record) -> str:
+    def format(self, record):  # pyre-ignore
+        return json.dumps(self._format_json(record), cls=EnhancedJSONEncoder)
+
+    def _format_json(self, record: LogRecord) -> Dict[Any, Any]:
         log_record = {k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS}
         if "timestamp" not in log_record:
             log_record["timestamp"] = datetime.utcnow()
@@ -73,7 +77,13 @@ class JSONFormatter(AbstractFormatter):
             log_record["exc_info"] = self.formatException(record.exc_info)
         if self.instance != self.NO_INSTANCE:
             log_record["instance"] = self.instance
-        return json.dumps(log_record, cls=EnhancedJSONEncoder)
+        return log_record
+
+
+class FluentJSONFormatter(JSONFormatter):
+    # TODO: check if there is a correct way to annotate this
+    def format(self, record):
+        return EnhancedJSONEncoder().as_dict(self._format_json(record))
 
 
 class CustomFormatter(AbstractFormatter):
@@ -82,20 +92,20 @@ class CustomFormatter(AbstractFormatter):
     def format(self, record) -> str:
         log_record = {k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS}
         if record.args and not hasattr(record.msg, "__dict__"):
-            log_record["msg"] = self._formatter(record.msg, record.args)
-        else:
-            log_record["msg"] = record.msg
+            record.msg = self._formatter(record.msg, record.args)
+            record.args = ()
 
         record.msg = "{}{}".format(self.encoder.encode(record.msg),
                                    ",".join({" {}={}".format(k, self.encoder.encode(v)) for (k, v)
                                              in log_record.items() if k != "msg"}))
-        record.instance = self.instance
+        if self.instance != self.NO_INSTANCE:
+            record.instance = self.instance
         return super(CustomFormatter, self).format(record)
 
     def formatTime(self, record, datefmt=None) -> str:
         ct = datetime.fromtimestamp(record.created)
         if datefmt:
-            s = ct.strftime(datefmt)
+            s = ct.astimezone().strftime(datefmt)
         else:
             s = ct.isoformat()
         return s

@@ -1,71 +1,105 @@
-from requests import HTTPError, RequestException, Session
-from requests.adapters import Retry, HTTPAdapter
+import status
+import json
 from typing import Optional, Dict, Any, Union, List
+from urllib3 import Retry, HTTPResponse
+from urllib3.exceptions import HTTPError, MaxRetryError
+from urllib3.poolmanager import PoolManager
+from urllib3.util import parse_url
+from ssl import SSLContext
 
-from bxutils import logging
-
-from bxcommon import constants
 from bxcommon.utils import json_utils
+from bxutils import logging
+from bxcommon import constants
+
+# recursive types are not supported: https://github.com/python/typing/issues/182
+
+jsonT = Union[Dict[str, Any], List[Any]]
 
 logger = logging.get_logger(__name__)
 
-# recursive types are not supported: https://github.com/python/typing/issues/182
-jsonT = Union[Dict[str, Any], List[Any]]
+_url = constants.SDN_ROOT_URL
+_ssl_context: Optional[SSLContext] = None
+
+METHODS_WHITELIST = frozenset(
+    ["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST", "PATCH"]
+)
 
 
-_sdn_url = constants.SDN_ROOT_URL
-_http_adapter = HTTPAdapter(max_retries=Retry(
-    total=constants.HTTP_REQUEST_RETRIES_COUNT,
-    connect=constants.HTTP_REQUEST_RETRIES_COUNT,
-    read=constants.HTTP_REQUEST_RETRIES_COUNT,
-    redirect=constants.HTTP_REQUEST_RETRIES_COUNT,
-    backoff_factor=constants.HTTP_REQUEST_BACKOFF_FACTOR
-))
-_http = Session()
+def set_root_url(sdn_url: str, ssl_context: Optional[SSLContext] = None):
+    global _url
+    _url = sdn_url
+    update_http_ssl_context(ssl_context)
 
 
-def set_sdn_url(sdn_url: str):
-    global _sdn_url
-    _sdn_url = sdn_url
-    _http.mount(_sdn_url, adapter=_http_adapter)
+def update_http_ssl_context(ssl_context: Optional[SSLContext] = None):
+    global _ssl_context
+    _ssl_context = ssl_context
+
+
+def post_json(endpoint: str, payload=None) -> Optional[jsonT]:
+    return _http_request("POST", endpoint, body=json_utils.serialize(payload),
+                         headers=constants.HTTP_HEADERS)
+
+
+def patch_json(endpoint: str, payload=None) -> Optional[jsonT]:
+    return _http_request("PATCH", endpoint, body=json_utils.serialize(payload),
+                         headers=constants.HTTP_HEADERS)
+
+
+def delete_json(endpoint: str, payload=None) -> Optional[jsonT]:
+    return _http_request("DELETE", endpoint, body=json_utils.serialize(payload),
+                         headers=constants.HTTP_HEADERS)
+
+
+def get_json(endpoint: str) -> Optional[jsonT]:
+    return _http_request("GET", endpoint,
+                         headers=constants.HTTP_HEADERS)
 
 
 def build_url(endpoint: str) -> str:
     if not endpoint or not isinstance(endpoint, str):
         raise ValueError("Missing or invalid URL")
-    return _sdn_url + endpoint
+    return _url + endpoint
+
+
+def raise_for_status(res: HTTPResponse) -> None:
+    if status.is_client_error(res.status) or status.is_server_error(res.status):
+        raise HTTPError("{}:{}", res.status, res.reason)
 
 
 def _http_request(method: str, endpoint: str, **kwargs) -> Optional[jsonT]:
     url = build_url(endpoint)
+    parsed_url = parse_url(url)
+    pm_args = {
+        "num_pools": constants.HTTP_POOL_MANAGER_COUNT,
+        "host": parsed_url.host,
+        "port": parsed_url.port,
+        "retries": Retry(
+            connect=constants.HTTP_REQUEST_RETRIES_COUNT,
+            read=constants.HTTP_REQUEST_RETRIES_COUNT,
+            redirect=constants.HTTP_REQUEST_RETRIES_COUNT,
+            backoff_factor=constants.HTTP_REQUEST_BACKOFF_FACTOR,
+            method_whitelist=METHODS_WHITELIST
+        ),
+        "ssl_context": _ssl_context,
+    }
+    if _ssl_context is not None:
+        pm_args["assert_hostname"] = False
+    http_pool_manager: PoolManager = PoolManager(**pm_args)
     try:
         logger.trace("HTTP {0} to {1}", method, url)
-        response = _http.request(method=method, url=url, timeout=constants.HTTP_REQUEST_TIMEOUT, **kwargs)
-        response.raise_for_status()
-    except HTTPError as e:
-        logger.error("{0} to {1} returned error: {2}", method, url, e)
+        response = http_pool_manager.request(
+            method=method,
+            url=url,
+            timeout=constants.HTTP_REQUEST_TIMEOUT,
+            **kwargs
+        )
+        raise_for_status(response)
+    except MaxRetryError as e:
+        logger.info("{} to {} failed due to: {}.", method, url, e)
         return None
-    except RequestException as e:
-        logger.error("{0} to {1} failed with error: {2}", method, url, e)
+    except Exception as e:
+        logger.error("{} to {} returned error: {}.", method, url, e)
         return None
 
-    return response.json()
-
-
-def get_json(endpoint: str) -> Optional[jsonT]:
-    return _http_request("GET", endpoint)
-
-
-def post_json(endpoint: str, payload=None) -> Optional[jsonT]:
-    return _http_request("POST", endpoint, data=json_utils.serialize(payload),
-                         headers={"Content-Type": "application/json"})
-
-
-def patch_json(endpoint: str, payload=None) -> Optional[jsonT]:
-    return _http_request("PATCH", endpoint, data=json_utils.serialize(payload),
-                         headers={"Content-Type": "application/json"})
-
-
-def delete_json(endpoint: str, payload=None) -> Optional[jsonT]:
-    return _http_request("DELETE", endpoint, data=json_utils.serialize(payload),
-                         headers={"Content-Type": "application/json"})
+    return json.loads(response.data)

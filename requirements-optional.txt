@@ -1,0 +1,2 @@
+fluent_logger==0.9.3
+pyinstrument==3.1.0

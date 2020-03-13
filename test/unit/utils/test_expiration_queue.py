@@ -101,5 +101,21 @@ class ExpirationQueueTests(unittest.TestCase):
         self.assertEqual(int(time_1_added), int(self.queue.get_oldest_item_timestamp()))
         self.assertEqual(item1, self.queue.get_oldest())
 
+    def test_remove_oldest_items_with_limits(self):
+        time.time = MagicMock(return_value=time.time())
+        for i in range(20):
+            self.queue.add(i)
+            time.time = MagicMock(return_value=time.time() + 5)
+
+        self.assertEqual(20, len(self.queue))
+
+        time.time = MagicMock(return_value=time.time() + self.time_to_live)
+        self.queue.remove_expired(limit=5)
+
+        self.assertEqual(15, len(self.queue))
+
+        self.queue.remove_expired()
+        self.assertEqual(0, len(self.queue))
+
     def _remove_item(self, item):
         self.removed_items.append(item)

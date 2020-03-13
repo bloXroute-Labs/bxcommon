@@ -23,7 +23,7 @@ class MemoryStatsService(ThreadedStatisticsService):
     def __init__(self, interval=0):
         self.sizer_obj = Sizer()
         super(MemoryStatsService, self).__init__("MemoryStats", interval=interval, look_back=5, reset=False,
-                                                 logger=logging.get_logger(LogRecordType.Memory))
+                                                 logger=logging.get_logger(LogRecordType.Memory, __name__))
 
     def set_node(self, node):
         super(MemoryStatsService, self).set_node(node)
@@ -31,12 +31,16 @@ class MemoryStatsService(ThreadedStatisticsService):
         self.sizer_obj = Sizer(node)
 
     def add_mem_stats(self, class_name, network_num, obj, obj_name, obj_mem_info, object_type=None, size_type=None, object_item_count=None):
-        mem_stats = self.interval_data.class_mem_stats[class_name]
-        mem_stats.timestamp = datetime.utcnow()
-
         # If the object being analyzed doesn't have a length property
         if object_item_count is None:
             object_item_count = len(obj) if hasattr(obj, "__len__") else 0
+
+        if obj_mem_info.size < constants.MEM_STATS_OBJECT_SIZE_THRESHOLD and \
+                object_item_count < constants.MEM_STATS_OBJECT_COUNT_THRESHOLD:
+            return
+
+        mem_stats = self.interval_data.class_mem_stats[class_name]
+        mem_stats.timestamp = datetime.utcnow()
 
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_item_count = object_item_count
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_size = obj_mem_info.size

@@ -1,13 +1,14 @@
 import struct
-from typing import List, Union
-from collections import namedtuple
+from typing import List, Union, NamedTuple
 
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES
 
 
-BlockShortIds = namedtuple("BlockShortIds", ["block_hash", "short_ids"])
+class BlockShortIds(NamedTuple):
+    block_hash: Sha256Hash
+    short_ids: List[int]
 
 
 def get_serialized_blocks_short_ids_bytes_len(blocks_short_ids: List[BlockShortIds]) -> int:
@@ -34,7 +35,7 @@ def serialize_blocks_short_ids_into_bytes(block_short_ids: List[BlockShortIds]) 
     buffer = bytearray(get_serialized_blocks_short_ids_bytes_len(block_short_ids))
     off = 0
     for block_short_id in block_short_ids:
-        buffer[off:off + SHA256_HASH_LEN] = block_short_id.block_hash
+        buffer[off:off + SHA256_HASH_LEN] = block_short_id.block_hash.binary
         off += SHA256_HASH_LEN
         struct.pack_into("<L", buffer, off, len(block_short_id.short_ids))
         off += UL_INT_SIZE_IN_BYTES

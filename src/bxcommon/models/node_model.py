@@ -1,47 +1,107 @@
-from bxcommon.constants import MAX_COUNTRY_LENGTH
 from dataclasses import dataclass
+from typing import Optional
+
+from bxcommon import constants
+from bxcommon.models.node_type import NodeType
+from bxcommon.models.platform_provider import PlatformProvider
 
 
-@dataclass
+@dataclass()
 class NodeModel:
-    def __init__(self, node_type=None, external_ip=None, external_port=None, network=None, online=None, node_id=None,
-                 sid_start=None, sid_end=None, sid_expire_time=None, last_pong_time=None, is_gateway_miner=None,
-                 is_internal_gateway=None, source_version=None, protocol_version=None, blockchain_network_num=None,
-                 blockchain_ip=None, blockchain_port=None, node_public_key=None, hostname=None, sdn_id=None,
-                 os_version=None, continent=None, country=None, split_relays=None, idx: int = None,
-                 has_fully_updated_tx_service=False, node_start_time=None, baseline_route_redundancy: int = 0,
-                 sdn_connection_alive = False ):
-        self.external_port = external_port
-        self.network = network
-        self.online = online
-        self.sdn_connection_alive = sdn_connection_alive
-        self.node_id = node_id
-        self.sid_start = sid_start
-        self.sid_end = sid_end
-        self.sid_expire_time = sid_expire_time
-        self.node_type = node_type
-        self.external_ip = external_ip
-        self.last_pong_time = last_pong_time
-        self.is_gateway_miner = is_gateway_miner
-        self.is_internal_gateway = is_internal_gateway
-        self.source_version = source_version
-        self.protocol_version = protocol_version
-        self.blockchain_network_num = blockchain_network_num
-        self.blockchain_ip = blockchain_ip
-        self.blockchain_port = blockchain_port
-        self.hostname = hostname
-        self.sdn_id = sdn_id
-        self.os_version = os_version
-        self.continent = continent
-        self.split_relays = split_relays
-        if country is not None:
-            self.country = country[:MAX_COUNTRY_LENGTH]
-        else:
-            self.country = None
-        self.idx = idx
-        self.sync_txs_status = has_fully_updated_tx_service
-        self.node_start_time = node_start_time
+    node_type: NodeType = None
+    external_port: int = 0
+    non_ssl_port: int = 0
+    external_ip: str = None
 
-        # Ethereum remote blockchain attribute
-        self.node_public_key = node_public_key
-        self.baseline_route_redundancy = baseline_route_redundancy
+    # Whether the node is online.
+    online: Optional[bool] = False
+
+    # Whether node has active connection with SDN
+    sdn_connection_alive: bool = False
+
+    # TODO: Remove this attribute as it's not being used anymore
+    network: str = None
+
+    # Internal id for distinguishing nodes.
+    node_id: Optional[str] = None
+
+    # The starting and ending Transaction Short ID range, inclusive.
+    sid_start: int = None
+    sid_end: int = None
+    next_sid_start: Optional[int] = None
+    next_sid_end: Optional[int] = None
+
+    sid_expire_time: int = None
+    last_pong_time: float = 0
+    is_gateway_miner: bool = False
+    is_internal_gateway: bool = False
+
+    # Current build's version
+    source_version: str = None
+
+    # Bloxroute protocol version
+    protocol_version: int = None
+
+    blockchain_network_num: int = None
+
+    # IP address of the blockchain node
+    blockchain_ip: str = None
+
+    # Port of the blockchain node
+    blockchain_port: int = None
+
+    # Nodes hostname
+    hostname: str = None
+
+    sdn_id: str = None
+
+    # Nodes OS version
+    os_version: str = None
+
+    continent: Optional[str] = None
+    split_relays: bool = None
+    country: str = None
+
+    # idx enforces the one-way connection order of relays.
+    # They connect to only other relays with an idx less than their own.
+    idx: int = None
+
+    has_fully_updated_tx_service: bool = False
+    sync_txs_status = has_fully_updated_tx_service
+    node_start_time: str = None
+
+    # Ethereum remote blockchain attribute
+    # Ethereum public key for remote blockchain connection
+    node_public_key: str = None
+
+    # number of redundant forwarding routes a particular relay expects by default
+    baseline_route_redundancy: int = 0
+
+    # number of redundant forwarding routes a particular relay expects to send to by default
+    baseline_source_redundancy: int = 0
+
+    private_ip: str = None
+    csr: str = None
+    cert: str = None
+    platform_provider: PlatformProvider = None
+
+    account_id: Optional[str] = None
+
+    latest_source_version: str = None
+    should_update_source_version: bool = False
+
+    def __post_init__(self):
+        self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
+        # TODO: Remove network attribute, not being used
+        if self.network is None:
+            self.network = constants.DEFAULT_NETWORK_NAME
+        if self.continent not in constants.DEFAULT_LIST_LOCATION_ORDER:
+            self.continent = None
+        if self.country:
+            self.country = self.country[:constants.MAX_COUNTRY_LENGTH]
+
+    def __eq__(self, other) -> bool:
+        return isinstance(other, NodeModel) and other.node_id == self.node_id
+
+    def __hash__(self):
+        return hash(self.node_id)

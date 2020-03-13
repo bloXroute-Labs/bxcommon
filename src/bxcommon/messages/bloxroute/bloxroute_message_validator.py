@@ -6,6 +6,7 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.messages.validation.abstract_message_validator import AbstractMessageValidator
 from bxcommon.messages.validation.message_size_validation_settings import MessageSizeValidationSettings
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
+from bxcommon.messages.validation.control_flag_validation_error import ControlFlagValidationError
 from bxcommon.utils import convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 
@@ -88,6 +89,7 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
 
         control_flag_byte = input_buffer[header_len + payload_len - 1:header_len + payload_len]
 
-        if not control_flag_byte[0] & BloxrouteMessageControlFlags.VALID:
-            raise MessageValidationError(
-                "Control flags byte does not have VALID flag set. Value: {}.".format(control_flag_byte))
+        if BloxrouteMessageControlFlags.VALID not in BloxrouteMessageControlFlags(control_flag_byte[0]):
+            raise ControlFlagValidationError(
+                "Control flags byte does not have VALID flag set. Value: {}.".format(control_flag_byte),
+                control_flag_byte[0])

@@ -1,0 +1,3 @@
+
+class ConnectionAuthenticationError(Exception):
+    pass

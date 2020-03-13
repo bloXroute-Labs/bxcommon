@@ -1,15 +1,20 @@
 import os
 import socket
+import asyncio
 from argparse import Namespace
 from contextlib import closing
-from typing import Optional, TypeVar, Type, TYPE_CHECKING
+from typing import Optional, TypeVar, Type, TYPE_CHECKING, List, Callable
+from mock import MagicMock
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
-from bxcommon.connections.node_type import NodeType
+from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
+from bxcommon.models.node_type import NodeType
+from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils import config, crypto, convert
@@ -51,7 +56,7 @@ Connection = TypeVar("Connection", bound="AbstractConnection")
 def create_connection(connection_cls: Type[Connection],
                       node: Optional[AbstractNode] = None,
                       node_opts: Optional[Namespace] = None,
-                      fileno: int = 1,
+                      file_no: int = 1,
                       ip: str = constants.LOCALHOST,
                       port: int = 8001,
                       from_me: bool = False,
@@ -60,17 +65,20 @@ def create_connection(connection_cls: Type[Connection],
         node_opts = get_common_opts(8002)
 
     if node is None:
-        node = MockNode(node_opts)
+        node = MockNode(node_opts, None)
 
     if isinstance(node, MockNode):
         add_to_pool = False
 
-    test_address = (ip, port)
-    test_socket_connection = MockSocketConnection(fileno, node)
-    connection = connection_cls(test_socket_connection, test_address, node, from_me)
+    test_socket_connection = MockSocketConnection(
+        file_no, node, ip_address=ip, port=port
+    )
+    if not from_me:
+        test_socket_connection.direction = NetworkDirection.INBOUND
+    connection = connection_cls(test_socket_connection, node)
 
     if add_to_pool:
-        node.connection_pool.add(fileno, ip, port, connection)
+        node.connection_pool.add(file_no, ip, port, connection)
     return connection
 
 
@@ -83,15 +91,43 @@ def clear_node_buffer(node, fileno):
 
 def receive_node_message(node, fileno, message):
     node.on_bytes_received(fileno, message)
-    node.on_finished_receiving(fileno)
 
 
-def get_queued_node_message(node: AbstractNode, fileno: int, message_type: str):
+def get_queued_node_bytes(node: AbstractNode, fileno: int, message_type: str):
     bytes_to_send = node.get_bytes_to_send(fileno)
     assert message_type in bytes_to_send.tobytes(), \
         f"could not find {message_type} in message bytes {convert.bytes_to_hex(bytes_to_send.tobytes())}"
     node.on_bytes_sent(fileno, len(bytes_to_send))
     return bytes_to_send
+
+
+def get_queued_node_messages(node: AbstractNode, fileno: int) -> List[AbstractMessage]:
+    connection = node.connection_pool.get_by_fileno(fileno)
+    bytes_to_send = node.get_bytes_to_send(fileno)
+    input_buffer = create_input_buffer_with_bytes(bytes_to_send)
+
+    total_bytes = 0
+    messages = []
+    (
+        is_full_message,
+        message_type,
+        payload_length
+    ) = connection.message_factory.get_message_header_preview_from_input_buffer(input_buffer)
+    while is_full_message:
+        message_length = connection.message_factory.base_message_type.HEADER_LENGTH + payload_length
+        message_contents = input_buffer.remove_bytes(message_length)
+        total_bytes += message_length
+
+        messages.append(connection.message_factory.create_message_from_buffer(message_contents))
+        (
+            is_full_message,
+            message_type,
+            payload_length
+        ) = connection.message_factory.get_message_header_preview_from_input_buffer(input_buffer)
+
+    if total_bytes:
+        node.on_bytes_sent(fileno, total_bytes)
+    return messages
 
 
 def get_free_port():
@@ -174,6 +210,9 @@ def get_common_opts(port,
         "throughput_stats_interval": constants.THROUGHPUT_STATS_INTERVAL_S,
         "info_stats_interval": constants.INFO_STATS_INTERVAL_S,
         "sync_tx_service": True,
+        "source_version": "v1.0.0",
+        "non_ssl_port": 3000,
+        "enable_node_cache": True
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val
@@ -183,13 +222,17 @@ def get_common_opts(port,
 def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockchain_address=None,
                      test_mode=None, peer_gateways=None, peer_relays=None, peer_transaction_relays=None,
                      split_relays=False, protocol_version=1, sid_expire_time=30, bloxroute_version="bloxroute 1.5",
-                     include_default_btc_args=False, include_default_eth_args=False,
+                     include_default_btc_args=False, include_default_eth_args=False, pub_key=None,
+                     include_default_ont_args=False,
                      blockchain_network_num=constants.DEFAULT_NETWORK_NUM, min_peer_gateways=0,
                      remote_blockchain_ip=None, remote_blockchain_port=None, connect_to_remote_blockchain=False,
                      is_internal_gateway=False, is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
                      parallelism_degree=1, cookie_file_path=COOKIE_FILE_PATH, blockchain_block_hold_timeout_s=30,
                      blockchain_block_recovery_timeout_s=30, stay_alive_duration=30 * 60, source_version="v1.1.1.1",
-                     initial_liveliness_check=30, block_interval=600, **kwargs) -> Namespace:
+                     initial_liveliness_check=30, block_interval=600, continent="NA", country="United States",
+                     non_ssl_port: int = 9001, rpc_port: int = 28332, has_fully_updated_tx_service: bool = False,
+                     max_block_interval: int = 10, default_tx_quota_type: QuotaType = QuotaType.FREE_DAILY_QUOTA,
+                     log_level_overrides=None, **kwargs) -> Namespace:
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -202,6 +245,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         blockchain_address = ("127.0.0.1", 7000)  # not real, just a placeholder
     if test_mode is None:
         test_mode = []
+    if log_level_overrides is None:
+        log_level_overrides = {}
     if remote_blockchain_ip is not None and remote_blockchain_port is not None:
         remote_blockchain_peer = (remote_blockchain_ip, remote_blockchain_port)
     else:
@@ -216,7 +261,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
     opts = get_common_opts(**partial_apply_args)
 
     opts.__dict__.update({
-        "node_type": NodeType.GATEWAY,
+        "node_type": NodeType.EXTERNAL_GATEWAY,
         "bloxroute_version": bloxroute_version,
         "blockchain_ip": blockchain_address[0],
         "blockchain_port": blockchain_address[1],
@@ -248,16 +293,25 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
             str(parallelism_degree)
         ),
-        "max_block_interval": 10,
+        "max_block_interval": max_block_interval,
         "cookie_file_path": cookie_file_path,
         "config_update_interval": 60,
         "blockchain_message_ttl": 10,
         "remote_blockchain_message_ttl": 10,
         "stay_alive_duration": stay_alive_duration,
         "initial_liveliness_check": initial_liveliness_check,
-        "has_fully_updated_tx_service": False,
+        "has_fully_updated_tx_service": has_fully_updated_tx_service,
         "source_version": source_version,
-        "require_blockchain_connection": True
+        "require_blockchain_connection": True,
+        "continent": continent,
+        "country": country,
+        "non_ssl_port": non_ssl_port,
+        "rpc_port": rpc_port,
+        "rpc_host": constants.LOCALHOST,
+        "rpc_user": "",
+        "rpc_password": "",
+        "default_tx_quota_type": default_tx_quota_type,
+        "should_update_source_version": False
     })
 
     if include_default_btc_args:
@@ -270,13 +324,47 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
     if include_default_eth_args:
         opts.__dict__.update({
             "private_key": "294549f8629f0eeb2b8e01aca491f701f5386a9662403b485c4efe7d447dfba3",
-            "node_public_key": None,
-            "remote_public_key": None,
+            "node_public_key": pub_key,
+            "remote_public_key": pub_key,
             "network_id": 1,
             "chain_difficulty": 4194304,
             "genesis_hash": "1e8ff5fd9d06ab673db775cf5c72a6b2d63171cd26fe1e6a8b9d2d696049c781",
             "no_discovery": True,
         })
+    if include_default_ont_args:
+        opts.__dict__.update({
+            "blockchain_net_magic": 12345,
+            "blockchain_version": 23456,
+            "is_consensus": True,
+            "sync_port": 10001,
+            "http_info_port": 10002,
+            "consensus_port": 10003,
+            "cap": bytes(32),
+            "blockchain_nonce": 0,
+            "relay": True,
+            "soft_version": "myversion",
+            "blockchain_services": 1,
+        })
     for key, val in kwargs.items():
         opts.__dict__[key] = val
     return opts
+
+
+def async_test(method):
+    def wrapper(*args, **kwargs):
+        async_method = asyncio.coroutine(method)
+        future = async_method(*args, **kwargs)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(future)
+
+    return wrapper
+
+
+class AsyncMock(Callable):
+    mock: MagicMock
+
+    def __init__(self, *args, **kwargs):
+        self.mock = MagicMock(*args, **kwargs)
+
+    async def __call__(self, *args, **kwargs):
+        return self.mock(*args, **kwargs)

@@ -1,15 +1,21 @@
 import struct
-from typing import List, Union
-from collections import namedtuple
 
+from typing import NamedTuple, Optional, List, Union, Set
 from bxutils import logging
 
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash
-from bxcommon.constants import UL_INT_SIZE_IN_BYTES, UL_SHORT_SIZE_IN_BYTES, NULL_TX_SID
+from bxcommon import constants
+from bxcommon.models.quota_type_model import QuotaType
 
 logger = logging.get_logger(__name__)
-TxContentShortIds = namedtuple("TxContentAndShortIds", ["tx_hash", "tx_content", "short_ids"])
+
+
+class TxContentShortIds(NamedTuple):
+    tx_hash: Sha256Hash
+    tx_content: Optional[Union[bytearray, memoryview]]
+    short_ids: List[int]
+    short_id_flags: List[QuotaType]
 
 
 def get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids: TxContentShortIds) -> int:
@@ -27,8 +33,8 @@ def get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids: TxConten
     if tx_content_short_ids.tx_content is not None:
         tx_content_size = len(tx_content_short_ids.tx_content)
 
-    return SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES + tx_content_size + UL_INT_SIZE_IN_BYTES + \
-           UL_SHORT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES * short_ids_count
+    return SHA256_HASH_LEN + constants.UL_INT_SIZE_IN_BYTES + tx_content_size + constants.UL_INT_SIZE_IN_BYTES + \
+        constants.UL_SHORT_SIZE_IN_BYTES + (constants.SID_LEN + constants.QUOTA_FLAG_LEN) * short_ids_count
 
 
 def get_serialized_txs_content_short_ids_bytes_len(txs_content_short_ids: List[TxContentShortIds]) -> int:
@@ -46,25 +52,36 @@ def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxCon
     buffer = bytearray(get_serialized_txs_content_short_ids_bytes_len(txs_content_short_ids))
     off = 0
     for tx_content_short_ids in txs_content_short_ids:
-        if tx_content_short_ids.tx_content is not None and NULL_TX_SID not in tx_content_short_ids.short_ids:
-            buffer[off: off + SHA256_HASH_LEN] = tx_content_short_ids.tx_hash
+        if tx_content_short_ids.tx_content is not None and constants.NULL_TX_SID not in tx_content_short_ids.short_ids:
+            buffer[off: off + SHA256_HASH_LEN] = tx_content_short_ids.tx_hash.binary
             off += SHA256_HASH_LEN
 
             struct.pack_into("<L", buffer, off, len(tx_content_short_ids.tx_content))
-            off += UL_INT_SIZE_IN_BYTES
+            off += constants.UL_INT_SIZE_IN_BYTES
             buffer[off: off + len(tx_content_short_ids.tx_content)] = tx_content_short_ids.tx_content
             off += len(tx_content_short_ids.tx_content)
 
             # expiration date
             struct.pack_into("<L", buffer, off, 0)
-            off += UL_INT_SIZE_IN_BYTES
+            off += constants.UL_INT_SIZE_IN_BYTES
 
             struct.pack_into("<H", buffer, off, len(tx_content_short_ids.short_ids))
-            off += UL_SHORT_SIZE_IN_BYTES
+            off += constants.UL_SHORT_SIZE_IN_BYTES
 
             for short_id in tx_content_short_ids.short_ids:
                 struct.pack_into("<L", buffer, off, short_id)
-                off += UL_INT_SIZE_IN_BYTES
+                off += constants.SID_LEN
+
+            # we pass a quota flags for each short id provided
+            # we pass an array of flags following the array of short ids, in matching order
+            # we require that quota flags array to be the same length of the short_ids array,
+            # if validation fail, we will pass empty values as the quota flags, to make backwards compatibility easier.
+            assert len(tx_content_short_ids.short_id_flags) == len(tx_content_short_ids.short_ids),\
+                "Invalid QuotaFlag Array Provided"
+            for short_id_quota_type in tx_content_short_ids.short_id_flags:
+                struct.pack_into("<B", buffer, off, short_id_quota_type.value)
+                off += constants.QUOTA_FLAG_LEN
+
         else:
             logger.debug(
                 "Transaction {} in network {} is missing either content or short ids. short id is None: {}, "
@@ -90,18 +107,23 @@ def deserialize_txs_content_short_ids_from_buffer(buffer: Union[bytearray, memor
         tx_hash = Sha256Hash(buffer[offset:offset + SHA256_HASH_LEN])
         offset = offset + SHA256_HASH_LEN
         tx_content_size, = struct.unpack_from("<L", buffer, offset)
-        offset += UL_INT_SIZE_IN_BYTES
+        offset += constants.UL_INT_SIZE_IN_BYTES
         tx_content = buffer[offset: offset + tx_content_size]
         offset += tx_content_size
-        offset += UL_INT_SIZE_IN_BYTES
+        offset += constants.UL_INT_SIZE_IN_BYTES
         short_ids_count, = struct.unpack_from("<H", buffer, offset)
-        offset += UL_SHORT_SIZE_IN_BYTES
+        offset += constants.UL_SHORT_SIZE_IN_BYTES
 
         short_ids = []
+        short_id_flags = []
         for _ in range(short_ids_count):
             short_id, = struct.unpack_from("<L", buffer, offset)
             short_ids.append(short_id)
-            offset += UL_INT_SIZE_IN_BYTES
-        txs_content_short_ids.append(TxContentShortIds(tx_hash, tx_content, short_ids))
+            offset += constants.SID_LEN
+        for _ in range(short_ids_count):
+            short_id_flag, = struct.unpack_from("<B", buffer, offset)
+            short_id_flags.append(QuotaType(short_id_flag))
+            offset += constants.QUOTA_FLAG_LEN
+        txs_content_short_ids.append(TxContentShortIds(tx_hash, tx_content, short_ids, short_id_flags))
 
     return txs_content_short_ids

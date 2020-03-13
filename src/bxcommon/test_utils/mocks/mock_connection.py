@@ -1,40 +1,35 @@
-from enum import IntFlag
+from typing import Optional, Set, Union
 
-from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
-from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import PING_INTERVAL_S
-from bxcommon.network.socket_connection import SocketConnection
-from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
+from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
+from bxcommon.network.network_direction import NetworkDirection
+from bxcommon.utils import memory_utils
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from typing import Optional, Set
-from bxcommon.utils import memory_utils
 from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
 
 
-class MockConnectionType(IntFlag):
-    MOCK = max(ConnectionType) << 1
-    NOT_MOCK = max(ConnectionType) << 2
-
-
 class MockConnection(AbstractConnection, SpecialMemoryProperties):
-    CONNECTION_TYPE = MockConnectionType.MOCK
+    CONNECTION_TYPE = ConnectionType.EXTERNAL_GATEWAY
 
-    def __init__(self, sock: SocketConnection, address, node, from_me=False):
+    def __init__(self, sock: AbstractSocketConnectionProtocol, node):
         self.socket_connection = sock
-        self.fileno = sock.fileno()
+        self.file_no = sock.file_no
 
         # (IP, Port) at time of socket creation. We may get a new application level port in
         # the version message if the connection is not from me.
-        self.peer_ip, self.peer_port = address
+        self.peer_ip, self.peer_port = sock.endpoint
+        self.endpoint = sock.endpoint
         self.peer_id = None
         self.my_ip = node.opts.external_ip
         self.my_port = node.opts.external_port
+        self.direction = self.socket_connection.direction
 
-        self.from_me = from_me  # Whether or not I initiated the connection
+        self.from_me = self.direction == NetworkDirection.OUTBOUND  # Whether or not I initiated the connection
 
         self.outputbuf = OutputBuffer()
         self.inputbuf = InputBuffer()
@@ -52,18 +47,8 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
         self.enqueued_messages = []
 
     def __repr__(self):
-        return f"MockConnection<fileno: {self.fileno}, address: ({self.peer_ip}, {self.peer_port}), " \
-               f"network_num: {self.network_num}>"
-
-    def is_active(self):
-        return self.state & ConnectionState.ESTABLISHED == ConnectionState.ESTABLISHED and \
-               not self.state & ConnectionState.MARK_FOR_CLOSE
-
-    def is_sendable(self):
-        return self.is_active()
-
-    def mark_for_close(self, force_destroy_now=False):
-        self.state |= ConnectionState.MARK_FOR_CLOSE
+        return f"MockConnection<file_no: {self.file_no}, address: ({self.peer_ip}, {self.peer_port}), " \
+            f"network_num: {self.network_num}>"
 
     def add_received_bytes(self, bytes_received):
         self.inputbuf.add_bytes(bytes_received)
@@ -80,15 +65,20 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
 
     def enqueue_msg(self, msg, _prepend_to_queue=False):
 
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
+        if not self.is_alive():
             return
 
         self.outputbuf.enqueue_msgbytes(msg.rawbytes())
         self.enqueued_messages.append(msg)
 
-    def enqueue_msg_bytes(self, msg_bytes, prepend=False):
+    def enqueue_msg_bytes(
+        self,
+        msg_bytes: Union[bytearray, memoryview],
+        prepend: bool = False,
+        full_message: Optional[AbstractMessage] = None
+    ):
 
-        if self.state & ConnectionState.MARK_FOR_CLOSE:
+        if not self.is_alive():
             return
 
         self.outputbuf.enqueue_msgbytes(msg_bytes)

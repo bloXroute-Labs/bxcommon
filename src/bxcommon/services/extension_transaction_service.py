@@ -1,31 +1,37 @@
-from typing import Any
+import time
 from datetime import datetime
-from typing import List
+from typing import Any, List
 
-from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
-from bxcommon.utils.stats.transaction_statistics_service import tx_stats
-from bxutils import logging
-from bxutils.logging.log_record_type import LogRecordType
+import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
+from bxcommon import constants
 from bxcommon.services.transaction_service import TransactionService
+from bxcommon.services.transaction_service import TxRemovalReason
 from bxcommon.utils import memory_utils
 from bxcommon.utils.object_encoder import ObjectEncoder
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
 from bxcommon.utils.proxy.default_map_proxy import DefaultMapProxy
 from bxcommon.utils.proxy.map_proxy import MapProxy
-from bxcommon import constants
 from bxcommon.utils.stats import hooks
+from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
+from bxcommon.utils.stats.transaction_statistics_service import tx_stats
+from bxutils import logging
+from bxutils.logging import log_config
+from bxutils.logging.log_record_type import LogRecordType
 
-import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
-
-logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup)
+logger = logging.get_logger(__name__)
+logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
 
 
 class ExtensionTransactionService(TransactionService):
 
     def __init__(self, node, network_num):
         super(ExtensionTransactionService, self).__init__(node, network_num)
+
+        # Log levels need to be set again to include the loggers created in this conditionally imported class
+        log_config.lazy_set_log_level(node.opts.log_level_overrides)
+
         self.proxy = tpe.TransactionService(
             task_pool_proxy.get_pool_size(),
             node.opts.tx_mem_pool_bucket_size,
@@ -46,6 +52,10 @@ class ExtensionTransactionService(TransactionService):
             self.proxy.tx_hash_to_contents(), raw_encoder, content_encoder
         )
         self._tx_not_seen_in_blocks = self.proxy.tx_not_seen_in_blocks()
+
+        self._tx_hash_to_time_removed = MapProxy(
+            self.proxy.tx_hash_to_time_removed(), raw_encoder, raw_encoder
+        )
 
     def track_seen_short_ids(self, block_hash, short_ids: List[int]) -> None:
         start_datetime = datetime.now()
@@ -84,7 +94,7 @@ class ExtensionTransactionService(TransactionService):
         for short_id in short_ids:
             tx_stats.add_tx_by_hash_event(
                 constants.UNKNOWN_TRANSACTION_HASH, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
-                self.network_num, short_id, reason="ExtensionsTrackSeenShortId"
+                self.network_num, short_id, reason=TxRemovalReason.EXTENSION_BLOCK_CLEANUP.value
             )
             self._tx_assignment_expire_queue.remove(short_id)
             if self.node.opts.dump_removed_short_ids:
@@ -102,9 +112,7 @@ class ExtensionTransactionService(TransactionService):
             self._tx_not_seen_in_blocks,
             "tx_not_seen_in_blocks",
             self.get_collection_mem_stats(
-                self._tx_not_seen_in_blocks,
-                self._tx_not_seen_in_blocks.get_bytes_length()
-            ),
+                self._tx_not_seen_in_blocks),
             object_item_count=len(self._tx_not_seen_in_blocks),
             object_type=memory_utils.ObjectType.BASE,
             size_type=size_type
@@ -155,7 +163,8 @@ class ExtensionTransactionService(TransactionService):
         super(ExtensionTransactionService, self)._track_seen_transaction(transaction_cache_key)
         self.proxy.track_seen_transaction(transaction_cache_key)
 
-    def remove_transaction_by_short_id(self, short_id: int, remove_related_short_ids: bool = False):
+    def remove_transaction_by_short_id(self, short_id: int, remove_related_short_ids: bool = False, force: bool = False,
+                                       removal_reason: TxRemovalReason = TxRemovalReason.UNKNOWN):
         # overriding this in order to handle removes triggered by either the mem limit or expiration queue
         # if the remove_related_short_ids is True than we assume the call originated by the track seen call
         # else we assume it was triggered by the cleanup.
@@ -164,13 +173,34 @@ class ExtensionTransactionService(TransactionService):
             self._tx_assignment_expire_queue.remove(short_id)
             tx_stats.add_tx_by_hash_event(
                 constants.UNKNOWN_TRANSACTION_HASH, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
-                self.network_num, short_id, reason="ExtensionRemoveShortId"
+                self.network_num, short_id, reason=removal_reason.value
             )
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
         else:
-            super(ExtensionTransactionService, self).remove_transaction_by_short_id(short_id)
+            super(ExtensionTransactionService, self).remove_transaction_by_short_id(short_id, force=force,
+                                                                                    removal_reason=removal_reason)
 
     def _clear(self):
         super(ExtensionTransactionService, self)._clear()
         self.proxy.clear_short_ids_seen_in_block()
+
+    def _cleanup_removed_transactions_history(self):
+        logger.trace(
+            "Starting to cleanup transaction cache history for network "
+            "number: {}.",
+            self.network_num
+        )
+        history_len_before = len(self._tx_hash_to_time_removed)
+        self._tx_hash_to_time_removed.map_obj.cleanup_removed_hashes_history(
+            time.time(), self._removed_txs_hashes_expiration_time_s
+        )
+        history_len_after = len(self._tx_hash_to_time_removed)
+        logger.trace(
+            "Finished cleanup transaction cache history. Size before: {}. "
+            "Size after: {}.",
+            history_len_before,
+            history_len_after
+        )
+
+        return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S

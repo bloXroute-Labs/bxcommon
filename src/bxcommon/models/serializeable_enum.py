@@ -2,5 +2,9 @@ from enum import Enum
 
 
 class SerializeableEnum(Enum):
+
+    def __hash__(self):
+        return hash(self.value)
+
     def __str__(self):
-        return self.value
+        return str(self.value)
