@@ -117,8 +117,11 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
 
         expected_length = (2 * constants.DOUBLE_SIZE_IN_BYTES) + (4 * constants.UL_SHORT_SIZE_IN_BYTES) + \
                           constants.CONTROL_FLAGS_LEN
-        self.get_message_preview_successfully(BdnPerformanceStatsMessage(time.time(), time.time(), 100, 200, 300, 400),
-                                              BdnPerformanceStatsMessage.MESSAGE_TYPE, expected_length)
+        self.get_message_preview_successfully(
+            BdnPerformanceStatsMessage(datetime.utcnow(), datetime.utcnow(), 100, 200, 300, 400),
+            BdnPerformanceStatsMessage.MESSAGE_TYPE,
+            expected_length
+        )
 
     def test_message_preview_incomplete(self):
         message = HelloMessage(protocol_version=1, network_num=2)
@@ -361,12 +364,12 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(raw_message, notification_message.raw_message())
 
     def test_bdn_performance_stats_message(self):
-        start_time = time.time()
+        start_time = datetime.utcnow()
         new_blocks_received_from_blockchain_node = 100
         new_blocks_received_from_bdn = 200
         new_tx_received_from_blockchain_node = 300
         new_tx_received_from_bdn = 400
-        end_time = time.time()
+        end_time = datetime.utcnow()
 
         bdn_stats_msg = \
             self.create_message_successfully(BdnPerformanceStatsMessage(start_time,
@@ -377,8 +380,8 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                                                         new_tx_received_from_bdn),
                                              BdnPerformanceStatsMessage)
 
-        self.assertEqual(datetime.fromtimestamp(start_time), bdn_stats_msg.interval_start_time())
-        self.assertEqual(datetime.fromtimestamp(end_time), bdn_stats_msg.interval_end_time())
+        self.assertEqual(start_time, bdn_stats_msg.interval_start_time())
+        self.assertEqual(end_time, bdn_stats_msg.interval_end_time())
         self.assertEqual(new_blocks_received_from_blockchain_node, bdn_stats_msg.new_blocks_from_blockchain_node())
         self.assertEqual(new_blocks_received_from_bdn, bdn_stats_msg.new_blocks_from_bdn())
         self.assertEqual(new_tx_received_from_blockchain_node, bdn_stats_msg.new_tx_from_blockchain_node())

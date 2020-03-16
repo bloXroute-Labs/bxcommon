@@ -4,8 +4,10 @@ from abc import ABCMeta, abstractmethod
 from collections import deque
 from datetime import datetime
 from threading import Thread, Lock
+from typing import Optional, TypeVar, Generic, Deque, Type, Callable, Dict, Any, TYPE_CHECKING
 
 from bxutils import logging
+from bxutils.logging import CustomLogger
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.log_record_type import LogRecordType
 
@@ -15,57 +17,92 @@ from bxcommon import constants
 logger = logging.get_logger(__name__)
 task_duration_logger = logging.get_logger(LogRecordType.TaskDuration, __name__)
 
-# TODO replace with dataclass
-class StatsIntervalData(object):
-    __slots__ = ["node", "node_id", "start_time", "end_time"]
+if TYPE_CHECKING:
+    from bxcommon.connections.abstract_node import AbstractNode
 
-    def __init__(self, node, node_id, start_time=None, end_time=None):
+
+class StatsIntervalData:
+    node: "AbstractNode"
+    node_id: str
+    start_time: datetime
+    end_time: Optional[datetime]
+    _closed: bool
+
+    def __init__(self, node: "AbstractNode", node_id: str):
         self.node = node
         self.node_id = node_id
-        self.start_time = start_time
-        self.end_time = end_time
+        self.start_time = datetime.utcnow()
+        self.end_time = None
+
+        self._closed = False
+
+    def close(self):
+        self.end_time = datetime.utcnow()
+        self._closed = True
 
 
-# TODO: change default log level from STATS to info
+T = TypeVar("T", bound=StatsIntervalData)
+N = TypeVar("N", bound="AbstractNode")
 
 
-class StatisticsService(metaclass=ABCMeta):
+class StatisticsService(Generic[T, N], metaclass=ABCMeta):
     """
     Abstract class of statistics services.
     """
+    history: Deque[T]
+    node: Optional[N]
+    name: str
+    log_level: LogLevel
+    logger: CustomLogger
+    interval_data: Optional[T]
+    interval: int
+    reset: bool
 
-    INTERVAL_DATA_CLASS = StatsIntervalData
-
-    def __init__(self, name, interval=0, look_back=1, reset=False, logger=logger, log_level=LogLevel.STATS):
+    def __init__(
+        self,
+        name: str,
+        interval: int = 0,
+        look_back: int = 1,
+        reset: bool = False,
+        stat_logger: CustomLogger = logger,
+        log_level: LogLevel = LogLevel.INFO,
+    ):
         self.history = deque(maxlen=look_back)
         self.node = None
         self.name = name
         self.log_level = log_level
-        self.logger = logger
+        self.logger = stat_logger
         self.interval_data = None
         self.interval = interval
         self.reset = reset
 
     @abstractmethod
-    def get_info(self):
+    def get_interval_data_class(self) -> Type[T]:
+        pass
+
+    @abstractmethod
+    def get_info(self) -> Dict[str, Any]:
         """
         Constructs response object to be outputted on stat service set interval.
         :return: dictionary to be converted to JSON
         """
         pass
 
-    def set_node(self, node):
+    def set_node(self, node: N) -> None:
         self.node = node
         self.create_interval_data_object()
 
-    def create_interval_data_object(self):
-        self.interval_data = self.INTERVAL_DATA_CLASS(self.node, self.node.opts.node_id, datetime.utcnow())
+    def create_interval_data_object(self) -> None:
+        assert self.node is not None
+        self.interval_data = self.get_interval_data_class()(self.node, self.node.opts.node_id)
 
-    def close_interval_data(self):
-        self.interval_data.end_time = datetime.utcnow()
+    def close_interval_data(self) -> None:
+        assert self.node is not None
+        assert self.interval_data is not None
+        self.interval_data.close()
         self.history.append(self.interval_data)
 
-    def flush_info(self):
+    def flush_info(self) -> int:
         self.close_interval_data()
         self.logger.log(self.log_level, {"data": self.get_info(), "type": self.name})
 
@@ -75,37 +112,33 @@ class StatisticsService(metaclass=ABCMeta):
         return self.interval
 
 
-class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
+class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
     """
     Abstract class for stats service that may take a long time to execute.
     """
 
-    def __init__(self, name, interval=0, look_back=1, reset=False, logger=None):
-        super(ThreadedStatisticsService, self).__init__(name, interval, look_back, reset, logger=logger)
+    _thread: Optional[Thread]
+    _alive: bool
+    _lock: Lock
+
+    def __init__(self, name: str, *args, **kwargs):
+        super(ThreadedStatisticsService, self).__init__(name, *args, **kwargs)
         self._thread = None
         self._alive = True
         self._lock = Lock()
 
-    @abstractmethod
-    def get_info(self):
-        """
-        Constructs response object to be outputted on stat service set interval.
-        :return: dictionary to be converted to JSON
-        """
-        pass
-
-    def start_recording(self, record_fn):
+    def start_recording(self, record_fn: Callable) -> None:
         self._thread = Thread(target=self.loop_record_on_thread, args=(record_fn,))
         self._thread.start()
 
-    def stop_recording(self):
+    def stop_recording(self) -> None:
         # TODO: This is necessary in order to make the tests pass. We are initializing multiple
         # nodes in a process in a test, both of which are initializing the memory_statistics_service.
         # Thus, there is unclear ownership of the global variable. The right fix here is to make
         # memory_statistics_service not a singleton anymore and have it be a variable that is assigned
         # on a per-node basis.
         if self._thread is None:
-            logger.error(
+            self.logger.error(
                 "Thread was not initialized yet, but stop_recording was called. An invariant in the code is broken."
             )
             return
@@ -115,9 +148,9 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
 
         self._thread.join()
 
-    def sleep_and_check_alive(self, sleep_time):
+    def sleep_and_check_alive(self, sleep_time: float) -> bool:
         """
-        Sleeps for sleeptime seconds and checks whether or this service is alive every 30 seconds.
+        Sleeps for sleep_time seconds and checks whether or this service is alive every 30 seconds.
         Returns whether or not this service is alive at the end of this sleep time.
         """
 
@@ -132,10 +165,11 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
             time.sleep(0)  # ensure sleep is called regardless of the sleep time value
         return alive
 
-    def loop_record_on_thread(self, record_fn):
+    def loop_record_on_thread(self, record_fn: Callable) -> None:
         """
         Assume that record_fn is a read-only function and its okay to get somewhat stale data.
         """
+        assert self.node is not None
         alive = self.sleep_and_check_alive(self.interval)
         while alive:
             start_date_time = datetime.utcnow()
@@ -143,8 +177,11 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
             try:
                 record_fn()
             except Exception as e:
-                logger.error("Recording {} stats failed with exception: {}. Stack trace: {}".format(self.name, e,
-                                                                                                    traceback.format_exc()))
+                self.logger.error(
+                    "Recording {} stats failed with exception: {}. Stack trace: {}".format(
+                        self.name, e, traceback.format_exc()
+                    )
+                )
                 runtime = 0
             else:
                 runtime = time.time() - start_time
@@ -154,7 +191,7 @@ class ThreadedStatisticsService(StatisticsService, metaclass=ABCMeta):
                         "start_date_time": start_date_time,
                         "task": self.name,
                         "duration": runtime,
-                        "node_id": self.node.opts.node_id
+                        "node_id": self.node.opts.node_id,
                     }
                 )
             sleep_time = self.interval - runtime

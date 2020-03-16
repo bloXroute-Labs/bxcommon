@@ -1,20 +1,25 @@
 from collections import defaultdict
-from typing import Optional, Union
+from typing import Optional, Union, Dict, Type, Any, TYPE_CHECKING
 
 from bxcommon import constants
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.utils.stats.measurement_type import MeasurementType
 from bxcommon.utils.stats.peer_stats import PeerStats
-from bxcommon.utils.stats.statistics_service import StatisticsService, \
-    StatsIntervalData
+from bxcommon.utils.stats.statistics_service import StatisticsService, StatsIntervalData
 from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 
 logger = logging.get_logger(LogRecordType.Throughput, __name__)
 
+if TYPE_CHECKING:
+    # noinspection PyUnresolvedReferences
+    from bxcommon.connections.abstract_node import AbstractNode
+
 
 class ThroughputIntervalData(StatsIntervalData):
-    __slots__ = ["total_in", "total_out", "peer_to_stats"]
+    total_in: int
+    total_out: int
+    peer_to_stats: Dict[str, PeerStats]
 
     def __init__(self, *args, **kwargs):
         super(ThroughputIntervalData, self).__init__(*args, **kwargs)
@@ -23,18 +28,28 @@ class ThroughputIntervalData(StatsIntervalData):
         self.peer_to_stats = defaultdict(PeerStats)
 
 
-class ThroughputStatistics(StatisticsService):
-    INTERVAL_DATA_CLASS = ThroughputIntervalData
+class ThroughputStatistics(StatisticsService[ThroughputIntervalData, "AbstractNode"]):
+    def __init__(
+        self,
+        interval=constants.THROUGHPUT_STATS_INTERVAL_S,
+        look_back=constants.THROUGHPUT_STATS_LOOK_BACK,
+    ):
+        super(ThroughputStatistics, self).__init__(
+            "ThroughputStats", interval, look_back, reset=True, stat_logger=logger
+        )
 
-    def __init__(self, interval=constants.THROUGHPUT_STATS_INTERVAL_S, look_back=constants.THROUGHPUT_STATS_LOOK_BACK):
-        super(ThroughputStatistics, self).__init__("ThroughputStats", interval, look_back, reset=True, logger=logger)
+    def get_interval_data_class(self) -> Type[ThroughputIntervalData]:
+        return ThroughputIntervalData
 
-    def add_event(self,
-                  direction: NetworkDirection,
-                  msg_type: str,
-                  msg_size: int,
-                  peer_desc: str,
-                  peer_id: Optional[str] = None):
+    def add_event(
+        self,
+        direction: NetworkDirection,
+        msg_type: str,
+        msg_size: int,
+        peer_desc: str,
+        peer_id: Optional[str] = None,
+    ) -> None:
+        assert self.interval_data is not None
         peer_stats = self.interval_data.peer_to_stats[peer_desc]
         peer_stats.address = peer_desc
         if peer_id is not None:
@@ -51,16 +66,14 @@ class ThroughputStatistics(StatisticsService):
             peer_stats.peer_total_sent += msg_size
             self.interval_data.total_out += msg_size
 
-    def add_throughput_event(self, throughput_event):
-        return self.add_event(direction=throughput_event.direction, msg_type=throughput_event.msg_type,
-                              msg_size=throughput_event.msg_size, peer_desc=throughput_event.peer_desc)
-
-    def add_measurement(self,
-                        peer_desc: str,
-                        measure_type: MeasurementType,
-                        measure_value: Union[int, float],
-                        peer_id: Optional[str] = None
-                        ):
+    def add_measurement(
+        self,
+        peer_desc: str,
+        measure_type: MeasurementType,
+        measure_value: Union[int, float],
+        peer_id: Optional[str] = None,
+    ) -> None:
+        assert self.interval_data is not None
         peer_stats = self.interval_data.peer_to_stats[peer_desc]
         peer_stats.address = peer_desc
         if peer_id is not None:
@@ -72,34 +85,33 @@ class ThroughputStatistics(StatisticsService):
             else:
                 peer_stats.ping_max = max(peer_stats.ping_max, measure_value)
         else:
-            # TODO: should be assertion that this should not happen
-            logger.error("Unexpected throughput measurement: {}={}".format(measure_type, measure_value))
+            raise ValueError(f"Unexpected throughput measurement: {measure_type}={measure_value}")
 
-    def get_info(self):
-        if self.node is None:
-            raise ValueError
-        payload = dict(
-            node_id=self.interval_data.node.opts.node_id,
-            node_type=self.interval_data.node.NODE_TYPE,
-            node_address="%s:%d" % (
-                self.interval_data.node.opts.external_ip, self.interval_data.node.opts.external_port),
-            node_peers=[],
-            total_bytes_received=self.interval_data.total_in,
-            total_bytes_sent=self.interval_data.total_out,
-            peer_stats=[],
-            start_time=self.interval_data.start_time,
-            end_time=self.interval_data.end_time,
-        )
-        for conn in self.interval_data.node.connection_pool:
-            payload["node_peers"].append(
+    def get_info(self) -> Dict[str, Any]:
+        assert self.node is not None
+        assert self.interval_data is not None
+
+        node_peers = []
+        for conn in self.node.connection_pool:
+            node_peers.append(
                 {
                     "peer_address": "%s:%d" % (conn.peer_ip, conn.peer_port),
                     "peer_id": conn.peer_id,
-                    "output_buffer_length": conn.get_backlog_size()
-                 }
+                    "output_buffer_length": conn.get_backlog_size(),
+                }
             )
-        payload["peer_stats"] = list(self.interval_data.peer_to_stats.values())
-        return payload
+
+        return {
+            "node_id": self.node.opts.node_id,
+            "node_type": self.node.NODE_TYPE,
+            "node_address": f"{self.node.opts.external_ip}:{self.node.opts.external_port}",
+            "node_peers": node_peers,
+            "total_bytes_received": self.interval_data.total_in,
+            "total_bytes_sent": self.interval_data.total_out,
+            "peer_stats": list(self.interval_data.peer_to_stats.values()),
+            "start_time": self.interval_data.start_time,
+            "end_time": self.interval_data.end_time,
+        }
 
 
 throughput_statistics = ThroughputStatistics()

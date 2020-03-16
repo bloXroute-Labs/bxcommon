@@ -9,7 +9,7 @@ from bxutils import logging
 # TODO: change default log level from STATS to info
 
 
-class StatisticsEventService(object):
+class StatisticsEventService:
     def __init__(self):
         self.name = None
         self.log_level = LogLevel.STATS
