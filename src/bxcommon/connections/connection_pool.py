@@ -91,8 +91,15 @@ class ConnectionPool:
                 for matching_type in matching_types
                 for connection in self.by_connection_type[matching_type]}
 
-    def get_by_ipport(self, ip, port):
-        return self.by_ipport[(ip, port)]
+    def get_by_ipport(self, ip: str, port: int, node_id: Optional[str] = None) -> AbstractConnection:
+        ip_port = (ip, port)
+        if ip_port in self.by_ipport:
+            return self.by_ipport[ip_port]
+
+        if node_id is not None and node_id in self.by_node_id:
+            return self.by_node_id[node_id]
+
+        raise KeyError(f"Could not find a connection with ip port: {ip_port} or node id: {node_id}")
 
     def get_by_fileno(self, fileno):
         if fileno > self.len_fileno:
