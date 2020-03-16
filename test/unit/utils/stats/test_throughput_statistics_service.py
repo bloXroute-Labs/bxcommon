@@ -74,7 +74,7 @@ class ThroughputServiceTests(AbstractTestCase):
     def test_get_json_when_no_node_set(self):
         throughput_statistics.node = None
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             throughput_statistics.get_info()
 
     def test_get_json_for_same_events(self):

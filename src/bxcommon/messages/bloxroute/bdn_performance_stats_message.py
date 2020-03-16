@@ -16,17 +16,17 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
                (4 * constants.UL_SHORT_SIZE_IN_BYTES) + constants.CONTROL_FLAGS_LEN
     MESSAGE_TYPE = BloxrouteMessageType.BDN_PERFORMANCE_STATS
 
-    def __init__(self, start_time: float = None, end_time: float = None,
+    def __init__(self, start_time: datetime = None, end_time: datetime = None,
                  new_blocks_received_from_blockchain_node: int = None, new_blocks_received_from_bdn: int = None,
                  new_tx_received_from_blockchain_node: int = None, new_tx_received_from_bdn: int = None, buf=None):
         if buf is None:
             buf = bytearray(self.MSG_SIZE)
 
             off = AbstractBloxrouteMessage.HEADER_LENGTH
-            struct.pack_into("<d", buf, off, start_time)
+            struct.pack_into("<d", buf, off, start_time.timestamp())
             off += constants.DOUBLE_SIZE_IN_BYTES
 
-            struct.pack_into("<d", buf, off, end_time)
+            struct.pack_into("<d", buf, off, end_time.timestamp())
             off += constants.DOUBLE_SIZE_IN_BYTES
 
             struct.pack_into("<H", buf, off, new_blocks_received_from_blockchain_node)
