@@ -244,11 +244,16 @@ class AbstractNode:
         if mark_connection_for_close:
             conn.mark_for_close()
 
-        if ConnectionState.ESTABLISHED not in conn.state:
-            logger.info("Failed to connect to: {}.", conn)
-        else:
-            logger.info("Closed connection: {}", conn)
         self._destroy_conn(conn)
+
+    def log_refused_connection(self, peer_info: ConnectionPeerInfo, error: str):
+        logger.info("Failed to connect to: {}, {}.", peer_info, error)
+
+    def log_closed_connection(self, connection: AbstractConnection):
+        if ConnectionState.ESTABLISHED not in connection.state:
+            logger.info("Failed to connect to: {}.", connection)
+        else:
+            logger.info("Closed connection: {}", connection)
 
     def on_updated_peers(self, outbound_peer_models: Set[OutboundPeerModel]):
         if not outbound_peer_models:
@@ -562,6 +567,8 @@ class AbstractNode:
 
         :param conn connection to destroy
         """
+        self.log_closed_connection(conn)
+
         should_retry = SocketConnectionState.DO_NOT_RETRY not in conn.socket_connection.state
 
         logger.debug("Breaking connection to {}. Attempting retry: {}", conn, should_retry)
