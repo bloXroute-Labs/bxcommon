@@ -29,6 +29,7 @@ class NodeEventModel:
     peer_port: int = None
     timestamp: str = None
     event_id: str = None
+    payload: str = None
 
     # 'type' has been deprecated but remains here for backwards compatibility with versions pre 1.54.0.
     # TODO: Remove "type" attribute and "__post_init__" once all gateway versions in the BDN are > v1.54.0. Also, remove

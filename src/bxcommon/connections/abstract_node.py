@@ -26,7 +26,6 @@ from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
 from bxcommon.services.threaded_request_service import ThreadedRequestService
 from bxcommon.utils import memory_utils, convert, performance_utils
-from bxutils.encoding import json_encoder
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
@@ -35,6 +34,7 @@ from bxcommon.utils.stats.node_statistics_service import node_stats_service
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
+from bxutils.encoding import json_encoder
 from bxutils.exceptions.connection_authentication_error import \
     ConnectionAuthenticationError
 from bxutils.logging import LogRecordType
@@ -245,11 +245,16 @@ class AbstractNode:
         if mark_connection_for_close:
             conn.mark_for_close()
 
-        if ConnectionState.ESTABLISHED not in conn.state:
-            logger.info("Failed to connect to: {}.", conn)
-        else:
-            logger.info("Closed connection: {}", conn)
         self._destroy_conn(conn)
+
+    def log_refused_connection(self, peer_info: ConnectionPeerInfo, error: str):
+        logger.info("Failed to connect to: {}, {}.", peer_info, error)
+
+    def log_closed_connection(self, connection: AbstractConnection):
+        if ConnectionState.ESTABLISHED not in connection.state:
+            logger.info("Failed to connect to: {}.", connection)
+        else:
+            logger.info("Closed connection: {}", connection)
 
     def on_updated_peers(self, outbound_peer_models: Set[OutboundPeerModel]):
         if not outbound_peer_models:
@@ -565,6 +570,8 @@ class AbstractNode:
 
         :param conn connection to destroy
         """
+        self.log_closed_connection(conn)
+
         should_retry = SocketConnectionState.DO_NOT_RETRY not in conn.socket_connection.state
 
         logger.debug("Breaking connection to {}. Attempting retry: {}", conn, should_retry)
