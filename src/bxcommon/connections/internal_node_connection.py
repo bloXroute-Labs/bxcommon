@@ -236,6 +236,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         """
         sending transaction service sync request
         """
+        self.node.last_sync_message_received_by_network[self.network_num] = time.time()
         self.enqueue_msg(TxServiceSyncReqMessage(network_num))
 
     def send_tx_service_sync_complete(self, network_num: int):
