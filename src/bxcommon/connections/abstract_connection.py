@@ -120,7 +120,8 @@ class AbstractConnection(Generic[Node]):
         return f"{self.CONNECTION_TYPE} ({details})"
 
     def _log_message(self, level: LogLevel, message, *args, **kwargs):
-        logger.log(level, f"[{self}] {message}", *args, **kwargs)
+        args = ("with_logging_prefix", f"[{self}",) + args
+        logger.log(level, message, *args, **kwargs)
 
     def log_trace(self, message, *args, **kwargs):
         self._log_message(LogLevel.TRACE, message, *args, **kwargs)

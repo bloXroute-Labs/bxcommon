@@ -5,7 +5,7 @@ from typing import List, Optional
 from argparse import Namespace
 
 from bxutils import logging
-
+from bxutils import log_messages
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.models.node_model import NodeModel
@@ -74,7 +74,7 @@ def read(opts: Namespace) -> Optional[CacheNetworkInfo]:
             with open(relative_path, "r") as cookie_file:
                 cache_file_info = model_loader.load_model(CacheNetworkInfo, json.load(cookie_file))
         else:
-            logger.error(f"Failed when tried to read from cache file: could not find the specified file")
+            logger.error(log_messages.READ_CACHE_FILE_ERROR)
     except Exception as ex:
         logger.error(f"Failed when tried to read from cache file: {opts.cookie_file_path} with exception: {ex}")
     finally:

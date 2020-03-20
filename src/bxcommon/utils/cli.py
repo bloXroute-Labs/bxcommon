@@ -20,7 +20,7 @@ from bxutils import logging
 from bxutils.logging import log_config
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
-
+from bxutils import log_messages
 logger = logging.get_logger(__name__)
 
 
@@ -341,7 +341,7 @@ def _set_blockchain_networks_from_cache(opts):
 def set_blockchain_networks_info(opts):
     opts.blockchain_networks = sdn_http_service.fetch_blockchain_networks()
     if not opts.blockchain_networks:
-        logger.warning("Empty list for blockchain networks from SDN, trying to obtain info from cache")
+        logger.warning(log_messages.EMPTY_BLOCKCHAIN_NETWORK_LIST)
         _set_blockchain_networks_from_cache(opts)
 
 
