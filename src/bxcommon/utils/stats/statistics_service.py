@@ -65,7 +65,7 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
         look_back: int = 1,
         reset: bool = False,
         stat_logger: CustomLogger = logger,
-        log_level: LogLevel = LogLevel.INFO,
+        log_level: LogLevel = LogLevel.STATS,
     ):
         self.history = deque(maxlen=look_back)
         self.node = None
