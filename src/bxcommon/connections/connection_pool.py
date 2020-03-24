@@ -26,7 +26,6 @@ class ConnectionPool:
     Lookups without node id are still allowed to support preSSL connections that
     do not have as strong guarantees on identifying connections by node id.
     """
-
     INITIAL_FILENO: ClassVar[int] = 100
 
     by_fileno: List[Optional[AbstractConnection]]

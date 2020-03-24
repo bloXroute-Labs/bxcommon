@@ -11,6 +11,7 @@ from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.services import tx_sync_service_helpers
 
 
 class SyncTxServiceTest(MessageFactoryTestCase):
@@ -32,7 +33,7 @@ class SyncTxServiceTest(MessageFactoryTestCase):
     def test_create_message_success_tx_service_sync_txs_msg_with_exceeded_buf(self):
         self._test_create_msg_success_tx_service_sync_with_tx_content_count(1000)
 
-    def _test_create_msg_success_tx_service_sync_with_tx_content_count(self, tx_content_count):
+    def _test_create_msg_success_tx_service_sync_with_tx_content_count(self, tx_content_count, sync_tx_content=True):
         short_ids = [list(range(1, 6)), list(range(11, 15)), list(range(53, 250)), [31], list(range(41, 48)), [51, 52]]
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
 
@@ -49,27 +50,8 @@ class SyncTxServiceTest(MessageFactoryTestCase):
 
         tx_service_snap = self.transaction_service.get_snapshot()
 
-        txs_content_short_ids: List[TxContentShortIds] = []
-        txs_msg_len = 0
-
-        for tx_hash in tx_service_snap:
-            short_ids = self.transaction_service.get_short_ids(tx_hash)
-            # TODO: evaluate short id quota type flag value
-            short_id_flags = [self.transaction_service.get_short_id_quota_type(short_id) for short_id in short_ids]
-            tx_content_short_ids = TxContentShortIds(
-                tx_hash,
-                self.transaction_service.get_transaction_by_hash(tx_hash),
-                short_ids,
-                short_id_flags
-            )
-
-            txs_msg_len += txs_serializer.get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids)
-            if txs_msg_len < 5000:
-                txs_content_short_ids.append(tx_content_short_ids)
-            else:
-                self._send_tx_msg(txs_content_short_ids, transaction_hashes)
-                txs_content_short_ids = []
-                txs_msg_len = 0
+        txs_content_short_ids = tx_sync_service_helpers.create_txs_service_msg(
+            self.transaction_service, tx_service_snap, sync_tx_content)
 
         if txs_content_short_ids:
             self._send_tx_msg(txs_content_short_ids, transaction_hashes)

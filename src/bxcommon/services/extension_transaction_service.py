@@ -1,6 +1,7 @@
+import struct
 import time
 from datetime import datetime
-from typing import Any, List
+from typing import Any, List, Tuple
 
 import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
@@ -13,6 +14,7 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
 from bxcommon.utils.proxy.default_map_proxy import DefaultMapProxy
 from bxcommon.utils.proxy.map_proxy import MapProxy
+from bxcommon.utils.proxy.vector_proxy import VectorProxy
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
@@ -88,6 +90,13 @@ class ExtensionTransactionService(TransactionService):
         super(ExtensionTransactionService, self).on_block_cleaned_up(block_hash)
         wrapped_block_hash = tpe.Sha256(tpe.InputBytes(block_hash.binary))
         self.proxy.on_block_cleaned_up(wrapped_block_hash)
+
+    def get_tx_service_sync_buffer(
+            self,
+            limit_tx_count_in_single_message: int = 0,
+            include_content: bool = False) -> memoryview:
+        byte_array_obj = self.proxy.tx_service_sync_txs(limit_tx_count_in_single_message, include_content)
+        return memoryview(byte_array_obj)
 
     def update_removed_transactions(self, removed_content_size: int, short_ids: List[int]) -> None:
         self._total_tx_contents_size -= removed_content_size

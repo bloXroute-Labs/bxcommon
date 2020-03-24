@@ -4,7 +4,7 @@ import os
 import time
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
-from collections import defaultdict
+from collections import defaultdict, Counter
 from ssl import SSLContext
 from typing import List, Optional, Tuple, Dict, NamedTuple, Union, Set
 
@@ -114,7 +114,9 @@ class AbstractNode:
 
         self.last_sync_message_received_by_network: Dict[int, float] = {}
 
-        self.start_sync_time = time.time()
+        self.start_sync_time: Optional[float] = None
+        self.sync_metrics: Dict[int, Counter] = defaultdict(Counter)
+
         opts.has_fully_updated_tx_service = False
 
         self._check_sync_relay_connections_alarm_id = self.alarm_queue.register_alarm(
@@ -526,6 +528,7 @@ class AbstractNode:
     @abstractmethod
     def sync_tx_services(self):
         self.start_sync_time = time.time()
+        self.sync_metrics = defaultdict(Counter)
 
     @abstractmethod
     def _transaction_sync_timeout(self):

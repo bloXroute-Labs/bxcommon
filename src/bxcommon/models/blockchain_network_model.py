@@ -28,3 +28,4 @@ class BlockchainNetworkModel:
     removed_transactions_history_expiration_s: int = constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S
     sdn_id: str = None
     tx_sync_interval_s: float = constants.GATEWAY_SYNC_TX_THRESHOLD_S
+    tx_sync_sync_content: bool = constants.GATEWAY_SYNC_SYNC_CONTENT

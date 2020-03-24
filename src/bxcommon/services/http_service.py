@@ -103,4 +103,50 @@ def _http_request(method: str, endpoint: str, **kwargs) -> Optional[jsonT]:
         logger.error("{} to {} returned error: {}.", method, url, e)
         return None
 
+def build_url(endpoint: str) -> str:
+    if not endpoint or not isinstance(endpoint, str):
+        raise ValueError("Missing or invalid URL")
+    return _url + endpoint
+
+
+def raise_for_status(res: HTTPResponse) -> None:
+    if status.is_client_error(res.status) or status.is_server_error(res.status):
+        raise HTTPError("{}:{}", res.status, res.reason)
+
+
+def _http_request(method: str, endpoint: str, **kwargs) -> Optional[jsonT]:
+    url = build_url(endpoint)
+    parsed_url = parse_url(url)
+    pm_args = {
+        "num_pools": constants.HTTP_POOL_MANAGER_COUNT,
+        "host": parsed_url.host,
+        "port": parsed_url.port,
+        "retries": Retry(
+            connect=constants.HTTP_REQUEST_RETRIES_COUNT,
+            read=constants.HTTP_REQUEST_RETRIES_COUNT,
+            redirect=constants.HTTP_REQUEST_RETRIES_COUNT,
+            backoff_factor=constants.HTTP_REQUEST_BACKOFF_FACTOR,
+            method_whitelist=METHODS_WHITELIST
+        ),
+        "ssl_context": _ssl_context,
+    }
+    if _ssl_context is not None:
+        pm_args["assert_hostname"] = False
+    http_pool_manager: PoolManager = PoolManager(**pm_args)
+    try:
+        logger.trace("HTTP {0} to {1}", method, url)
+        response = http_pool_manager.request(
+            method=method,
+            url=url,
+            timeout=constants.HTTP_REQUEST_TIMEOUT,
+            **kwargs
+        )
+        raise_for_status(response)
+    except MaxRetryError as e:
+        logger.info("{} to {} failed due to: {}.", method, url, e)
+        return None
+    except Exception as e:
+        logger.error("{} to {} returned error: {}.", method, url, e)
+        return None
+
     return json.loads(response.data)
