@@ -6,7 +6,7 @@ from bxcommon.models.node_type import NodeType
 from bxcommon.models.platform_provider import PlatformProvider
 
 
-@dataclass()
+@dataclass
 class NodeModel:
     node_type: NodeType = None
     external_port: int = 0
@@ -89,6 +89,8 @@ class NodeModel:
 
     latest_source_version: str = None
     should_update_source_version: bool = False
+
+    assigning_short_ids: bool = False
 
     def __post_init__(self):
         self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS

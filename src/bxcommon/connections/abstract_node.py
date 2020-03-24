@@ -16,6 +16,7 @@ from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import TerminationError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
+from bxcommon.models.node_model import NodeModel
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
@@ -287,15 +288,32 @@ class AbstractNode:
         for peer in outbound_peer_models:
             peer_ip = peer.ip
             peer_port = peer.port
-            if not self.connection_pool.has_connection(
-                peer_ip,
-                peer_port,
-                peer.node_id
-            ):
+            if self.should_connect_to_new_outbound_peer(peer):
                 self.enqueue_connection(
-                    peer_ip, peer_port, convert.peer_node_to_connection_type(self.NODE_TYPE, peer.node_type)
+                    peer_ip, peer_port, convert.peer_node_to_connection_type(
+                        self.NODE_TYPE, peer.node_type
+                    )
                 )
         self.outbound_peers = outbound_peer_models
+
+    def on_updated_node_model(self, new_node_model: NodeModel):
+        """
+        Updates `opts` according a newly updated `NodeModel`.
+        This is currently unused on gateways.
+        """
+        logger.debug(
+            "Updating node attributes with new model: {}", new_node_model
+        )
+        for key, val in new_node_model.__dict__.items():
+            logger.trace(
+                "Updating attribute '{}': {} => {}", key, self.opts.__dict__.get(key, 'None'), val
+            )
+            self.opts.__dict__[key] = val
+
+    def should_connect_to_new_outbound_peer(self, outbound_peer: OutboundPeerModel) -> bool:
+        return not self.connection_pool.has_connection(
+            outbound_peer.ip, outbound_peer.port, outbound_peer.node_id
+        )
 
     def on_updated_sid_space(self, sid_start, sid_end):
         """
@@ -327,11 +345,11 @@ class AbstractNode:
 
         if conn is None:
             logger.debug("Request to get bytes for connection not in pool. file_no: {}", file_no)
-            return
+            return None
 
         if not conn.is_alive():
             conn.log_trace("Skipping sending bytes for closed connection.")
-            return
+            return None
 
         return conn.get_bytes_to_send()
 

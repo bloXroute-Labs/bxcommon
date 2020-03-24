@@ -95,8 +95,9 @@ def receive_node_message(node, fileno, message):
     node.on_bytes_received(fileno, message)
 
 
-def get_queued_node_bytes(node: AbstractNode, fileno: int, message_type: str):
+def get_queued_node_bytes(node: AbstractNode, fileno: int, message_type: bytes) -> memoryview:
     bytes_to_send = node.get_bytes_to_send(fileno)
+    assert bytes_to_send is not None
     assert message_type in bytes_to_send.tobytes(), \
         f"could not find {message_type} in message bytes {convert.bytes_to_hex(bytes_to_send.tobytes())}"
     node.on_bytes_sent(fileno, len(bytes_to_send))
@@ -132,6 +133,10 @@ def get_queued_node_messages(node: AbstractNode, fileno: int) -> List[AbstractMe
     if total_bytes:
         node.on_bytes_sent(fileno, total_bytes)
     return messages
+
+
+def has_no_queued_messages(node: AbstractNode, fileno: int) -> bool:
+    return len(get_queued_node_messages(node, fileno)) == 0
 
 
 def get_free_port():

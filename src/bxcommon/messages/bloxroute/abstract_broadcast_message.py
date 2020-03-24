@@ -78,12 +78,12 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
             off = self.SOURCE_ID_OFFSET
             self._source_id = uuid_pack.from_bytes(struct.unpack_from("<16s", self.buf, off)[0])
             if self._source_id is None:
-                self._source_id = constants.EMPTY_SOURCE_ID.decode()
+                self._source_id = constants.DECODED_EMPTY_SOURCE_ID
 
         return self._source_id
 
     def source_id_as_str(self) -> str:
-        if self.source_id() == constants.EMPTY_SOURCE_ID.decode():
+        if self.source_id() == constants.DECODED_EMPTY_SOURCE_ID:
             return "None"
         else:
             return self.source_id()
@@ -92,3 +92,6 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
         self._source_id = source_id
         off = self.HEADER_LENGTH + crypto.SHA256_HASH_LEN + constants.NETWORK_NUM_LEN
         struct.pack_into("<16s", self.buf, off, uuid_pack.to_bytes(source_id))
+
+    def has_source_id(self) -> bool:
+        return self.source_id() != constants.DECODED_EMPTY_SOURCE_ID
