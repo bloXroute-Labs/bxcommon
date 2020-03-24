@@ -36,3 +36,4 @@ class LogRecordType(Enum):
     NetworkTroubleshooting = "stats.performance.network"
     RoutingTableStats = "stats.routing"
     GarbageCollection = "stats.gc"
+    ShortIdAllocation = "sid.allocation"
