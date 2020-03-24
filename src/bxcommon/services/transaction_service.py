@@ -192,7 +192,7 @@ class TransactionService:
         if transaction_cache_key in self._tx_cache_key_to_short_ids:
             return self._tx_cache_key_to_short_ids[transaction_cache_key]
         else:
-            return {constants.NULL_TX_SID}
+            return constants.NULL_TX_SIDS
 
     def get_transaction(self, short_id: int) -> TransactionInfo:
         """
