@@ -22,6 +22,9 @@ class TransactionStatEventType:
     TX_SHORT_ID_EMPTY_IN_MSG_FROM_RELAY = StatEventTypeSettings("TxShortIdEmptyInMsgFromRelay")
     TX_SENT_FROM_RELAY_TO_PEERS = StatEventTypeSettings("TxSentFromRelayToPeers",
                                                         event_logic_flags=StatEventLogicFlags.SUMMARY)
+    TX_CONTENTS_REQUEST_SENT_FROM_RELAY = StatEventTypeSettings("TxContentsRequestSentFromRelay")
+    TX_CONTENTS_REPLY_SENT_BY_RELAY = StatEventTypeSettings("TxContentsReplySentFromRelay")
+    TX_CONTENTS_REPLY_RECEIVED_BY_RELAY = StatEventTypeSettings("TxContentsReplyReceivedByRelay")
     TX_UNKNOWN_SHORT_IDS_REQUESTED_BY_GATEWAY_FROM_RELAY = StatEventTypeSettings(
         "TxUnknownShortIdsRequestedByGatewayFromRelay")
     TX_UNKNOWN_SHORT_IDS_REPLY_RECEIVED_BY_GATEWAY_FROM_RELAY = StatEventTypeSettings(

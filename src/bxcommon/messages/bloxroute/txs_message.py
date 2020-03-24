@@ -96,7 +96,7 @@ class TxsMessage(AbstractBloxrouteMessage):
         txs_count, = struct.unpack_from("<L", self.buf, off)
         off += constants.UL_INT_SIZE_IN_BYTES
 
-        logger.debug("Block recovery: received {0} txs in the message.".format(txs_count))
+        logger.debug("TxsMessage: received {0} txs in the message.".format(txs_count))
 
         for tx_index in range(txs_count):
             tx_sid, = struct.unpack_from("<L", self.buf, off)
