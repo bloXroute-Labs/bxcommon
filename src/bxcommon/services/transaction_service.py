@@ -276,7 +276,7 @@ class TransactionService:
     def get_short_id_count(self):
         return len(self._short_id_to_tx_cache_key)
 
-    def has_transaction_contents(self, transaction_hash: Sha256Hash) -> bool:
+    def has_transaction_contents(self, transaction_hash: Union[Sha256Hash, str]) -> bool:
         """
         Checks if transaction contents is available in transaction service cache
 

@@ -70,7 +70,7 @@ def create_txs_service_msg_from_time(
                     snapshot_cache_keys.add(cache_key)
                     tx_hash = transaction_service._tx_cache_key_to_hash(cache_key)
                     short_ids = list(transaction_service._tx_cache_key_to_short_ids[cache_key])
-                    if sync_tx_content:
+                    if sync_tx_content and transaction_service.has_transaction_contents(cache_key):
                         tx_content = transaction_service._tx_cache_key_to_contents[cache_key]
                     else:
                         tx_content = bytearray(0)
