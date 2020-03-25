@@ -74,7 +74,8 @@ class BlockStatEventType:
     BLOCK_RECOVERY_COMPLETED = StatEventTypeSettings("BlockRecoveryCompleted")
     BLOCK_RECOVERY_CANCELED = StatEventTypeSettings("BlockRecoveryCanceled")
     BLOCK_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockSentToBlockchainNode",
-                                                          event_logic_flags=StatEventLogicFlags.SUMMARY)
+                                                          event_logic_flags=StatEventLogicFlags.SUMMARY |
+                                                                            StatEventLogicFlags.PROPAGATION_END)
     BLOCK_HEADER_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockHeaderSentToBlockchainNode",
                                                                  event_logic_flags=StatEventLogicFlags.SUMMARY)
     BLOCK_BODY_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockBodySentToBlockchainNode",
