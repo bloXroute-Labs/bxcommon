@@ -6,7 +6,6 @@ from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection, Node
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
-from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.blocks_short_ids_serializer import BlockShortIds
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
@@ -19,17 +18,16 @@ from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import
 from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
-from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
+from bxcommon.services import tx_sync_service_helpers
 from bxcommon.utils import nonce_generator, performance_utils
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
-from bxcommon.services import tx_sync_service_helpers
 from bxutils import logging
 from bxutils.logging import LogRecordType
 
@@ -213,8 +211,9 @@ class InternalNodeConnection(AbstractConnection[Node]):
                 if QuotaType.PAID_DAILY_QUOTA in quota_type:
                     tx_service.set_short_id_quota_type(short_id, quota_type)
 
-        self.log_info("TxSync processed msg from {} network {}, msgs: {}, transactions: {}, content: {}",
-                      self, network_num, sync_metrics["msgs"], sync_metrics["tx_count"], sync_metrics["tx_content_count"])
+        self.log_debug("TxSync processed msg from {} network {}, msgs: {}, transactions: {}, content: {}",
+                       self, network_num, sync_metrics["msgs"], sync_metrics["tx_count"],
+                       sync_metrics["tx_content_count"])
 
     def send_tx_service_sync_req(self, network_num: int):
         """
@@ -255,7 +254,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
     def send_tx_service_sync_txs(self, network_num: int, tx_service_snap: List[Sha256Hash],
                                  sync_tx_content: bool = True, duration: float = 0, msgs_count: int = 0,
-                                 total_tx_count: int = 0, sending_tx_msgs_start_time: float = 0):
+                                 total_tx_count: int = 0, sending_tx_msgs_start_time: float = 0) -> None:
         if sending_tx_msgs_start_time == 0:
             sending_tx_msgs_start_time = time.time()
         tx_service = self.node.get_tx_service(network_num)
@@ -294,7 +293,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
                     duration, msgs_count, total_tx_count, sending_tx_msgs_start_time
                 )
             else:  # if all txs were sent, send complete msg
-                self.log_info(
+                self.log_debug(
                     "TxSync to: {} network: {}, Sent: transactions {}, messages: {}. took {:.3f}s.",
                     self,
                     network_num,
@@ -304,7 +303,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
                 )
                 self.send_tx_service_sync_complete(network_num)
         else:  # if time is up - upgrade this node as synced - giving up
-            self.log_info(
+            self.log_debug(
                 "TxSync to: {} network: {}, Sent: transactions {}, messages {}. took more than {}s. Giving up. "
                 "{} transactions were not synced",
                 self,
@@ -317,16 +316,16 @@ class InternalNodeConnection(AbstractConnection[Node]):
             self.send_tx_service_sync_complete(network_num)
 
     def send_tx_service_sync_txs_from_time(
-            self,
-            network_num: int,
-            sync_tx_content: bool = True,
-            duration: float = 0,
-            msgs_count: int = 0,
-            total_tx_count: int = 0,
-            sending_tx_msgs_start_time: float = 0,
-            start_time: float = 0,
-            snapshot_cache_keys: Optional[Set] = None
-    ):
+        self,
+        network_num: int,
+        sync_tx_content: bool = True,
+        duration: float = 0,
+        msgs_count: int = 0,
+        total_tx_count: int = 0,
+        sending_tx_msgs_start_time: float = 0,
+        start_time: float = 0,
+        snapshot_cache_keys: Optional[Set[Sha256Hash]] = None
+    ) -> None:
         if sending_tx_msgs_start_time == 0:
             sending_tx_msgs_start_time = time.time()
         done = False
@@ -401,15 +400,15 @@ class InternalNodeConnection(AbstractConnection[Node]):
             self.send_tx_service_sync_complete(network_num)
 
     def send_tx_service_sync_txs_from_buffer(
-            self,
-            network_num: int,
-            txs_buffer: memoryview,
-            duration: float = 0,
-            msgs_count: int = 0,
-            total_tx_count: int = 0,
-            sending_tx_msgs_start_time: float = 0,
-            start_offset: int = 0
-    ):
+        self,
+        network_num: int,
+        txs_buffer: memoryview,
+        duration: float = 0,
+        msgs_count: int = 0,
+        total_tx_count: int = 0,
+        sending_tx_msgs_start_time: float = 0,
+        start_offset: int = 0
+    ) -> None:
         if sending_tx_msgs_start_time == 0:
             sending_tx_msgs_start_time = time.time()
 

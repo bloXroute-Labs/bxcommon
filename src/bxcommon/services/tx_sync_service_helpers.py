@@ -7,8 +7,8 @@ from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.services.transaction_service import TransactionService
-from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils import crypto
+from bxcommon.utils.object_hash import Sha256Hash
 from bxutils import logging
 
 logger = logging.get_logger(__name__)
@@ -17,7 +17,8 @@ logger = logging.get_logger(__name__)
 def create_txs_service_msg(
     transaction_service: TransactionService,
     tx_service_snap: List[Sha256Hash],
-    sync_tx_content: bool = True) -> List[TxContentShortIds]:
+    sync_tx_content: bool = True
+) -> List[TxContentShortIds]:
     task_start = time.time()
     txs_content_short_ids: List[TxContentShortIds] = []
     txs_msg_len = 0
@@ -41,7 +42,7 @@ def create_txs_service_msg(
         txs_msg_len += txs_serializer.get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids)
 
         txs_content_short_ids.append(tx_content_short_ids)
-        if txs_msg_len >= constants.TXS_MSG_SIZE or time.time() - task_start > constants.TXS_TASK_DURATION:
+        if txs_msg_len >= constants.TXS_MSG_SIZE or time.time() - task_start > constants.TXS_SYNC_TASK_DURATION:
             break
     if not tx_service_snap:
         done = True
@@ -52,7 +53,7 @@ def create_txs_service_msg_from_time(
     transaction_service: TransactionService,
     start_time: float = 0,
     sync_tx_content: bool = True,
-    snapshot_cache_keys: Optional[Set] = None) -> Tuple[List[TxContentShortIds], float, bool, Set]:  # pyre-ignore
+    snapshot_cache_keys: Optional[Set[Sha256Hash]] = None) -> Tuple[List[TxContentShortIds], float, bool, Set[Sha256Hash]]:
     task_start = time.time()
     txs_content_short_ids: List[TxContentShortIds] = []
     txs_msg_len = 0
@@ -83,7 +84,7 @@ def create_txs_service_msg_from_time(
                     txs_msg_len += txs_serializer.get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids)
                     txs_content_short_ids.append(tx_content_short_ids)
                     if txs_msg_len >= constants.TXS_MSG_SIZE or (
-                        time.time() - task_start > constants.TXS_TASK_DURATION):
+                        time.time() - task_start > constants.TXS_SYNC_TASK_DURATION):
                         break
             else:
                 expire_short_ids.append(short_id)
@@ -95,26 +96,37 @@ def create_txs_service_msg_from_time(
 
 
 def create_txs_service_msg_from_buffer(
-        transaction_service: TransactionService,
-        txs_buffer: memoryview,
-        start_offset: int) -> Tuple[TxServiceSyncTxsMessage, int, int, bool]:
-
+    transaction_service: TransactionService,
+    txs_buffer: memoryview,
+    start_offset: int) -> Tuple[TxServiceSyncTxsMessage, int, int, bool]:
     max_task_complete_time = time.time() + constants.GATEWAY_SYNC_BUILD_MESSAGE_THRESHOLD_S
     current_pos = start_offset
     complete_buffer = False
     tx_count = 0
 
-    while not complete_buffer and time.time() < max_task_complete_time:
-        short_ids_offset = current_pos + crypto.SHA256_HASH_LEN + constants.UL_INT_SIZE_IN_BYTES + constants.UL_INT_SIZE_IN_BYTES
-        short_ids, = struct.unpack_from("<H", txs_buffer, short_ids_offset)
-        current_pos = short_ids_offset + constants.UL_SHORT_SIZE_IN_BYTES + (constants.UL_INT_SIZE_IN_BYTES * short_ids) + short_ids
-        tx_count += 1
-        if current_pos >= len(txs_buffer):
-            complete_buffer = True
+    if start_offset == 0 and len(txs_buffer) <= constants.GATEWAY_SYNC_MAX_MESSAGE_SIZE_BYTES:
+        complete_buffer = True
+        tx_count, = struct.unpack_from("<L", txs_buffer)
+        start_offset = constants.UL_INT_SIZE_IN_BYTES
+        current_pos = len(txs_buffer)
+    else:
+        if start_offset == 0:
+            start_offset = current_pos = constants.UL_INT_SIZE_IN_BYTES
+
+        while not complete_buffer and \
+            time.time() < max_task_complete_time and \
+            current_pos - start_offset < constants.GATEWAY_SYNC_MAX_MESSAGE_SIZE_BYTES:
+
+            short_ids_offset = current_pos + crypto.SHA256_HASH_LEN + constants.UL_INT_SIZE_IN_BYTES + constants.UL_INT_SIZE_IN_BYTES
+            short_ids, = struct.unpack_from("<H", txs_buffer, short_ids_offset)
+            current_pos = short_ids_offset + constants.UL_SHORT_SIZE_IN_BYTES + (
+                constants.UL_INT_SIZE_IN_BYTES * short_ids) + short_ids
+            tx_count += 1
+            if current_pos >= len(txs_buffer):
+                complete_buffer = True
 
     return TxServiceSyncTxsMessage(
         transaction_service.network_num,
-        txs_buffer=txs_buffer,
-        txs_buffer_length=current_pos,
+        txs_buffer=txs_buffer[start_offset:current_pos],
         tx_count=tx_count,
     ), tx_count, current_pos, complete_buffer

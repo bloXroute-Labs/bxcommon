@@ -20,7 +20,6 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
             self, network_num: Optional[int] = None,
             txs_content_short_ids: Optional[List[TxContentShortIds]] = None,
             txs_buffer: Optional[Union[memoryview, bytearray]] = None,
-            txs_buffer_length: Optional[int] = None,
             tx_count: Optional[int] = None,
             buf: Optional[bytearray] = None
     ):
@@ -34,10 +33,10 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
             self.buf.extend(bytearray(CONTROL_FLAGS_LEN))
         elif txs_buffer is not None and buf is None:
             txs_offset = self.HEADER_LENGTH + UL_INT_SIZE_IN_BYTES +  UL_INT_SIZE_IN_BYTES
-            self.buf = bytearray(txs_offset + txs_buffer_length + CONTROL_FLAGS_LEN)
+            self.buf = bytearray(txs_offset + len(txs_buffer) + CONTROL_FLAGS_LEN)
             self._tx_count = tx_count
             struct.pack_into("<LL", self.buf, self.HEADER_LENGTH, self._network_num, self._tx_count)
-            self.buf[txs_offset:txs_offset + txs_buffer_length] = txs_buffer[:txs_buffer_length]
+            self.buf[txs_offset:txs_offset + len(txs_buffer)] = txs_buffer
         elif buf is not None:
             self.buf = buf
 
