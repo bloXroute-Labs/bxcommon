@@ -9,6 +9,7 @@ from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroad
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
+from bxcommon.messages.bloxroute.get_tx_contents_message import GetTxContentsMessage
 from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
@@ -19,6 +20,7 @@ from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
+from bxcommon.messages.bloxroute.tx_contents_message import TxContentsMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
 from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
@@ -49,6 +51,8 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         BloxrouteMessageType.TRANSACTION: TxMessage,
         BloxrouteMessageType.GET_TRANSACTIONS: GetTxsMessage,
         BloxrouteMessageType.TRANSACTIONS: TxsMessage,
+        BloxrouteMessageType.GET_TX_CONTENTS: GetTxContentsMessage,
+        BloxrouteMessageType.TX_CONTENTS: TxContentsMessage,
         BloxrouteMessageType.KEY: KeyMessage,
         BloxrouteMessageType.BLOCK_HOLDING: BlockHoldingMessage,
         BloxrouteMessageType.DISCONNECT_RELAY_PEER: DisconnectRelayPeerMessage,

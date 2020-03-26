@@ -21,6 +21,7 @@ from bxcommon.messages.bloxroute.bloxroute_message_factory import \
 from bxcommon.messages.bloxroute.bloxroute_version_manager import \
     bloxroute_version_manager
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
+from bxcommon.messages.bloxroute.get_tx_contents_message import GetTxContentsMessage
 from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
@@ -30,6 +31,7 @@ from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.transaction_cleanup_message import \
     TransactionCleanupMessage
+from bxcommon.messages.bloxroute.tx_contents_message import TxContentsMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.version_message import VersionMessage
@@ -122,6 +124,18 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
             BdnPerformanceStatsMessage.MESSAGE_TYPE,
             expected_length
         )
+
+        tx_info = TransactionInfo(crypto.double_sha256(b"123"), bytearray(4), 1)
+        expected_length = constants.NETWORK_NUM_LEN + constants.SID_LEN + SHA256_HASH_LEN + \
+                          constants.UL_INT_SIZE_IN_BYTES + constants.CONTROL_FLAGS_LEN + len(tx_info.contents)
+        self.get_message_preview_successfully(TxContentsMessage(5, tx_info),
+                                              TxContentsMessage.MESSAGE_TYPE,
+                                              expected_length)
+
+        expected_length = constants.NETWORK_NUM_LEN + constants.SID_LEN + constants.CONTROL_FLAGS_LEN
+        self.get_message_preview_successfully(GetTxContentsMessage(1, 2),
+                                              GetTxContentsMessage.MESSAGE_TYPE,
+                                              expected_length)
 
     def test_message_preview_incomplete(self):
         message = HelloMessage(protocol_version=1, network_num=2)
@@ -233,6 +247,20 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
             self.assertEqual(txs[i].hash, result_tx.hash)
             self.assertEqual(txs[i].contents, result_tx.contents)
             self.assertEqual(txs[i].short_id, result_tx.short_id)
+
+        get_tx_contents_message = self.create_message_successfully(GetTxContentsMessage(test_network_num, sid),
+                                                                  GetTxContentsMessage)
+        self.assertEqual(sid, get_tx_contents_message.get_short_id())
+        self.assertEqual(test_network_num, get_tx_contents_message.network_num())
+
+        tx_info = TransactionInfo(Sha256Hash(crypto.double_sha256(b"123")), bytearray(4), 1)
+        tx_contents_message = self.create_message_successfully(TxContentsMessage(test_network_num, tx_info),
+                                                              TxContentsMessage)
+        self.assertEqual(test_network_num, tx_contents_message.network_num())
+        result_tx_info = tx_contents_message.get_tx_info()
+        self.assertEqual(tx_info.hash, result_tx_info.hash)
+        self.assertEqual(tx_info.contents, result_tx_info.contents)
+        self.assertEqual(tx_info.short_id, result_tx_info.short_id)
 
     def test_create_message_failure(self):
         message = HelloMessage(protocol_version=1, network_num=2)
