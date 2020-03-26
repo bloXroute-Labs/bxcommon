@@ -8,6 +8,8 @@ from urllib3.exceptions import HTTPError, MaxRetryError
 from urllib3.poolmanager import PoolManager
 from urllib3.util import parse_url
 
+from bxutils import log_messages
+
 from bxcommon import constants
 from bxutils import logging
 from bxutils.encoding import json_encoder
@@ -100,7 +102,7 @@ def _http_request(method: str, endpoint: str, **kwargs) -> Optional[jsonT]:
         logger.info("{} to {} failed due to: {}.", method, url, e)
         return None
     except Exception as e:
-        logger.error("{} to {} returned error: {}.", method, url, e)
+        logger.error(log_messages.HTTP_REQUEST_RETURNED_ERROR, method, url, e)
         return None
 
     return json.loads(response.data)

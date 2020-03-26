@@ -6,6 +6,7 @@ import time
 from typing import Optional, List, Dict, Union, Iterable
 from logging import StreamHandler, FileHandler
 
+from bxutils import log_messages
 from bxutils import constants
 from bxutils.logging.log_format import LogFormat, JSONFormatter, CustomFormatter, FluentJSONFormatter
 from bxutils.logging.log_level import LogLevel
@@ -126,7 +127,7 @@ def set_log_levels(log_config: Dict[str, Union[LogLevel, str]]):
                         custom_log_level = log_level.from_string(custom_log_level)
                     logging.getLogger(logger_instance.name).setLevel(custom_log_level)
                 except (KeyError, AttributeError):
-                    logger.error("Invalid Log Level Provided Ignore for path {}: {}", log_name, custom_log_level)
+                    logger.error(log_messages.INVALID_LOG_LEVEL, log_name, custom_log_level)
 
 
 def lazy_set_log_level(log_overrides):

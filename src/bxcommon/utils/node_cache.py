@@ -5,12 +5,12 @@ from typing import List, Optional
 from argparse import Namespace
 
 from bxutils import logging
-from bxutils import log_messages
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.models.node_model import NodeModel
 from bxcommon.utils import model_loader, config
 from bxutils.encoding.json_encoder import EnhancedJSONEncoder
+from bxutils import log_messages
 
 logger = logging.get_logger(__name__)
 

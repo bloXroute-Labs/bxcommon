@@ -19,6 +19,7 @@ from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
+from bxutils import log_messages
 from bxutils.logging.log_record_type import LogRecordType
 
 logger = logging.get_logger(__name__)
@@ -333,7 +334,7 @@ class TransactionService:
         """
         if short_id == constants.NULL_TX_SID:
             # TODO: this should be an assertion; requires testing
-            logger.warning("Attempted to assign null short id to transaction hash {}. Ignoring.", transaction_hash)
+            logger.warning(log_messages.ATTEMPTED_TO_ASSIGN_NULL_SHORT_ID_TO_TX_HASH, transaction_hash)
             return
         logger.trace("Assigning sid {} to transaction {}", short_id, transaction_hash)
 
@@ -951,8 +952,7 @@ class TransactionService:
                                                            removal_reason=TxRemovalReason.MEMORY_LIMIT)
             removed_tx_count += 1
         if self._is_exceeding_memory_limit() and not self._tx_assignment_expire_queue:
-            logger.warning("Memory management failure. There appears to be a lack of short ids in the node."
-                           "Clearing all transaction data: {}", self.get_cache_state_json())
+            logger.warning(log_messages.SID_MEMORY_MANAGEMENT_FAILURE, self.get_cache_state_json())
             removed_tx_count += len(self._tx_cache_key_to_contents)
             self._clear()
 
@@ -968,7 +968,7 @@ class TransactionService:
             if blockchain_network.network_num == self.network_num:
                 return blockchain_network.final_tx_confirmations_count
 
-        logger.warning("Could not determine final confirmations count for network number {}. Using default {}.",
+        logger.warning(log_messages.UNABLE_TO_DETERMINE_TX_FINAL_CONFIRMATIONS_COUNT,
                        self.network_num, self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT)
 
         return self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT
@@ -981,8 +981,7 @@ class TransactionService:
             if blockchain_network.network_num == self.network_num:
                 return blockchain_network.removed_transactions_history_expiration_s
 
-        logger.warning("Could not determine expiration time for transaction removed from cache for network number {}. "
-                       "Using default {}.",
+        logger.warning(log_messages.UNABLE_TO_DETERMINE_TX_EXPIRATION_TIME,
                        self.network_num, constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S)
 
         return constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S
@@ -999,14 +998,14 @@ class TransactionService:
             if blockchain_network.network_num == self.network_num:
                 if blockchain_network.tx_contents_memory_limit_bytes is None:
                     logger.warning(
-                        "Blockchain network {} does not have tx cache size limit configured. Using default {}.",
+                        log_messages.TX_CACHE_SIZE_LIMIT_NOT_CONFIGURED,
                         self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
                     )
                     return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
                 else:
                     return blockchain_network.tx_contents_memory_limit_bytes
 
-        logger.warning("Could not determine transactions memory limit for network number {}. Using default {}.",
+        logger.warning(log_messages.UNABLE_TO_DETERMINE_TX_MEMORY_LIMIT,
                        self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES)
         return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
 

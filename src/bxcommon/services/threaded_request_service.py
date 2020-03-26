@@ -7,6 +7,7 @@ from bxutils import logging
 from bxcommon import constants
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.concurrency.thread_pool import ThreadPool
+from bxutils import log_messages
 
 logger = logging.get_logger(__name__)
 
@@ -68,17 +69,15 @@ class ThreadedRequestService:
         extra_info = "{}, {}".format(request, args)
         if not task.done():
             if task.running():
-                logger.warning("Threaded request was enqueued more than {} second(s) ago and hasn't"
-                               " finished yet: {}", self.timeout, extra_info)
+                logger.warning(log_messages.THREADED_REQUEST_HAS_LONG_RUNTIME, self.timeout, extra_info)
             else:
-                logger.warning("Threaded request hasn't started running yet, cancelling: {}", extra_info)
+                logger.warning(log_messages.THREADED_REQUEST_IS_STALE, extra_info)
                 task.cancel()
         else:
             try:
                 result = task.result()
                 logger.trace("Task {} completed with result: {}", extra_info, result)
             except CancelledError as e:
-                logger.error("Task: {} with values: {} was cancelled: {}", task, extra_info, e, exc_info=True)
+                logger.error(log_messages.TASK_CANCELLED, task, extra_info, e, exc_info=True)
             except Exception as e:
-                logger.error("Task: {} with values: {} failed due to error: {}", task, extra_info, e, exc_info=True)
-
+                logger.error(log_messages.TASK_FAILED, task, extra_info, e, exc_info=True)

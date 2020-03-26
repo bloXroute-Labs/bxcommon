@@ -335,7 +335,7 @@ def _set_blockchain_networks_from_cache(opts):
     if cache_info:
         opts.blockchain_networks = cache_info.blockchain_network
     if not opts.blockchain_networks:
-        logger.warning("Cached info for blockchain_networks was empty")
+        logger.warning(log_messages.EMPTY_BLOCKCHAIN_NETWORK_CACHE)
 
 
 def set_blockchain_networks_info(opts):

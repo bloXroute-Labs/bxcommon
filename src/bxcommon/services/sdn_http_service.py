@@ -11,6 +11,7 @@ from bxcommon.services import http_service
 from bxcommon.utils import model_loader, ip_resolver
 from bxutils import logging
 from bxutils.encoding import json_encoder
+from bxutils import log_messages
 
 logger = logging.get_logger(__name__)
 
@@ -37,7 +38,7 @@ def _fetch_peers(node_url: str, node_id=None) -> List[OutboundPeerModel]:
     )
 
     if not outbound_peers_response:
-        logger.warning("BDN returned no peers at endpoint: {}", node_url)
+        logger.warning(log_messages.BDN_RETURNED_NO_PEERS, node_url)
         return []
 
     outbound_peers = [model_loader.load_model(OutboundPeerModel, o) for o in outbound_peers_response]
@@ -59,7 +60,7 @@ def fetch_remote_blockchain_peer(node_id: str) -> Optional[OutboundPeerModel]:
     node_url = SdnRoutes.node_remote_blockchain.format(node_id)
     peers = _fetch_peers(node_url, node_id)
     if len(peers) < 1:
-        logger.warning("BDN did not send the expected number of remote blockchain peers.")
+        logger.warning(log_messages.BDN_RETURNED_UNEXPECTED_NUMBER_OF_PEERS)
         return None
     else:
         logger.debug("Ordered potential remote blockchain peers: {}", peers)
@@ -83,7 +84,7 @@ def fetch_blockchain_networks() -> List[BlockchainNetworkModel]:
     blockchain_networks = http_service.get_json(node_url)
 
     if not blockchain_networks:
-        logger.warning("BDN does not seem to contain any configured networks.")
+        logger.warning(log_messages.BDN_CONTAINS_NO_CONFIGURED_NETWORKS)
         return []
 
     blockchain_networks = [model_loader.load_model(BlockchainNetworkModel, b) for b in blockchain_networks]

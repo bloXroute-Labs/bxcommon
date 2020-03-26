@@ -1,5 +1,151 @@
-from enum import Enum
+from bxutils.logging_messages_utils import LogMessage
+from bxutils.log_message_categories import *
 
 
-EMPTY_BLOCKCHAIN_NETWORK_LIST = "empty_blockhain_network_list"
-READ_CACHE_FILE_ERROR = "cache_read_file_error"
+EMPTY_BLOCKCHAIN_NETWORK_LIST= LogMessage(
+    "C-000000",
+    REQUEST_RESPONSE_CATEGORY,
+    "Empty list for blockchain networks from SDN, trying to obtain info from cache"
+)
+READ_CACHE_FILE_ERROR = LogMessage(
+    "C-000001",
+    GENERAL_CATEGORY,
+    "Failed when tried to read from cache file: could not find the specified file"
+)
+PROTOCOL_VERSION_NOT_IN_FACTORY_MAPPING = LogMessage(
+    "C-000002",
+    REQUEST_RESPONSE_CATEGORY,
+    "Got a message with version {}. Should be supported, but not in factory mapping."
+)
+UNABLE_TO_DETERMINE_PUBLIC_IP = LogMessage(
+    "C-000003",
+    NETWORK_CATEGORY,
+    ("Unable to determine public IP address, please specify one manually via the '--external-ip' command line "
+     "argument.\n\n Detailed error message:\n\t{}")
+)
+PING_TRIGGERED_AN_ERROR = LogMessage(
+    "C-000004",
+    NETWORK_CATEGORY,
+    "Ping to {} {} triggered an error: {}."
+)
+ERROR_LOADING_MODEL_INTO_DICT = LogMessage(
+    "C-000005",
+    GENERAL_CATEGORY,
+    "Failed when tried to load str to dict. model class: {} model params: {}"
+)
+STOP_RECORDING_CALLED_ON_UNINITIALIZED_THREAD = LogMessage(
+    "C-000006",
+    LOGGING_CATEGORY,
+    "Thread was not initialized yet, but stop_recording was called. An invariant in the code is broken."
+)
+FAILURE_RECORDING_STATS = LogMessage(
+    "C-000007",
+    LOGGING_CATEGORY,
+    "Recording {} stats failed with exception: {}. Stack trace: {}"
+)
+HTTP_REQUEST_RETURNED_ERROR = LogMessage(
+    "C-000008",
+    REQUEST_RESPONSE_CATEGORY,
+    "{} to {} returned error: {}."
+)
+TASK_CANCELLED = LogMessage(
+    "C-000009",
+    THREAD_CATEGORY,
+    "Task: {} with values: {} was cancelled: {}"
+)
+TASK_FAILED = LogMessage(
+    "C-000010",
+    THREAD_CATEGORY,
+    "Task: {} with values: {} failed due to error: {}"
+)
+FLUENTD_LOGGER_BUFFER_OVERFLOW = LogMessage(
+    "C-000011",
+    LOGGING_CATEGORY,
+    "fluentd logger, buffer overflow"
+)
+INVALID_LOG_LEVEL = LogMessage(
+    "C-000012",
+    LOGGING_CATEGORY,
+    "Invalid Log Level Provided Ignore for path {}: {}"
+)
+DETECTED_PYTHON3_6 = LogMessage(
+    "C-000013",
+    GENERAL_CATEGORY,
+    ("Python 3.6 environment is detected. Degraded performance is expected. Upgrade "
+     "to Python 3.7 or above for improved performance.")
+)
+EMPTY_BLOCKCHAIN_NETWORK_CACHE = LogMessage(
+    "C-000014",
+    PROCESSING_FAILED_CATEGORY,
+    "Cached info for blockchain_networks was empty"
+)
+DECRYPTION_FAILED = LogMessage(
+    "C-000015",
+    PROCESSING_FAILED_CATEGORY,
+    "Could not decrypt encrypted item with hash {}. Last four bytes: {}"
+)
+UNABLE_TO_DETERMINE_CONNECTION_TYPE = LogMessage(
+    "C-000016",
+    CONNECTION_PROBLEM_CATEGORY,
+    "Could not determine expected connection type for {}:{}. Disconnecting..."
+)
+FAILED_TO_AUTHENTICATE_CONNECTION = LogMessage(
+    "C-000017",
+    AUTHENTICATION_ERROR,
+    "Failed to authenticate connection on {}:{} due to an error: {}."
+)
+ATTEMPTED_TO_ASSIGN_NULL_SHORT_ID_TO_TX_HASH = LogMessage(
+    "C-000018",
+    PROCESSING_FAILED_CATEGORY,
+    "Attempted to assign null short id to transaction hash {}. Ignoring."
+)
+SID_MEMORY_MANAGEMENT_FAILURE = LogMessage(
+    "C-000019",
+    MEMORY_CATEGORY,
+    "Memory management failure. There appears to be a lack of short ids in the node. Clearing all transaction data: {}"
+)
+UNABLE_TO_DETERMINE_TX_FINAL_CONFIRMATIONS_COUNT = LogMessage(
+    "C-000020",
+    PROCESSING_FAILED_CATEGORY,
+    "Could not determine final confirmations count for network number {}. Using default {}."
+)
+UNABLE_TO_DETERMINE_TX_EXPIRATION_TIME = LogMessage(
+    "C-000021",
+    PROCESSING_FAILED_CATEGORY,
+    "Could not determine expiration time for transaction removed from cache for network number {}. Using default {}."
+)
+TX_CACHE_SIZE_LIMIT_NOT_CONFIGURED = LogMessage(
+    "C-000022",
+    PROCESSING_FAILED_CATEGORY,
+    "Blockchain network {} does not have tx cache size limit configured. Using default {}."
+)
+UNABLE_TO_DETERMINE_TX_MEMORY_LIMIT = LogMessage(
+    "C-000023",
+    MEMORY_CATEGORY,
+    "Could not determine transactions memory limit for network number {}. Using default {}."
+)
+THREADED_REQUEST_HAS_LONG_RUNTIME = LogMessage(
+    "C-000024",
+    PROCESSING_FAILED_CATEGORY,
+    "Threaded request was enqueued more than {} second(s) ago and hasn't finished yet: {}"
+)
+THREADED_REQUEST_IS_STALE = LogMessage(
+    "C-000025",
+    PROCESSING_FAILED_CATEGORY,
+    "Threaded request hasn't started running yet, cancelling: {}"
+)
+BDN_RETURNED_NO_PEERS = LogMessage(
+    "C-000026",
+    REQUEST_RESPONSE_CATEGORY,
+    "BDN returned no peers at endpoint: {}"
+)
+BDN_RETURNED_UNEXPECTED_NUMBER_OF_PEERS = LogMessage(
+    "C-000027",
+    REQUEST_RESPONSE_CATEGORY,
+    "BDN did not send the expected number of remote blockchain peers."
+)
+BDN_CONTAINS_NO_CONFIGURED_NETWORKS = LogMessage(
+    "C-000028",
+    REQUEST_RESPONSE_CATEGORY,
+    "BDN does not seem to contain any configured networks."
+)

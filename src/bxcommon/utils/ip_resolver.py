@@ -8,6 +8,7 @@ import urllib3
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxutils import logging
+from bxutils import log_messages
 
 logger = logging.get_logger(__name__)
 
@@ -61,7 +62,5 @@ def get_node_public_ip() -> Optional[str]:
             raise ConnectionError("Unable to parse IP from response - no response was returned")
 
     except Exception as ex:
-        logger.error(
-            "Unable to determine public IP address, please specify one manually via the '--external-ip' command line "
-            "argument.\n\nDetailed error message:\n\t{}", ex)
+        logger.error(log_messages.UNABLE_TO_DETERMINE_PUBLIC_IP, ex)
         exit(1)

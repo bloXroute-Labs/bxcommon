@@ -17,9 +17,6 @@ class CustomLogRecord(log_record_class):
 
 
 class CustomLogger(logger_class):
-    # for this PoC if we don't find the msg, it's not an id
-    # so we return the same msg. We should have a default error msg for this case
-    # Also we don't want errors when trying to hash dictionaries in the PoC
 
     def debug(self, msg, *args, **kwargs):
         super(CustomLogger, self).debug(msg, *args, **kwargs)

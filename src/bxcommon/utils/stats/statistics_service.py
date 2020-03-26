@@ -7,6 +7,7 @@ from threading import Thread, Lock
 from typing import Optional, TypeVar, Generic, Deque, Type, Callable, Dict, Any, TYPE_CHECKING
 
 from bxutils import logging
+from bxutils import log_messages
 from bxutils.logging import CustomLogger
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.log_record_type import LogRecordType
@@ -138,9 +139,7 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
         # memory_statistics_service not a singleton anymore and have it be a variable that is assigned
         # on a per-node basis.
         if self._thread is None:
-            self.logger.error(
-                "Thread was not initialized yet, but stop_recording was called. An invariant in the code is broken."
-            )
+            self.logger.error(log_messages.STOP_RECORDING_CALLED_ON_UNINITIALIZED_THREAD)
             return
 
         with self._lock:
@@ -177,11 +176,7 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
             try:
                 record_fn()
             except Exception as e:
-                self.logger.error(
-                    "Recording {} stats failed with exception: {}. Stack trace: {}".format(
-                        self.name, e, traceback.format_exc()
-                    )
-                )
+                self.logger.error(log_messages.FAILURE_RECORDING_STATS, self.name, e, traceback.format_exc())
                 runtime = 0
             else:
                 runtime = time.time() - start_time

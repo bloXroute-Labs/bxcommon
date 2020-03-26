@@ -5,6 +5,7 @@ from bxcommon.utils import crypto, convert
 from bxcommon.utils.crypto import symmetric_decrypt, symmetric_encrypt
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxutils import logging
+from bxutils import log_messages
 
 logger = logging.get_logger(__name__)
 
@@ -121,7 +122,7 @@ class EncryptedCache(object):
             return cache_item.decrypt()
         except DecryptionError:
             failed_ciphertext = self.pop_ciphertext(hash_key)
-            logger.warning("Could not decrypt encrypted item with hash {}. Last four bytes: {}",
+            logger.warning(log_messages.DECRYPTION_FAILED,
                            convert.bytes_to_hex(hash_key), convert.bytes_to_hex(failed_ciphertext[-4:]))
             return None
 

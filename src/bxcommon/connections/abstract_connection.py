@@ -26,6 +26,7 @@ from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.stats import hooks
 from bxutils import logging
+from bxutils.constants import HAS_PREFIX
 from bxutils.exceptions.connection_authentication_error import ConnectionAuthenticationError
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.log_record_type import LogRecordType
@@ -120,7 +121,7 @@ class AbstractConnection(Generic[Node]):
         return f"{self.CONNECTION_TYPE} ({details})"
 
     def _log_message(self, level: LogLevel, message, *args, **kwargs):
-        args = ("with_logging_prefix", f"[{self}",) + args
+        args = (HAS_PREFIX, f"[{self}",) + args
         logger.log(level, message, *args, **kwargs)
 
     def log_trace(self, message, *args, **kwargs):

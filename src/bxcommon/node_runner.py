@@ -16,6 +16,7 @@ from bxcommon.services import sdn_http_service
 from bxcommon.utils import cli, model_loader, config, node_cache
 from bxcommon.utils.cli import CommonOpts
 from bxutils import logging
+from bxutils import log_messages
 from bxutils.logging import log_config, LoggerConfig, gc_logger
 from bxutils.logging.log_level import LogLevel
 from bxutils.services.node_ssl_service import NodeSSLService
@@ -209,7 +210,4 @@ def _init_ssl_service(
 
 def _verify_environment():
     if sys.version.startswith("3.6."):
-        logger.warning(
-            "Python 3.6 environment is detected. Degraded performance is expected. "
-            "Upgrade to Python 3.7 or above for improved performance."
-        )
+        logger.warning(log_messages.DETECTED_PYTHON3_6)

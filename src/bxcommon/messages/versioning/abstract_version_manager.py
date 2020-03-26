@@ -8,6 +8,7 @@ from bxcommon.constants import VERSION_NUM_LEN
 from bxcommon.messages.bloxroute.version_message import VersionMessage
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
+from bxutils import log_messages
 
 logger = logging.get_logger(__name__)
 
@@ -37,8 +38,7 @@ class AbstractVersionManager:
         if not self.is_protocol_supported(protocol_version):
             raise ValueError("Protocol of version {} is not supported.".format(protocol_version))
         if protocol_version not in self.protocol_to_factory_mapping:
-            logger.error("Got a message with version {}. Should be supported, but not in factory mapping.",
-                         protocol_version)
+            logger.error(log_messages.PROTOCOL_VERSION_NOT_IN_FACTORY_MAPPING, protocol_version)
             raise NotImplementedError()
 
         return self.protocol_to_factory_mapping[protocol_version]

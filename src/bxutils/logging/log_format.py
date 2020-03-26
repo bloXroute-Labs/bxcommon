@@ -1,13 +1,12 @@
 # An enum that stores the different log levels
 import os
 from enum import Enum
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 from logging import Formatter, LogRecord
 import json
 from datetime import datetime
-from bxutils.message_map import message_map, logger_names
-from bxutils.log_categories_map import categories_map
-from bxutils.log_message_categories import LogMessageCategories
+from bxutils.logging_messages_utils import logger_names, LogMessage
+from bxutils.log_message_categories import UNCATEGORIZED, THIRD_PARTY_CATEGORY
 from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 from bxutils import constants
 
@@ -59,12 +58,13 @@ class AbstractFormatter(Formatter):
     instance: str = NO_INSTANCE
 
     def _handle_args(self, record):
-        if isinstance(record.args[0], str) and record.args[0] == "with_logging_prefix":
+        if isinstance(record.args[0], str) and record.args[0] == constants.HAS_PREFIX:
             prefix = record.args[1]
             r_args = record.args[2:]
             return " ".join([prefix, self._formatter(record.msg, r_args)])
         else:
             return self._formatter(record.msg, record.args)
+
 
 class JSONFormatter(AbstractFormatter):
 
@@ -75,16 +75,18 @@ class JSONFormatter(AbstractFormatter):
         self.log_module_to_handler = dict.fromkeys(logger_names,
                                                    self._handle_categorized_log_name)
 
-    def _handle_categorized_log_name(self, record: LogRecord):
-        category_field = categories_map.get(record.msg, None)
-        category = category_field.value if category_field else LogMessageCategories.UNCATEGORIZED.value
-        return (category,
-                message_map.get(record.msg, record.msg))
+    def _handle_categorized_log_name(self, record: LogRecord) -> Tuple[str, str, str]:
+        if record.msg.__class__.__name__ == "LogMessage":
+            message_content = record.msg
+        else:
+            message_content = LogMessage("N/A", UNCATEGORIZED, record.msg)
+        # pyre-ignore
+        return message_content.code, message_content.category, message_content.text
 
     def _handle_categorized_log_level(self, record: LogRecord, log_record: Dict[Any, Any]):
-        log_record["category"], record.msg = self.log_module_to_handler.get(
+        log_record["msg_code"], log_record["category"], record.msg = self.log_module_to_handler.get(
             record.name.split(".")[0],
-            lambda x: ("Third party log message", record.msg)
+            lambda x: (None, THIRD_PARTY_CATEGORY, record.msg)
         )(record)
 
     def _handle_record(self, record: LogRecord, log_record: Dict[Any, Any]):

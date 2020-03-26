@@ -3,20 +3,21 @@ import msgpack
 from io import BytesIO
 
 from bxutils import constants
+from bxutils import log_messages
 from bxutils.logging.fluentd_overflow_handler_type import OverflowHandlerType
 
 logger = logging.getLogger(__name__)
 
 
 def overflow_handler_print(pending_records_buffer):
-    logger.error("fluentd logger, buffer overflow")
+    logger.error(log_messages.FLUENTD_LOGGER_BUFFER_OVERFLOW)
     unpacker = msgpack.Unpacker(BytesIO(pending_records_buffer))
     for unpacked in unpacker:
         print(unpacked)
 
 
 def overflow_handler_ignore(pending_records_buffer):
-    logger.error("fluentd logger, buffer overflow")
+    logger.error(log_messages.FLUENTD_LOGGER_BUFFER_OVERFLOW)
 
 
 overflow_handler_map = {

@@ -5,6 +5,7 @@ from typing import List, NamedTuple
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxutils import logging
+from bxutils import log_messages
 
 logger = logging.get_logger(__name__)
 
@@ -32,7 +33,7 @@ def get_ping_latency(outbound_peer: OutboundPeerModel) -> NodeLatencyInfo:
                 ping_latency = constants.PING_TIMEOUT_S * 1000
                 logger.debug("Ping to {} {} timed out.", outbound_peer.node_type, outbound_peer.ip)
     except Exception as ex:
-        logger.error("Ping to {} {} triggered an error: {}.", outbound_peer.node_type, outbound_peer.ip, ex)
+        logger.error(log_messages.PING_TRIGGERED_AN_ERROR, outbound_peer.node_type, outbound_peer.ip, ex)
         ping_latency = constants.PING_TIMEOUT_S * 1000
 
     return NodeLatencyInfo(outbound_peer, ping_latency)

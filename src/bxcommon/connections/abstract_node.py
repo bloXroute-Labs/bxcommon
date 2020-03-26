@@ -38,6 +38,7 @@ from bxutils import logging
 from bxutils.encoding import json_encoder
 from bxutils.exceptions.connection_authentication_error import \
     ConnectionAuthenticationError
+from bxutils import log_messages
 from bxutils.logging import LogRecordType
 from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.extensions import extensions_factory
@@ -191,13 +192,7 @@ class AbstractNode:
                     socket_connection
                 )
             except ConnectionAuthenticationError as e:
-                logger.warning(
-                    "Failed to authenticate connection on {}:{}"
-                    "due to an error: {}.",
-                    ip,
-                    port,
-                    e
-                )
+                logger.warning(log_messages.FAILED_TO_AUTHENTICATE_CONNECTION, ip, port, e)
                 socket_connection.mark_for_close(should_retry=False)
                 return None
 
@@ -613,9 +608,7 @@ class AbstractNode:
             if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
                 self.sdn_connection = conn_obj
         else:
-            logger.warning(
-                "Could not determine expected connection type for {}:{}. Disconnecting...", ip, port
-            )
+            logger.warning(log_messages.UNABLE_TO_DETERMINE_CONNECTION_TYPE, ip, port)
             socket_connection.mark_for_close(should_retry=False)
 
         return conn_obj
