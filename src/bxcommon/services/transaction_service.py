@@ -11,7 +11,7 @@ from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils.crypto import SHA256_HASH_LEN
-from bxcommon.utils import memory_utils, convert, json_utils
+from bxcommon.utils import memory_utils, convert
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_hash import Sha256Hash
@@ -19,6 +19,7 @@ from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
+from bxutils.encoding import json_encoder
 from bxutils import log_messages
 from bxutils.logging.log_record_type import LogRecordType
 
@@ -321,9 +322,9 @@ class TransactionService:
         else:
             if transaction_cache_key in self._tx_cache_key_to_short_ids:
                 short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
-                self._tx_cache_key_to_short_ids.remove(transaction_cache_key)
+                del self._tx_cache_key_to_short_ids[transaction_cache_key]
                 for short_id in short_ids:
-                    self._short_id_to_tx_cache_key.remove(short_id)
+                    del self._short_id_to_tx_cache_key[short_id]
                     self._tx_assignment_expire_queue.remove(short_id)
 
     def assign_short_id(self, transaction_hash: Sha256Hash, short_id: int):
