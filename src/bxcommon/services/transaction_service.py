@@ -581,7 +581,7 @@ class TransactionService:
                     if cache_key is not None:
                         snapshot_cache_keys.add(cache_key)
                     else:
-                        logger.debug("Short id: {} does not exist!", short_id)
+                        logger.trace("Short id: {} does not exist!", short_id)
                         remove_expired_sids.append(short_id)
             for short_id in remove_expired_sids:
                 self._tx_assignment_expire_queue.remove(short_id)

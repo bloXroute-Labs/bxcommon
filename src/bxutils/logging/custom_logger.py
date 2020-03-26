@@ -2,6 +2,7 @@ import logging
 from typing import Type
 from logging import LogRecord
 from bxutils.logging.log_level import LogLevel
+from bxutils.logging_messages_utils import LogMessage
 logger_class: Type[logging.Logger] = logging.getLoggerClass()
 log_record_class: Type[LogRecord] = logging.getLogRecordFactory()  # pyre-ignore
 
@@ -19,24 +20,29 @@ class CustomLogRecord(log_record_class):
 class CustomLogger(logger_class):
 
     def debug(self, msg, *args, **kwargs):
-        super(CustomLogger, self).debug(msg, *args, **kwargs)
+        self.log(logging.DEBUG, msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        super(CustomLogger, self).info(msg, *args, **kwargs)
+        self.log(logging.INFO, msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        super(CustomLogger, self).warning(msg, *args, **kwargs)
+        self.log(logging.WARNING, msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
-        super(CustomLogger, self).error(msg, *args, **kwargs)
+        self.log(logging.ERROR, msg, *args, **kwargs)
 
     def exception(self, msg, *args, exc_info=True, **kwargs):
-        super(CustomLogger, self).exception(msg, *args, exc_info=exc_info, **kwargs)
+        self.log(logging.ERROR, msg, *args, exc_info=exc_info, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        super(CustomLogger, self).critical(msg, *args, **kwargs)
+        self.log(logging.ERROR, msg, *args, **kwargs)
 
     def log(self, level, msg, *args, **kwargs):
+        if isinstance(msg, LogMessage):
+            extra = kwargs.setdefault("extra", {})
+            extra["code"] = msg.code
+            extra["category"] = msg.category
+            msg = msg.text
         super(CustomLogger, self).log(level, msg, *args, **kwargs)
 
     def fatal(self, msg, *args, exc_info=True, **kwargs):
