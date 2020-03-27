@@ -91,8 +91,8 @@ class ExtensionTransactionService(TransactionService):
         wrapped_block_hash = tpe.Sha256(tpe.InputBytes(block_hash.binary))
         self.proxy.on_block_cleaned_up(wrapped_block_hash)
 
-    def get_tx_service_sync_buffer(self) -> memoryview:
-        byte_array_obj = self.proxy.get_tx_sync_buffer_without_content()
+    def get_tx_service_sync_buffer(self, sync_tx_content: bool) -> memoryview:
+        byte_array_obj = self.proxy.get_tx_sync_buffer(self._total_tx_contents_size, sync_tx_content)
         return memoryview(byte_array_obj)
 
     def update_removed_transactions(self, removed_content_size: int, short_ids: List[int]) -> None:

@@ -115,9 +115,12 @@ def create_txs_service_msg_from_buffer(
 
         while not complete_buffer and \
             time.time() < max_task_complete_time and \
-            current_pos - start_offset < constants.GATEWAY_SYNC_MAX_MESSAGE_SIZE_BYTES:
+            current_pos - start_offset <= constants.GATEWAY_SYNC_MAX_MESSAGE_SIZE_BYTES:
 
-            short_ids_offset = current_pos + crypto.SHA256_HASH_LEN + constants.UL_INT_SIZE_IN_BYTES + constants.UL_INT_SIZE_IN_BYTES
+            current_pos += crypto.SHA256_HASH_LEN
+            content_len, = struct.unpack_from("<L", txs_buffer, current_pos)
+
+            short_ids_offset = current_pos + constants.UL_INT_SIZE_IN_BYTES + constants.UL_INT_SIZE_IN_BYTES + content_len
             short_ids, = struct.unpack_from("<H", txs_buffer, short_ids_offset)
             current_pos = short_ids_offset + constants.UL_SHORT_SIZE_IN_BYTES + (
                 constants.UL_INT_SIZE_IN_BYTES * short_ids) + short_ids
