@@ -7,4 +7,4 @@ class LogMessage:
     category: str
     text: str
 
-
+logger_names = set(["bxcommon"])
