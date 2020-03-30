@@ -264,7 +264,7 @@ class TransactionService:
                                                  self._tx_cache_key_to_contents[transaction_cache_key],
                                                  short_id))
                 else:
-                    missing.append(TransactionInfo(None, None, short_id))
+                    missing.append(TransactionInfo(self._tx_cache_key_to_hash(transaction_cache_key), None, short_id))
                     logger.trace("Short id {} was requested but is unknown.", short_id)
             else:
                 missing.append(TransactionInfo(None, None, short_id))
