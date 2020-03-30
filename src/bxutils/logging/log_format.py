@@ -69,7 +69,8 @@ class JSONFormatter(AbstractFormatter):
                       }
         log_record.update({k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS})
 
-        log_record["msg"] = record.msg
+        if record.args:
+            log_record["msg"] = self._formatter(record.msg, record.args)
         if record.exc_info:
             log_record["exc_info"] = self.formatException(record.exc_info)
         if self.instance != self.NO_INSTANCE:
@@ -89,6 +90,7 @@ class CustomFormatter(AbstractFormatter):
     def format(self, record) -> str:
         log_record = {k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS}
         if record.args and not hasattr(record.msg, "__dict__"):
+            record.msg = self._formatter(record.msg, record.args)
             record.args = ()
 
         record.msg = "{}{}".format(self.encoder.encode(record.msg),
