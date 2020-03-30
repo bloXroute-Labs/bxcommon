@@ -505,7 +505,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
             network_stats["tx_content_len"] = len(_tx_service._tx_cache_key_to_contents)
             sync_data[network_num] = network_stats
 
-        logger.stats({"type": "TxSyncMetrics", "data": sync_data})
+        logger.debug({"type": "TxSyncMetrics", "data": sync_data})
         self.node.on_fully_updated_tx_service()
 
     def mark_for_close(self, should_retry: Optional[bool] = None):

@@ -47,7 +47,7 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
         )
 
     def log_level(self):
-        return LogLevel.INFO
+        return LogLevel.DEBUG
 
     def network_num(self) -> int:
         if self._network_num is None:
@@ -66,7 +66,7 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
         return txs_serializer.deserialize_txs_content_short_ids_from_buffer(self._memoryview, offset, self.tx_count())
 
     def __repr__(self) -> str:
-        return "{}<network_num: {}, tx_count: {}".format(self.__class__.__name__, self.network_num(), self.tx_count())
+        return "{}<network_num: {}, tx_count: {}>".format(self.__class__.__name__, self.network_num(), self.tx_count())
 
     def _txs_content_short_ids_serialize(self) -> None:
         off = self.HEADER_LENGTH
