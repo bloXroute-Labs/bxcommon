@@ -8,6 +8,3 @@ class LogMessage:
     text: str
 
 
-logger_names = set(["bxcommon"])
-
-
