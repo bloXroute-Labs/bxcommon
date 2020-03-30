@@ -41,7 +41,6 @@ class CustomLogger(logger_class):
         if isinstance(msg, LogMessage):
             extra = kwargs.setdefault("extra", {})
             extra["code"] = msg.code
-            extra["category"] = msg.category
             msg = msg.text
         super(CustomLogger, self).log(level, msg, *args, **kwargs)
 

@@ -11,6 +11,7 @@ from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 from bxutils import constants
 
 BUILT_IN_ATTRS = {
+    "timestamp",
     "args",
     "asctime",
     "created",
@@ -99,12 +100,13 @@ class JSONFormatter(AbstractFormatter):
         return json.dumps(self._format_json(record), cls=EnhancedJSONEncoder)
 
     def _format_json(self, record: LogRecord) -> Dict[Any, Any]:
-        log_record = {k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS}
-        if "timestamp" not in log_record:
-            log_record["timestamp"] = datetime.utcnow()
-        log_record["pid"] = os.getpid()
-        log_record["name"] = record.name
-        log_record["level"] = record.levelname
+        log_record = {"timestamp": record.__dict__.get("timestamp", datetime.utcnow()),
+                      "level": record.levelname,
+                      "name": record.name,
+                      "pid": os.getpid()
+                      }
+        log_record.update({k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS})
+
         self._handle_record(record, log_record)
         if record.args:
             # There has to be a better way to do this...
