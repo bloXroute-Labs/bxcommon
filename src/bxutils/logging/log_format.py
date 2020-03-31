@@ -1,7 +1,7 @@
 # An enum that stores the different log levels
 import os
 from enum import Enum
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 from logging import Formatter, LogRecord
 import json
 from datetime import datetime
@@ -45,6 +45,15 @@ class LogFormat(Enum):
         return self.name
 
 
+def _fallback_handler(record: LogRecord) -> Tuple[Optional[str], Optional[str], str]:
+    if record.msg.__class__.__name__ == "LogMessage":
+        message_content = record.msg
+    else:
+        message_content = LogMessage(None, None, record.msg)
+    # pyre-ignore
+    return message_content.code, message_content.category, message_content.text
+
+
 class AbstractFormatter(Formatter):
     FORMATTERS = {
         "%": lambda msg, args: str(msg) % args,
@@ -76,21 +85,20 @@ class JSONFormatter(AbstractFormatter):
         self.log_module_to_handler = dict.fromkeys(logger_names,
                                                    self._handle_categorized_log_name)
 
-    def _handle_categorized_log_name(self, record: LogRecord) -> Tuple[str, str, str]:
+    def _handle_categorized_log_name(self, record: LogRecord) -> Tuple[Optional[str], Optional[str], str]:
         if record.msg.__class__.__name__ == "LogMessage":
             message_content = record.msg
         else:
-            message_content = LogMessage("N/A", UNCATEGORIZED, record.msg)
+            message_content = LogMessage(None, None, record.msg)
         # pyre-ignore
         return message_content.code, message_content.category, message_content.text
 
     def _handle_categorized_log_level(self, record: LogRecord, log_record: Dict[Any, Any]):
         log_record["code"], log_record["category"], record.msg = self.log_module_to_handler.get(
-            record.name.split(".")[0],
-            lambda x: (None, THIRD_PARTY_CATEGORY, record.msg)
+            record.name.split(".")[0], _fallback_handler
         )(record)
 
-    def _handle_record(self, record: LogRecord, log_record: Dict[Any, Any]):
+    def _handle_record(self, record: LogRecord, log_record: Dict[Any, Any]) -> None:
         self.log_level_to_handler.get(
             record.levelname,
             (lambda x, y: (x, y))
@@ -117,6 +125,7 @@ class JSONFormatter(AbstractFormatter):
             log_record["exc_info"] = self.formatException(record.exc_info)
         if self.instance != self.NO_INSTANCE:
             log_record["instance"] = self.instance
+
         return log_record
 
 
