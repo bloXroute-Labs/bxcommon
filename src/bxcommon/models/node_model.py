@@ -90,7 +90,7 @@ class NodeModel:
     latest_source_version: str = None
     should_update_source_version: bool = False
 
-    assigning_short_ids: bool = False
+    assigning_short_ids: Optional[bool] = False
 
     def __post_init__(self):
         self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
