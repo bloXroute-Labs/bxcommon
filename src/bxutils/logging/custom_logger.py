@@ -38,11 +38,16 @@ class CustomLogger(logger_class):
         self.log(logging.ERROR, msg, *args, **kwargs)
 
     def log(self, level, msg, *args, **kwargs):
-        if isinstance(msg, LogMessage):
-            extra = kwargs.setdefault("extra", {})
-            extra["code"] = msg.code
-            msg = msg.text
         super(CustomLogger, self).log(level, msg, *args, **kwargs)
+
+    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
+        if isinstance(msg, LogMessage):
+            if extra is None:
+                extra = {}
+            extra["code"] = msg.code
+            extra["category"] = msg.category
+            msg = msg.text
+        super(CustomLogger, self)._log(level, msg, args, exc_info, extra, stack_info)
 
     def fatal(self, msg, *args, exc_info=True, **kwargs):
         if self.isEnabledFor(LogLevel.FATAL):

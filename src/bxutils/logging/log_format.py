@@ -45,15 +45,6 @@ class LogFormat(Enum):
         return self.name
 
 
-def _fallback_handler(record: LogRecord) -> Tuple[Optional[str], Optional[str], str]:
-    if record.msg.__class__.__name__ == "LogMessage":
-        message_content = record.msg
-    else:
-        message_content = LogMessage(None, None, record.msg)
-    # pyre-ignore
-    return message_content.code, message_content.category, message_content.text
-
-
 class AbstractFormatter(Formatter):
     FORMATTERS = {
         "%": lambda msg, args: str(msg) % args,
@@ -78,32 +69,6 @@ class AbstractFormatter(Formatter):
 
 class JSONFormatter(AbstractFormatter):
 
-    def __init__(self, *args, **kwargs):
-        super(JSONFormatter, self).__init__(args, kwargs)
-        self.log_level_to_handler = dict.fromkeys(constants.CATEGORIZED_LOG_LEVELS,
-                                                  self._handle_categorized_log_level)
-        self.log_module_to_handler = dict.fromkeys(logger_names,
-                                                   self._handle_categorized_log_name)
-
-    def _handle_categorized_log_name(self, record: LogRecord) -> Tuple[Optional[str], Optional[str], str]:
-        if record.msg.__class__.__name__ == "LogMessage":
-            message_content = record.msg
-        else:
-            message_content = LogMessage(None, None, record.msg)
-        # pyre-ignore
-        return message_content.code, message_content.category, message_content.text
-
-    def _handle_categorized_log_level(self, record: LogRecord, log_record: Dict[Any, Any]):
-        log_record["code"], log_record["category"], record.msg = self.log_module_to_handler.get(
-            record.name.split(".")[0], _fallback_handler
-        )(record)
-
-    def _handle_record(self, record: LogRecord, log_record: Dict[Any, Any]) -> None:
-        self.log_level_to_handler.get(
-            record.levelname,
-            (lambda x, y: (x, y))
-        )(record, log_record)
-
     def format(self, record):  # pyre-ignore
         return json.dumps(self._format_json(record), cls=EnhancedJSONEncoder)
 
@@ -115,7 +80,6 @@ class JSONFormatter(AbstractFormatter):
                       }
         log_record.update({k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS})
 
-        self._handle_record(record, log_record)
         if record.args:
             # There has to be a better way to do this...
             log_record["msg"] = self._handle_args(record)
