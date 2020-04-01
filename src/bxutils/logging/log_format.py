@@ -36,6 +36,9 @@ BUILT_IN_ATTRS = {
     "threadName",
 }
 
+EXCLUDE_FROM_PLAIN_FORMATTING = {
+    "category"
+}
 
 class LogFormat(Enum):
     JSON = "JSON"
@@ -103,7 +106,8 @@ class CustomFormatter(AbstractFormatter):
     encoder = EnhancedJSONEncoder()
 
     def format(self, record) -> str:
-        log_record = {k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS}
+        log_record = {k: v for k, v in record.__dict__.items() if
+                      k not in BUILT_IN_ATTRS and k not in EXCLUDE_FROM_PLAIN_FORMATTING}
         if record.args and not hasattr(record.msg, "__dict__"):
             record.msg = self._handle_args(record)
             record.args = ()
