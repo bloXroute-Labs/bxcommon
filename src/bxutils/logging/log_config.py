@@ -26,9 +26,59 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def _get_handler_file(folder_path: str):
+    assert folder_path is not None, "log folder path is missing"
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    filename = os.path.join(
+        folder_path,
+        "{}{}.log".format(time.strftime("%Y-%m-%d-%H:%M:%S+0000-", time.gmtime()), str(os.getpid()))
+    )
+    return FileHandler(filename)
+
+
+def _get_handler_fluentd(fluentd_host: str, fluentd_tag_suffix: Optional[str], max_queue_size: int):
+    assert fluentd_host is not None, "fluentd host name is missing"
+    if ":" in fluentd_host:
+        fluentd_host, fluentd_port = fluentd_host.split(":")
+    else:
+        fluentd_port = constants.FLUENTD_PORT
+    if fluentd_tag_suffix:
+        fluentd_tag = constants.FLUENTD_DEFAULT_TAG + "." + fluentd_tag_suffix
+    else:
+        fluentd_tag = constants.FLUENTD_DEFAULT_TAG
+    return FluentHandler(
+        fluentd_tag,
+        host=fluentd_host,
+        port=int(fluentd_port),
+        buffer_overflow_handler=overflow_handler,
+        nanosecond_precision=True,
+        max_queue_size=max_queue_size
+    )
+
+
+def _get_formatter(log_format: LogFormat, root_log_level: LogLevel, style: str, handler_type: HandlerType):
+    if log_format == LogFormat.PLAIN:
+        if root_log_level <= LogLevel.DEBUG:
+            formatter = CustomFormatter(fmt=constants.DEBUG_LOG_FORMAT_PATTERN,
+                                        datefmt=constants.PLAIN_LOG_DATE_FORMAT_PATTERN,
+                                        style=style)
+        else:
+            formatter = CustomFormatter(fmt=constants.INFO_LOG_FORMAT_PATTERN,
+                                        datefmt=constants.PLAIN_LOG_DATE_FORMAT_PATTERN,
+                                        style=style)
+    elif handler_type == HandlerType.Fluent:
+        formatter = FluentJSONFormatter(style=style)
+    elif log_format == LogFormat.JSON:
+        formatter = JSONFormatter(style=style)
+    else:
+        raise ValueError("LOG_FORMAT was not set correctly: {}".format(log_format))
+    return formatter
+
+
 def create_logger(
         global_logger_name: Optional[str],
-        root_log_level: int = constants.DEFAULT_LOG_LEVEL,
+        root_log_level: LogLevel = constants.DEFAULT_LOG_LEVEL,
         log_format: LogFormat = constants.DEFAULT_LOG_FORMAT,
         handler_type: HandlerType = HandlerType.Stream,
         flush_handlers: bool = True,
@@ -53,51 +103,16 @@ def create_logger(
     :param max_queue_size: the maximum size of the fluent logger queue
     :param handler_log_level: a specific log level for the handler itself (optional)
     """
-    if log_format == LogFormat.PLAIN:
-        if root_log_level <= LogLevel.DEBUG:
-            formatter = CustomFormatter(fmt=constants.DEBUG_LOG_FORMAT_PATTERN,
-                                        datefmt=constants.PLAIN_LOG_DATE_FORMAT_PATTERN,
-                                        style=style)
-        else:
-            formatter = CustomFormatter(fmt=constants.INFO_LOG_FORMAT_PATTERN,
-                                        datefmt=constants.PLAIN_LOG_DATE_FORMAT_PATTERN,
-                                        style=style)
-    elif handler_type == HandlerType.Fluent:
-        formatter = FluentJSONFormatter(style=style)
-    elif log_format == LogFormat.JSON:
-        formatter = JSONFormatter(style=style)
-    else:
-        raise ValueError("LOG_FORMAT was not set correctly: {}".format(log_format))
+    formatter = _get_formatter(log_format, root_log_level, style, handler_type)
 
     custom_logger = logging.getLogger(global_logger_name)
 
     if handler_type == HandlerType.File:
-        assert folder_path is not None, "log folder path is missing"
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-        filename = os.path.join(
-            folder_path,
-            "{}{}.log".format(time.strftime("%Y-%m-%d-%H:%M:%S+0000-", time.gmtime()), str(os.getpid()))
-        )
-        handler = FileHandler(filename)
+        assert folder_path is not None
+        handler = _get_handler_file(folder_path)
     elif handler_type == HandlerType.Fluent:
-        assert fluentd_host is not None, "fluentd host name is missing"
-        if ":" in fluentd_host:
-            fluentd_host, fluentd_port = fluentd_host.split(":")
-        else:
-            fluentd_port = constants.FLUENTD_PORT
-        if fluentd_tag_suffix:
-            fluentd_tag = constants.FLUENTD_DEFAULT_TAG + "." + fluentd_tag_suffix
-        else:
-            fluentd_tag = constants.FLUENTD_DEFAULT_TAG
-        handler = FluentHandler(
-            fluentd_tag,
-            host=fluentd_host,
-            port=int(fluentd_port),
-            buffer_overflow_handler=overflow_handler,
-            nanosecond_precision=True,
-            max_queue_size=max_queue_size
-        )
+        assert fluentd_host is not None
+        handler = _get_handler_fluentd(fluentd_host, fluentd_tag_suffix, max_queue_size)
     else:
         handler = StreamHandler(sys.stdout)
 
@@ -130,7 +145,7 @@ def set_log_levels(log_config: Dict[str, Union[LogLevel, str]]):
                     logger.error(log_messages.INVALID_LOG_LEVEL, log_name, custom_log_level)
 
 
-def lazy_set_log_level(log_overrides):
+def lazy_set_log_level(log_overrides) -> None:
     log_configs = {}
     for stats_logger_name in constants.STATS_LOGGER_NAMES:
         log_configs[stats_logger_name] = constants.DEFAULT_STATS_LOG_LEVEL
@@ -138,7 +153,7 @@ def lazy_set_log_level(log_overrides):
     set_log_levels(log_configs)
 
 
-def set_instance(logger_names: List[Optional[str]], instance: str):
+def set_instance(logger_names: List[Optional[str]], instance: str) -> None:
     logger_names.append(None)  # make sure we also set the instance on the root logger
     for logger_name in logger_names:
         custom_logger = logging.getLogger(logger_name)
@@ -171,21 +186,23 @@ def setup_logging(
         third_party_loggers: Optional[List[LoggerConfig]] = None,
         fluent_log_level: Optional[LogLevel] = None,
         stdout_log_level: Optional[LogLevel] = None
-        ):
+        ) -> None:
     loggers_config = [LoggerConfig(None, root_log_style, root_log_level)]
     if third_party_loggers is not None:
         loggers_config.extend(third_party_loggers)
 
     for logger_config in loggers_config:
-        create_logger(
-            logger_config.name,
-            root_log_level=logger_config.log_level if logger_config.log_level is not None else default_log_level,
-            log_format=log_format,
-            style=logger_config.style,
-            handler_type=HandlerType.Stream,
-            handler_log_level=stdout_log_level
-        )
-        if enable_fluent_logger and fluentd_host is not None and FluentHandler is not None:
+        if LoggerConfig.log_handler_type is None or LoggerConfig.log_handler_type == HandlerType.Stream:
+            create_logger(
+                logger_config.name,
+                root_log_level=logger_config.log_level if logger_config.log_level is not None else default_log_level,
+                log_format=log_format,
+                style=logger_config.style,
+                handler_type=HandlerType.Stream,
+                handler_log_level=stdout_log_level
+            )
+        if enable_fluent_logger and LoggerConfig.log_handler_type is None \
+                or LoggerConfig.log_handler_type == HandlerType.Fluent:
             create_logger(
                 logger_config.name,
                 root_log_level=logger_config.log_level if logger_config.log_level is not None else default_log_level,

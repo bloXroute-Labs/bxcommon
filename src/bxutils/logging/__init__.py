@@ -1,8 +1,11 @@
 import logging
 import typing
 
+from dataclasses import dataclass
+
 from bxutils.logging.log_record_type import LogRecordType
 from bxutils.logging.log_level import LogLevel
+from bxutils.logging.handler_type import HandlerType
 from typing import Optional, Union, NamedTuple
 
 from bxutils.logging.custom_logger import CustomLogger, CustomLogRecord
@@ -11,10 +14,12 @@ logging.setLogRecordFactory(CustomLogRecord)  # pyre-ignore
 logging.setLoggerClass(CustomLogger)
 
 
-class LoggerConfig(NamedTuple):
+@dataclass()
+class LoggerConfig:
     name: Optional[str]
     style: str
     log_level: Optional[LogLevel]
+    log_handler_type: Optional[HandlerType] = None
 
 
 def get_logger(name: Optional[Union[str, LogRecordType]] = None,
