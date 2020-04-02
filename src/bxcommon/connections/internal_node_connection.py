@@ -490,7 +490,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         if self.node.NODE_TYPE in NodeType.GATEWAY and ConnectionType.RELAY_BLOCK in self.CONNECTION_TYPE:
             return
         network_num = msg.network_num()
-        self.node.last_sync_message_received_by_network.pop(network_num, None)
+        self.node.on_network_synced(network_num)
         duration = time.time() - self.node.start_sync_time
         self.log_info(
             "TxSync complete. {} is ready and operational. It took {:.3f} seconds to complete transaction state with BDN.",
