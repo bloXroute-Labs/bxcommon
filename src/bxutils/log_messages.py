@@ -149,3 +149,63 @@ BDN_CONTAINS_NO_CONFIGURED_NETWORKS = LogMessage(
     REQUEST_RESPONSE_CATEGORY,
     "BDN does not seem to contain any configured networks."
 )
+COULD_NOT_PARSE_MESSAGE = LogMessage(
+    "C-000029",
+    PROCESSING_FAILED_CATEGORY,
+    "Could not parse message. Error: {}"
+)
+OUT_OF_MEMORY = LogMessage(
+    "C-000030",
+    PROCESSING_FAILED_CATEGORY,
+    "Out of memory error occurred during message processing. Error: {}. "
+)
+UNAUTHORIZED_MESSAGE = LogMessage(
+    "C-000031",
+    PROCESSING_FAILED_CATEGORY,
+    "Unauthorized message {} from {}."
+)
+UNABLE_TO_RECOVER_PARTIAL_MESSAGE = LogMessage(
+    "C-000032",
+    PROCESSING_FAILED_CATEGORY,
+    "Unable to recover after message that failed validation. Closing connection."
+)
+TRYING_TO_RECOVER_MESSAGE = LogMessage(
+    "C-000033",
+    PROCESSING_FAILED_CATEGORY,
+    "Message processing error; trying to recover. Error: {}."
+)
+UNABLE_TO_RECOVER_FULL_MESSAGE = LogMessage(
+    "C-000034",
+    PROCESSING_FAILED_CATEGORY,
+    "Message processing error; unable to recover. Error: {}."
+)
+UNEXPECTED_MESSAGE = LogMessage(
+    "C-000035",
+    PROCESSING_FAILED_CATEGORY,
+    "Received unexpected message ({}) before handshake completed. Closing."
+)
+MESSAGE_VALIDATION_FAILED = LogMessage(
+    "C-000036",
+    PROCESSING_FAILED_CATEGORY,
+    "Message validation failed for {} message: {}."
+)
+INVALID_HANDSHAKE = LogMessage(
+    "C-000037",
+    PROCESSING_FAILED_CATEGORY,
+    "Invalid handshake request on {}:{}. Rejecting the connection. {}"
+)
+DUPLICATE_CONNECTION = LogMessage(
+    "C-000038",
+    PROCESSING_FAILED_CATEGORY,
+    "Discovered duplicate connections to node {}: {}. Closing."
+)
+TOO_MANY_BAD_MESSAGES = LogMessage(
+    "C-000039",
+    PROCESSING_FAILED_CATEGORY,
+    "Received too many bad messages. Closing."
+)
+NETWORK_NUMBER_MISMATCH = LogMessage(
+    "C-000040",
+    PROCESSING_FAILED_CATEGORY,
+    "Network number mismatch. Current network num {}, remote network num {}. Closing connection."
+)

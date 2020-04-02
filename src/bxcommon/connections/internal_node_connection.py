@@ -29,6 +29,7 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
 from bxutils import logging
+from bxutils import log_messages
 from bxutils.logging import LogRecordType
 
 logger = logging.get_logger(__name__)
@@ -148,9 +149,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         network_num = msg.network_num()
 
         if self.node.network_num != constants.ALL_NETWORK_NUM and network_num != self.node.network_num:
-            self.log_warning(
-                "Network number mismatch. Current network num {}, remote network num {}. Closing connection.",
-                self.node.network_num, network_num)
+            self.log_warning(log_messages.NETWORK_NUMBER_MISMATCH, self.node.network_num, network_num)
             self.mark_for_close()
             return
 
