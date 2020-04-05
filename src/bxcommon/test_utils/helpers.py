@@ -95,14 +95,17 @@ def receive_node_message(node, fileno, message):
     node.on_bytes_received(fileno, message)
 
 
-def get_queued_node_bytes(node: AbstractNode, fileno: int, message_type: bytes) -> memoryview:
+def get_queued_node_bytes(
+    node: AbstractNode, fileno: int, message_type: bytes, flush: bool = True
+) -> memoryview:
     bytes_to_send = node.get_bytes_to_send(fileno)
     assert bytes_to_send is not None
     assert message_type in bytes_to_send.tobytes(), \
         f"could not find {message_type} in message bytes " \
         f"{convert.bytes_to_hex(bytes_to_send.tobytes())} " \
         f"on file_no: {fileno}"
-    node.on_bytes_sent(fileno, len(bytes_to_send))
+    if flush:
+        node.on_bytes_sent(fileno, len(bytes_to_send))
     return bytes_to_send
 
 
