@@ -2,6 +2,9 @@ from collections import defaultdict
 from typing import Iterable
 from typing import List, Dict, Set, Optional, Tuple, ClassVar
 import time
+
+from prometheus_client import Gauge
+
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.utils import memory_utils
@@ -42,6 +45,8 @@ class ConnectionPool:
         self.by_node_id = {}
         self.len_fileno = ConnectionPool.INITIAL_FILENO
         self.count_conn_by_ip = defaultdict(lambda: 0)
+
+        self._create_metrics()
 
     def add(self, fileno: int, ip: str, port: int, conn: AbstractConnection) -> None:
         """
@@ -265,3 +270,23 @@ class ConnectionPool:
     # Not used right now but is helpful for debugging
     def _get_ref_info(self, parent_obj):
         return [(obj.name, obj.size, self._get_ref_info(obj)) for obj in parent_obj.references]
+
+    def _create_metrics(self) -> None:
+        self.connections_gauge = Gauge(
+            "peer_count",
+            "Number of peers node is connected to",
+            ("connection_type",)
+        )
+        self.connections_gauge.labels("total").set_function(lambda: len(self.by_ipport))
+        self.connections_gauge.labels("blockchain").set_function(
+            lambda: len(self.get_by_connection_type(ConnectionType.BLOCKCHAIN_NODE))
+        )
+        self.connections_gauge.labels("relay_transaction").set_function(
+            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_TRANSACTION))
+        )
+        self.connections_gauge.labels("relay_block").set_function(
+            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_BLOCK))
+        )
+        self.connections_gauge.labels("relay_all").set_function(
+            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_ALL))
+        )

@@ -1,6 +1,8 @@
 from collections import defaultdict
 from typing import Optional, Union, Dict, Type, Any, TYPE_CHECKING
 
+from prometheus_client import Counter
+
 from bxcommon import constants
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.utils.stats.measurement_type import MeasurementType
@@ -14,6 +16,10 @@ logger = logging.get_logger(LogRecordType.Throughput, __name__)
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
     from bxcommon.connections.abstract_node import AbstractNode
+
+
+bytes_received = Counter("bytes_received", "Number of bytes received from all connections")
+bytes_sent = Counter("bytes_sent", "Number of bytes sent on all connections")
 
 
 class ThroughputIntervalData(StatsIntervalData):
@@ -60,11 +66,13 @@ class ThroughputStatistics(StatisticsService[ThroughputIntervalData, "AbstractNo
             peer_stats.messages_received[msg_type].count += 1
             peer_stats.peer_total_received += msg_size
             self.interval_data.total_in += msg_size
+            bytes_received.inc(msg_size)
         else:
             peer_stats.messages_sent.bytes += msg_size
             peer_stats.messages_sent.count += 1
             peer_stats.peer_total_sent += msg_size
             self.interval_data.total_out += msg_size
+            bytes_sent.inc(msg_size)
 
     def add_measurement(
         self,

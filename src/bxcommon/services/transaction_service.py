@@ -6,6 +6,8 @@ from enum import Enum
 from functools import reduce
 from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator
 
+from prometheus_client import Gauge
+
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.models.quota_type_model import QuotaType
@@ -26,6 +28,16 @@ from bxutils.logging.log_record_type import LogRecordType
 logger = logging.get_logger(__name__)
 logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
 logger_tx_histogram = logging.get_logger(LogRecordType.TransactionHistogram, __name__)
+total_cached_transactions = Gauge(
+    "cached_transaction_total",
+    "Number of cached transactions",
+    ("network",)
+)
+total_cached_transactions_size = Gauge(
+    "cached_transaction_bytes",
+    "Size of cached transactions",
+    ("network",)
+)
 
 
 def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash]) -> Sha256Hash:
@@ -158,11 +170,15 @@ class TransactionService:
                 constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S,
                 self._dump_removed_short_ids
             )
-
         self.node.alarm_queue.register_alarm(
             constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S,
             self._cleanup_removed_transactions_history
         )
+
+        self.total_cached_transactions = total_cached_transactions.labels(network_num)
+        self.total_cached_transactions.set_function(lambda: len(self._tx_cache_key_to_contents))
+        self.total_cached_transactions_size = total_cached_transactions_size.labels(network_num)
+        self.total_cached_transactions_size.set_function(lambda: self._total_tx_contents_size)
 
     def get_short_id_quota_type(self, short_id: int) -> QuotaType:
         if short_id in self._short_id_to_tx_quota_flag:
