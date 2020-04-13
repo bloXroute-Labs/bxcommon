@@ -69,9 +69,11 @@ class ExpirationQueue(Generic[T]):
         while (
             len(self.queue) > 0 and
             iterations < limit and
+            # pyre-fixme[6]: Expected `float` for 1st param but got `Optional[float]`.
             current_time - self.get_oldest_item_timestamp() > self.time_to_live_sec
         ):
             # noinspection PyArgumentList
+            # pyre-fixme[28]: Unexpected keyword argument `last`.
             item, timestamp = self.queue.popitem(last=False)
 
             if remove_callback is not None:
@@ -107,6 +109,7 @@ class ExpirationQueue(Generic[T]):
         :param remove_callback: reference to a callback function that is being called when item is removed
         """
         if len(self.queue) > 0:
+            # pyre-fixme[28]: Unexpected keyword argument `last`.
             item, timestamp = self.queue.popitem(last=False)
 
             if remove_callback is not None:

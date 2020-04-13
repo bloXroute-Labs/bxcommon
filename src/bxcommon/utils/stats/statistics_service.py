@@ -95,12 +95,18 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
 
     def create_interval_data_object(self) -> None:
         assert self.node is not None
+        # pyre-fixme[6]: Expected `AbstractNode` for 1st param but got
+        #  `Optional[Variable[N (bound to AbstractNode)]]`.
+        # pyre-fixme[16]: `Optional` has no attribute `opts`.
         self.interval_data = self.get_interval_data_class()(self.node, self.node.opts.node_id)
 
     def close_interval_data(self) -> None:
         assert self.node is not None
         assert self.interval_data is not None
+        # pyre-fixme[16]: `Optional` has no attribute `close`.
         self.interval_data.close()
+        # pyre-fixme[6]: Expected `T` for 1st param but got `Optional[Variable[T
+        #  (bound to StatsIntervalData)]]`.
         self.history.append(self.interval_data)
 
     def flush_info(self) -> int:
@@ -130,6 +136,7 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
 
     def start_recording(self, record_fn: Callable) -> None:
         self._thread = Thread(target=self.loop_record_on_thread, args=(record_fn,))
+        # pyre-fixme[16]: `Optional` has no attribute `start`.
         self._thread.start()
 
     def stop_recording(self) -> None:
@@ -145,6 +152,7 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
         with self._lock:
             self._alive = False
 
+        # pyre-fixme[16]: `Optional` has no attribute `join`.
         self._thread.join()
 
     def sleep_and_check_alive(self, sleep_time: float) -> bool:
@@ -186,6 +194,7 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
                         "start_date_time": start_date_time,
                         "task": self.name,
                         "duration": runtime,
+                        # pyre-fixme[16]: `Optional` has no attribute `opts`.
                         "node_id": self.node.opts.node_id,
                     }
                 )

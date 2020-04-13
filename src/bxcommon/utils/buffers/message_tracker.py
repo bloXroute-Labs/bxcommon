@@ -39,12 +39,16 @@ class MessageTrackerEntry:
         if self.message:
             if isinstance(self.message, TxMessage):
                 if tx_stats.should_log_event_for_tx(
+                    # pyre-fixme[16]: `Optional` has no attribute `tx_hash`.
                     self.message.tx_hash().binary,
+                    # pyre-fixme[16]: `Optional` has no attribute `network_num`.
                     self.message.network_num(),
+                    # pyre-fixme[16]: `Optional` has no attribute `short_id`.
                     self.message.short_id(),
                 ):
                     return LogLevel.DEBUG
 
+            # pyre-fixme[16]: `Optional` has no attribute `log_level`.
             return self.message.log_level()
 
         return LogLevel.DEBUG

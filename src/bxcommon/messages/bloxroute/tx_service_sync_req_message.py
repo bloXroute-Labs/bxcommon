@@ -20,6 +20,7 @@ class TxServiceSyncReqMessage(AbstractBloxrouteMessage):
             struct.pack_into("<L", self.buf, off, network_num)
             off += constants.NETWORK_NUM_LEN
 
+        # pyre-fixme[8]: Attribute has type `bytearray`; used as `Optional[bytearray]`.
         self.buf: bytearray = buf
         self._network_num: Optional[int] = None
 
@@ -29,11 +30,14 @@ class TxServiceSyncReqMessage(AbstractBloxrouteMessage):
             self.buf
         )
 
-    def network_num(self) -> Optional[int]:
+    def network_num(self) -> int:
         if self._network_num is None:
             off = self.HEADER_LENGTH
             self._network_num, = struct.unpack_from("<L", self._memoryview, off)
-        return self._network_num
+
+        network_num = self._network_num
+        assert network_num is not None
+        return network_num
 
     def __repr__(self) -> str:
         return "{}<network_num: {}".format(self.__class__.__name__, self.network_num())

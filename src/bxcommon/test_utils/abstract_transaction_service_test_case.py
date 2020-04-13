@@ -34,6 +34,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         log_config.create_logger(None, root_log_level=LogLevel.INFO)
 
     def setUp(self) -> None:
+        # pyre-fixme[45]: Cannot instantiate abstract class `MockNode`.
         self.mock_node = MockNode(
             helpers.get_common_opts(8000, node_type=NodeType.EXTERNAL_GATEWAY, log_level_overrides={}))
         self.mock_node.opts.transaction_pool_memory_limit = self.TEST_MEMORY_LIMIT_MB

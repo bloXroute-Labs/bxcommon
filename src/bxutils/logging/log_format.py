@@ -72,7 +72,7 @@ class AbstractFormatter(Formatter):
 
 class JSONFormatter(AbstractFormatter):
 
-    def format(self, record):  # pyre-ignore
+    def format(self, record):
         return json.dumps(self._format_json(record), cls=EnhancedJSONEncoder)
 
     def _format_json(self, record: LogRecord) -> Dict[Any, Any]:
@@ -89,6 +89,12 @@ class JSONFormatter(AbstractFormatter):
         else:
             log_record["msg"] = record.msg
         if record.exc_info:
+            # pyre-fixme[6]: Expected `Union[Tuple[None, None, None],
+            #  Tuple[typing.Type[typing.Any], BaseException,
+            #  Optional[types.TracebackType]]]` for 1st param but got
+            #  `Optional[typing.Union[Tuple[None, None, None],
+            #  Tuple[typing.Type[typing.Any], BaseException,
+            #  Optional[types.TracebackType]]]]`.
             log_record["exc_info"] = self.formatException(record.exc_info)
         if self.instance != self.NO_INSTANCE:
             log_record["instance"] = self.instance

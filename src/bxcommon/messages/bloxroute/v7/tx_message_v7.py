@@ -50,6 +50,7 @@ class TxMessageV7(AbstractBroadcastMessage):
         if self._short_id is None:
             off = self.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH - constants.CONTROL_FLAGS_LEN
             self._short_id, = struct.unpack_from("<L", self.buf, off)
+        # pyre-fixme[7]: Expected `int` but got `None`.
         return self._short_id
 
     def quota_type(self) -> QuotaType:
@@ -60,6 +61,7 @@ class TxMessageV7(AbstractBroadcastMessage):
             tx_quota_type_flag, = struct.unpack_from("<B", self.buf, off)
             self._tx_quota_type = QuotaType(tx_quota_type_flag)
         assert self._tx_quota_type is not None
+        # pyre-fixme[7]: Expected `QuotaType` but got `None`.
         return self._tx_quota_type
 
     def tx_val(self) -> memoryview:
@@ -73,6 +75,7 @@ class TxMessageV7(AbstractBroadcastMessage):
                                off:self.HEADER_LENGTH + self.payload_len() - constants.CONTROL_FLAGS_LEN]
 
         assert self._tx_val is not None
+        # pyre-fixme[7]: Expected `memoryview` but got `Optional[memoryview]`.
         return self._tx_val
 
     def __repr__(self):

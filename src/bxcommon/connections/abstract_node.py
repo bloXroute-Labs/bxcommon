@@ -128,6 +128,7 @@ class AbstractNode:
             constants.TX_SERVICE_CHECK_NETWORKS_SYNCED_S, self._transaction_sync_timeout)
 
         self.requester = ThreadedRequestService(
+            # pyre-fixme[16]: `Optional` has no attribute `name`.
             self.NODE_TYPE.name.lower(), self.alarm_queue, constants.THREADED_HTTP_POOL_SLEEP_INTERVAL_S
         )
 
@@ -287,6 +288,8 @@ class AbstractNode:
             if self.should_connect_to_new_outbound_peer(peer):
                 self.enqueue_connection(
                     peer_ip, peer_port, convert.peer_node_to_connection_type(
+                        # pyre-fixme[6]: Expected `NodeType` for 1st param but got
+                        #  `Optional[NodeType]`.
                         self.NODE_TYPE, peer.node_type
                     )
                 )
@@ -358,7 +361,7 @@ class AbstractNode:
 
         conn.advance_sent_bytes(bytes_sent)
 
-    def on_bytes_written_to_socket(self, file_no: int, bytes_written: int):
+    def on_bytes_written_to_socket(self, file_no: int, bytes_written: int) -> None:
         conn = self.connection_pool.get_by_fileno(file_no)
 
         if conn is None:
@@ -366,6 +369,7 @@ class AbstractNode:
                 "Bytes written call for connection not in pool: {}",
                 file_no
             )
+            return
 
         conn.advance_bytes_written_to_socket(bytes_written)
 
@@ -560,6 +564,8 @@ class AbstractNode:
         node_type = extensions_factory.get_node_type(cert)
         try:
             connection_type = convert.peer_node_to_connection_type(
+                # pyre-fixme[6]: Expected `NodeType` for 1st param but got
+                #  `Optional[NodeType]`.
                 self.NODE_TYPE, node_type
             )
         except (KeyError, ValueError):
@@ -607,6 +613,7 @@ class AbstractNode:
             self.connection_pool.add(socket_connection.file_no, ip, port, conn_obj)
 
             if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
+                # pyre-fixme[16]: `AbstractNode` has no attribute `sdn_connection`.
                 self.sdn_connection = conn_obj
         else:
             logger.warning(log_messages.UNABLE_TO_DETERMINE_CONNECTION_TYPE, ip, port)

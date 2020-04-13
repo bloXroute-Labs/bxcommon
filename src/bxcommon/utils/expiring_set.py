@@ -45,7 +45,7 @@ class ExpiringSet(Generic[T]):
     def get_recent_items(self, count: int) -> List[T]:
         items = []
         # noinspection PyTypeChecker
-        entries = reversed(self._expiration_queue.queue.keys())  # pyre-ignore queue is actually an OrderedDict
+        entries = reversed(self._expiration_queue.queue.keys())
 
 
         try:

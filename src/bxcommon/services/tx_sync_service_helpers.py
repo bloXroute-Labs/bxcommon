@@ -67,6 +67,7 @@ def create_txs_service_msg_from_time(
             cache_key = transaction_service._short_id_to_tx_cache_key.get(short_id, None)
             if cache_key is not None:
                 if cache_key not in snapshot_cache_keys:
+                    # pyre-fixme[6]: Expected `Sha256Hash` for 1st param but got `str`.
                     snapshot_cache_keys.add(cache_key)
                     tx_hash = transaction_service._tx_cache_key_to_hash(cache_key)
                     short_ids = list(transaction_service._tx_cache_key_to_short_ids[cache_key])

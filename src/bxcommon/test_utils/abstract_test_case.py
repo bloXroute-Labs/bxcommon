@@ -13,6 +13,8 @@ from bxutils.logging.log_level import LogLevel
 RELATIVE_PATH_SSL_FILES = "bxcommon/test/ssl_files"
 
 
+# pyre-fixme[13]: Attribute `ssl_folder_path` is never initialized.
+# pyre-fixme[13]: Attribute `ssl_folder_url` is never initialized.
 class AbstractTestCase(unittest.TestCase):
     ssl_folder_path: str
     ssl_folder_url: str

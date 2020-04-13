@@ -23,7 +23,9 @@ class HelloMessage(VersionMessage):
                                        )
     HELLO_MESSAGE_LENGTH = VersionMessage.VERSION_MESSAGE_BLOCK.size + HELLO_MESSAGE_BLOCK.size + constants.CONTROL_FLAGS_LEN
 
+    # pyre-fixme[9]: node_id has type `str`; used as `None`.
     def __init__(self, protocol_version: Optional[int] = None, network_num: Optional[int] = None, node_id: str = None,
+                 # pyre-fixme[9]: buf has type `bytearray`; used as `None`.
                  buf: bytearray = None):
         if buf is None:
             buf = bytearray(self.HEADER_LENGTH + self.HELLO_MESSAGE_LENGTH)

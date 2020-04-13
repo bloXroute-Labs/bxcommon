@@ -62,6 +62,8 @@ def run_node(
     log_config.setup_logging(
         opts.log_format,
         opts.log_level,
+        # pyre-fixme[6]: Expected `Iterable[str]` for 3rd param but got
+        #  `Iterable[Optional[str]]`.
         logger_names,
         opts.log_level_overrides,
         enable_fluent_logger=opts.log_fluentd_enable,

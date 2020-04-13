@@ -39,6 +39,7 @@ class TxContentsMessage(AbstractBloxrouteMessage):
         self._tx_info = None
 
         if buf is None:
+            # pyre-fixme[16]: `Optional` has no attribute `contents`.
             tx_contents_len = len(tx_info.contents)
             msg_size += tx_contents_len
             buf = bytearray(msg_size)
@@ -47,9 +48,11 @@ class TxContentsMessage(AbstractBloxrouteMessage):
             struct.pack_into("<L", buf, off, network_num)
             off += constants.NETWORK_NUM_LEN
 
+            # pyre-fixme[16]: `Optional` has no attribute `short_id`.
             struct.pack_into("<L", buf, off, tx_info.short_id)
             off += constants.SID_LEN
 
+            # pyre-fixme[16]: `Optional` has no attribute `hash`.
             buf[off:off + bxcommon.utils.crypto.SHA256_HASH_LEN] = tx_info.hash
             off += bxcommon.utils.crypto.SHA256_HASH_LEN
 
@@ -77,6 +80,7 @@ class TxContentsMessage(AbstractBloxrouteMessage):
             self._parse()
 
         assert self._network_num is not None
+        # pyre-fixme[7]: Expected `int` but got `None`.
         return self._network_num
 
     def get_tx_info(self) -> TransactionInfo:
@@ -84,6 +88,7 @@ class TxContentsMessage(AbstractBloxrouteMessage):
             self._parse()
 
         assert self._tx_info is not None
+        # pyre-fixme[7]: Expected `TransactionInfo` but got `None`.
         return self._tx_info
 
     def _parse(self) -> None:

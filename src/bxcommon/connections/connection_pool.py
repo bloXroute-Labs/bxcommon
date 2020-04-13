@@ -76,11 +76,14 @@ class ConnectionPool:
 
     def update_connection_type(self, conn: AbstractConnection, connection_type: ConnectionType) -> None:
         self.delete(conn)
+
         # pyre-ignore this is how we currently identify connections
         conn.CONNECTION_TYPE = connection_type
         self.add(conn.file_no, conn.peer_ip, conn.peer_port, conn)
-        assert conn.peer_id is not None
-        self.index_conn_node_id(conn.peer_id, conn)
+
+        peer_id = conn.peer_id
+        assert peer_id is not None
+        self.index_conn_node_id(peer_id, conn)
 
     def index_conn_node_id(self, node_id: str, conn: AbstractConnection) -> None:
         self.by_node_id[node_id] = conn
@@ -146,8 +149,9 @@ class ConnectionPool:
         else:
             self.count_conn_by_ip[conn.peer_ip] -= 1
 
-        if conn.peer_id and conn.peer_id in self.by_node_id:
-            del self.by_node_id[conn.peer_id]
+        peer_id = conn.peer_id
+        if peer_id and peer_id in self.by_node_id:
+            del self.by_node_id[peer_id]
 
     def items(self):
         """

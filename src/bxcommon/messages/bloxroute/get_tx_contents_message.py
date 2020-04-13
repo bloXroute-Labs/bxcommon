@@ -56,6 +56,7 @@ class GetTxContentsMessage(AbstractBloxrouteMessage):
             self._parse()
 
         assert self._network_num
+        # pyre-fixme[7]: Expected `int` but got `None`.
         return self._network_num
 
     def get_short_id(self) -> int:
@@ -63,6 +64,7 @@ class GetTxContentsMessage(AbstractBloxrouteMessage):
             self._parse()
 
         assert self._short_id
+        # pyre-fixme[7]: Expected `int` but got `None`.
         return self._short_id
 
     def _parse(self) -> None:

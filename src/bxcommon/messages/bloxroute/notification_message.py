@@ -17,6 +17,9 @@ class NotificationMessage(AbstractBloxrouteMessage):
                           constants.CONTROL_FLAGS_LEN
     MESSAGE_TYPE = BloxrouteMessageType.NOTIFICATION
 
+    # pyre-fixme[9]: notification_code has type `Union[NotificationCode, int]`; used
+    #  as `None`.
+    # pyre-fixme[9]: raw has type `str`; used as `None`.
     def __init__(self, notification_code: Union[NotificationCode, int] = None, raw: str = None, buf=None):
         if buf is None:
             buffer_len = self.BASE_PAYLOAD_LENGTH + (len(raw) if raw is not None else 0)
@@ -46,12 +49,14 @@ class NotificationMessage(AbstractBloxrouteMessage):
         if self._notification_code is None:
             self._unpack()
         assert self._notification_code is not None
+        # pyre-fixme[7]: Expected `Union[NotificationCode, int]` but got `None`.
         return self._notification_code
 
     def raw_message(self) -> str:
         if self._raw is None:
             self._unpack()
         assert self._raw is not None
+        # pyre-fixme[7]: Expected `str` but got `None`.
         return self._raw
 
     def formatted_message(self):

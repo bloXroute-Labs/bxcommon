@@ -7,6 +7,7 @@ logger_class: Type[logging.Logger] = logging.getLoggerClass()
 log_record_class: Type[LogRecord] = logging.getLogRecordFactory()  # pyre-ignore
 
 
+# pyre-fixme[11]: Annotation `log_record_class` is not defined as a type.
 class CustomLogRecord(log_record_class):
 
     def getMessage(self):
@@ -17,6 +18,7 @@ class CustomLogRecord(log_record_class):
         return msg
 
 
+# pyre-fixme[11]: Annotation `logger_class` is not defined as a type.
 class CustomLogger(logger_class):
 
     def debug(self, msg, *args, **kwargs):

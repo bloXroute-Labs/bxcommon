@@ -64,16 +64,16 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             else:
                 return str(o)
         if isinstance(o, (date, datetime, time)):
-            return o.isoformat()  # pyre-ignore
+            return o.isoformat()
         if isinstance(o, bytes):
             try:
                 return o.decode("utf-8")
             except UnicodeDecodeError:
                 return str(o)
         if hasattr(o, "hexdigest"):
-            return o.hexdigest()  # pyre-ignore
+            return o.hexdigest()
         if hasattr(o, "hex_string"):
-            return o.hex_string()  # pyre-ignore
+            return o.hex_string()
         if istraceback(o):
             return "".join(traceback.format_tb(o)).strip()
         return o

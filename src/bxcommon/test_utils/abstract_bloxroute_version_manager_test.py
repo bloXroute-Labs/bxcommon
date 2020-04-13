@@ -883,13 +883,16 @@ class AbstractBloxrouteVersionManagerTest(
             ],
         )
         self.assertEqual(
+            # pyre-fixme[16]: `AbstractMessage` has no attribute `msg_type`.
             original_old_message.msg_type(), converted_old_message.msg_type(),
         )
         self.assertEqual(
+            # pyre-fixme[16]: `AbstractMessage` has no attribute `payload_len`.
             original_old_message.payload_len(),
             converted_old_message.payload_len(),
         )
         self.assertEqual(
+            # pyre-fixme[16]: `AbstractMessage` has no attribute `get_control_flags`.
             original_old_message.get_control_flags(),
             converted_old_message.get_control_flags(),
         )

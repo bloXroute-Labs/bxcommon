@@ -34,6 +34,8 @@ class BroadcastMessage(AbstractBroadcastMessage):
             struct.pack_into("?", self.buf, off, is_encrypted)
             off += constants.BLOCK_ENCRYPTED_FLAG_LEN
 
+            # pyre-fixme[6]: Expected `Sized` for 1st param but got
+            #  `Optional[bytearray]`.
             self.buf[off:off + len(blob)] = blob
 
     def log_level(self):
@@ -43,6 +45,7 @@ class BroadcastMessage(AbstractBroadcastMessage):
         if self._is_encrypted is None:
             off = self.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH - constants.CONTROL_FLAGS_LEN
             self._is_encrypted, = struct.unpack_from("?", self.buf, off)
+        # pyre-fixme[7]: Expected `bool` but got `None`.
         return self._is_encrypted
 
     def block_hash(self) -> Sha256Hash:
@@ -54,6 +57,7 @@ class BroadcastMessage(AbstractBroadcastMessage):
                   constants.CONTROL_FLAGS_LEN
             self._blob = self._memoryview[off:self.HEADER_LENGTH + self.payload_len() - constants.CONTROL_FLAGS_LEN]
 
+        # pyre-fixme[7]: Expected `memoryview` but got `None`.
         return self._blob
 
     @classmethod

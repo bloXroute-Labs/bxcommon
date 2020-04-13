@@ -27,6 +27,7 @@ class NodeInfo(StatisticsService[StatsIntervalData, "AbstractNode"]):
 
     def get_info(self) -> Dict[str, Any]:
         assert self.node is not None
+        # pyre-fixme[16]: Optional type has no attribute `opts`.
         payload = dict(self.node.opts.__dict__)
         payload["current_time"] = datetime.utcnow()
         payload["node_peers"] = {
@@ -34,6 +35,7 @@ class NodeInfo(StatisticsService[StatsIntervalData, "AbstractNode"]):
             for (
                 connection_type,
                 connections,
+            # pyre-fixme[16]: Optional type has no attribute `connection_pool`.
             ) in self.node.connection_pool.by_connection_type.items()
         }
         payload["threads"] = active_count()

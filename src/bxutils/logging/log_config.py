@@ -132,6 +132,7 @@ def set_level(logger_names: List[Optional[str]], level: LogLevel) -> None:
 
 
 def set_log_levels(log_config: Dict[str, Union[LogLevel, str]]):
+    # pyre-fixme[16]: `RootLogger` has no attribute `manager`.
     all_loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
 
     for logger_instance in all_loggers:
@@ -160,6 +161,7 @@ def set_instance(logger_names: List[Optional[str]], instance: str) -> None:
         for handler in custom_logger.handlers:
             formatter = handler.formatter
             if hasattr(formatter, "instance"):
+                # pyre-fixme[16]: `Optional` has no attribute `instance`.
                 formatter.instance = instance
 
 
@@ -195,6 +197,8 @@ def setup_logging(
         if LoggerConfig.log_handler_type is None or LoggerConfig.log_handler_type == HandlerType.Stream:
             create_logger(
                 logger_config.name,
+                # pyre-fixme[6]: Expected `LogLevel` for 2nd param but got
+                #  `Optional[LogLevel]`.
                 root_log_level=logger_config.log_level if logger_config.log_level is not None else default_log_level,
                 log_format=log_format,
                 style=logger_config.style,
@@ -205,6 +209,8 @@ def setup_logging(
                 or LoggerConfig.log_handler_type == HandlerType.Fluent:
             create_logger(
                 logger_config.name,
+                # pyre-fixme[6]: Expected `LogLevel` for 2nd param but got
+                #  `Optional[LogLevel]`.
                 root_log_level=logger_config.log_level if logger_config.log_level is not None else default_log_level,
                 log_format=LogFormat.JSON,
                 style=logger_config.style,

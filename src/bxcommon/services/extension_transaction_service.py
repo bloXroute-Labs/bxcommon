@@ -1,9 +1,8 @@
-import struct
 import time
 from datetime import datetime
-from typing import Any, List, Tuple
+from typing import Any, List
 
-import task_pool_executor as tpe  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
+import task_pool_executor as tpe
 
 from bxcommon import constants
 from bxcommon.services.transaction_service import TransactionService
@@ -14,7 +13,6 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
 from bxcommon.utils.proxy.default_map_proxy import DefaultMapProxy
 from bxcommon.utils.proxy.map_proxy import MapProxy
-from bxcommon.utils.proxy.vector_proxy import VectorProxy
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats

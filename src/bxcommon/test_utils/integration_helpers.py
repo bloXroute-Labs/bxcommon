@@ -46,12 +46,18 @@ def receive_on_connection(connection: AbstractConnection):
             process_message_called.is_called = True
             old_process_message()
 
+    # pyre-fixme[16]: Anonymous callable has no attribute `is_called`.
     process_message_called.is_called = False
 
+    # pyre-fixme[8]: Attribute has type
+    #  `BoundMethod[typing.Callable(AbstractConnection.process_message)[[Named(self,
+    #  AbstractConnection[typing.Any])], typing.Any], AbstractConnection[typing.Any]]`;
+    #  used as `() -> Any`.
     connection.process_message = process_message_called
 
     wait_while(
         lambda: not (process_message_called.is_called or not connection.is_alive()),
+        # pyre-fixme[16]: `AbstractSocketConnectionProtocol` has no attribute `receive`.
         lambda: connection.socket_connection.receive()
     )
 

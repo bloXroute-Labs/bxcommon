@@ -23,6 +23,10 @@ class MemoryStatsIntervalData(StatsIntervalData):
         self.class_mem_stats = defaultdict(ClassMemStats)
 
 
+# pyre-fixme[24]: Type parameter `AbstractNode` violates constraints on `T` in
+#  generic type `ThreadedStatisticsService`.
+# pyre-fixme[24]: Type parameter `MemoryStatsIntervalData` violates constraints on
+#  `N` in generic type `ThreadedStatisticsService`.
 class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "AbstractNode"]):
     def __init__(self, interval: int = 0):
         self.sizer_obj = Sizer()
@@ -84,6 +88,7 @@ class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "Abs
         assert self.node is not None
         assert self.interval_data is not None
         payload = {
+            # pyre-fixme[16]: Optional type has no attribute `opts`.
             "node_id": self.node.opts.node_id,
             "node_type": self.node.opts.node_type,
             "node_network_num": self.node.opts.blockchain_network_num,
@@ -97,6 +102,7 @@ class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "Abs
 
     def flush_info(self) -> int:
         assert self.node is not None
+        # pyre-fixme[16]: Optional type has no attribute `dump_memory_usage`.
         self.node.dump_memory_usage()
         return super(MemoryStatsService, self).flush_info()
 

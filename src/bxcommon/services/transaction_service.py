@@ -44,6 +44,7 @@ def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash
     if isinstance(transaction_hash, Sha256Hash):
         return transaction_hash
 
+    # pyre-fixme[25]: Assertion will always fail.
     if isinstance(transaction_hash, (bytes, bytearray, memoryview)):
         return Sha256Hash(binary=transaction_hash)
 
@@ -111,7 +112,7 @@ class TransactionService:
     _tx_cache_key_to_short_ids: Dict[str, Set[int]]
     _tx_assignment_expire_queue: ExpirationQueue
     _tx_hash_without_sid: ExpirationQueue[Sha256Hash]
-    _tx_hash_sid_without_content: ExpirationQueue[int]
+    _tx_hash_sid_without_content: ExpirationQueue[Sha256Hash]
     _tx_hash_to_time_removed: OrderedDict
 
     MAX_ID = 2 ** 32
@@ -147,9 +148,9 @@ class TransactionService:
         self._short_id_to_tx_quota_flag = {}
         self._short_id_to_tx_cache_key = {}
         self._tx_cache_key_to_contents = {}
-        self._tx_assignment_expire_queue: ExpirationQueue[int] = ExpirationQueue(node.opts.sid_expire_time)
-        self._tx_hash_without_sid: ExpirationQueue[Sha256Hash] = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
-        self._tx_hash_sid_without_content: ExpirationQueue[Sha256Hash] = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
+        self._tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
+        self._tx_hash_without_sid = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
+        self._tx_hash_sid_without_content = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
         self._tx_hash_to_time_removed = OrderedDict()
 
         self._final_tx_confirmations_count = self._get_final_tx_confirmations_count()
@@ -468,11 +469,13 @@ class TransactionService:
         :param removal_reason:
         """
         if short_id in self._short_id_to_tx_cache_key:
-            transaction_cache_key = self._short_id_to_tx_cache_key.get(short_id)
+            transaction_cache_key = self._short_id_to_tx_cache_key[short_id]
             if transaction_cache_key in self._tx_cache_key_to_short_ids:
                 short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
-                short_id_flags = [self._short_id_to_tx_quota_flag.get(sid, QuotaType.FREE_DAILY_QUOTA) for sid in
-                                  short_ids]
+                short_id_flags = [
+                    self._short_id_to_tx_quota_flag.get(sid, QuotaType.FREE_DAILY_QUOTA)
+                    for sid in short_ids
+                ]
                 tx_flag = reduce(lambda x, y: x | y, short_id_flags)
                 if QuotaType.PAID_DAILY_QUOTA in tx_flag and not force:
                     return
@@ -1035,6 +1038,7 @@ class TransactionService:
         if isinstance(transaction_hash, (bytes, bytearray, memoryview)):
             return convert.bytes_to_hex(transaction_hash)
 
+        # pyre-fixme[25]: Assertion will always fail.
         if isinstance(transaction_hash, str):
             return transaction_hash
 
@@ -1044,6 +1048,7 @@ class TransactionService:
         if isinstance(transaction_hash, Sha256Hash):
             return transaction_hash
 
+        # pyre-fixme[25]: Assertion will always fail.
         if isinstance(transaction_hash, (bytes, bytearray, memoryview)):
             return Sha256Hash(binary=transaction_hash)
 

@@ -23,6 +23,8 @@ class OutboundPeerModel:
         port: int,
         node_id: Optional[str] = None,
         is_internal_gateway: bool = False,
+        # pyre-fixme[9]: attributes has type `Dict[typing.Any, typing.Any]`; used as
+        #  `None`.
         attributes: Dict[Any, Any] = None,
         node_type: Optional[NodeType] = None,
         non_ssl_port: Optional[int] = None,

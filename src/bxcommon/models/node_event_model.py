@@ -24,16 +24,23 @@ class NodeEventType(SerializeableEnum):
 class NodeEventModel:
     # What event happened in a node.
     node_id: str
+    # pyre-fixme[8]: Attribute has type `NodeEventType`; used as `None`.
     event_type: NodeEventType = None
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     peer_ip: str = None
+    # pyre-fixme[8]: Attribute has type `int`; used as `None`.
     peer_port: int = None
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     timestamp: str = None
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     event_id: str = None
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     payload: str = None
 
     # 'type' has been deprecated but remains here for backwards compatibility with versions pre 1.54.0.
     # TODO: Remove "type" attribute and "__post_init__" once all gateway versions in the BDN are > v1.54.0. Also, remove
     #  the default value of "None" for "event_type"
+    # pyre-fixme[8]: Attribute has type `NodeEventType`; used as `None`.
     type: NodeEventType = None
 
     def __post_init__(self):

@@ -11,15 +11,16 @@ from bxcommon.services.extension_transaction_service import ExtensionTransaction
 from bxcommon.messages.bloxroute.abstract_cleanup_message import AbstractCleanupMessage
 
 
-import task_pool_executor as tpe   # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
+import task_pool_executor as tpe
 
 logger = logging.get_logger(LogRecordType.TransactionCleanup, __name__)
 
 
-def contents_cleanup(transaction_service: TransactionService,
-                     block_confirmation_message: AbstractCleanupMessage,
-                     cleanup_tasks
-                     ):
+def contents_cleanup(
+    transaction_service: TransactionService,
+    block_confirmation_message: AbstractCleanupMessage,
+    cleanup_tasks
+):
     start_datetime = datetime.utcnow()
     start_time = time.time()
     tx_service = typing.cast(ExtensionTransactionService, transaction_service)

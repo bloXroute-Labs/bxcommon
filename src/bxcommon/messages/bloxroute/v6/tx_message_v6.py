@@ -41,6 +41,7 @@ class TxMessageV6(AbstractBroadcastMessage):
         if self._short_id is None:
             off = self.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH - constants.CONTROL_FLAGS_LEN
             self._short_id, = struct.unpack_from("<L", self.buf, off)
+        # pyre-fixme[7]: Expected `int` but got `None`.
         return self._short_id
 
     def tx_val(self) -> memoryview:
@@ -54,6 +55,7 @@ class TxMessageV6(AbstractBroadcastMessage):
                                off:self.HEADER_LENGTH + self.payload_len() - constants.CONTROL_FLAGS_LEN]
 
         assert self._tx_val is not None
+        # pyre-fixme[7]: Expected `memoryview` but got `Optional[memoryview]`.
         return self._tx_val
 
     def __repr__(self):

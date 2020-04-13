@@ -20,6 +20,7 @@ class TxsMessage(AbstractBloxrouteMessage):
     Message with tx details. Reply to GetTxsMessage.
     """
 
+    # pyre-fixme[9]: buf has type `bytearray`; used as `None`.
     def __init__(self, txs: Optional[List[TransactionInfo]] = None, buf: bytearray = None):
 
         """
@@ -30,6 +31,8 @@ class TxsMessage(AbstractBloxrouteMessage):
         """
 
         if buf is None:
+            # pyre-fixme[6]: Expected `List[TransactionInfo]` for 1st param but got
+            #  `Optional[List[TransactionInfo]]`.
             buf = self._txs_to_bytes(txs)
             super(TxsMessage, self).__init__(self.MESSAGE_TYPE, len(buf) - self.HEADER_LENGTH, buf)
         else:
@@ -51,6 +54,7 @@ class TxsMessage(AbstractBloxrouteMessage):
             self._parse()
 
         assert self._txs is not None
+        # pyre-fixme[7]: Expected `List[TransactionInfo]` but got `None`.
         return self._txs
 
     def _txs_to_bytes(self, txs_details: List[TransactionInfo]):
@@ -65,6 +69,8 @@ class TxsMessage(AbstractBloxrouteMessage):
 
         # msg_size += size of each tx
         for tx_info in txs_details:
+            # pyre-fixme[6]: Expected `Sized` for 1st param but got
+            #  `Optional[typing.Union[bytearray, memoryview]]`.
             msg_size += len(tx_info.contents)
 
         buf = bytearray(msg_size)
@@ -77,13 +83,23 @@ class TxsMessage(AbstractBloxrouteMessage):
             struct.pack_into("<L", buf, off, tx_info.short_id)
             off += constants.UL_INT_SIZE_IN_BYTES
 
+            # pyre-fixme[6]: Expected `Union[typing.Iterable[int], bytes]` for 2nd
+            #  param but got `Optional[Sha256Hash]`.
             buf[off:off + bxcommon.utils.crypto.SHA256_HASH_LEN] = tx_info.hash
             off += bxcommon.utils.crypto.SHA256_HASH_LEN
 
+            # pyre-fixme[6]: Expected `Sized` for 1st param but got
+            #  `Optional[typing.Union[bytearray, memoryview]]`.
             struct.pack_into("<L", buf, off, len(tx_info.contents))
             off += constants.UL_INT_SIZE_IN_BYTES
 
+            # pyre-fixme[6]: Expected `Sized` for 1st param but got
+            #  `Optional[typing.Union[bytearray, memoryview]]`.
+            # pyre-fixme[6]: Expected `Union[typing.Iterable[int], bytes]` for 2nd
+            #  param but got `Optional[typing.Union[bytearray, memoryview]]`.
             buf[off:off + len(tx_info.contents)] = tx_info.contents
+            # pyre-fixme[6]: Expected `Sized` for 1st param but got
+            #  `Optional[typing.Union[bytearray, memoryview]]`.
             off += len(tx_info.contents)
 
         return buf

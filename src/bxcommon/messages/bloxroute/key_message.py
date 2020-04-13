@@ -20,6 +20,8 @@ class KeyMessage(AbstractBroadcastMessage):
         super().__init__(message_hash, network_num, source_id, buf)
 
         if buf is None:
+            # pyre-fixme[6]: Expected `Sized` for 1st param but got
+            #  `Optional[bytearray]`.
             if len(key) != crypto.KEY_SIZE:
                 raise ValueError(f"Key must be of size {crypto.KEY_SIZE}")
 
@@ -37,6 +39,7 @@ class KeyMessage(AbstractBroadcastMessage):
             off = self.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH - constants.CONTROL_FLAGS_LEN
             self._key = self._memoryview[off:off + crypto.KEY_SIZE]
 
+        # pyre-fixme[7]: Expected `memoryview` but got `None`.
         return self._key
 
     def __repr__(self):

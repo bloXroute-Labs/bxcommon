@@ -47,6 +47,8 @@ class TxMessage(AbstractBroadcastMessage):
                 + constants.UL_INT_SIZE_IN_BYTES
                 + len(tx_val)
             )
+        # pyre-fixme[6]: Expected `Optional[bytearray]` for 4th param but got
+        #  `Optional[Union[bytearray, memoryview]]`.
         super().__init__(message_hash, network_num, source_id, buf)
 
         if buf is None:
@@ -95,6 +97,7 @@ class TxMessage(AbstractBroadcastMessage):
                 - constants.CONTROL_FLAGS_LEN
             )
             (self._short_id,) = struct.unpack_from("<L", self.buf, off)
+        # pyre-fixme[7]: Expected `int` but got `None`.
         return self._short_id
 
     def has_short_id(self) -> bool:
@@ -112,6 +115,7 @@ class TxMessage(AbstractBroadcastMessage):
             (tx_quota_type_flag,) = struct.unpack_from("<B", self.buf, off)
             self._tx_quota_type = QuotaType(tx_quota_type_flag)
         assert self._tx_quota_type is not None
+        # pyre-fixme[7]: Expected `QuotaType` but got `None`.
         return self._tx_quota_type
 
     def timestamp(self) -> int:
@@ -124,6 +128,7 @@ class TxMessage(AbstractBroadcastMessage):
                 - constants.CONTROL_FLAGS_LEN
             )
             (self._timestamp,) = struct.unpack_from("<L", self.buf, off)
+        # pyre-fixme[7]: Expected `int` but got `None`.
         return self._timestamp
 
     def tx_val(self) -> memoryview:
@@ -146,6 +151,7 @@ class TxMessage(AbstractBroadcastMessage):
                 ]
 
         assert self._tx_val is not None
+        # pyre-fixme[7]: Expected `memoryview` but got `Optional[memoryview]`.
         return self._tx_val
 
     def is_compact(self) -> bool:

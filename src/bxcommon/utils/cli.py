@@ -211,6 +211,7 @@ def add_argument_parser_logging(arg_parser: ArgumentParser):
     arg_parser.add_argument(
         "--log-level",
         help="set log level",
+        # pyre-fixme[16]: `LogLevel` has no attribute `__getattr__`.
         type=LogLevel.__getattr__,
         choices=list(LogLevel),
         default=utils_constants.DEFAULT_LOG_LEVEL
@@ -218,6 +219,7 @@ def add_argument_parser_logging(arg_parser: ArgumentParser):
     arg_parser.add_argument(
         "--log-format",
         help="set log format",
+        # pyre-fixme[16]: `LogFormat` has no attribute `__getattr__`.
         type=LogFormat.__getattr__,
         choices=list(LogFormat),
         default=utils_constants.DEFAULT_LOG_FORMAT

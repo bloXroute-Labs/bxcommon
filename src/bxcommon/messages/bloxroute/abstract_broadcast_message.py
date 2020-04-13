@@ -13,15 +13,19 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
                      constants.CONTROL_FLAGS_LEN
     SOURCE_ID_OFFSET = AbstractBloxrouteMessage.HEADER_LENGTH + crypto.SHA256_HASH_LEN + constants.NETWORK_NUM_LEN
 
-    def __init__(self, message_hash: Optional[Sha256Hash] = None, network_num: Optional[int] = None,
-                 source_id: Optional[str] = None, buf: Optional[bytearray] = None):
-        self._message_hash = None
-        self._network_num = None
-        self._source_id = None
-        self._message_id = None
+    _message_hash: Optional[Sha256Hash] = None
+    _network_num: Optional[int] = None
+    _source_id: Optional[str] = None
+    _message_id: Optional[ConcatHash] = None
 
+    def __init__(
+        self,
+        message_hash: Optional[Sha256Hash] = None,
+        network_num: Optional[int] = None,
+        source_id: Optional[str] = None,
+        buf: Optional[bytearray] = None
+    ):
         if buf is None:
-            assert message_hash is not None and network_num is not None and source_id is not None
             self.buf = bytearray(self.HEADER_LENGTH + self.PAYLOAD_LENGTH)
         else:
             self.buf = buf
@@ -30,6 +34,7 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
         super().__init__(self.MESSAGE_TYPE, payload_length, self.buf)
 
         if buf is None:
+            assert message_hash is not None and network_num is not None and source_id is not None
             off = AbstractBloxrouteMessage.HEADER_LENGTH
 
             self.buf[off:off + crypto.SHA256_HASH_LEN] = message_hash.binary
@@ -41,7 +46,7 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
             struct.pack_into("<16s", self.buf, off, uuid_pack.to_bytes(source_id))
             off += constants.NODE_ID_SIZE_IN_BYTES
 
-    def set_message_hash(self, message_hash: Sha256Hash):
+    def set_message_hash(self, message_hash: Sha256Hash) -> None:
         assert self.buf is not None
         off = AbstractBloxrouteMessage.HEADER_LENGTH
         self.buf[off:off + crypto.SHA256_HASH_LEN] = message_hash.binary
@@ -51,7 +56,9 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
             off = self.HEADER_LENGTH
             self._message_hash = Sha256Hash(self._memoryview[off:off + crypto.SHA256_HASH_LEN])
 
-        return self._message_hash
+        message_hash = self._message_hash
+        assert message_hash is not None
+        return message_hash
 
     def message_id(self) -> ConcatHash:
         """
@@ -63,15 +70,18 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
                 self._memoryview[off:off + crypto.SHA256_HASH_LEN + constants.NETWORK_NUM_LEN],
                 0
             )
-        return self._message_id
+        message_id = self._message_id
+        assert message_id is not None
+        return message_id
 
     def network_num(self) -> int:
         if self._network_num is None:
             off = self.HEADER_LENGTH + crypto.SHA256_HASH_LEN
             self._network_num, = struct.unpack_from("<L", self.buf, off)
 
-        assert self._network_num is not None
-        return self._network_num
+        network_num = self._network_num
+        assert network_num is not None
+        return network_num
 
     def source_id(self) -> str:
         if self._source_id is None:
@@ -80,7 +90,9 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
             if self._source_id is None:
                 self._source_id = constants.DECODED_EMPTY_SOURCE_ID
 
-        return self._source_id
+        source_id = self._source_id
+        assert source_id is not None
+        return source_id
 
     def source_id_as_str(self) -> str:
         if self.source_id() == constants.DECODED_EMPTY_SOURCE_ID:
@@ -88,7 +100,7 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
         else:
             return self.source_id()
 
-    def set_source_id(self, source_id: str):
+    def set_source_id(self, source_id: str) -> None:
         self._source_id = source_id
         off = self.HEADER_LENGTH + crypto.SHA256_HASH_LEN + constants.NETWORK_NUM_LEN
         struct.pack_into("<16s", self.buf, off, uuid_pack.to_bytes(source_id))

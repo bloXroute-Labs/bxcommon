@@ -14,7 +14,7 @@ class AbstractInternalMessage(AbstractMessage):
     HEADER_LENGTH = constants.BX_HDR_COMMON_OFF
     STARTING_BYTES_LEN = 0
 
-    def __init__(self, msg_type: str, payload_len: int, buf: bytearray):
+    def __init__(self, msg_type: bytes, payload_len: int, buf: bytearray):
 
         if len(buf) < self.HEADER_LENGTH:
             raise ValueError("Buffer must be at least {0} in length.".format(self.HEADER_LENGTH))
