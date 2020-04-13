@@ -48,6 +48,7 @@ class BlockStatEventType:
     ENC_BLOCK_CUT_THROUGH_SOURCE_CANCELLED = StatEventTypeSettings("EncBlockCutThroughCancelled")
     ENC_BLOCK_CUT_THROUGH_MANGER_CANCELLED = StatEventTypeSettings("EncBlockCutThroughManagerCancelled")
     ENC_BLOCK_RECEIVED_BY_GATEWAY_FROM_NETWORK = StatEventTypeSettings("EncBlockReceivedByGatewayFromNetwork")
+    ENC_BLOCK_GATEWAY_IGNORE_NO_BLOCKCHAIN = StatEventTypeSettings("EncBlockGatewayIgnoreNoBlockchain")
     ENC_BLOCK_DECRYPTED_SUCCESS = StatEventTypeSettings("EncBlockDecryptedSuccess")
     ENC_BLOCK_DECRYPTION_ERROR = StatEventTypeSettings("EncBlockDecryptionError")
     ENC_BLOCK_SENT_BLOCK_RECEIPT = StatEventTypeSettings("EncBlockSentBlockReceipt", detailed_stat_event=True)
@@ -74,7 +75,8 @@ class BlockStatEventType:
     BLOCK_RECOVERY_COMPLETED = StatEventTypeSettings("BlockRecoveryCompleted")
     BLOCK_RECOVERY_CANCELED = StatEventTypeSettings("BlockRecoveryCanceled")
     BLOCK_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockSentToBlockchainNode",
-                                                          event_logic_flags=StatEventLogicFlags.SUMMARY)
+                                                          event_logic_flags=StatEventLogicFlags.SUMMARY |
+                                                                            StatEventLogicFlags.PROPAGATION_END)
     BLOCK_HEADER_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockHeaderSentToBlockchainNode",
                                                                  event_logic_flags=StatEventLogicFlags.SUMMARY)
     BLOCK_BODY_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockBodySentToBlockchainNode",

@@ -61,6 +61,7 @@ class TestNodeRunner(AbstractTestCase):
             "log_fluentd_enable": False,
             "log_fluentd_host": None,
             "use_extensions": True,
+            "log_fluentd_queue_size": 1000,
             "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
                 str(constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE),
             ),
@@ -68,7 +69,9 @@ class TestNodeRunner(AbstractTestCase):
             "source_version": "v1.0.0",
             "ca_cert_url": self.ssl_folder_url,
             "private_ssl_base_url": self.ssl_folder_url,
-            "data_dir": config.get_default_data_path()
+            "data_dir": config.get_default_data_path(),
+            "log_level_fluentd": LogLevel.DEBUG,
+            "log_level_stdout": LogLevel.TRACE
         }
         self.opts = Namespace()
         self.opts.__dict__ = opts

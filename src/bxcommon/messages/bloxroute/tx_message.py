@@ -31,7 +31,7 @@ class TxMessage(AbstractBroadcastMessage):
         tx_val: Union[bytearray, bytes, memoryview, None] = None,
         quota_type: Optional[QuotaType] = None,
         timestamp: Union[int, float] = constants.NULL_TX_TIMESTAMP,
-        buf: Optional[bytearray] = None,
+        buf: Optional[Union[bytearray, memoryview]] = None,
     ):
         self._short_id = None
         self._tx_val: Optional[memoryview] = None
@@ -96,6 +96,9 @@ class TxMessage(AbstractBroadcastMessage):
             )
             (self._short_id,) = struct.unpack_from("<L", self.buf, off)
         return self._short_id
+
+    def has_short_id(self) -> bool:
+        return self.short_id() != constants.NULL_TX_SID
 
     def quota_type(self) -> QuotaType:
         if self._tx_quota_type is None:

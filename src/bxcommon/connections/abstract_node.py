@@ -4,7 +4,7 @@ import os
 import time
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
-from collections import defaultdict
+from collections import defaultdict, Counter
 from ssl import SSLContext
 from typing import List, Optional, Tuple, Dict, NamedTuple, Union, Set
 
@@ -16,6 +16,7 @@ from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import TerminationError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
+from bxcommon.models.node_model import NodeModel
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
@@ -25,7 +26,7 @@ from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
 from bxcommon.services.threaded_request_service import ThreadedRequestService
-from bxcommon.utils import memory_utils, json_utils, convert, performance_utils
+from bxcommon.utils import memory_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
@@ -34,8 +35,10 @@ from bxcommon.utils.stats.node_statistics_service import node_stats_service
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
+from bxutils.encoding import json_encoder
 from bxutils.exceptions.connection_authentication_error import \
     ConnectionAuthenticationError
+from bxutils import log_messages
 from bxutils.logging import LogRecordType
 from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.extensions import extensions_factory
@@ -112,8 +115,11 @@ class AbstractNode:
         # this way can verify if node lost connection to requested relay.
 
         self.last_sync_message_received_by_network: Dict[int, float] = {}
+        self.network_synced: Dict[int, bool] = defaultdict(lambda: False)
 
-        self.start_sync_time = time.time()
+        self.start_sync_time: Optional[float] = None
+        self.sync_metrics: Dict[int, Counter] = defaultdict(Counter)
+
         opts.has_fully_updated_tx_service = False
 
         self._check_sync_relay_connections_alarm_id = self.alarm_queue.register_alarm(
@@ -187,13 +193,7 @@ class AbstractNode:
                     socket_connection
                 )
             except ConnectionAuthenticationError as e:
-                logger.warning(
-                    "Failed to authenticate connection on {}:{}"
-                    "due to an error: {}.",
-                    ip,
-                    port,
-                    e
-                )
+                logger.warning(log_messages.FAILED_TO_AUTHENTICATE_CONNECTION, ip, port, e)
                 socket_connection.mark_for_close(should_retry=False)
                 return None
 
@@ -274,7 +274,9 @@ class AbstractNode:
                 rem_peer.port,
                 rem_peer.node_id
             ):
-                rem_conn = self.connection_pool.get_by_ipport(rem_peer.ip, rem_peer.port, rem_peer.node_id)
+                rem_conn = self.connection_pool.get_by_ipport(
+                    rem_peer.ip, rem_peer.port, rem_peer.node_id
+                )
                 if rem_conn:
                     rem_conn.mark_for_close(False)
 
@@ -282,15 +284,32 @@ class AbstractNode:
         for peer in outbound_peer_models:
             peer_ip = peer.ip
             peer_port = peer.port
-            if not self.connection_pool.has_connection(
-                peer_ip,
-                peer_port,
-                peer.node_id
-            ):
+            if self.should_connect_to_new_outbound_peer(peer):
                 self.enqueue_connection(
-                    peer_ip, peer_port, convert.peer_node_to_connection_type(self.NODE_TYPE, peer.node_type)
+                    peer_ip, peer_port, convert.peer_node_to_connection_type(
+                        self.NODE_TYPE, peer.node_type
+                    )
                 )
         self.outbound_peers = outbound_peer_models
+
+    def on_updated_node_model(self, new_node_model: NodeModel):
+        """
+        Updates `opts` according a newly updated `NodeModel`.
+        This is currently unused on gateways.
+        """
+        logger.debug(
+            "Updating node attributes with new model: {}", new_node_model
+        )
+        for key, val in new_node_model.__dict__.items():
+            logger.trace(
+                "Updating attribute '{}': {} => {}", key, self.opts.__dict__.get(key, 'None'), val
+            )
+            self.opts.__dict__[key] = val
+
+    def should_connect_to_new_outbound_peer(self, outbound_peer: OutboundPeerModel) -> bool:
+        return not self.connection_pool.has_connection(
+            outbound_peer.ip, outbound_peer.port, outbound_peer.node_id
+        )
 
     def on_updated_sid_space(self, sid_start, sid_end):
         """
@@ -322,11 +341,11 @@ class AbstractNode:
 
         if conn is None:
             logger.debug("Request to get bytes for connection not in pool. file_no: {}", file_no)
-            return
+            return None
 
         if not conn.is_alive():
             conn.log_trace("Skipping sending bytes for closed connection.")
-            return
+            return None
 
         return conn.get_bytes_to_send()
 
@@ -485,7 +504,7 @@ class AbstractNode:
             node_size = memory_utils.get_detailed_object_size(self)
             memory_logger.statistics(
                 "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}",
-                total_mem_usage, self.next_report_mem_usage_bytes, json_utils.serialize(node_size))
+                total_mem_usage, self.next_report_mem_usage_bytes, json_encoder.to_json(node_size))
             self.next_report_mem_usage_bytes = total_mem_usage + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES
 
     def on_input_received(self, file_no: int) -> bool:
@@ -523,6 +542,7 @@ class AbstractNode:
     @abstractmethod
     def sync_tx_services(self):
         self.start_sync_time = time.time()
+        self.sync_metrics = defaultdict(Counter)
 
     @abstractmethod
     def _transaction_sync_timeout(self):
@@ -589,12 +609,14 @@ class AbstractNode:
             if conn_obj.CONNECTION_TYPE == ConnectionType.SDN:
                 self.sdn_connection = conn_obj
         else:
-            logger.warning(
-                "Could not determine expected connection type for {}:{}. Disconnecting...", ip, port
-            )
+            logger.warning(log_messages.UNABLE_TO_DETERMINE_CONNECTION_TYPE, ip, port)
             socket_connection.mark_for_close(should_retry=False)
 
         return conn_obj
+
+    def on_network_synced(self, network_num: int) -> None:
+        self.last_sync_message_received_by_network.pop(network_num, None)
+        self.network_synced[network_num] = True
 
     def on_fully_updated_tx_service(self):
         logger.debug("Synced transaction state with BDN.")

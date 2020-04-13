@@ -20,7 +20,7 @@ from bxutils import logging
 from bxutils.logging import log_config
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
-
+from bxutils import log_messages
 logger = logging.get_logger(__name__)
 
 
@@ -57,6 +57,9 @@ class CommonOpts:
     source_version: int
     ca_cert_url: str
     private_ssl_base_url: str
+    log_fluentd_queue_size: int
+    log_level_fluentd: LogLevel
+    log_level_stdout: LogLevel
 
     def __init__(self, opts: Namespace):
         self.external_ip = opts.external_ip
@@ -92,6 +95,9 @@ class CommonOpts:
         self.ca_cert_url = opts.ca_cert_url
         self.private_ssl_base_url = opts.private_ssl_base_url
         self.non_ssl_port = opts.non_ssl_port
+        self.log_level_fluentd = opts.log_level_fluentd
+        self.log_level_stdout = opts.log_level_stdout
+        self.log_fluentd_queue_size = opts.log_fluentd_queue_size
 
         # Validation
         self.validate_external_ip()
@@ -229,6 +235,12 @@ def add_argument_parser_logging(arg_parser: ArgumentParser):
         default=utils_constants.FLUENTD_HOST
     )
     arg_parser.add_argument(
+        "--log-fluentd-queue-size",
+        help="fluentd queue size",
+        type=int,
+        default=utils_constants.FLUENTD_LOGGER_MAX_QUEUE_SIZE
+    )
+    arg_parser.add_argument(
         "--log-flush-immediately",
         help="Enables immediate flush for logs",
         type=convert.str_to_bool,
@@ -239,6 +251,20 @@ def add_argument_parser_logging(arg_parser: ArgumentParser):
         help="override log level for namespace stats=INFO,bxcommon.connections=WARNING",
         default={},
         type=log_config.str_to_log_options
+    )
+    arg_parser.add_argument(
+        "--log-level-fluentd",
+        help="The fluentd handler log level",
+        type=LogLevel.__getattr__,
+        choices=list(LogLevel),
+        default=utils_constants.DEFAULT_LOG_LEVEL
+    )
+    arg_parser.add_argument(
+        "--log-level-stdout",
+        help="The stdout handler log level",
+        type=LogLevel.__getattr__,
+        choices=list(LogLevel),
+        default=LogLevel.TRACE
     )
 
 
@@ -309,13 +335,13 @@ def _set_blockchain_networks_from_cache(opts):
     if cache_info:
         opts.blockchain_networks = cache_info.blockchain_network
     if not opts.blockchain_networks:
-        logger.warning("Cached info for blockchain_networks was empty")
+        logger.warning(log_messages.EMPTY_BLOCKCHAIN_NETWORK_CACHE)
 
 
 def set_blockchain_networks_info(opts):
     opts.blockchain_networks = sdn_http_service.fetch_blockchain_networks()
     if not opts.blockchain_networks:
-        logger.warning("Empty list for blockchain networks from SDN, trying to obtain info from cache")
+        logger.warning(log_messages.EMPTY_BLOCKCHAIN_NETWORK_LIST)
         _set_blockchain_networks_from_cache(opts)
 
 

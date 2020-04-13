@@ -4,6 +4,8 @@ import asyncio
 from argparse import Namespace
 from contextlib import closing
 from typing import Optional, TypeVar, Type, TYPE_CHECKING, List, Callable
+
+from bxutils.logging.log_level import LogLevel
 from mock import MagicMock
 
 from bxcommon import constants
@@ -93,16 +95,21 @@ def receive_node_message(node, fileno, message):
     node.on_bytes_received(fileno, message)
 
 
-def get_queued_node_bytes(node: AbstractNode, fileno: int, message_type: str):
+def get_queued_node_bytes(node: AbstractNode, fileno: int, message_type: bytes) -> memoryview:
     bytes_to_send = node.get_bytes_to_send(fileno)
+    assert bytes_to_send is not None
     assert message_type in bytes_to_send.tobytes(), \
-        f"could not find {message_type} in message bytes {convert.bytes_to_hex(bytes_to_send.tobytes())}"
+        f"could not find {message_type} in message bytes " \
+        f"{convert.bytes_to_hex(bytes_to_send.tobytes())} " \
+        f"on file_no: {fileno}"
     node.on_bytes_sent(fileno, len(bytes_to_send))
     return bytes_to_send
 
 
 def get_queued_node_messages(node: AbstractNode, fileno: int) -> List[AbstractMessage]:
     connection = node.connection_pool.get_by_fileno(fileno)
+    assert connection is not None
+    assert connection.message_factory is not None
     bytes_to_send = node.get_bytes_to_send(fileno)
     input_buffer = create_input_buffer_with_bytes(bytes_to_send)
 
@@ -128,6 +135,10 @@ def get_queued_node_messages(node: AbstractNode, fileno: int) -> List[AbstractMe
     if total_bytes:
         node.on_bytes_sent(fileno, total_bytes)
     return messages
+
+
+def has_no_queued_messages(node: AbstractNode, fileno: int) -> bool:
+    return len(get_queued_node_messages(node, fileno)) == 0
 
 
 def get_free_port():
@@ -212,7 +223,10 @@ def get_common_opts(port,
         "sync_tx_service": True,
         "source_version": "v1.0.0",
         "non_ssl_port": 3000,
-        "enable_node_cache": True
+        "enable_node_cache": True,
+        "log_fluentd_queue_size": 1000,
+        "log_level_fluentd": LogLevel.DEBUG,
+        "log_level_stdout": LogLevel.TRACE
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val

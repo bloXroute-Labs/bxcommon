@@ -38,6 +38,7 @@ OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME = 0.05
 # The unsigned integer transaction SID representing null.
 # If changing, also change in bxapi/constants.py
 NULL_TX_SID = 0
+NULL_TX_SIDS = {NULL_TX_SID}
 NULL_TX_TIMESTAMP = 0
 UNKNOWN_TRANSACTION_HASH: Sha256Hash = Sha256Hash(bytearray(b"\xff" * crypto.SHA256_HASH_LEN))
 # </editor-fold>
@@ -125,8 +126,6 @@ class SdnRoutes(object):
     nodes = "/nodes"
     node = "/nodes/{0}"
     gateway_node_config = "/configs/gateway_node/{0}"
-    node_relays = "/nodes/{0}/peers"
-    node_potential_relays = "/nodes/{0}/potential-relays"
     node_potential_relays_by_network = "/nodes/{0}/{1}/potential-relays"
     node_gateways = "/nodes/{0}/gateways"
     node_remote_blockchain = "/nodes/{0}/potential-remote-blockchain-peers"
@@ -230,6 +229,7 @@ BLOCK_CONFIRMATIONS_COUNT = 4
 DEFAULT_BLOCK_HOLD_TIMEOUT = 0.3
 
 TXS_MSG_SIZE = 64000
+TXS_SYNC_TASK_DURATION = 0.15
 TX_SERVICE_SYNC_TXS_S = 0.01
 SENDING_TX_MSGS_TIMEOUT_MS = 10 * 60 * 1000
 TX_SERVICE_CHECK_NETWORKS_SYNCED_S = 10 * 60
@@ -249,6 +249,7 @@ MAX_ALLOCATION_POINTER_COUNT = 10
 MAX_COUNT_PER_ALLOCATION = 10
 
 EMPTY_SOURCE_ID = MSG_NULL_BYTE * 16
+DECODED_EMPTY_SOURCE_ID = EMPTY_SOURCE_ID.decode()
 
 TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S = 60 * 15
 TRANSACTION_SERVICE_TRANSACTIONS_HISTOGRAM_BUCKETS = 36
@@ -287,6 +288,11 @@ NODE_SHUTDOWN_TIMEOUT_S = 30
 
 # tx gateway sync snapshot interval, 0 to snapshot the whole mempool
 GATEWAY_SYNC_TX_THRESHOLD_S = 30 * 60
+GATEWAY_SYNC_SYNC_CONTENT = True
+GATEWAY_SYNC_BUILD_MESSAGE_THRESHOLD_S = 0.15
+GATEWAY_SYNC_MAX_MESSAGE_SIZE_BYTES = 500 * 1024
+TX_CONTENT_NO_SID_EXPIRE_S = 60 * 15
+TX_SYNC_USE_SNAPSHOT = False
 
 MEM_STATS_OBJECT_SIZE_THRESHOLD = 1024 * 1024
 MEM_STATS_OBJECT_COUNT_THRESHOLD = 2000

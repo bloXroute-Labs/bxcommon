@@ -17,5 +17,5 @@ class QuietTestCase(AbstractTestCase):
 
     @classmethod
     def setUpClass(cls):
-        log_config.create_logger(None, log_level=LogLevel.FATAL, folder_path="./logs/")
+        log_config.create_logger(None, root_log_level=LogLevel.FATAL, folder_path="./logs/")
         memory_statistics.start_recording = MagicMock()

@@ -8,6 +8,7 @@ from typing import Dict, Type, TypeVar, Any, List, Optional, Union, Set
 import dataclasses
 
 from bxutils import logging
+from bxutils import log_messages
 
 logger = logging.get_logger(__name__)
 T = TypeVar("T")
@@ -19,8 +20,7 @@ def load_model_from_json(model_class: Type[T], model_params: str) -> T:
         model_dict = json.loads(model_params)
         return load_model(model_class, model_dict)
     except Exception:
-        logger.error("Failed when tried to load str to dict. model class: {} model params: {}", model_class,
-                     model_params)
+        logger.error(log_messages.ERROR_LOADING_MODEL_INTO_DICT, model_class, model_params)
         raise
 
 

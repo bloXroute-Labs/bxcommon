@@ -8,6 +8,8 @@ class BloxrouteMessageType(object):
     TRANSACTION = b"tx"
     GET_TRANSACTIONS = b"gettxs"
     TRANSACTIONS = b"txs"
+    GET_TX_CONTENTS = b"getcontents"
+    TX_CONTENTS = b"txcontents"
     KEY = b"key"
     BLOCK_HOLDING = b"blockhold"
     DISCONNECT_RELAY_PEER = b"droprelay"

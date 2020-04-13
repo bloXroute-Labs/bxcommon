@@ -2,6 +2,9 @@ from collections import defaultdict
 from typing import Iterable
 from typing import List, Dict, Set, Optional, Tuple, ClassVar
 import time
+
+from prometheus_client import Gauge
+
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.utils import memory_utils
@@ -14,7 +17,17 @@ logger = logging.get_logger(__name__)
 
 class ConnectionPool:
     """
-    A group of connections with active sockets.
+    Class for managing a set of connection handlers over a node's lifecycle.
+
+    Connections should be thought of unique identified by via file no or node id.
+    (ip, port) will sometimes be used for look ups, but can sometimes be unreliable to identify
+    a connection to another node depending on who initiates the connection.
+
+    Try to avoid writing code that needs to rely on looking up connections by (ip, port), and
+    include fallbacks for node id lookup.
+
+    Lookups without node id are still allowed to support preSSL connections that
+    do not have as strong guarantees on identifying connections by node id.
     """
     INITIAL_FILENO: ClassVar[int] = 100
 
@@ -24,7 +37,6 @@ class ConnectionPool:
     by_node_id: Dict[str, AbstractConnection]
     len_fileno: int
     count_conn_by_ip: Dict[str, int]
-    num_peer_conn: int
 
     def __init__(self):
         self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO
@@ -33,16 +45,14 @@ class ConnectionPool:
         self.by_node_id = {}
         self.len_fileno = ConnectionPool.INITIAL_FILENO
         self.count_conn_by_ip = defaultdict(lambda: 0)
-        self.num_peer_conn = 0
 
-    def add(self, fileno: int, ip: str, port: int, conn: AbstractConnection):
+        self._create_metrics()
+
+    def add(self, fileno: int, ip: str, port: int, conn: AbstractConnection) -> None:
         """
         Adds a connection for a tracking.
         Throws an AssertionError if there already exists a connection to the same (ip, port) pair.
         """
-        if not isinstance(fileno, int):
-            raise TypeError("Fileno is expected to be of type integer.")
-
         assert (ip, port) not in self.by_ipport
 
         while fileno >= self.len_fileno:
@@ -54,7 +64,7 @@ class ConnectionPool:
         self.by_connection_type[conn.CONNECTION_TYPE].add(conn)
         self.count_conn_by_ip[ip] += 1
 
-    def update_port(self, old_port, new_port, conn):
+    def update_port(self, old_port: int, new_port: int, conn: AbstractConnection) -> None:
         """
         Updates port mapping of connection. Clears out old one.
         """
@@ -64,16 +74,18 @@ class ConnectionPool:
 
         self.by_ipport[(conn.peer_ip, new_port)] = conn
 
-    def update_connection_type(self, conn: AbstractConnection, connection_type: ConnectionType):
+    def update_connection_type(self, conn: AbstractConnection, connection_type: ConnectionType) -> None:
         self.delete(conn)
+        # pyre-ignore this is how we currently identify connections
         conn.CONNECTION_TYPE = connection_type
         self.add(conn.file_no, conn.peer_ip, conn.peer_port, conn)
+        assert conn.peer_id is not None
         self.index_conn_node_id(conn.peer_id, conn)
 
     def index_conn_node_id(self, node_id: str, conn: AbstractConnection) -> None:
         self.by_node_id[node_id] = conn
 
-    def has_connection(self, ip: str, port: int, node_id: Optional[str] = None):
+    def has_connection(self, ip: str, port: int, node_id: Optional[str] = None) -> bool:
         if node_id is not None and node_id in self.by_node_id:
             return True
         return (ip, port) in self.by_ipport
@@ -101,32 +113,15 @@ class ConnectionPool:
 
         raise KeyError(f"Could not find a connection with ip port: {ip_port} or node id: {node_id}")
 
-    def get_by_fileno(self, fileno):
+    def get_by_fileno(self, fileno: int) -> Optional[AbstractConnection]:
         if fileno > self.len_fileno:
             return None
         return self.by_fileno[fileno]
 
-    def get_num_conn_by_ip(self, ip):
-        """
-        Gets the number of connections to this IP address.
-        """
-        if ip in self.count_conn_by_ip:
-            return self.count_conn_by_ip[ip]
-        return 0
-
     def get_by_node_id(self, node_id: str) -> AbstractConnection:
-        """
-        Returns list of connections where the peer_id matches the node id param
-
-        NOTE: The connection's peer_id attribute only gets assigned once the hello message is received so you will only
-        be able to retrieve connections by node id once this has been exchanged
-
-        :param node_id: node id to match
-        :return: list of matched connections
-        """
         return self.by_node_id[node_id]
 
-    def delete(self, conn):
+    def delete(self, conn: AbstractConnection) -> None:
         """
         Delete connection from connection pool.
         """
@@ -153,15 +148,6 @@ class ConnectionPool:
 
         if conn.peer_id and conn.peer_id in self.by_node_id:
             del self.by_node_id[conn.peer_id]
-
-    def delete_by_fileno(self, fileno):
-        """
-        Delete connection from connection pool via fileno.
-        """
-        conn = self.by_fileno[fileno]
-        if conn is not None:
-            # noinspection PyTypeChecker
-            self.delete(conn)
 
     def items(self):
         """
@@ -284,3 +270,23 @@ class ConnectionPool:
     # Not used right now but is helpful for debugging
     def _get_ref_info(self, parent_obj):
         return [(obj.name, obj.size, self._get_ref_info(obj)) for obj in parent_obj.references]
+
+    def _create_metrics(self) -> None:
+        self.connections_gauge = Gauge(
+            "peer_count",
+            "Number of peers node is connected to",
+            ("connection_type",)
+        )
+        self.connections_gauge.labels("total").set_function(lambda: len(self.by_ipport))
+        self.connections_gauge.labels("blockchain").set_function(
+            lambda: len(self.get_by_connection_type(ConnectionType.BLOCKCHAIN_NODE))
+        )
+        self.connections_gauge.labels("relay_transaction").set_function(
+            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_TRANSACTION))
+        )
+        self.connections_gauge.labels("relay_block").set_function(
+            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_BLOCK))
+        )
+        self.connections_gauge.labels("relay_all").set_function(
+            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_ALL))
+        )

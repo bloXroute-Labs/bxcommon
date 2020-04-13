@@ -10,6 +10,7 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import PayloadLenError, UnauthorizedMessageError, ConnectionStateError
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
 from bxcommon.messages.validation.control_flag_validation_error import ControlFlagValidationError
@@ -25,6 +26,8 @@ from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.stats import hooks
 from bxutils import logging
+from bxutils import log_messages
+from bxutils.constants import HAS_PREFIX
 from bxutils.exceptions.connection_authentication_error import ConnectionAuthenticationError
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.log_record_type import LogRecordType
@@ -83,7 +86,7 @@ class AbstractConnection(Generic[Node]):
 
         self.hello_messages = []
         self.header_size = 0
-        self.message_factory = None
+        self.message_factory: Optional[AbstractMessageFactory] = None
         self.message_handlers = None
 
         self.log_throughput = True
@@ -119,7 +122,8 @@ class AbstractConnection(Generic[Node]):
         return f"{self.CONNECTION_TYPE} ({details})"
 
     def _log_message(self, level: LogLevel, message, *args, **kwargs):
-        logger.log(level, f"[{self}] {message}", *args, **kwargs)
+        args = (HAS_PREFIX, f"[{self}",) + args
+        logger.log(level, message, *args, **kwargs)
 
     def log_trace(self, message, *args, **kwargs):
         self._log_message(LogLevel.TRACE, message, *args, **kwargs)
@@ -160,7 +164,7 @@ class AbstractConnection(Generic[Node]):
             # to determine next retry
             self.node.num_retries_by_ip[(self.peer_ip, self.peer_port)] = 0
 
-    def add_received_bytes(self, bytes_received: int):
+    def add_received_bytes(self, bytes_received: Union[bytearray, bytes]):
         """
         Adds bytes received from socket connection to input buffer
 
@@ -287,8 +291,7 @@ class AbstractConnection(Generic[Node]):
                 # Full messages must be one of the handshake messages if the connection isn't established yet.
                 if ConnectionState.ESTABLISHED not in self.state \
                     and msg_type not in self.hello_messages:
-                    self.log_warning("Received unexpected message ({}) before handshake completed. Closing.",
-                                     msg_type)
+                    self.log_warning(log_messages.UNEXPECTED_MESSAGE, msg_type)
                     self.mark_for_close()
                     return
 
@@ -320,19 +323,18 @@ class AbstractConnection(Generic[Node]):
 
             # TODO: Investigate possible solutions to recover from PayloadLenError errors
             except PayloadLenError as e:
-                self.log_error("Could not parse message. Error: {}", e.msg)
+                self.log_error(log_messages.COULD_NOT_PARSE_MESSAGE, e.msg)
                 self.mark_for_close()
                 return
 
             except MemoryError as e:
-                self.log_error(
-                    "Out of memory error occurred during message processing. Error: {}. ", e, exc_info=True)
+                self.log_error(log_messages.OUT_OF_MEMORY, e, exc_info=True)
                 self.log_debug("Failed message bytes: {}",
                                self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
                 raise
 
             except UnauthorizedMessageError as e:
-                self.log_error("Unauthorized message {} from {}.", e.msg.MESSAGE_TYPE, self.peer_desc)
+                self.log_error(log_messages.UNAUTHORIZED_MESSAGE, e.msg.MESSAGE_TYPE, self.peer_desc)
                 self.log_debug("Failed message bytes: {}",
                                self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
 
@@ -345,17 +347,15 @@ class AbstractConnection(Generic[Node]):
             except MessageValidationError as e:
 
                 if self.node.NODE_TYPE not in NodeType.GATEWAY_TYPE:
-
                     if isinstance(e, ControlFlagValidationError):
-
                         if e.is_cancelled_cut_through:
                             self.log_debug(
                                 "Message validation failed for {} message: {}. Probably cut-through cancellation",
                                 msg_type, e.msg)
                         else:
-                            self.log_warning("Message validation failed for {} message: {}.", msg_type, e.msg)
+                            self.log_warning(log_messages.MESSAGE_VALIDATION_FAILED, msg_type, e.msg)
                     else:
-                        self.log_warning("Message validation failed for {} message: {}.", msg_type, e.msg)
+                        self.log_warning(log_messages.MESSAGE_VALIDATION_FAILED, msg_type, e.msg)
                 else:
                     self.log_debug("Message validation failed for {} message: {}.", msg_type, e.msg)
                 self.log_debug("Failed message bytes: {}",
@@ -364,7 +364,7 @@ class AbstractConnection(Generic[Node]):
                 if is_full_msg:
                     self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
                 else:
-                    self.log_error("Unable to recover after message that failed validation. Closing connection.")
+                    self.log_error(log_messages.UNABLE_TO_RECOVER_PARTIAL_MESSAGE)
                     self.mark_for_close()
                     return
 
@@ -376,8 +376,7 @@ class AbstractConnection(Generic[Node]):
                     self.log_debug("Received invalid handshake request on {}:{}, {}", self.peer_ip, self.peer_port,
                                    e.msg)
                 else:
-                    self.log_warning("Invalid handshake request on {}:{}. Rejecting the connection. {}",
-                                     self.peer_ip, self.peer_port, e.msg)
+                    self.log_warning(log_messages.INVALID_HANDSHAKE, self.peer_ip, self.peer_port, e.msg)
                 self.log_debug("Failed message bytes: {}",
                                self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
 
@@ -389,8 +388,7 @@ class AbstractConnection(Generic[Node]):
 
                 # Attempt to recover connection by removing bad full message
                 if is_full_msg:
-                    self.log_error("Message processing error; trying to recover. Error: {}.", e,
-                                   exc_info=True)
+                    self.log_error(log_messages.TRYING_TO_RECOVER_MESSAGE, e, exc_info=True)
                     self.log_debug("Failed message bytes: {}",
                                    self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
 
@@ -399,7 +397,7 @@ class AbstractConnection(Generic[Node]):
 
                 # Connection is unable to recover from message processing error if incomplete message is received
                 else:
-                    self.log_error("Message processing error; unable to recover. Error: {}.", e, exc_info=True)
+                    self.log_error(log_messages.UNABLE_TO_RECOVER_FULL_MESSAGE, e, exc_info=True)
                     self.log_debug("Failed message bytes: {}",
                                    self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
                     self.mark_for_close()
@@ -464,11 +462,7 @@ class AbstractConnection(Generic[Node]):
                 if existing_connection.from_me:
                     existing_connection.mark_for_close()
 
-                self.log_warning(
-                    "Discovered duplicate connections to node {}: {}. Closing.",
-                    self.peer_id,
-                    existing_connection
-                )
+                self.log_warning(log_messages.DUPLICATE_CONNECTION, self.peer_id, existing_connection)
 
         self.enqueue_msg(self.ack_message)
         if (ConnectionState.INITIALIZED | ConnectionState.HELLO_ACKD) in self.state:
@@ -617,7 +611,7 @@ class AbstractConnection(Generic[Node]):
         :return: if connection should be closed
         """
         if self.num_bad_messages == constants.MAX_BAD_MESSAGES:
-            self.log_warning("Received too many bad messages. Closing.")
+            self.log_warning(log_messages.TOO_MANY_BAD_MESSAGES)
             self.mark_for_close()
             return True
         else:

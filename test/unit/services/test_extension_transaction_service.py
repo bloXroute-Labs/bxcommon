@@ -49,5 +49,14 @@ class ExtensionTransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_removed_transactions_history_by_sid(self):
         self._test_removed_transactions_history_by_sid()
 
+    def test_add_tx_without_sid(self):
+        self._test_add_tx_without_sid()
+
+    def add_tx_without_sid_expire(self):
+        self._test_add_tx_without_sid_expire()
+
+    def test_add_sid_without_content(self):
+        self._test_add_sid_without_content()
+
     def _get_transaction_service(self) -> TransactionService:
         return ExtensionTransactionService(self.mock_node, 0)

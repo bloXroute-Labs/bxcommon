@@ -1,15 +1,18 @@
-import status
 import json
+from ssl import SSLContext
 from typing import Optional, Dict, Any, Union, List
+
+import status
 from urllib3 import Retry, HTTPResponse
 from urllib3.exceptions import HTTPError, MaxRetryError
 from urllib3.poolmanager import PoolManager
 from urllib3.util import parse_url
-from ssl import SSLContext
 
-from bxcommon.utils import json_utils
-from bxutils import logging
+from bxutils import log_messages
+
 from bxcommon import constants
+from bxutils import logging
+from bxutils.encoding import json_encoder
 
 # recursive types are not supported: https://github.com/python/typing/issues/182
 
@@ -37,17 +40,17 @@ def update_http_ssl_context(ssl_context: Optional[SSLContext] = None):
 
 
 def post_json(endpoint: str, payload=None) -> Optional[jsonT]:
-    return _http_request("POST", endpoint, body=json_utils.serialize(payload),
+    return _http_request("POST", endpoint, body=json_encoder.to_json(payload),
                          headers=constants.HTTP_HEADERS)
 
 
 def patch_json(endpoint: str, payload=None) -> Optional[jsonT]:
-    return _http_request("PATCH", endpoint, body=json_utils.serialize(payload),
+    return _http_request("PATCH", endpoint, body=json_encoder.to_json(payload),
                          headers=constants.HTTP_HEADERS)
 
 
 def delete_json(endpoint: str, payload=None) -> Optional[jsonT]:
-    return _http_request("DELETE", endpoint, body=json_utils.serialize(payload),
+    return _http_request("DELETE", endpoint, body=json_encoder.to_json(payload),
                          headers=constants.HTTP_HEADERS)
 
 
@@ -99,7 +102,7 @@ def _http_request(method: str, endpoint: str, **kwargs) -> Optional[jsonT]:
         logger.info("{} to {} failed due to: {}.", method, url, e)
         return None
     except Exception as e:
-        logger.error("{} to {} returned error: {}.", method, url, e)
+        logger.error(log_messages.HTTP_REQUEST_RETURNED_ERROR, method, url, e)
         return None
 
     return json.loads(response.data)

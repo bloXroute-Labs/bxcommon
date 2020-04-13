@@ -5,7 +5,6 @@ from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.utils.stats.measurement_type import MeasurementType
 
-
 def add_throughput_event(
     direction: NetworkDirection,
     msg_type: str,

@@ -1,9 +1,10 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
+from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.utils.object_hash import Sha256Hash
 
 
-class AbstractBlockMessage(metaclass=ABCMeta):
+class AbstractBlockMessage(AbstractMessage):
 
     @abstractmethod
     def block_hash(self) -> Sha256Hash:

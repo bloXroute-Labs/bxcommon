@@ -1,15 +1,17 @@
 # An enum that stores the different log levels
 import os
 from enum import Enum
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, Optional
 from logging import Formatter, LogRecord
 import json
 from datetime import datetime
-
+from bxutils.logging_messages_utils import logger_names, LogMessage
+from bxutils.log_message_categories import UNCATEGORIZED, THIRD_PARTY_CATEGORY
 from bxutils.encoding.json_encoder import EnhancedJSONEncoder
-
+from bxutils import constants
 
 BUILT_IN_ATTRS = {
+    "timestamp",
     "args",
     "asctime",
     "created",
@@ -34,6 +36,9 @@ BUILT_IN_ATTRS = {
     "threadName",
 }
 
+EXCLUDE_FROM_PLAIN_FORMATTING = {
+    "category"
+}
 
 class LogFormat(Enum):
     JSON = "JSON"
@@ -56,6 +61,14 @@ class AbstractFormatter(Formatter):
     NO_INSTANCE: str = "[Unassigned]"
     instance: str = NO_INSTANCE
 
+    def _handle_args(self, record):
+        if isinstance(record.args[0], str) and record.args[0] == constants.HAS_PREFIX:
+            prefix = record.args[1]
+            r_args = record.args[2:]
+            return " ".join([prefix, self._formatter(record.msg, r_args)])
+        else:
+            return self._formatter(record.msg, record.args)
+
 
 class JSONFormatter(AbstractFormatter):
 
@@ -63,20 +76,23 @@ class JSONFormatter(AbstractFormatter):
         return json.dumps(self._format_json(record), cls=EnhancedJSONEncoder)
 
     def _format_json(self, record: LogRecord) -> Dict[Any, Any]:
-        log_record = {k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS}
-        if "timestamp" not in log_record:
-            log_record["timestamp"] = datetime.utcnow()
-        log_record["pid"] = os.getpid()
-        log_record["name"] = record.name
-        log_record["level"] = record.levelname
+        log_record = {"timestamp": record.__dict__.get("timestamp", datetime.utcnow()),
+                      "level": record.levelname,
+                      "name": record.name,
+                      "pid": os.getpid()
+                      }
+        log_record.update({k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS})
+
         if record.args:
-            log_record["msg"] = self._formatter(record.msg, record.args)
+            # There has to be a better way to do this...
+            log_record["msg"] = self._handle_args(record)
         else:
             log_record["msg"] = record.msg
         if record.exc_info:
             log_record["exc_info"] = self.formatException(record.exc_info)
         if self.instance != self.NO_INSTANCE:
             log_record["instance"] = self.instance
+
         return log_record
 
 
@@ -90,9 +106,10 @@ class CustomFormatter(AbstractFormatter):
     encoder = EnhancedJSONEncoder()
 
     def format(self, record) -> str:
-        log_record = {k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS}
+        log_record = {k: v for k, v in record.__dict__.items() if
+                      k not in BUILT_IN_ATTRS and k not in EXCLUDE_FROM_PLAIN_FORMATTING}
         if record.args and not hasattr(record.msg, "__dict__"):
-            record.msg = self._formatter(record.msg, record.args)
+            record.msg = self._handle_args(record)
             record.args = ()
 
         record.msg = "{}{}".format(self.encoder.encode(record.msg),
@@ -109,3 +126,4 @@ class CustomFormatter(AbstractFormatter):
         else:
             s = ct.isoformat()
         return s
+
