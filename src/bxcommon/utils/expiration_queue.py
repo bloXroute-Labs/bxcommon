@@ -47,7 +47,7 @@ class ExpirationQueue(Generic[T]):
     def remove_expired(
         self,
         current_time: Optional[float] = None,
-        remove_callback: Optional[Callable[[T], None]] = None,
+        remove_callback: Optional[Callable[[T], Any]] = None,
         limit: Optional[int] = None,
         *args,
         **kwargs

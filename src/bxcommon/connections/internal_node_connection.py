@@ -58,7 +58,11 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.ack_message = AckMessage()
 
         self.can_send_pings = True
-        self.ping_message_timestamps = ExpiringDict(self.node.alarm_queue, constants.REQUEST_EXPIRATION_TIME)
+        self.ping_message_timestamps = ExpiringDict(
+            self.node.alarm_queue,
+            constants.REQUEST_EXPIRATION_TIME,
+            f"{str(self)}_ping_timestamps"
+        )
         self._sync_ping_latencies: Dict[int, Optional[float]] = {}
         self._nonce_to_network_num: Dict[int, int] = {}
         self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)

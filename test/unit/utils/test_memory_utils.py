@@ -32,7 +32,7 @@ class MemoryUtilsTest(AbstractTestCase):
         self.assertTrue(object_size.is_actual_size)
         self.assertEqual(0, len(object_size.references))
 
-        ex_set = ExpiringSet(AlarmQueue(), 10)
+        ex_set = ExpiringSet(AlarmQueue(), 10, "testset")
         s = set()
         h1 = Sha256Hash(b"1" * 32)
         h2 = Sha256Hash(b"0" * 32)

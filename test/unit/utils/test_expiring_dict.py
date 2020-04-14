@@ -12,7 +12,7 @@ class ExpiringDictTests(unittest.TestCase):
 
     def setUp(self):
         self.ALARM_QUEUE = AlarmQueue()
-        self.e_dict = ExpiringDict(self.ALARM_QUEUE, self.EXPIRATION_TIME_S)
+        self.e_dict = ExpiringDict(self.ALARM_QUEUE, self.EXPIRATION_TIME_S, "testdict")
 
     def test_cleanup(self):
 

@@ -664,7 +664,7 @@ class TransactionService:
         logger.debug("Expiring tx content for tx without sid. Total entries: {}",
                      len(self._tx_hash_without_sid))
         self._tx_hash_without_sid.remove_expired(
-            remove_callback=self.remove_transaction_by_tx_hash,  # pyre-ignore
+            remove_callback=self.remove_transaction_by_tx_hash,
             limit=constants.MAX_EXPIRED_TXS_TO_REMOVE,
             force=True,
             assume_no_sid=True

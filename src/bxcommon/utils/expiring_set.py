@@ -12,10 +12,6 @@ logger = logging.get_logger(__name__)
 class ExpiringSet(Generic[T]):
     """
     Set with expiration time.
-
-    For determining if items are in the set, use "if item in expiring_set.contents".
-    __contains__ is intentionally not overwritten. This is a performance critical class,
-    and we're avoiding extra function call overhead.
     """
 
     contents: Set[T]
@@ -23,13 +19,17 @@ class ExpiringSet(Generic[T]):
     _expiration_queue: ExpirationQueue[T]
     _expiration_time: int
     _log_removal: bool
+    _name:  str
 
-    def __init__(self, alarm_queue: AlarmQueue, expiration_time_s: int, log_removal: bool = False):
+    def __init__(
+        self, alarm_queue: AlarmQueue, expiration_time_s: int, name: str, log_removal: bool = False
+    ):
         self.contents = set()
         self._alarm_queue = alarm_queue
         self._expiration_queue = ExpirationQueue(expiration_time_s)
         self._expiration_time = expiration_time_s
         self._log_removal = log_removal
+        self._name = name
 
     def __contains__(self, item: T):
         return item in self.contents
@@ -40,7 +40,12 @@ class ExpiringSet(Generic[T]):
     def add(self, item: T):
         self.contents.add(item)
         self._expiration_queue.add(item)
-        self._alarm_queue.register_approx_alarm(self._expiration_time * 2, self._expiration_time, self.cleanup)
+        self._alarm_queue.register_approx_alarm(
+            self._expiration_time * 2,
+            self._expiration_time,
+            self.cleanup,
+            alarm_name=f"ExpiringSet[{self._name}]#cleanup"
+        )
 
     def get_recent_items(self, count: int) -> List[T]:
         items = []

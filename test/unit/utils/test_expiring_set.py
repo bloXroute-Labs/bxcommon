@@ -12,7 +12,7 @@ class ExpiringSetTest(AbstractTestCase):
     EXPIRATION_TIME_S = 1
 
     def setUp(self):
-        self.sut = ExpiringSet(self.ALARM_QUEUE, self.EXPIRATION_TIME_S)
+        self.sut = ExpiringSet(self.ALARM_QUEUE, self.EXPIRATION_TIME_S, "testset")
 
     def test_cleanup(self):
         test_item = "dummy_text"

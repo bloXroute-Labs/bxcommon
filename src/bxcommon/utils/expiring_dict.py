@@ -9,19 +9,21 @@ VT = TypeVar("VT")
 
 class ExpiringDict(Generic[KT, VT]):
     """
-    Set with expiration time.
+    Dictionary with expiration time.
     """
 
     contents: Dict[KT, VT]
     _alarm_queue: AlarmQueue
     _expiration_queue: ExpirationQueue[KT]
     _expiration_time: int
+    _name: str
 
-    def __init__(self, alarm_queue, expiration_time_s):
+    def __init__(self, alarm_queue: AlarmQueue, expiration_time_s: int, name: str):
         self.contents = {}
         self._alarm_queue = alarm_queue
         self._expiration_queue = ExpirationQueue(expiration_time_s)
         self._expiration_time = expiration_time_s
+        self._name = name
 
     def __contains__(self, item: KT):
         return item in self.contents
@@ -38,12 +40,17 @@ class ExpiringDict(Generic[KT, VT]):
     def __getitem__(self, item: KT) -> VT:
         return self.contents[item]
 
-    def add(self, key: KT, value: VT):
+    def add(self, key: KT, value: VT) -> None:
         self.contents[key] = value
         self._expiration_queue.add(key)
-        self._alarm_queue.register_approx_alarm(self._expiration_time * 2, self._expiration_time, self.cleanup)
+        self._alarm_queue.register_approx_alarm(
+            self._expiration_time * 2,
+            self._expiration_time,
+            self.cleanup,
+            alarm_name=f"ExpiringDict[{self._name}]#cleanup"
+        )
 
-    def cleanup(self):
+    def cleanup(self) -> float:
         self._expiration_queue.remove_expired(remove_callback=self.remove_item)
         return 0
 
