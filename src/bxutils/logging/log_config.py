@@ -8,7 +8,8 @@ from logging import StreamHandler, FileHandler
 
 from bxutils import log_messages
 from bxutils import constants
-from bxutils.logging.log_format import LogFormat, JSONFormatter, CustomFormatter, FluentJSONFormatter
+from bxutils.logging.log_format import LogFormat
+from bxutils.logging.formatters import JSONFormatter, CustomFormatter, FluentJSONFormatter, AbstractFormatter
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.handler_type import HandlerType
 from bxutils.logging import log_level, LoggerConfig
@@ -154,15 +155,9 @@ def lazy_set_log_level(log_overrides) -> None:
     set_log_levels(log_configs)
 
 
-def set_instance(logger_names: List[Optional[str]], instance: str) -> None:
-    logger_names.append(None)  # make sure we also set the instance on the root logger
-    for logger_name in logger_names:
-        custom_logger = logging.getLogger(logger_name)
-        for handler in custom_logger.handlers:
-            formatter = handler.formatter
-            if hasattr(formatter, "instance"):
-                # pyre-fixme[16]: `Optional` has no attribute `instance`.
-                formatter.instance = instance
+def set_instance(instance: str) -> None:
+    # TODO: change function signature
+    AbstractFormatter.instance = instance
 
 
 def str_to_log_options(value: str) -> Dict[str, LogLevel]:

@@ -181,7 +181,7 @@ def _run_node(
 
     # Start main loop
     node = node_class(opts, node_ssl_service)
-    log_config.set_instance(list(logger_names), node.opts.node_id)
+    log_config.set_instance(node.opts.node_id)
     loop = asyncio.get_event_loop()
     node_event_loop = NodeEventLoop(node)
 
