@@ -37,3 +37,4 @@ class LogRecordType(Enum):
     RoutingTableStats = "stats.routing"
     GarbageCollection = "stats.gc"
     ShortIdAllocation = "sid.allocation"
+    Config = "config"
