@@ -1,3 +1,5 @@
+import functools
+import operator
 import time
 from collections import defaultdict, OrderedDict, Counter
 from dataclasses import dataclass
@@ -20,7 +22,7 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
-from bxutils import logging
+from bxutils import logging, utils
 from bxutils.encoding import json_encoder
 from bxutils import log_messages
 from bxutils.logging.log_record_type import LogRecordType
@@ -177,9 +179,13 @@ class TransactionService:
         )
 
         self.total_cached_transactions = total_cached_transactions.labels(network_num)
-        self.total_cached_transactions.set_function(lambda: len(self._tx_cache_key_to_contents))
+        self.total_cached_transactions.set_function(
+            functools.partial(len, self._tx_cache_key_to_contents)
+        )
         self.total_cached_transactions_size = total_cached_transactions_size.labels(network_num)
-        self.total_cached_transactions_size.set_function(lambda: self._total_tx_contents_size)
+        self.total_cached_transactions_size.set_function(
+            functools.partial(utils.identity, self._total_tx_contents_size)
+        )
 
     def get_short_id_quota_type(self, short_id: int) -> QuotaType:
         if short_id in self._short_id_to_tx_quota_flag:

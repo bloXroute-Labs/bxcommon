@@ -1,3 +1,4 @@
+import functools
 from collections import defaultdict
 from typing import Iterable
 from typing import List, Dict, Set, Optional, Tuple, ClassVar
@@ -281,16 +282,22 @@ class ConnectionPool:
             "Number of peers node is connected to",
             ("connection_type",)
         )
-        self.connections_gauge.labels("total").set_function(lambda: len(self.by_ipport))
+        self.connections_gauge.labels("total").set_function(
+            functools.partial(len, self.by_ipport)
+        )
         self.connections_gauge.labels("blockchain").set_function(
-            lambda: len(self.get_by_connection_type(ConnectionType.BLOCKCHAIN_NODE))
+            functools.partial(self._get_number_of_connections, ConnectionType.BLOCKCHAIN_NODE)
         )
         self.connections_gauge.labels("relay_transaction").set_function(
-            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_TRANSACTION))
+            functools.partial(self._get_number_of_connections, ConnectionType.RELAY_TRANSACTION)
         )
         self.connections_gauge.labels("relay_block").set_function(
-            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_BLOCK))
+            functools.partial(self._get_number_of_connections, ConnectionType.RELAY_BLOCK)
         )
         self.connections_gauge.labels("relay_all").set_function(
-            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_ALL))
+            functools.partial(self._get_number_of_connections, ConnectionType.RELAY_ALL)
         )
+
+    def _get_number_of_connections(self, connection_type: ConnectionType) -> int:
+        return len(self.get_by_connection_type(connection_type))
+
