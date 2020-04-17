@@ -37,7 +37,7 @@ class ExpiringSet(Generic[T]):
     def __len__(self) -> int:
         return len(self.contents)
 
-    def add(self, item: T):
+    def add(self, item: T) -> None:
         self.contents.add(item)
         self._expiration_queue.add(item)
         self._alarm_queue.register_approx_alarm(
@@ -46,6 +46,9 @@ class ExpiringSet(Generic[T]):
             self.cleanup,
             alarm_name=f"ExpiringSet[{self._name}]#cleanup"
         )
+
+    def remove(self, item: T) -> None:
+        self.contents.remove(item)
 
     def get_recent_items(self, count: int) -> List[T]:
         items = []

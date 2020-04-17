@@ -407,9 +407,13 @@ class AbstractNode:
         for _, conn in self.connection_pool.items():
             conn.mark_for_close(should_retry=False)
 
-    def broadcast(self, msg: AbstractMessage, broadcasting_conn: Optional[AbstractConnection] = None,
-                  prepend_to_queue: bool = False, connection_types: Optional[List[ConnectionType]] = None) \
-        -> List[AbstractConnection]:
+    def broadcast(
+        self,
+        msg: AbstractMessage,
+        broadcasting_conn: Optional[AbstractConnection] = None,
+        prepend_to_queue: bool = False,
+        connection_types: Optional[List[ConnectionType]] = None
+    ) -> List[AbstractConnection]:
         """
         Broadcasts message msg to connections of the specified type except requester.
         """

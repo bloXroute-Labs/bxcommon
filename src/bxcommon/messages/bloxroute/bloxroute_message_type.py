@@ -1,5 +1,5 @@
 # TODO: make these integers to save us some bytes
-class BloxrouteMessageType(object):
+class BloxrouteMessageType:
     HELLO = b"hello"
     ACK = b"ack"
     PING = b"ping"

@@ -46,8 +46,9 @@ class LazyBind:
         self.bound_fn = bound_fn
 
     def call(self, *args, **kwargs) -> Any:
-        assert self.bound_fn is not None
-        return self.bound_fn(*args, **kwargs)
+        bound_fn = self.bound_fn
+        assert bound_fn is not None
+        return bound_fn(*args, **kwargs)
 
 
 def is_greater_or_eq_version(version1: str, version2: str) -> bool:
