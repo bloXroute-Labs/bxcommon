@@ -256,7 +256,7 @@ class AbstractNode:
         else:
             logger.info("Closed connection: {}", connection)
 
-    def on_updated_peers(self, outbound_peer_models: Set[OutboundPeerModel]):
+    def on_updated_peers(self, outbound_peer_models: Set[OutboundPeerModel]) -> None:
         if not outbound_peer_models:
             logger.debug("Got peer update with no peers.")
             return
