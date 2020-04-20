@@ -6,6 +6,7 @@ from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import LOCALHOST, ALL_NETWORK_NUM
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
+from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.services.broadcast_service import BroadcastService, BroadcastOptions
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -43,7 +44,7 @@ class BroadcastServiceTest(AbstractTestCase):
         matching_network_num = self._add_connection(1, 9001, 1)
         not_matching_network_num = self._add_connection(2, 9002, 2)
 
-        message = BroadcastMessage(Sha256Hash(helpers.generate_hash()), 1, "", False,
+        message = BroadcastMessage(Sha256Hash(helpers.generate_hash()), 1, "", BroadcastMessageType.BLOCK, False,
                                    helpers.generate_bytearray(250))
         self.sut.broadcast(message, BroadcastOptions(connection_types=[MockConnection.CONNECTION_TYPE]))
 
@@ -57,16 +58,16 @@ class BroadcastServiceTest(AbstractTestCase):
         relay_transaction_conn = self._add_connection(2, 9002, ALL_NETWORK_NUM, ConnectionType.RELAY_TRANSACTION)
         gateway_conn = self._add_connection(3, 9003, ALL_NETWORK_NUM, ConnectionType.EXTERNAL_GATEWAY)
 
-        block_message = BroadcastMessage(Sha256Hash(helpers.generate_hash()), ALL_NETWORK_NUM, "", False,
-                                         helpers.generate_bytearray(250))
+        block_message = BroadcastMessage(Sha256Hash(helpers.generate_hash()), ALL_NETWORK_NUM, "",
+                                         BroadcastMessageType.BLOCK, False, helpers.generate_bytearray(250))
         self.sut.broadcast(block_message, BroadcastOptions(connection_types=[ConnectionType.RELAY_BLOCK]))
 
-        tx_message = BroadcastMessage(Sha256Hash(helpers.generate_hash()), ALL_NETWORK_NUM, "", False,
-                                      helpers.generate_bytearray(250))
+        tx_message = BroadcastMessage(Sha256Hash(helpers.generate_hash()), ALL_NETWORK_NUM, "",
+                                      BroadcastMessageType.BLOCK, False, helpers.generate_bytearray(250))
         self.sut.broadcast(tx_message, BroadcastOptions(connection_types=[ConnectionType.RELAY_TRANSACTION]))
 
-        gateway_message = BroadcastMessage(Sha256Hash(helpers.generate_hash()), ALL_NETWORK_NUM, "", False,
-                                           helpers.generate_bytearray(250))
+        gateway_message = BroadcastMessage(Sha256Hash(helpers.generate_hash()), ALL_NETWORK_NUM, "",
+                                           BroadcastMessageType.BLOCK, False, helpers.generate_bytearray(250))
         self.sut.broadcast(gateway_message, BroadcastOptions(connection_types=[ConnectionType.GATEWAY]))
 
         self.assertIn(block_message, relay_all_conn.enqueued_messages)

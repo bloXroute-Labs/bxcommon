@@ -41,6 +41,6 @@ class AbstractBloxrouteMessage(AbstractInternalMessage):
         """
         Removes control flag value
         :param flag: flag value to remove
-w        """
+        """
         if self.buf[-1] & flag:
             self.buf[-1] ^= flag

@@ -5,6 +5,7 @@ from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_vers
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
+from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.test_utils import helpers
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
@@ -26,6 +27,7 @@ def broadcast_key_pair(short_ids=None, network_num=0):
     broadcast_message_bytes.extend(compact_block_short_ids_serializer.serialize_short_ids_into_bytes(short_ids))
     key_bytes, enc_broadcast_message_bytes = crypto.symmetric_encrypt(bytes(broadcast_message_bytes))
 
-    broadcast_message = BroadcastMessage(broadcast_message_hash, network_num, "", True, enc_broadcast_message_bytes)
+    broadcast_message = BroadcastMessage(broadcast_message_hash, network_num, "", BroadcastMessageType.BLOCK, True,
+                                         enc_broadcast_message_bytes)
     key_message = KeyMessage(broadcast_message_hash, network_num, "", key_bytes)
     return broadcast_message, key_message

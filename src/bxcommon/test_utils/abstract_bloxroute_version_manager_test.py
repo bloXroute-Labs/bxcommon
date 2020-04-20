@@ -44,6 +44,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_txs_message import (
 )
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
+from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.models.notification_code import NotificationCode
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionInfo
@@ -105,6 +106,7 @@ class AbstractBloxrouteVersionManagerTest(
 
     NODE_ID = "02e5b506-7c6b-41ea-b0f9-19851f2a015b"
     NETWORK_NUMBER = 7
+    BROADCAST_TYPE = BroadcastMessageType.BLOCK
 
     def __init__(self, *args, **kwargs):
         # hack to avoid unit test discovery of this class
@@ -145,6 +147,7 @@ class AbstractBloxrouteVersionManagerTest(
             helpers.generate_object_hash(),
             self.NETWORK_NUMBER,
             self.NODE_ID,
+            self.BROADCAST_TYPE,
             False,
             helpers.generate_bytearray(500),
         )
