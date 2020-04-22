@@ -28,6 +28,7 @@ class PortAllocator:
 
     def _get_next_port(self, port: Optional[int] = None) -> int:
         if port is None:
+            # pyre-fixme[6]: Expected `int` for 1st param but got `Optional[int]`.
             port = self._port_range.start if self._last_allocated_port is None else self._last_allocated_port + 1
         if port not in self._port_range:
             raise RuntimeError(f"No available ports remained in range: {self._port_range}!")

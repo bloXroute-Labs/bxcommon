@@ -56,6 +56,7 @@ class ThroughputStatistics(StatisticsService[ThroughputIntervalData, "AbstractNo
         peer_id: Optional[str] = None,
     ) -> None:
         assert self.interval_data is not None
+        # pyre-fixme[16]: `Optional` has no attribute `peer_to_stats`.
         peer_stats = self.interval_data.peer_to_stats[peer_desc]
         peer_stats.address = peer_desc
         if peer_id is not None:
@@ -65,12 +66,14 @@ class ThroughputStatistics(StatisticsService[ThroughputIntervalData, "AbstractNo
             peer_stats.messages_received[msg_type].bytes += msg_size
             peer_stats.messages_received[msg_type].count += 1
             peer_stats.peer_total_received += msg_size
+            # pyre-fixme[16]: `Optional` has no attribute `total_in`.
             self.interval_data.total_in += msg_size
             bytes_received.inc(msg_size)
         else:
             peer_stats.messages_sent.bytes += msg_size
             peer_stats.messages_sent.count += 1
             peer_stats.peer_total_sent += msg_size
+            # pyre-fixme[16]: `Optional` has no attribute `total_out`.
             self.interval_data.total_out += msg_size
             bytes_sent.inc(msg_size)
 
@@ -82,6 +85,7 @@ class ThroughputStatistics(StatisticsService[ThroughputIntervalData, "AbstractNo
         peer_id: Optional[str] = None,
     ) -> None:
         assert self.interval_data is not None
+        # pyre-fixme[16]: `Optional` has no attribute `peer_to_stats`.
         peer_stats = self.interval_data.peer_to_stats[peer_desc]
         peer_stats.address = peer_desc
         if peer_id is not None:
@@ -100,6 +104,7 @@ class ThroughputStatistics(StatisticsService[ThroughputIntervalData, "AbstractNo
         assert self.interval_data is not None
 
         node_peers = []
+        # pyre-fixme[16]: `Optional` has no attribute `connection_pool`.
         for conn in self.node.connection_pool:
             node_peers.append(
                 {
@@ -110,14 +115,21 @@ class ThroughputStatistics(StatisticsService[ThroughputIntervalData, "AbstractNo
             )
 
         return {
+            # pyre-fixme[16]: `Optional` has no attribute `opts`.
             "node_id": self.node.opts.node_id,
+            # pyre-fixme[16]: `Optional` has no attribute `NODE_TYPE`.
             "node_type": self.node.NODE_TYPE,
             "node_address": f"{self.node.opts.external_ip}:{self.node.opts.external_port}",
             "node_peers": node_peers,
+            # pyre-fixme[16]: `Optional` has no attribute `total_in`.
             "total_bytes_received": self.interval_data.total_in,
+            # pyre-fixme[16]: `Optional` has no attribute `total_out`.
             "total_bytes_sent": self.interval_data.total_out,
+            # pyre-fixme[16]: `Optional` has no attribute `peer_to_stats`.
             "peer_stats": list(self.interval_data.peer_to_stats.values()),
+            # pyre-fixme[16]: `Optional` has no attribute `start_time`.
             "start_time": self.interval_data.start_time,
+            # pyre-fixme[16]: `Optional` has no attribute `end_time`.
             "end_time": self.interval_data.end_time,
         }
 

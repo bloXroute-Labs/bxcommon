@@ -1,7 +1,7 @@
 import time
 from heapq import heappop, heappush
 from threading import RLock
-from typing import List, Optional
+from typing import List, Optional, Callable, Dict
 
 from bxcommon import constants
 from bxcommon.utils import performance_utils
@@ -17,13 +17,22 @@ class Alarm:
     Alarm object. Encapsulates function and arguments.
     """
 
-    def __init__(self, fn, fire_time, *args, **kwargs):
-        if fn is None:
-            raise ValueError("Alarm callback cannot be none.")
+    def __init__(
+        self, fn: Callable, fire_time: float, *args, name: Optional[str] = None, **kwargs
+    ):
+        if name is None:
+            if hasattr(fn, "im_class"):
+                cls = getattr(fn, "im_class")
+                name = f"{cls}#{fn.__name__}"
+
+            else:
+                name = fn.__name__
+
         self.fn = fn
         self.args = args
         self.kwargs = kwargs
         self.fire_time = fire_time
+        self.name = name
 
     def fire(self):
         time_from_expected = time.time() - self.fire_time
@@ -31,16 +40,8 @@ class Alarm:
             logger.debug("{} executed {} seconds later than expected.", self, time_from_expected)
         return self.fn(*self.args, **self.kwargs)
 
-    def get_function_name(self):
-        if hasattr(self.fn, "im_class"):
-            return "{}#{}".format(self.fn.im_class.__name__, self.fn.__name__)
-
-        else:
-            return self.fn.__name__
-
     def __repr__(self):
-        return "Alarm<function: {}, fire_time: {}".format(self.get_function_name(),
-                                                          self.fire_time)
+        return f"Alarm<function: {self.name}, fire_time: {self.fire_time}"
 
 
 class AlarmId:
@@ -49,15 +50,21 @@ class AlarmId:
     alarm: Alarm
     is_active: bool
 
-    def __init__(self, fire_time, count, alarm):
+    def __init__(self, fire_time: float, count: int, alarm: Alarm):
         self.fire_time = fire_time
         self.count = count
         self.alarm = alarm
         self.is_active = True
 
     def __repr__(self):
-        return f"AlarmId<fire_time: {self.fire_time}, count: {self.count}, active: {self.is_active}, " \
-            f"alarm: {self.alarm}>"
+        return (
+            f"AlarmId<"
+            f"fire_time: {self.fire_time}, "
+            f"count: {self.count}, "
+            f"active: {self.is_active}, "
+            f"alarm: {self.alarm}"
+            f">"
+        )
 
     def __lt__(self, other):
         if not isinstance(other, AlarmId):
@@ -68,11 +75,15 @@ class AlarmId:
     def __eq__(self, other):
         if not isinstance(other, AlarmId):
             return False
-        return self.fire_time == other.fire_time and self.count == other.count and self.alarm == other.alarm \
-               and self.is_active == other.is_active
+        return (
+            self.fire_time == other.fire_time
+            and self.count == other.count
+            and self.alarm == other.alarm
+            and self.is_active == other.is_active
+        )
 
 
-class AlarmQueue(object):
+class AlarmQueue:
     """
     Queue for events that take place some time in the future.
 
@@ -90,16 +101,19 @@ class AlarmQueue(object):
 
     def __init__(self):
         self.alarms: List[AlarmId] = []
-        self.uniq_count = 0
-        self.approx_alarms_scheduled = {}
+        self.uniq_count: int = 0
+        self.approx_alarms_scheduled: Dict[Callable, List[AlarmId]] = {}
         self.lock = RLock()
 
-    def register_alarm(self, fire_delay, fn, *args):
+    def register_alarm(
+        self, fire_delay: float, fn: Callable, *args, alarm_name: Optional[str] = None, **kwargs
+    ) -> AlarmId:
         """
         Schedules an alarm to be fired in `fire_delay` seconds. Function must return a positive integer
         to be schedule again in the future.
         :param fire_delay: delay in seconds before firing alarm
         :param fn: function to be fired on delay
+        :param alarm_name: optional label for alarm
         :param args: function arguments
         :return: (fire time, unique count, alarm function)
         """
@@ -108,14 +122,22 @@ class AlarmQueue(object):
         elif fn is None:
             raise ValueError("Function cannot be None.")
 
-        alarm = Alarm(fn, time.time() + fire_delay, *args)
+        alarm = Alarm(fn, time.time() + fire_delay, *args, name=alarm_name, **kwargs)
         alarm_id = AlarmId(time.time() + fire_delay, self.uniq_count, alarm)
         with self.lock:
             heappush(self.alarms, alarm_id)
             self.uniq_count += 1
         return alarm_id
 
-    def register_approx_alarm(self, fire_delay, slop, fn, *args):
+    def register_approx_alarm(
+        self,
+        fire_delay: float,
+        slop: float,
+        fn: Callable,
+        *args,
+        alarm_name: Optional[str] = None,
+        **kwargs
+    ) -> None:
         """
         Schedules an alarm that will fire in between `fire_delay` +/- slop seconds. The referenced function
         will only be executed once in that time interval, even if multiple calls to this method are made.
@@ -126,14 +148,14 @@ class AlarmQueue(object):
         """
         if fire_delay < 0:
             raise ValueError("Invalid negative fire delay.")
-        elif fn is None:
-            raise ValueError("Function cannot be None.")
-        elif slop < 0:
+        if slop < 0:
             raise ValueError("Invalid negative slop.")
 
         with self.lock:
             if fn not in self.approx_alarms_scheduled:
-                new_alarm_id = self.register_alarm(fire_delay, fn, *args)
+                new_alarm_id = self.register_alarm(
+                    fire_delay, fn, *args, alarm_name=alarm_name, **kwargs
+                )
                 self.approx_alarms_scheduled[fn] = []
                 heappush(self.approx_alarms_scheduled[fn], new_alarm_id)
             else:
@@ -142,23 +164,23 @@ class AlarmQueue(object):
                 for alarm_id in self.approx_alarms_scheduled[fn]:
                     if early_time <= alarm_id.fire_time <= late_time:
                         return
-                heappush(self.approx_alarms_scheduled[fn], self.register_alarm(fire_delay, fn, *args))
+                heappush(
+                    self.approx_alarms_scheduled[fn],
+                    self.register_alarm(fire_delay, fn, *args, alarm_name=alarm_name, **kwargs)
+                )
 
-    def unregister_alarm(self, alarm_id: AlarmId):
+    def unregister_alarm(self, alarm_id: AlarmId) -> None:
         """
         Cancels alarm and cleans up the head of the heap.
         :param alarm_id: alarm to cancel
         """
-        if alarm_id is None:
-            raise ValueError("Alarm id cannot be none.")
-
         alarm_id.is_active = False
 
         with self.lock:
             while self.alarms and not self.alarms[0].is_active:
                 heappop(self.alarms)
 
-    def fire_alarms(self):
+    def fire_alarms(self) -> None:
         """
         Fire alarms that are ready.
         Reschedules alarms that return a value > 0 with the return value as the next timeout.
@@ -203,10 +225,13 @@ class AlarmQueue(object):
                             if not alarm_heap:
                                 del self.approx_alarms_scheduled[alarm.fn]
 
-        performance_utils.log_operation_duration(alarm_troubleshooting_logger,
-                                                 "Alarms", curr_time,
-                                                 constants.WARN_ALL_ALARMS_EXECUTION_DURATION,
-                                                 count=alarms_count)
+        performance_utils.log_operation_duration(
+            alarm_troubleshooting_logger,
+            "Alarms",
+            curr_time,
+            constants.WARN_ALL_ALARMS_EXECUTION_DURATION,
+            count=alarms_count
+        )
 
     def fire_ready_alarms(self) -> Optional[float]:
         """

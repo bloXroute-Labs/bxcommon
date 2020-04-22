@@ -14,9 +14,9 @@ class AbstractBloxrouteMessage(AbstractInternalMessage):
     HEADER_LENGTH = constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF
     STARTING_BYTES_LEN = constants.STARTING_SEQUENCE_BYTES_LEN
 
-    def __init__(self, msg_type: str = None, payload_len: int = None, buf: bytearray = None):
+    def __init__(self, msg_type: bytes, payload_len: int, buf: bytearray):
 
-        super(AbstractBloxrouteMessage, self).__init__(msg_type=msg_type, payload_len=payload_len, buf=buf)
+        super().__init__(msg_type=msg_type, payload_len=payload_len, buf=buf)
 
         buf[:constants.STARTING_SEQUENCE_BYTES_LEN] = constants.STARTING_SEQUENCE_BYTES
 

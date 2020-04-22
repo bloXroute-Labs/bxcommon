@@ -49,6 +49,7 @@ def get_app_memory_usage():
     global _process
     if _process is None:
         _process = Process()
+    # pyre-fixme[16]: `Optional` has no attribute `memory_info`.
     return _process.memory_info().rss
 
 
@@ -104,9 +105,9 @@ def _get_special_size_helper(obj: Union[Deque, Set[Any], memoryview, List], ids:
     if id(obj) not in ids:
         if isinstance(obj, memoryview):
             total_size += getsizeof(obj, default_size)
-            if id(obj.obj) not in ids:  # pyre-ignore
-                total_size += obj.nbytes  # pyre-ignore
-                ids.add(id(obj.obj))  # pyre-ignore
+            if id(obj.obj) not in ids:
+                total_size += obj.nbytes
+                ids.add(id(obj.obj))
             ids.add(id(obj))
             return SpecialTuple(size=total_size, seen_ids=ids)
         # The size of deques and memoryviews are not properly recorded using get_object_size
@@ -140,6 +141,7 @@ def get_special_size(obj: Any, ids: Optional[Set[int]] = None) -> SpecialTuple:
     if ids is None:
         ids = set()
     if obj is None:
+        # pyre-fixme[6]: Expected `int` for 1st param but got `None`.
         ids.add(obj)
         return SpecialTuple(size=0, seen_ids=ids)
     if isinstance(obj, SpecialMemoryProperties):

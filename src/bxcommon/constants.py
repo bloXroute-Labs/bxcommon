@@ -269,7 +269,7 @@ MAX_EXPIRED_TXS_TO_REMOVE = 500
 # keep constants_local.py file to override settings in the constants file
 # this part should be at the bottom of the file
 try:
-    # pyre-ignore Leave this for CircleCI, as it lacks a constants_local.py
+    # pyre-ignore
     from bxcommon.constants_local import *
 except ImportError as e:
     pass

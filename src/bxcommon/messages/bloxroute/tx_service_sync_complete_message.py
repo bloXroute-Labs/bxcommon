@@ -36,11 +36,14 @@ class TxServiceSyncCompleteMessage(AbstractBloxrouteMessage):
     def log_level(self) -> int:
         return LogLevel.DEBUG
 
-    def network_num(self) -> Optional[int]:
+    def network_num(self) -> int:
         if self._network_num is None:
             off = self.HEADER_LENGTH
             self._network_num, = struct.unpack_from("<L", self._memoryview, off)
-        return self._network_num
+
+        network_num = self._network_num
+        assert network_num is not None
+        return network_num
 
     def __repr__(self) -> str:
         return "{}<network_num: {}".format(self.__class__.__name__, self.network_num())

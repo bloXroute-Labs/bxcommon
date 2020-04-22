@@ -9,10 +9,13 @@ from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxutils.common import url_helper
 from bxutils.logging import log_config
 from bxutils.logging.log_level import LogLevel
+from bxutils.logging.log_record_type import LogRecordType
 
 RELATIVE_PATH_SSL_FILES = "bxcommon/test/ssl_files"
 
 
+# pyre-fixme[13]: Attribute `ssl_folder_path` is never initialized.
+# pyre-fixme[13]: Attribute `ssl_folder_url` is never initialized.
 class AbstractTestCase(unittest.TestCase):
     ssl_folder_path: str
     ssl_folder_url: str
@@ -20,6 +23,7 @@ class AbstractTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         log_config.create_logger(None)
+        log_config.set_level([LogRecordType.Config.value], LogLevel.WARNING)
         log_config.set_level(["bxcommon", "bxgateway", "bxrelay", "bxgateway_internal"], LogLevel.DEBUG)
         http_service.get_json = MagicMock()
         http_service.post_json = MagicMock()

@@ -30,6 +30,7 @@ class StatisticsEventService:
         if end_date_time is None:
             end_date_time = start_date_time
 
+        # pyre-fixme[6]: Expected `str` for 3rd param but got `None`.
         stat_event = StatEvent(event_settings, object_id, self.node_id, start_date_time, end_date_time, **kwargs)
         self.logger.log(self.log_level, {"data": stat_event, "type": self.name})
 

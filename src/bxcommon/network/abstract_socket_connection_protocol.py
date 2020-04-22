@@ -32,7 +32,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
     _node: "AbstractNode"
     _should_retry: bool
     _initial_bytes: Optional[int]  # bytes for message tracker to ignore for handshake
-    _receive_buf: bytearray
+    _receive_buf: bytearray = bytearray(constants.RECV_BUFSIZE)
 
     def __init__(
         self,
@@ -43,6 +43,8 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         self._node = node
         self.transport: Optional[Transport] = None
         self.file_no = -1
+        # pyre-fixme[8]: Attribute has type `IpEndpoint`; used as
+        #  `Optional[IpEndpoint]`.
         self.endpoint = endpoint
         if self.endpoint is None:
             self.direction = NetworkDirection.INBOUND
@@ -59,10 +61,10 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
 
     def connection_made(self, transport: BaseTransport) -> None:
         self.transport = typing.cast(Transport, transport)
-        self.file_no = self.transport.get_extra_info("socket").fileno()
+        self.file_no = transport.get_extra_info("socket").fileno()
         if self.direction == NetworkDirection.INBOUND:
             self.endpoint = IpEndpoint(
-                *self.transport.get_extra_info("peername")
+                *transport.get_extra_info("peername")
             )
             logger.debug("[{}] - accepted connection.", self)
         self._node.on_connection_added(self)
@@ -110,22 +112,26 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             data = self._node.get_bytes_to_send(self.file_no)
             if not data:
                 break
-            assert self.transport is not None, "Connection is broken!"
 
-            transport_buffer_size = self.transport.get_write_buffer_size()
+            transport = self.transport
+            assert transport is not None, "Connection is broken!"
+
+            transport_buffer_size = transport.get_write_buffer_size()
             total_transport_buffer_size = transport_buffer_size + len(data)
             if self._initial_bytes is None:
                 self._initial_bytes = transport_buffer_size
 
-            self.transport.write(data)
+            transport.write(data)
             self._node.on_bytes_sent(self.file_no, len(data))
             total_bytes_attempted_to_send += len(data)
 
-            bytes_sent = total_transport_buffer_size - self.transport.get_write_buffer_size()
+            bytes_sent = total_transport_buffer_size - transport.get_write_buffer_size()
             total_bytes_sent += bytes_sent
 
-            remaining_initial_bytes = max(0, self._initial_bytes - bytes_sent)
-            bytes_sent -= self._initial_bytes
+            initial_bytes = self._initial_bytes
+            assert initial_bytes is not None
+            remaining_initial_bytes = max(0, initial_bytes - bytes_sent)
+            bytes_sent -= initial_bytes
             self._initial_bytes = remaining_initial_bytes
 
             self._node.on_bytes_written_to_socket(self.file_no, bytes_sent)
@@ -150,8 +156,10 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             return
         self.state |= SocketConnectionState.MARK_FOR_CLOSE
         self._should_retry = should_retry
-        assert self.transport is not None, "Connection is broken!"
-        self.transport.close()
+
+        transport = self.transport
+        assert transport is not None, "Connection is broken!"
+        transport.close()
         logger.debug(
             "[{}] - marked for close, retrying: {}.", self, should_retry
         )
@@ -180,8 +188,9 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             raise TypeError("Socket is not SSL type!") from e
 
     def get_write_buffer_size(self) -> int:
-        assert self.transport is not None, "Connection is broken!"
-        if self.transport.is_closing():
+        transport = self.transport
+        assert transport is not None, "Connection is broken!"
+        if transport.is_closing():
             return 0
         else:
-            return self.transport.get_write_buffer_size()
+            return transport.get_write_buffer_size()

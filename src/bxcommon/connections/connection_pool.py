@@ -1,3 +1,4 @@
+import functools
 from collections import defaultdict
 from typing import Iterable
 from typing import List, Dict, Set, Optional, Tuple, ClassVar
@@ -76,11 +77,14 @@ class ConnectionPool:
 
     def update_connection_type(self, conn: AbstractConnection, connection_type: ConnectionType) -> None:
         self.delete(conn)
+
         # pyre-ignore this is how we currently identify connections
         conn.CONNECTION_TYPE = connection_type
         self.add(conn.file_no, conn.peer_ip, conn.peer_port, conn)
-        assert conn.peer_id is not None
-        self.index_conn_node_id(conn.peer_id, conn)
+
+        peer_id = conn.peer_id
+        assert peer_id is not None
+        self.index_conn_node_id(peer_id, conn)
 
     def index_conn_node_id(self, node_id: str, conn: AbstractConnection) -> None:
         self.by_node_id[node_id] = conn
@@ -146,8 +150,9 @@ class ConnectionPool:
         else:
             self.count_conn_by_ip[conn.peer_ip] -= 1
 
-        if conn.peer_id and conn.peer_id in self.by_node_id:
-            del self.by_node_id[conn.peer_id]
+        peer_id = conn.peer_id
+        if peer_id and peer_id in self.by_node_id:
+            del self.by_node_id[peer_id]
 
     def items(self):
         """
@@ -277,16 +282,22 @@ class ConnectionPool:
             "Number of peers node is connected to",
             ("connection_type",)
         )
-        self.connections_gauge.labels("total").set_function(lambda: len(self.by_ipport))
+        self.connections_gauge.labels("total").set_function(
+            functools.partial(len, self.by_ipport)
+        )
         self.connections_gauge.labels("blockchain").set_function(
-            lambda: len(self.get_by_connection_type(ConnectionType.BLOCKCHAIN_NODE))
+            functools.partial(self._get_number_of_connections, ConnectionType.BLOCKCHAIN_NODE)
         )
         self.connections_gauge.labels("relay_transaction").set_function(
-            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_TRANSACTION))
+            functools.partial(self._get_number_of_connections, ConnectionType.RELAY_TRANSACTION)
         )
         self.connections_gauge.labels("relay_block").set_function(
-            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_BLOCK))
+            functools.partial(self._get_number_of_connections, ConnectionType.RELAY_BLOCK)
         )
         self.connections_gauge.labels("relay_all").set_function(
-            lambda: len(self.get_by_connection_type(ConnectionType.RELAY_ALL))
+            functools.partial(self._get_number_of_connections, ConnectionType.RELAY_ALL)
         )
+
+    def _get_number_of_connections(self, connection_type: ConnectionType) -> int:
+        return len(self.get_by_connection_type(connection_type))
+

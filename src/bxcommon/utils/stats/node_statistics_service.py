@@ -53,16 +53,21 @@ class _NodeStatisticsService(StatisticsService[NodeTransactionStatInterval, "Abs
             "garbage_collection": {
                 "uncollectable": len(gc.garbage),
                 "collection_counts": {
+                    # pyre-fixme[16]: Optional type has no attribute
+                    #  `collection_counts`.
                     f"gen{k}": v for k, v in self.interval_data.collection_counts.items()
                 },
                 "sizes": {"gen0": gen0, "gen1": gen1, "gen2": gen2,},
+                # pyre-fixme[16]: Optional type has no attribute `time_spent_in_gc`.
                 "total_elapsed_time": self.interval_data.time_spent_in_gc,
             }
         }
 
     def log_gc_duration(self, generation: int, duration_s: int) -> None:
         assert self.interval_data is not None
+        # pyre-fixme[16]: Optional type has no attribute `time_spent_in_gc`.
         self.interval_data.time_spent_in_gc += duration_s
+        # pyre-fixme[16]: Optional type has no attribute `collection_counts`.
         self.interval_data.collection_counts[generation] += 1
 
 

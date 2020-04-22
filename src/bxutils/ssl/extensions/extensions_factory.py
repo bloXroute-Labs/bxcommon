@@ -35,6 +35,9 @@ def create_account_id_extension(account_id: str) -> AccountIdExtension:
 
 def get_node_type(cert: Certificate) -> Optional[NodeType]:
     try:
+        # pyre-fixme[16]: `ExtensionType` has no attribute `value`.
+        # pyre-fixme[6]: Expected `ObjectIdentifier` for 1st param but got
+        #  `ObjectIdentifier`.
         node_type_str = cert.extensions.get_extension_for_oid(ExtensionsObjectIds.NODE_TYPE).value.value.decode("utf-8")
         return NodeType[node_type_str]
     except ExtensionNotFound:
@@ -43,6 +46,9 @@ def get_node_type(cert: Certificate) -> Optional[NodeType]:
 
 def get_node_id(cert: Certificate) -> Optional[str]:
     try:
+        # pyre-fixme[16]: `ExtensionType` has no attribute `value`.
+        # pyre-fixme[6]: Expected `ObjectIdentifier` for 1st param but got
+        #  `ObjectIdentifier`.
         return cert.extensions.get_extension_for_oid(ExtensionsObjectIds.NODE_ID).value.value.decode("utf-8")
     except ExtensionNotFound:
         return None
@@ -50,6 +56,9 @@ def get_node_id(cert: Certificate) -> Optional[str]:
 
 def get_account_id(cert: Certificate) -> Optional[str]:
     try:
+        # pyre-fixme[16]: `ExtensionType` has no attribute `value`.
+        # pyre-fixme[6]: Expected `ObjectIdentifier` for 1st param but got
+        #  `ObjectIdentifier`.
         return cert.extensions.get_extension_for_oid(ExtensionsObjectIds.ACCOUNT_ID).value.value.decode("utf-8")
     except ExtensionNotFound:
         return None
@@ -60,8 +69,15 @@ def get_custom_extensions(
         node_id: Optional[str] = None,
         account_id: Optional[str] = None,
         ca_cert: bool = False,
+        # pyre-fixme[11]: Annotation `KeyUsage` is not defined as a type.
         key_usage: KeyUsage = DEFAULT_KEY_USAGE
+# pyre-fixme[11]: Annotation `BasicConstraints` is not defined as a type.
+# pyre-fixme[11]: Annotation `KeyUsage` is not defined as a type.
+# pyre-fixme[11]: Annotation `UnrecognizedExtension` is not defined as a type.
 ) -> List[Union[KeyUsage, UnrecognizedExtension, BasicConstraints]]:
+    # pyre-fixme[11]: Annotation `BasicConstraints` is not defined as a type.
+    # pyre-fixme[11]: Annotation `KeyUsage` is not defined as a type.
+    # pyre-fixme[11]: Annotation `UnrecognizedExtension` is not defined as a type.
     extensions: List[Union[KeyUsage, UnrecognizedExtension, BasicConstraints]] = [
         BasicConstraints(ca=ca_cert, path_length=None),
         key_usage

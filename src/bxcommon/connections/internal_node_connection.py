@@ -58,7 +58,11 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.ack_message = AckMessage()
 
         self.can_send_pings = True
-        self.ping_message_timestamps = ExpiringDict(self.node.alarm_queue, constants.REQUEST_EXPIRATION_TIME)
+        self.ping_message_timestamps = ExpiringDict(
+            self.node.alarm_queue,
+            constants.REQUEST_EXPIRATION_TIME,
+            f"{str(self)}_ping_timestamps"
+        )
         self._sync_ping_latencies: Dict[int, Optional[float]] = {}
         self._nonce_to_network_num: Dict[int, int] = {}
         self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)
@@ -490,6 +494,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
             return
         network_num = msg.network_num()
         self.node.on_network_synced(network_num)
+        # pyre-fixme[6]: Expected `float` for 1st param but got `Optional[float]`.
         duration = time.time() - self.node.start_sync_time
         self.log_info(
             "TxSync complete. {} is ready and operational. It took {:.3f} seconds to complete transaction state with BDN.",
@@ -502,6 +507,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
             network_stats["content_without_sid"] = len(_tx_service._tx_hash_without_sid.queue)
             network_stats["sid_without_content"] = len(_tx_service._tx_hash_sid_without_content.queue)
             network_stats["tx_content_len"] = len(_tx_service._tx_cache_key_to_contents)
+            # pyre-fixme[6]: Expected `str` for 1st param but got `int`.
             sync_data[network_num] = network_stats
 
         logger.debug({"type": "TxSyncMetrics", "data": sync_data})

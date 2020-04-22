@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass, field
-from typing import Optional, List, Iterable, TypeVar, Generic
+from typing import Optional, List, Iterable, TypeVar, Generic, Set
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_pool import ConnectionPool
@@ -21,6 +21,7 @@ class BroadcastOptions:
 
 
 class BroadcastService(Generic[MT, CT], ABC):
+    connection_pool: ConnectionPool
 
     def __init__(self, connection_pool: ConnectionPool):
         self.connection_pool = connection_pool
@@ -33,19 +34,26 @@ class BroadcastService(Generic[MT, CT], ABC):
             logger.log(message.log_level(), "Broadcasting {} to [{}] connections.", message,
                        ",".join(map(str, options.connection_types)))
 
-        connections = set()
-        for connection in self.connection_pool.get_by_connection_types(options.connection_types):
-            if self.should_broadcast_to_connection(message, connection) and \
-                    connection != options.broadcasting_connection:
-                connections.add(connection)
-        return self._broadcast_to_connections(message, connections, options)
+        connections = self.get_connections_for_broadcast(message, options)
+        return self.broadcast_to_connections(message, connections, options)
 
     @abstractmethod
     def should_broadcast_to_connection(self, message: MT, connection: CT) -> bool:
         pass
 
-    def _broadcast_to_connections(self, message: AbstractMessage, connections: Iterable[CT],
-                                  options: BroadcastOptions) -> List[CT]:
+    def get_connections_for_broadcast(self, message: MT, options: BroadcastOptions) -> Set[CT]:
+        connections = set()
+        for connection in self.connection_pool.get_by_connection_types(options.connection_types):
+            if (
+                self.should_broadcast_to_connection(message, connection) and
+                connection != options.broadcasting_connection
+            ):
+                connections.add(connection)
+        return connections
+
+    def broadcast_to_connections(
+        self, message: AbstractMessage, connections: Iterable[CT], options: BroadcastOptions
+    ) -> List[CT]:
         broadcast_connections = []
         for connection in connections:
             if connection.is_active():

@@ -21,8 +21,12 @@ class TxServiceSyncTxsMessageV6(AbstractBloxrouteMessage):
             txs_content_short_ids: Optional[List[TxContentShortIdsV6]] = None,
             buf: Optional[bytearray] = None
     ):
+        # pyre-fixme[8]: Attribute has type `int`; used as `Optional[int]`.
         self._network_num: int = network_num
+        # pyre-fixme[8]: Attribute has type `int`; used as `Optional[int]`.
         self._tx_count: int = len(txs_content_short_ids) if txs_content_short_ids is not None else None
+        # pyre-fixme[8]: Attribute has type `List[TxContentShortIdsV6]`; used as
+        #  `Optional[List[TxContentShortIdsV6]]`.
         self._txs_content_short_ids: List[TxContentShortIdsV6] = txs_content_short_ids
 
         if txs_content_short_ids is not None and buf is None:

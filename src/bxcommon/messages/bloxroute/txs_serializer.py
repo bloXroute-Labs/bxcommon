@@ -31,6 +31,8 @@ def get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids: TxConten
 
     tx_content_size = 0
     if tx_content_short_ids.tx_content is not None:
+        # pyre-fixme[6]: Expected `Sized` for 1st param but got
+        #  `Optional[Union[bytearray, memoryview]]`.
         tx_content_size = len(tx_content_short_ids.tx_content)
 
     return SHA256_HASH_LEN + constants.UL_INT_SIZE_IN_BYTES + tx_content_size + constants.UL_INT_SIZE_IN_BYTES + \
@@ -56,9 +58,17 @@ def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxCon
             buffer[off: off + SHA256_HASH_LEN] = tx_content_short_ids.tx_hash.binary
             off += SHA256_HASH_LEN
 
+            # pyre-fixme[6]: Expected `Sized` for 1st param but got
+            #  `Optional[Union[bytearray, memoryview]]`.
             struct.pack_into("<L", buffer, off, len(tx_content_short_ids.tx_content))
             off += constants.UL_INT_SIZE_IN_BYTES
+            # pyre-fixme[6]: Expected `Sized` for 1st param but got
+            #  `Optional[Union[bytearray, memoryview]]`.
+            # pyre-fixme[6]: Expected `Union[typing.Iterable[int], bytes]` for 2nd
+            #  param but got `Optional[Union[bytearray, memoryview]]`.
             buffer[off: off + len(tx_content_short_ids.tx_content)] = tx_content_short_ids.tx_content
+            # pyre-fixme[6]: Expected `Sized` for 1st param but got
+            #  `Optional[Union[bytearray, memoryview]]`.
             off += len(tx_content_short_ids.tx_content)
 
             # expiration date

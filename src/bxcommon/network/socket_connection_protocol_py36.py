@@ -8,6 +8,7 @@ from bxcommon.network.ip_endpoint import IpEndpoint
 class SocketConnectionProtocolPy36(AbstractSocketConnectionProtocol, Protocol):
     def __init__(
         self,
+        # pyre-fixme[11]: Annotation `AbstractNode` is not defined as a type.
         node: "AbstractNode",
         endpoint: Optional[IpEndpoint] = None,
         is_ssl: bool = True,

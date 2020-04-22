@@ -120,6 +120,7 @@ class NodeEventLoop:
             )
             server_futures.append(server_future)
         logger.debug("Starting listening on: {}.", endpoints)
+        # pyre-fixme[7]: Expected `List[AbstractServer]` but got `Tuple[typing.Any]`.
         return await asyncio.gather(*server_futures)
 
     async def _connect_to_target(
@@ -208,4 +209,4 @@ class NodeEventLoop:
         if is_ssl is None:
             is_ssl = endpoint.port in utils_constants.SSL_PORT_RANGE
 
-        return protocol_cls(self._node, target_endpoint, is_ssl=is_ssl)  # pyre-ignore Instantiate class
+        return protocol_cls(self._node, target_endpoint, is_ssl=is_ssl)

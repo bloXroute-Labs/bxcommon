@@ -62,6 +62,8 @@ def run_node(
     log_config.setup_logging(
         opts.log_format,
         opts.log_level,
+        # pyre-fixme[6]: Expected `Iterable[str]` for 3rd param but got
+        #  `Iterable[Optional[str]]`.
         logger_names,
         opts.log_level_overrides,
         enable_fluent_logger=opts.log_fluentd_enable,
@@ -179,7 +181,7 @@ def _run_node(
 
     # Start main loop
     node = node_class(opts, node_ssl_service)
-    log_config.set_instance(list(logger_names), node.opts.node_id)
+    log_config.set_instance(node.opts.node_id)
     loop = asyncio.get_event_loop()
     node_event_loop = NodeEventLoop(node)
 

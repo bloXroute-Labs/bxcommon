@@ -8,9 +8,11 @@ from bxcommon.models.platform_provider import PlatformProvider
 
 @dataclass
 class NodeModel:
+    # pyre-fixme[8]: Attribute has type `NodeType`; used as `None`.
     node_type: NodeType = None
     external_port: int = 0
     non_ssl_port: int = 0
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     external_ip: str = None
 
     # Whether the node is online.
@@ -20,58 +22,75 @@ class NodeModel:
     sdn_connection_alive: bool = False
 
     # TODO: Remove this attribute as it's not being used anymore
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     network: str = None
 
     # Internal id for distinguishing nodes.
     node_id: Optional[str] = None
 
     # The starting and ending Transaction Short ID range, inclusive.
+    # pyre-fixme[8]: Attribute has type `int`; used as `None`.
     sid_start: int = None
+    # pyre-fixme[8]: Attribute has type `int`; used as `None`.
     sid_end: int = None
     next_sid_start: Optional[int] = None
     next_sid_end: Optional[int] = None
 
+    # pyre-fixme[8]: Attribute has type `int`; used as `None`.
     sid_expire_time: int = None
     last_pong_time: float = 0
     is_gateway_miner: bool = False
     is_internal_gateway: bool = False
 
     # Current build's version
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     source_version: str = None
 
     # Bloxroute protocol version
+    # pyre-fixme[8]: Attribute has type `int`; used as `None`.
     protocol_version: int = None
 
+    # pyre-fixme[8]: Attribute has type `int`; used as `None`.
     blockchain_network_num: int = None
 
     # IP address of the blockchain node
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     blockchain_ip: str = None
 
     # Port of the blockchain node
+    # pyre-fixme[8]: Attribute has type `int`; used as `None`.
     blockchain_port: int = None
 
     # Nodes hostname
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     hostname: str = None
 
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     sdn_id: str = None
 
     # Nodes OS version
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     os_version: str = None
 
     continent: Optional[str] = None
+    # pyre-fixme[8]: Attribute has type `bool`; used as `None`.
     split_relays: bool = None
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     country: str = None
 
     # idx enforces the one-way connection order of relays.
     # They connect to only other relays with an idx less than their own.
+    # pyre-fixme[8]: Attribute has type `int`; used as `None`.
     idx: int = None
 
     has_fully_updated_tx_service: bool = False
     sync_txs_status = has_fully_updated_tx_service
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     node_start_time: str = None
 
     # Ethereum remote blockchain attribute
     # Ethereum public key for remote blockchain connection
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     node_public_key: str = None
 
     # number of redundant forwarding routes a particular relay expects by default
@@ -80,13 +99,18 @@ class NodeModel:
     # number of redundant forwarding routes a particular relay expects to send to by default
     baseline_source_redundancy: int = 0
 
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     private_ip: str = None
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     csr: str = None
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     cert: str = None
+    # pyre-fixme[8]: Attribute has type `PlatformProvider`; used as `None`.
     platform_provider: PlatformProvider = None
 
     account_id: Optional[str] = None
 
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     latest_source_version: str = None
     should_update_source_version: bool = False
 

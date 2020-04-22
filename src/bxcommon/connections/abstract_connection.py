@@ -50,10 +50,6 @@ class AbstractConnection(Generic[Node]):
     message_tracker: Optional[MessageTracker]
 
     def __init__(self, socket_connection: AbstractSocketConnectionProtocol, node: Node):
-        if not isinstance(socket_connection, AbstractSocketConnectionProtocol):
-            raise ValueError("AbstractSocketConnectionProtocol type is expected for socket_connection arg but was {0}."
-                             .format(type(socket_connection)))
-
         self.socket_connection = socket_connection
         self.file_no = socket_connection.file_no
 
@@ -122,7 +118,7 @@ class AbstractConnection(Generic[Node]):
         return f"{self.CONNECTION_TYPE} ({details})"
 
     def _log_message(self, level: LogLevel, message, *args, **kwargs):
-        args = (HAS_PREFIX, f"[{self}",) + args
+        args = (HAS_PREFIX, f"[{self}]",) + args
         logger.log(level, message, *args, **kwargs)
 
     def log_trace(self, message, *args, **kwargs):
@@ -183,8 +179,9 @@ class AbstractConnection(Generic[Node]):
         self.advance_bytes_on_buffer(self.outputbuf, bytes_sent)
 
     def advance_bytes_written_to_socket(self, bytes_written: int):
-        if self.message_tracker:
-            self.message_tracker.advance_bytes(bytes_written)
+        message_tracker = self.message_tracker
+        if message_tracker:
+            message_tracker.advance_bytes(bytes_written)
 
     def enqueue_msg(self, msg: AbstractMessage, prepend: bool = False):
         """
@@ -217,17 +214,18 @@ class AbstractConnection(Generic[Node]):
             return
 
         size = len(msg_bytes)
+        message_tracker = self.message_tracker
 
         self.log_trace("Enqueued {} bytes.", size)
 
         if prepend:
             self.outputbuf.prepend_msgbytes(msg_bytes)
-            if self.message_tracker:
-                self.message_tracker.prepend_message(len(msg_bytes), full_message)
+            if message_tracker:
+                message_tracker.prepend_message(len(msg_bytes), full_message)
         else:
             self.outputbuf.enqueue_msgbytes(msg_bytes)
-            if self.message_tracker:
-                self.message_tracker.append_message(len(msg_bytes), full_message)
+            if message_tracker:
+                message_tracker.append_message(len(msg_bytes), full_message)
 
         self.socket_connection.send()
 

@@ -67,6 +67,7 @@ def create_connection(connection_cls: Type[Connection],
         node_opts = get_common_opts(8002)
 
     if node is None:
+        # pyre-fixme[45]: Cannot instantiate abstract class `MockNode`.
         node = MockNode(node_opts, None)
 
     if isinstance(node, MockNode):
@@ -95,14 +96,17 @@ def receive_node_message(node, fileno, message):
     node.on_bytes_received(fileno, message)
 
 
-def get_queued_node_bytes(node: AbstractNode, fileno: int, message_type: bytes) -> memoryview:
+def get_queued_node_bytes(
+    node: AbstractNode, fileno: int, message_type: bytes, flush: bool = True
+) -> memoryview:
     bytes_to_send = node.get_bytes_to_send(fileno)
     assert bytes_to_send is not None
     assert message_type in bytes_to_send.tobytes(), \
         f"could not find {message_type} in message bytes " \
         f"{convert.bytes_to_hex(bytes_to_send.tobytes())} " \
         f"on file_no: {fileno}"
-    node.on_bytes_sent(fileno, len(bytes_to_send))
+    if flush:
+        node.on_bytes_sent(fileno, len(bytes_to_send))
     return bytes_to_send
 
 
@@ -119,12 +123,16 @@ def get_queued_node_messages(node: AbstractNode, fileno: int) -> List[AbstractMe
         is_full_message,
         message_type,
         payload_length
+    # pyre-fixme[16]: `Optional` has no attribute
+    #  `get_message_header_preview_from_input_buffer`.
     ) = connection.message_factory.get_message_header_preview_from_input_buffer(input_buffer)
     while is_full_message:
+        # pyre-fixme[16]: `Optional` has no attribute `base_message_type`.
         message_length = connection.message_factory.base_message_type.HEADER_LENGTH + payload_length
         message_contents = input_buffer.remove_bytes(message_length)
         total_bytes += message_length
 
+        # pyre-fixme[16]: `Optional` has no attribute `create_message_from_buffer`.
         messages.append(connection.message_factory.create_message_from_buffer(message_contents))
         (
             is_full_message,
@@ -374,6 +382,7 @@ def async_test(method):
     return wrapper
 
 
+# pyre-fixme[39]: `(...) -> Any` is not a valid parent class.
 class AsyncMock(Callable):
     mock: MagicMock
 

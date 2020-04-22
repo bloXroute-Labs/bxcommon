@@ -167,6 +167,7 @@ def get_transport_cert(transport: Union[Transport, TCPTransport]) -> Certificate
     :raise: ValueError if the transport doesn't wrap an SSL socket
     """
     ssl_socket = typing.cast(SSLSocket, transport.get_extra_info("ssl_object"))
+    # pyre-fixme[25]: Assertion will always fail.
     if isinstance(ssl_socket, (SSLSocket, ssl.SSLObject)):
         return get_socket_cert(ssl_socket)
     else:
@@ -178,6 +179,9 @@ def sign_csr(
         ca_cert: Certificate,
         key: EllipticCurvePrivateKey,
         validation_period_days: int,
+        # pyre-fixme[11]: Annotation `BasicConstraints` is not defined as a type.
+        # pyre-fixme[11]: Annotation `KeyUsage` is not defined as a type.
+        # pyre-fixme[11]: Annotation `UnrecognizedExtension` is not defined as a type.
         custom_extensions: Iterable[Union[KeyUsage, UnrecognizedExtension, BasicConstraints]]
 ) -> Certificate:
     """
@@ -208,6 +212,8 @@ def sign_csr(
     except ExtensionNotFound:
         pass
     for extension in custom_extensions:
+        # pyre-fixme[6]: Expected `Union[typing.Type[typing.Any],
+        #  typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd param but got `Any`.
         if isinstance(extension, UnrecognizedExtension):
             critical = False
         else:

@@ -3,13 +3,14 @@ from typing import List, Optional
 
 from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
-from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
 from bxutils.logging.log_level import LogLevel
 
 
 class AbstractCleanupMessage(AbstractBroadcastMessage):
+    # pyre-fixme[15]: `MESSAGE_TYPE` overrides attribute defined in
+    #  `AbstractBloxrouteMessage` inconsistently.
     MESSAGE_TYPE = None
     PAYLOAD_START_OFFSET = AbstractBroadcastMessage.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH - \
         constants.CONTROL_FLAGS_LEN
@@ -18,24 +19,34 @@ class AbstractCleanupMessage(AbstractBroadcastMessage):
     Message with sids numbers for cleanup.
     """
 
-    def __init__(self, message_hash: Optional[Sha256Hash] = None, network_num: Optional[int] = None,
-                 source_id: str = "", sids: Optional[List[int]] = None, tx_hashes: Optional[List[Sha256Hash]] = None,
-                 buf: Optional[bytearray] = None):
-        self._tx_hashes = None
-        self._sids = None
-        self._sids_count = None
-        self._tx_hashes_count = None
+    _tx_hashes: Optional[List[Sha256Hash]] = None
+    _sids: Optional[List[int]] = None
+    _sids_count: Optional[int] = None
+    _tx_hashes_count: Optional[int] = None
+
+    def __init__(
+        self,
+        message_hash: Optional[Sha256Hash] = None,
+        network_num: Optional[int] = None,
+        source_id: str = "",
+        sids: Optional[List[int]] = None,
+        tx_hashes: Optional[List[Sha256Hash]] = None,
+        buf: Optional[bytearray] = None
+    ):
 
         if buf is None:
             assert tx_hashes is not None and sids is not None
-            self.PAYLOAD_LENGTH = AbstractBroadcastMessage.PAYLOAD_LENGTH + \
-                                  (constants.UL_INT_SIZE_IN_BYTES * 2) + \
-                                  (len(sids) * constants.UL_INT_SIZE_IN_BYTES) + \
-                                  (len(tx_hashes) * crypto.SHA256_HASH_LEN)
+            self.PAYLOAD_LENGTH = (
+                AbstractBroadcastMessage.PAYLOAD_LENGTH
+                + (constants.UL_INT_SIZE_IN_BYTES * 2)
+                + (len(sids) * constants.UL_INT_SIZE_IN_BYTES)
+                + (len(tx_hashes) * crypto.SHA256_HASH_LEN)
+            )
 
         super(AbstractCleanupMessage, self).__init__(message_hash, network_num, source_id, buf)
 
         if buf is None:
+            assert tx_hashes is not None and sids is not None
             sid_count = len(sids)
             hashes_count = len(tx_hashes)
             off = self.PAYLOAD_START_OFFSET
@@ -61,14 +72,17 @@ class AbstractCleanupMessage(AbstractBroadcastMessage):
         if self._sids is None:
             self._parse()
 
-        assert self._sids is not None
-        return self._sids
+        sids = self._sids
+        assert sids is not None
+        return sids
 
     def transaction_hashes(self) -> List[Sha256Hash]:
         if self._tx_hashes is None:
             self._parse()
-        assert self._tx_hashes is not None
-        return self._tx_hashes
+
+        tx_hashes = self._tx_hashes
+        assert tx_hashes is not None
+        return tx_hashes
 
     def _parse(self):
         off = self.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH - constants.CONTROL_FLAGS_LEN

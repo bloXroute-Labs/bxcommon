@@ -14,6 +14,7 @@ class InputBuffer(SpecialMemoryProperties):
         if not self.input_list:
             return False
 
+        # pyre-fixme[25]: Assertion will always fail.
         if not isinstance(suffix, (memoryview, bytearray, bytes)):
             raise ValueError(f"Suffix must be memoryview, bytearray or bytes, not {type(suffix)}.")
 
@@ -30,6 +31,7 @@ class InputBuffer(SpecialMemoryProperties):
         """
         Adds a data bytes to the end of the input buffer.
         """
+        # pyre-fixme[25]: Assertion will always fail.
         if not isinstance(piece, (bytearray, memoryview, bytes)):
             raise ValueError("Piece must be a bytearray, bytes or memoryview.")
         self.input_list.append(piece)
