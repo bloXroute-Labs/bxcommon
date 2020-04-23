@@ -26,14 +26,17 @@ from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyn
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.notification_message import NotificationMessage
 from bxcommon.messages.bloxroute.v8.broadcast_message_v8 import BroadcastMessageV8
+from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.buffers.input_buffer import InputBuffer
-from bxcommon.utils.object_hash import Sha256Hash
+from bxcommon.utils.object_hash import Sha256Hash, ConcatHash
 
 
 class BroadcastMessagePreview(NamedTuple):
     is_full_header: bool
-    message_hash: Optional[Sha256Hash]
+    block_hash: Optional[Sha256Hash]
+    broadcast_type: Optional[BroadcastMessageType]
+    message_id: Optional[ConcatHash]
     network_num: Optional[int]
     source_id: Optional[str]
     payload_length: Optional[int]
@@ -81,7 +84,7 @@ class _BloxrouteMessageFactoryV8(AbstractMessageFactory):
                                   constants.CONTROL_FLAGS_LEN
         is_full_header = input_buffer.length >= broadcast_header_length
         if not is_full_header:
-            return BroadcastMessagePreview(False, None, None, None, None)
+            return BroadcastMessagePreview(False, None, None, None, None, None, None)
         else:
             _is_full_message, _command, payload_length = self.get_message_header_preview_from_input_buffer(input_buffer)
 
@@ -89,7 +92,9 @@ class _BloxrouteMessageFactoryV8(AbstractMessageFactory):
 
             offset = self.base_message_type.HEADER_LENGTH
 
-            message_hash = broadcast_header[offset:offset + crypto.SHA256_HASH_LEN]
+            block_hash = broadcast_header[offset:offset + crypto.SHA256_HASH_LEN]
+            block_hash_with_network_num = broadcast_header[offset:
+                                                           offset + crypto.SHA256_HASH_LEN + constants.NETWORK_NUM_LEN]
             offset += crypto.SHA256_HASH_LEN
 
             network_num, = struct.unpack_from("<L", broadcast_header[offset:offset + constants.NETWORK_NUM_LEN])
@@ -98,8 +103,14 @@ class _BloxrouteMessageFactoryV8(AbstractMessageFactory):
             source_id = uuid_pack.from_bytes(
                 struct.unpack_from("<16s", broadcast_header[offset:offset + constants.NODE_ID_SIZE_IN_BYTES])[0])
 
-            return BroadcastMessagePreview(is_full_header, Sha256Hash(message_hash), network_num, source_id,
-                                           payload_length)
+            broadcast_type_bytearray = bytearray(constants.BROADCAST_TYPE_LEN)
+            struct.pack_into("<4s", broadcast_type_bytearray, 0,
+                             BroadcastMessageType.BLOCK.value.encode(constants.DEFAULT_TEXT_ENCODING))
+            broadcast_type_bytearray = bytes(broadcast_type_bytearray)
+            message_id = ConcatHash(bytearray(block_hash_with_network_num) + broadcast_type_bytearray, 0)
+
+            return BroadcastMessagePreview(is_full_header, Sha256Hash(block_hash), BroadcastMessageType.BLOCK,
+                                           message_id, network_num, source_id, payload_length)
 
     def __repr__(self):
         return f"{self.__class__.__name__}; message_type_mapping: {self.message_type_mapping}"
