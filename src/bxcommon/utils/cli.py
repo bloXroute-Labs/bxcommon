@@ -10,6 +10,7 @@ from bxcommon import constants
 from bxcommon.constants import ALL_NETWORK_NUM
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_type import NodeType
+from bxcommon.rpc import rpc_constants
 from bxcommon.services import http_service
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import config, ip_resolver, convert, node_cache
@@ -134,6 +135,31 @@ def get_argument_parser() -> argparse.ArgumentParser:
     arg_parser.add_argument(
         "--node-id",
         help="(TEST ONLY) Set the node_id for using in testing."
+    )
+
+    arg_parser.add_argument(
+        "--rpc-host",
+        help="The node RPC host (default: {}).".format(rpc_constants.DEFAULT_RPC_HOST),
+        type=str,
+        default=rpc_constants.DEFAULT_RPC_HOST
+    )
+    arg_parser.add_argument(
+        "--rpc-port",
+        help="The node RPC port (default: {}).".format(rpc_constants.DEFAULT_RPC_PORT),
+        type=int,
+        default=rpc_constants.DEFAULT_RPC_PORT
+    )
+    arg_parser.add_argument(
+        "--rpc-user",
+        help=f"The node RPC server user (default: {rpc_constants.DEFAULT_RPC_USER})",
+        type=str,
+        default=rpc_constants.DEFAULT_RPC_USER
+    )
+    arg_parser.add_argument(
+        "--rpc-password",
+        help=f"The node RPC server password (default: {rpc_constants.DEFAULT_RPC_PASSWORD})",
+        type=str,
+        default=rpc_constants.DEFAULT_RPC_PASSWORD
     )
 
     arg_parser.add_argument("--transaction-pool-memory-limit",
@@ -315,7 +341,7 @@ def parse_blockchain_opts(opts, node_type: NodeType):
     """
     opts_dict = opts.__dict__
 
-    if node_type in NodeType.RELAY:
+    if node_type in NodeType.RELAY or node_type in NodeType.BLOXROUTE_PUBLIC_API:
         opts_dict["blockchain_network_num"] = ALL_NETWORK_NUM
         return
 
@@ -330,6 +356,7 @@ def parse_blockchain_opts(opts, node_type: NodeType):
     opts_dict["blockchain_ignore_block_interval_count"] = network_info.ignore_block_interval_count
     opts_dict["blockchain_block_recovery_timeout_s"] = network_info.block_recovery_timeout_s
     opts_dict["blockchain_block_hold_timeout_s"] = network_info.block_hold_timeout_s
+    opts_dict["enable_network_content_logs"] = network_info.enable_network_content_logs
 
 
 def _set_blockchain_networks_from_cache(opts):

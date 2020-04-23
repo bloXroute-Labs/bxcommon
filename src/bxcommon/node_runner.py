@@ -3,7 +3,7 @@ import gc
 import sys
 from argparse import Namespace
 from datetime import datetime
-from typing import Iterable, Optional, Type, Union, Callable
+from typing import Iterable, Optional, Type, Union, Callable, List
 
 import uvloop
 
@@ -57,7 +57,10 @@ def run_node(
     ssl_service_factory: Callable[
         [NodeType, str, str, str], NodeSSLService
     ] = default_ssl_service_factory,
+    third_party_loggers: Optional[List[LoggerConfig]] = None
 ):
+    if third_party_loggers is None:
+        third_party_loggers = THIRD_PARTY_LOGGERS
     opts.logger_names = logger_names
     log_config.setup_logging(
         opts.log_format,
@@ -69,7 +72,7 @@ def run_node(
         enable_fluent_logger=opts.log_fluentd_enable,
         fluentd_host=opts.log_fluentd_host,
         fluentd_queue_size=opts.log_fluentd_queue_size,
-        third_party_loggers=THIRD_PARTY_LOGGERS,
+        third_party_loggers=third_party_loggers,
         fluent_log_level=opts.log_level_fluentd,
         stdout_log_level=opts.log_level_stdout
     )

@@ -254,7 +254,7 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
                      initial_liveliness_check=30, block_interval=600, continent="NA", country="United States",
                      non_ssl_port: int = 9001, rpc_port: int = 28332, has_fully_updated_tx_service: bool = False,
                      max_block_interval: int = 10, default_tx_quota_type: QuotaType = QuotaType.FREE_DAILY_QUOTA,
-                     log_level_overrides=None, **kwargs) -> Namespace:
+                     log_level_overrides=None, enable_network_content_logs=False ,**kwargs) -> Namespace:
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -333,7 +333,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "rpc_user": "",
         "rpc_password": "",
         "default_tx_quota_type": default_tx_quota_type,
-        "should_update_source_version": False
+        "should_update_source_version": False,
+        "enable_network_content_logs": False
     })
 
     if include_default_btc_args:

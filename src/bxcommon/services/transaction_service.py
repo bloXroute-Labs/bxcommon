@@ -382,8 +382,9 @@ class TransactionService:
     def set_final_tx_confirmations_count(self, val: int):
         self._final_tx_confirmations_count = val
 
-    def set_transaction_contents(self, transaction_hash: Sha256Hash,
-                                 transaction_contents: Union[bytearray, memoryview]):
+    def set_transaction_contents(
+            self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
+    ):
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
 
@@ -409,6 +410,8 @@ class TransactionService:
         self._total_tx_contents_size += len(transaction_contents) - previous_size
 
         self._memory_limit_clean_up()
+
+        self.node.log_txs_network_content(self.network_num, wrap_sha256(transaction_hash), transaction_contents)
 
     def remove_transaction_by_tx_hash(
             self, transaction_hash: Sha256Hash, force: bool = True, assume_no_sid: bool = False) -> Optional[Set[int]]:
@@ -706,7 +709,6 @@ class TransactionService:
         else:
             self.tx_hash_sid_without_content_alarm_scheduled = False
             return 0
-
 
     def track_seen_short_ids(self, block_hash: Sha256Hash, short_ids: List[int]):
         """

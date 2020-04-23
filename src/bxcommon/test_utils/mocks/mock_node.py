@@ -62,3 +62,11 @@ class MockNode(AbstractNode):
 
     def _check_sync_relay_connections(self):
         pass
+
+    def broadcast_transaction(
+            self,
+            message,
+            broadcasting_connection,
+            prepend_to_queue: bool = False
+    ) -> None:
+        pass

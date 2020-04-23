@@ -28,6 +28,8 @@ from bxcommon.services.broadcast_service import BroadcastService, \
 from bxcommon.services.threaded_request_service import ThreadedRequestService
 from bxcommon.utils import memory_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
+from bxcommon.utils.blockchain_utils import bdn_tx_to_bx_tx
+from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
@@ -504,6 +506,7 @@ class AbstractNode:
             tx_stats.configure_network(blockchain_network.network_num,
                                        blockchain_network.tx_percent_to_log_by_hash,
                                        blockchain_network.tx_percent_to_log_by_sid)
+        bdn_tx_to_bx_tx.init(blockchain_networks)
 
     def dump_memory_usage(self):
         total_mem_usage = memory_utils.get_app_memory_usage()
@@ -551,6 +554,11 @@ class AbstractNode:
     def sync_tx_services(self):
         self.start_sync_time = time.time()
         self.sync_metrics = defaultdict(Counter)
+
+    def log_txs_network_content(
+            self, network_num: int, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
+    ) -> None:
+        pass
 
     @abstractmethod
     def _transaction_sync_timeout(self):

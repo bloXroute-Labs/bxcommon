@@ -1,4 +1,7 @@
-class MockAlarmQueue(object):
+from bxcommon.utils.alarm_queue import AlarmQueue
+
+
+class MockAlarmQueue(AlarmQueue):
     def __init__(self):
         self.alarms = []
 

@@ -59,6 +59,11 @@ def get_json(endpoint: str) -> Optional[jsonT]:
                          headers=constants.HTTP_HEADERS)
 
 
+def get_json_with_payload(endpoint: str, payload=None) -> Optional[jsonT]:
+    return _http_request("GET", endpoint, body=json_encoder.to_json(payload),
+                         headers=constants.HTTP_HEADERS)
+
+
 def build_url(endpoint: str) -> str:
     if not endpoint or not isinstance(endpoint, str):
         raise ValueError("Missing or invalid URL")

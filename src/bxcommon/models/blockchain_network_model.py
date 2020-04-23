@@ -40,3 +40,4 @@ class BlockchainNetworkModel:
     sdn_id: str = None
     tx_sync_interval_s: float = constants.GATEWAY_SYNC_TX_THRESHOLD_S
     tx_sync_sync_content: bool = constants.GATEWAY_SYNC_SYNC_CONTENT
+    enable_network_content_logs: bool = False

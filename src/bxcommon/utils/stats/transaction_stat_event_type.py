@@ -41,3 +41,5 @@ class TransactionStatEventType:
     BDN_TX_RECEIVED_FROM_CLIENT_ACCOUNT_IGNORE_SEEN = StatEventTypeSettings(
         "BDNTxReceivedFromClientAccountIgnoreSeen"
     )
+    TX_COUNTER_INCREMENTED = StatEventTypeSettings("TxCounterIncremented")
+    TX_COUNTER_BLOCKED = StatEventTypeSettings("TxCounterBlocked")
