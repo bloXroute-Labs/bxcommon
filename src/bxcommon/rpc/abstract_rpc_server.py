@@ -9,10 +9,10 @@ from aiohttp.web_exceptions import HTTPUnauthorized
 
 from bxcommon.rpc.request_formatter import RequestFormatter
 from bxcommon.rpc.response_formatter import ResponseFormatter
+from bxcommon.rpc.rpc_request_handler import RpcRequestHandler
 
 from bxutils import logging
 
-from bxcommon.rpc.rpc_request_handler import RpcRequestHandler
 
 
 logger = logging.get_logger(__name__)

@@ -1,6 +1,3 @@
-#TODO: This file is duplicated in bxapi. Keep in sync until we have a long term solution to make one
-# of them obsolete.
-
 from dataclasses import dataclass
 
 from bxcommon.models.config.abstract_config_model import AbstractConfigModel
@@ -17,6 +14,3 @@ class GatewayNodeConfigModel(AbstractConfigModel):
     stats_config: StatsConfigModel = None
     # pyre-fixme[8]: Attribute has type `CronConfigModel`; used as `None`.
     cron_config: CronConfigModel = None
-
-
-

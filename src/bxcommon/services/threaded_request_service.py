@@ -2,12 +2,11 @@ import functools
 from concurrent.futures import Future, CancelledError
 from typing import Callable, Any, Optional
 
-from bxutils import logging
-
 from bxcommon import constants
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.concurrency.thread_pool import ThreadPool
 from bxutils import log_messages
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -79,5 +78,5 @@ class ThreadedRequestService:
                 logger.trace("Task {} completed with result: {}", extra_info, result)
             except CancelledError as e:
                 logger.error(log_messages.TASK_CANCELLED, task, extra_info, e, exc_info=True)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 logger.error(log_messages.TASK_FAILED, task, extra_info, e, exc_info=True)

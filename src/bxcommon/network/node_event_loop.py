@@ -50,6 +50,7 @@ class NodeEventLoop:
     async def run(self) -> None:
         try:
             await self._run()
+        # pylint: disable=broad-except
         except Exception as e:
             logger.exception("Unhandled error raised: {}.", e)
 

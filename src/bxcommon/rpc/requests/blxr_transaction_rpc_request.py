@@ -111,4 +111,3 @@ class BlxrTransactionRpcRequest(AbstractRpcRequest):
 
     def _get_account_id(self):
         return self._node.account_id
-

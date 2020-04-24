@@ -1,6 +1,7 @@
 from enum import Flag
 from functools import reduce
 
+
 class SerializableFlag(Flag):
     def __str__(self):
         if self.name is not None:
@@ -10,7 +11,7 @@ class SerializableFlag(Flag):
 
     @classmethod
     def from_string(cls, string_value: str):
-        string_values = set([w.strip().upper() for w in str(string_value).split("|")])
+        string_values = {w.strip().upper() for w in str(string_value).split("|")}
         flag_elements = [item for item in cls if item.name in string_values]
         if flag_elements:
             return reduce(lambda x, y: x | y, flag_elements)

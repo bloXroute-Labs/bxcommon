@@ -1,9 +1,9 @@
 import struct
 from typing import Optional
 
-from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon import constants
+from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 
 
 class TxServiceSyncReqMessage(AbstractBloxrouteMessage):

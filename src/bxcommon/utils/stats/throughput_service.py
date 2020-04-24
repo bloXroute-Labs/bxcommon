@@ -15,6 +15,7 @@ logger = logging.get_logger(LogRecordType.Throughput, __name__)
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
+    # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_node import AbstractNode
 
 

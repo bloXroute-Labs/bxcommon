@@ -1,6 +1,6 @@
 import socket
-from typing import Optional
 from contextlib import closing
+from typing import Optional
 
 from bxcommon.network.port_range import PortRange
 
@@ -32,7 +32,8 @@ class PortAllocator:
             port = self._port_range.start if self._last_allocated_port is None else self._last_allocated_port + 1
         if port not in self._port_range:
             raise RuntimeError(f"No available ports remained in range: {self._port_range}!")
-        elif check_port(port):
+
+        if check_port(port):
             return port
         else:
             return self._get_next_port(port + 1)

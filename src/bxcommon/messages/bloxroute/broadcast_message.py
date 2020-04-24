@@ -26,8 +26,13 @@ class BroadcastMessage(AbstractBroadcastMessage):
 
         # override payload length for variable length message
         if blob:
-            self.PAYLOAD_LENGTH = AbstractBroadcastMessage.PAYLOAD_LENGTH + constants.BROADCAST_TYPE_LEN \
-                                  + constants.BLOCK_ENCRYPTED_FLAG_LEN + len(blob)
+            # pylint: disable=invalid-name
+            self.PAYLOAD_LENGTH = (
+                AbstractBroadcastMessage.PAYLOAD_LENGTH
+                + constants.BROADCAST_TYPE_LEN
+                + constants.BLOCK_ENCRYPTED_FLAG_LEN +
+                len(blob)
+            )
         super().__init__(message_hash, network_num, source_id, buf)
 
         if buf is None:

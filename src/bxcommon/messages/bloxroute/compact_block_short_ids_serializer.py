@@ -3,7 +3,6 @@ from collections import namedtuple
 
 from bxcommon import constants
 
-
 BlockOffsets = namedtuple("BlockOffsets", ["short_id_offset", "block_begin_offset"])
 
 

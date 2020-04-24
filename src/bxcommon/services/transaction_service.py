@@ -1,31 +1,35 @@
+# pylint: disable=too-many-lines
+
 import functools
-import operator
 import time
 from collections import defaultdict, OrderedDict, Counter
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from functools import reduce
-from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator
+from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iterator, TYPE_CHECKING
 
 from prometheus_client import Gauge
 
 from bxcommon import constants
-from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
-from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils import memory_utils, convert
+from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
+from bxutils import log_messages
 from bxutils import logging, utils
 from bxutils.encoding import json_encoder
-from bxutils import log_messages
 from bxutils.logging.log_record_type import LogRecordType
+
+if TYPE_CHECKING:
+    # pylint: disable=ungrouped-imports,cyclic-import
+    from bxcommon.connections.abstract_node import AbstractNode
 
 logger = logging.get_logger(__name__)
 logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
@@ -81,6 +85,7 @@ class TransactionServiceStats:
         )
 
 
+# pylint: disable=too-many-public-methods
 class TransactionService:
     """
     Service for managing transaction mappings.
@@ -104,7 +109,7 @@ class TransactionService:
     _tx_assignment_expire_queue: expiration time of short ids
     """
 
-    node: AbstractNode
+    node: "AbstractNode"
     tx_assign_alarm_scheduled: bool
     tx_content_without_sid_alarm_scheduled: bool
     network_num: int
@@ -112,10 +117,10 @@ class TransactionService:
     _short_id_to_tx_quota_flag: Dict[int, QuotaType]
     _tx_cache_key_to_contents: Dict[str, Union[bytearray, memoryview]]
     _tx_cache_key_to_short_ids: Dict[str, Set[int]]
-    _tx_assignment_expire_queue: ExpirationQueue
-    _tx_hash_without_sid: ExpirationQueue[Sha256Hash]
-    _tx_hash_sid_without_content: ExpirationQueue[Sha256Hash]
+    _tx_assignment_expire_queue: ExpirationQueue[int]
     _tx_hash_to_time_removed: OrderedDict
+    tx_hashes_without_short_id: ExpirationQueue[Sha256Hash]
+    tx_hashes_without_content: ExpirationQueue[Sha256Hash]  # but has short ID
 
     MAX_ID = 2 ** 32
     SHORT_ID_SIZE = 4
@@ -126,7 +131,7 @@ class TransactionService:
     ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE = 88
     ESTIMATED_TX_HASH_NOT_SEEN_IN_BLOCK_ITEM_SIZE = 312
 
-    def __init__(self, node: AbstractNode, network_num: int):
+    def __init__(self, node: "AbstractNode", network_num: int):
         """
         Constructor
         :param node: reference to node object
@@ -144,15 +149,15 @@ class TransactionService:
 
         self.tx_assign_alarm_scheduled = False
         self.tx_content_without_sid_alarm_scheduled = False
-        self.tx_hash_sid_without_content_alarm_scheduled = False
+        self.tx_without_content_alarm_scheduled = False
 
         self._tx_cache_key_to_short_ids = defaultdict(set)
         self._short_id_to_tx_quota_flag = {}
         self._short_id_to_tx_cache_key = {}
         self._tx_cache_key_to_contents = {}
         self._tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
-        self._tx_hash_without_sid = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
-        self._tx_hash_sid_without_content = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
+        self.tx_hashes_without_short_id = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
+        self.tx_hashes_without_content = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
         self._tx_hash_to_time_removed = OrderedDict()
 
         self._final_tx_confirmations_count = self._get_final_tx_confirmations_count()
@@ -162,7 +167,7 @@ class TransactionService:
         self._removed_txs_hashes_expiration_time_s = self._get_removed_transactions_history_expiration_time_s()
 
         # short ids seen in block ordered by them block hash
-        self._short_ids_seen_in_block: OrderedDict[Sha256Hash, List[int]] = OrderedDict()
+        self._short_ids_seen_in_block: Dict[Sha256Hash, List[int]] = OrderedDict()
         self._total_tx_contents_size = 0
         self._total_tx_removed_by_memory_limit = 0
 
@@ -328,7 +333,7 @@ class TransactionService:
         return short_id in self._short_id_to_tx_cache_key
 
     def has_cache_key_no_sid_entry(self, transaction_hash: Sha256Hash) -> bool:
-        return transaction_hash in self._tx_hash_without_sid.queue
+        return transaction_hash in self.tx_hashes_without_short_id.queue
 
     def removed_transaction(self, transaction_hash: Sha256Hash) -> bool:
         """
@@ -364,16 +369,16 @@ class TransactionService:
 
         transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
         if transaction_cache_key not in self._tx_cache_key_to_contents:
-            self._tx_hash_sid_without_content.add(transaction_hash)
-            if not self.tx_hash_sid_without_content_alarm_scheduled:
+            self.tx_hashes_without_content.add(transaction_hash)
+            if not self.tx_without_content_alarm_scheduled:
                 self.node.alarm_queue.register_alarm(constants.TX_CONTENT_NO_SID_EXPIRE_S,
                                                      self.expire_sid_without_content)
-                self.tx_hash_sid_without_content_alarm_scheduled = True
+                self.tx_without_content_alarm_scheduled = True
 
         self._tx_cache_key_to_short_ids[transaction_cache_key].add(short_id)
         self._short_id_to_tx_cache_key[short_id] = transaction_cache_key
         self._tx_assignment_expire_queue.add(short_id)
-        self._tx_hash_without_sid.remove(transaction_hash)
+        self.tx_hashes_without_short_id.remove(transaction_hash)
 
         if not self.tx_assign_alarm_scheduled:
             self.node.alarm_queue.register_alarm(self.node.opts.sid_expire_time, self.expire_old_assignments)
@@ -395,7 +400,7 @@ class TransactionService:
         transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
 
         if transaction_cache_key not in self._tx_cache_key_to_short_ids:
-            self._tx_hash_without_sid.add(transaction_hash)
+            self.tx_hashes_without_short_id.add(transaction_hash)
             if not self.tx_content_without_sid_alarm_scheduled:
                 self.node.alarm_queue.register_alarm(constants.TX_CONTENT_NO_SID_EXPIRE_S,
                                                      self.expire_content_without_sid)
@@ -404,7 +409,7 @@ class TransactionService:
         if transaction_cache_key in self._tx_cache_key_to_contents:
             previous_size = len(self._tx_cache_key_to_contents[transaction_cache_key])
 
-        self._tx_hash_sid_without_content.remove(transaction_hash)
+        self.tx_hashes_without_content.remove(transaction_hash)
 
         self._tx_cache_key_to_contents[transaction_cache_key] = transaction_contents
         self._total_tx_contents_size += len(transaction_contents) - previous_size
@@ -414,14 +419,17 @@ class TransactionService:
         self.node.log_txs_network_content(self.network_num, wrap_sha256(transaction_hash), transaction_contents)
 
     def remove_transaction_by_tx_hash(
-            self, transaction_hash: Sha256Hash, force: bool = True, assume_no_sid: bool = False) -> Optional[Set[int]]:
+        self,
+        transaction_hash: Sha256Hash,
+        force: bool = True,
+        assume_no_sid: bool = False
+    ) -> Optional[Set[int]]:
         """
         Clean up mapping. Removes transaction contents and mapping.
         :param transaction_hash: tx hash to clean up
         :param force: when false, cleanup will ignore tx / sids marked with quota flag
         :param assume_no_sid: cleanup request will be ignored if the tx has short ids
         """
-        previous_size = 0
         transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
         removed_sids = 0
         removed_txns = 0
@@ -438,7 +446,7 @@ class TransactionService:
             else:
                 short_ids = self._tx_cache_key_to_short_ids.pop(transaction_cache_key)
 
-            for short_id_flag, short_id in zip(short_id_flags, short_ids):
+            for _, short_id in zip(short_id_flags, short_ids):
                 tx_stats.add_tx_by_hash_event(
                     transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
                     self.network_num, short_id, reason=TxRemovalReason.BLOCK_CLEANUP.value
@@ -465,11 +473,14 @@ class TransactionService:
                      removed_sids, removed_txns)
         return short_ids
 
-    def remove_transaction_by_short_id(self,
-                                       short_id: int,
-                                       remove_related_short_ids: bool = False,
-                                       force: bool = True,
-                                       removal_reason: TxRemovalReason = TxRemovalReason.UNKNOWN):
+    # pylint: disable=too-many-branches
+    def remove_transaction_by_short_id(
+        self,
+        short_id: int,
+        remove_related_short_ids: bool = False,
+        force: bool = True,
+        removal_reason: TxRemovalReason = TxRemovalReason.UNKNOWN
+    ) -> None:
         """
         Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
         :param short_id: short id to clean up
@@ -537,8 +548,9 @@ class TransactionService:
         for block_hash, short_ids in self._short_ids_seen_in_block.items():
             yield block_hash, short_ids
 
-    def iter_timestamped_transaction_hashes_from_oldest(self, newest_time: float = float("inf")) -> \
-            Generator[Tuple[Sha256Hash, float], None, None]:
+    def iter_transaction_hashes_from_oldest(
+        self, newest_time: float = float("inf")
+    ) -> Generator[Tuple[Sha256Hash, float], None, None]:
         for short_id, timestamp in self._tx_assignment_expire_queue.queue.items():
             if timestamp > newest_time:
                 break
@@ -547,8 +559,9 @@ class TransactionService:
             assert transaction_hash is not None
             yield transaction_hash, timestamp
 
-    def thread_safe_iter_timestamped_transactions_from_oldest(self, newest_time: float = float("inf")) -> \
-            Generator[Tuple[int, Sha256Hash, float], None, None]:
+    def thread_safe_iter_transactions_from_oldest(
+        self, newest_time: float = float("inf")
+    ) -> Generator[Tuple[int, Sha256Hash, float], None, None]:
 
         tries = 0
         items = None
@@ -563,7 +576,7 @@ class TransactionService:
         if items is None:
             raise RuntimeError("The expiration queue changed size during iteration every time")
 
-        logger.debug("Attempted to freeze assignment queue {} times".format(tries))
+        logger.debug("Attempted to freeze assignment queue {} times", tries)
 
         for short_id, timestamp in items:
             if timestamp > newest_time:
@@ -671,17 +684,17 @@ class TransactionService:
         Clean up content without short ids.
         """
         logger.debug("Expiring tx content for tx without sid. Total entries: {}",
-                     len(self._tx_hash_without_sid))
-        self._tx_hash_without_sid.remove_expired(
+                     len(self.tx_hashes_without_short_id))
+        self.tx_hashes_without_short_id.remove_expired(
             remove_callback=self.remove_transaction_by_tx_hash,
             limit=constants.MAX_EXPIRED_TXS_TO_REMOVE,
             force=True,
             assume_no_sid=True
         )
         logger.debug("Finished cleaning up tx. Entries remaining: {}",
-                     len(self._tx_hash_without_sid))
-        if len(self._tx_hash_without_sid) > 0:
-            oldest_tx_timestamp = self._tx_hash_without_sid.get_oldest_item_timestamp()
+                     len(self.tx_hashes_without_short_id))
+        if len(self.tx_hashes_without_short_id) > 0:
+            oldest_tx_timestamp = self.tx_hashes_without_short_id.get_oldest_item_timestamp()
             assert oldest_tx_timestamp is not None
             time_to_expire_oldest = (oldest_tx_timestamp + constants.TX_CONTENT_NO_SID_EXPIRE_S) - time.time()
             return max(time_to_expire_oldest, constants.MIN_CLEAN_UP_EXPIRED_TXS_TASK_INTERVAL_S)
@@ -694,20 +707,20 @@ class TransactionService:
         Clean up short ids without content.
         """
         logger.debug("Expiring short ids without content. Total entries: {}",
-                     len(self._tx_hash_sid_without_content))
-        self._tx_hash_sid_without_content.remove_expired(
+                     len(self.tx_hashes_without_content))
+        self.tx_hashes_without_content.remove_expired(
             remove_callback=self.remove_sid_by_tx_hash,
             limit=constants.MAX_EXPIRED_TXS_TO_REMOVE,
         )
         logger.debug("Finished cleaning up sids. Entries remaining: {}",
-                     len(self._tx_hash_sid_without_content))
-        if len(self._tx_hash_sid_without_content) > 0:
-            oldest_tx_timestamp = self._tx_hash_sid_without_content.get_oldest_item_timestamp()
+                     len(self.tx_hashes_without_content))
+        if len(self.tx_hashes_without_content) > 0:
+            oldest_tx_timestamp = self.tx_hashes_without_content.get_oldest_item_timestamp()
             assert oldest_tx_timestamp is not None
             time_to_expire_oldest = (oldest_tx_timestamp + constants.TX_CONTENT_NO_SID_EXPIRE_S) - time.time()
             return max(time_to_expire_oldest, constants.MIN_CLEAN_UP_EXPIRED_TXS_TASK_INTERVAL_S)
         else:
-            self.tx_hash_sid_without_content_alarm_scheduled = False
+            self.tx_without_content_alarm_scheduled = False
             return 0
 
     def track_seen_short_ids(self, block_hash: Sha256Hash, short_ids: List[int]):
@@ -724,6 +737,7 @@ class TransactionService:
 
         if len(self._short_ids_seen_in_block) >= self._final_tx_confirmations_count:
 
+            # pyre-fixme[28]: Unexpected keyword argument `last`.
             _, final_short_ids = self._short_ids_seen_in_block.popitem(last=False)
 
             for short_id in final_short_ids:
@@ -881,11 +895,11 @@ class TransactionService:
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
-            self._tx_hash_without_sid,
+            self.tx_hashes_without_short_id,
             "tx_hash_without_sid",
-            self.get_collection_mem_stats(self._tx_hash_without_sid,
-                                          len(self._tx_hash_without_sid) * SHA256_HASH_LEN),
-            object_item_count=len(self._tx_hash_without_sid),
+            self.get_collection_mem_stats(self.tx_hashes_without_short_id,
+                                          len(self.tx_hashes_without_short_id) * SHA256_HASH_LEN),
+            object_item_count=len(self.tx_hashes_without_short_id),
             object_type=memory_utils.ObjectType.BASE,
             size_type=size_type
         )
@@ -893,17 +907,19 @@ class TransactionService:
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
-            self._tx_hash_sid_without_content,
+            self.tx_hashes_without_content,
             "tx_hash_sid_without_content",
-            self.get_collection_mem_stats(self._tx_hash_sid_without_content,
-                                          len(self._tx_hash_sid_without_content) * SHA256_HASH_LEN),
-            object_item_count=len(self._tx_hash_sid_without_content),
+            self.get_collection_mem_stats(self.tx_hashes_without_content,
+                                          len(self.tx_hashes_without_content) * SHA256_HASH_LEN),
+            object_item_count=len(self.tx_hashes_without_content),
             object_type=memory_utils.ObjectType.BASE,
             size_type=size_type
         )
 
-
-    def get_object_type(self, collection_obj: Any):
+    def get_object_type(
+        self,
+        collection_obj: Any  # pylint: disable=unused-argument
+    ):
         return memory_utils.ObjectType.BASE
 
     def get_aggregate_stats(self):
@@ -959,8 +975,8 @@ class TransactionService:
 
     def _dump_removed_short_ids(self) -> int:
         if self._removed_short_ids:
-            with open("{}/{}".format(self.node.opts.dump_removed_short_ids_path, int(time.time())), "w") as f:
-                f.write(str(self._removed_short_ids))
+            with open(f"{self.node.opts.dump_removed_short_ids_path}/{int(time.time())}", "w") as file_handle:
+                file_handle.write(str(self._removed_short_ids))
             self._removed_short_ids.clear()
         return constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S
 
@@ -976,8 +992,10 @@ class TransactionService:
         removed_tx_count = 0
 
         while self._is_exceeding_memory_limit() and self._tx_assignment_expire_queue:
-            self._tx_assignment_expire_queue.remove_oldest(remove_callback=self.remove_transaction_by_short_id,
-                                                           removal_reason=TxRemovalReason.MEMORY_LIMIT)
+            self._tx_assignment_expire_queue.remove_oldest(
+                remove_callback=self.remove_transaction_by_short_id,
+                removal_reason=TxRemovalReason.MEMORY_LIMIT
+            )
             removed_tx_count += 1
         if self._is_exceeding_memory_limit() and not self._tx_assignment_expire_queue:
             logger.warning(log_messages.SID_MEMORY_MANAGEMENT_FAILURE, self.get_cache_state_json())
@@ -1076,9 +1094,9 @@ class TransactionService:
         pass
 
     def _iter_block_seen_by_time(self, skip_start: int, skip_end: int) -> Iterator[Sha256Hash]:
-        to = len(self._short_ids_seen_in_block) - skip_end
+        end = len(self._short_ids_seen_in_block) - skip_end
         for idx, block_hash in enumerate(self._short_ids_seen_in_block.keys()):
-            if skip_start <= idx <= to:
+            if skip_start <= idx <= end:
                 yield block_hash
 
     def _is_exceeding_memory_limit(self) -> bool:
@@ -1140,8 +1158,13 @@ class TransactionService:
 
             oldest_tx = next(iter(self._tx_hash_to_time_removed))
 
-            while self._tx_hash_to_time_removed and \
-                    current_time - self._tx_hash_to_time_removed[oldest_tx] > self._removed_txs_hashes_expiration_time_s:
+            while (
+                self._tx_hash_to_time_removed
+                and (
+                    current_time - self._tx_hash_to_time_removed[oldest_tx]
+                    > self._removed_txs_hashes_expiration_time_s
+                )
+            ):
 
                 del self._tx_hash_to_time_removed[oldest_tx]
 

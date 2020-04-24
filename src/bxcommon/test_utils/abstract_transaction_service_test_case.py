@@ -23,6 +23,7 @@ def get_sha(data: bytes) -> Sha256Hash:
     return Sha256Hash(binary=crypto.double_sha256(data))
 
 
+# pylint: disable=protected-access
 class AbstractTransactionServiceTestCase(AbstractTestCase):
     __metaclass__ = ABCMeta
 
@@ -34,9 +35,13 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         log_config.create_logger(None, root_log_level=LogLevel.INFO)
 
     def setUp(self) -> None:
-        # pyre-fixme[45]: Cannot instantiate abstract class `MockNode`.
         self.mock_node = MockNode(
-            helpers.get_common_opts(8000, node_type=NodeType.EXTERNAL_GATEWAY, log_level_overrides={}))
+            helpers.get_common_opts(
+                8000,
+                node_type=NodeType.EXTERNAL_GATEWAY,
+                log_level_overrides={}
+            )
+        )
         self.mock_node.opts.transaction_pool_memory_limit = self.TEST_MEMORY_LIMIT_MB
         self.transaction_service = self._get_transaction_service()
 
@@ -45,8 +50,8 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
 
-        for i in range(len(short_ids)):
-            self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
+        for i, short_id in enumerate(short_ids):
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
             self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
 
         for i, transaction_hash in enumerate(transaction_hashes):
@@ -68,17 +73,17 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
 
-        for i in range(len(short_ids)):
-            self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
+        for i, short_id in enumerate(short_ids):
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
             self.transaction_service.assign_short_id(transaction_hashes[i], short_ids_2[i])
             self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
 
         for i, transaction_hash in enumerate(transaction_hashes):
             short_id = self.transaction_service.get_short_id(transaction_hash)
-            self.assertTrue(short_id == short_ids[i] or short_id == short_ids_2[i])
+            self.assertIn(short_id, {short_ids[i], short_ids_2[i]})
 
-        for i in range(len(short_ids)):
-            transaction_hash1, transaction_content1, _ = self.transaction_service.get_transaction(short_ids[i])
+        for i, short_id in enumerate(short_ids):
+            transaction_hash1, transaction_content1, _ = self.transaction_service.get_transaction(short_id)
             transaction_hash2, transaction_content2, _ = self.transaction_service.get_transaction(short_ids_2[i])
             self.assertEqual(transaction_hashes[i], transaction_hash1.binary)
             self.assertEqual(transaction_contents[i], transaction_content1)
@@ -90,9 +95,8 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
 
-        for i in range(len(short_ids)):
-            self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
-            cache_key = self.transaction_service._tx_hash_to_cache_key(transaction_hashes[i])
+        for i, short_id in enumerate(short_ids):
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
             self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
 
         time.time = MagicMock(return_value=time.time() + self.transaction_service.node.opts.sid_expire_time + 10)
@@ -153,17 +157,17 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
 
-        for i in range(len(short_ids)):
-            self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
+        for i, short_id in enumerate(short_ids):
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
             self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
-            self.transaction_service.set_short_id_quota_type(short_ids[i], QuotaType.PAID_DAILY_QUOTA)
+            self.transaction_service.set_short_id_quota_type(short_id, QuotaType.PAID_DAILY_QUOTA)
 
         time_zero = time.time()
 
         time.time = MagicMock(return_value=time_zero + self.transaction_service.node.opts.sid_expire_time / 2)
         short_ids_2 = [5, 6, 7, 8, 9]
-        for i in range(len(short_ids_2)):
-            self.transaction_service.assign_short_id(transaction_hashes[i], short_ids_2[i])
+        for i, short_id in enumerate(short_ids_2):
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
 
         time.time = MagicMock(return_value=time_zero + self.transaction_service.node.opts.sid_expire_time + 5)
         self.transaction_service.node.alarm_queue.fire_alarms()
@@ -189,10 +193,10 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
 
-        for i in range(len(short_ids)):
+        for i, short_id in enumerate(short_ids):
             cached_key = self.transaction_service._tx_hash_to_cache_key(transaction_hashes[i])
             self.transaction_service._tx_cache_key_to_contents[cached_key] = transaction_contents[i]
-            self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
 
         self.transaction_service.set_final_tx_confirmations_count(7)
         # 1st block with short ids arrives
@@ -245,10 +249,10 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         transaction_hashes = list(map(crypto.double_sha256, map(bytes, short_ids)))
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
 
-        for i in range(len(short_ids)):
+        for i, short_id in enumerate(short_ids):
             cached_key = self.transaction_service._tx_hash_to_cache_key(transaction_hashes[i])
             self.transaction_service._tx_cache_key_to_contents[cached_key] = transaction_contents[i]
-            self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
 
         self.transaction_service.set_final_tx_confirmations_count(2)
 
@@ -308,8 +312,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.assertEqual(tx_count_set_1, len(self.transaction_service._tx_cache_key_to_contents))
 
         # verify that first half of transactions from set 1 no longer in cache and second half still cached
-        for i in range(len(transactions_set_1)):
-            tx_hash, tx_contents, short_id = transactions_set_1[i]
+        for i, (tx_hash, tx_contents, short_id) in enumerate(transactions_set_1):
             if i < tx_count_set_2:
                 self.assertFalse(self.transaction_service.has_transaction_contents(tx_hash))
                 self.assertFalse(self.transaction_service.has_transaction_short_id(tx_hash))
@@ -322,8 +325,8 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
                 self.assertEqual(tx_contents, self.transaction_service.get_transaction_by_hash(tx_hash))
 
         # verify that all transactions from the second set are in cache
-        for i in range(len(transactions_set_2)):
-            tx_hash, tx_contents, short_id = transactions_set_2[i]
+        for i, transaction_set in enumerate(transactions_set_2):
+            tx_hash, tx_contents, short_id = transaction_set
             self.assertTrue(self.transaction_service.has_transaction_contents(tx_hash))
             self.assertTrue(self.transaction_service.has_transaction_short_id(tx_hash))
             self.assertTrue(self.transaction_service.has_short_id(short_id))
@@ -361,9 +364,9 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         transaction_hashes = list(map(Sha256Hash, map(crypto.double_sha256, map(bytes, short_ids))))
         transaction_contents = list(map(lambda _: helpers.generate_bytearray(250), short_ids))
 
-        for i in range(len(short_ids)):
+        for i, short_id in enumerate(short_ids):
             self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
-            self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
 
         self._verify_txs_in_tx_service(expected_short_ids=[1, 2, 3, 4], not_expected_short_ids=[])
 
@@ -376,9 +379,9 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         transaction_hashes = list(map(Sha256Hash, map(crypto.double_sha256, map(bytes, short_ids))))
         transaction_contents = list(map(lambda _: helpers.generate_bytearray(250), short_ids))
 
-        for i in range(len(short_ids)):
+        for i, short_id in enumerate(short_ids):
             self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
-            self.transaction_service.assign_short_id(transaction_hashes[i], short_ids[i])
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
             self.transaction_service.set_short_id_quota_type(short_ids[i], QuotaType.PAID_DAILY_QUOTA)
 
         self._verify_txs_in_tx_service(expected_short_ids=[1, 2, 3, 4], not_expected_short_ids=[])
@@ -396,7 +399,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.transaction_service.log_tx_service_mem_stats()
         memory_statistics.flush_info()
 
-    def _test_iter_timestamped_transaction_hashes_from_oldest(self):
+    def _test_iter_transaction_hashes_from_oldest(self):
         transactions = self._add_transactions(30, 250)
         self.transaction_service = self._get_transaction_service()
 
@@ -407,8 +410,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.transaction_service.assign_short_id(transaction.hash, transaction.short_id)
             time.time = MagicMock(return_value=time.time() + 10)
 
-        result = [tx for tx in
-                  self.transaction_service.iter_timestamped_transaction_hashes_from_oldest(original_time + 100 - 1)]
+        result = list(self.transaction_service.iter_transaction_hashes_from_oldest(original_time + 100 - 1))
 
         self.assertEqual(10, len(result))
         last_timestamp = original_time - 10
@@ -490,7 +492,10 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         # alarm is expected to remove 10 first transactions from history cache
         expected_removed_txs_count = 10
         time.time = MagicMock(
-            return_value=original_time + constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S + tx_interval * expected_removed_txs_count)
+            return_value=original_time
+                         + constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S
+                         + tx_interval * expected_removed_txs_count
+        )
         self.mock_node.alarm_queue.fire_alarms()
 
         self.assertEqual(len(transactions) - expected_removed_txs_count,
@@ -504,51 +509,51 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
 
     def _test_add_tx_without_sid(self):
         tx_hash, tx_content = self.get_fake_tx()
-        cache_key = self.transaction_service._tx_hash_to_cache_key(tx_hash)
 
         self.transaction_service.set_transaction_contents(tx_hash, tx_content)
         self.assertTrue(self.transaction_service.has_transaction_contents(tx_hash))
         self.assertFalse(self.transaction_service.has_transaction_short_id(tx_hash))
-        self.assertEqual(len(self.transaction_service._tx_hash_without_sid.queue), 1)
+        self.assertEqual(len(self.transaction_service.tx_hashes_without_short_id.queue), 1)
         self.assertTrue(self.transaction_service.has_cache_key_no_sid_entry(tx_hash))
-        self.assertIn(tx_hash, self.transaction_service._tx_hash_without_sid.queue.keys())
+        self.assertIn(tx_hash, self.transaction_service.tx_hashes_without_short_id.queue.keys())
 
         self.transaction_service.assign_short_id(tx_hash, 42)
-        self.assertEqual(0, len(self.transaction_service._tx_hash_without_sid.queue))
+        self.assertEqual(0, len(self.transaction_service.tx_hashes_without_short_id.queue))
         self.assertNotIn(self.transaction_service._tx_hash_to_cache_key(tx_hash),
-                         self.transaction_service._tx_hash_without_sid.queue)
+                         self.transaction_service.tx_hashes_without_short_id.queue)
 
     def _test_add_tx_without_sid_expire(self):
         start_time = time.time()
         tx_hash, tx_content = self.get_fake_tx()
-        cache_key = self.transaction_service._tx_hash_to_cache_key(tx_hash)
 
         self.transaction_service.set_transaction_contents(tx_hash, tx_content)
         self.assertTrue(self.transaction_service.has_transaction_contents(tx_hash))
         self.assertFalse(self.transaction_service.has_transaction_short_id(tx_hash))
-        self.assertEqual(len(self.transaction_service._tx_hash_without_sid.queue), 1)
+        self.assertEqual(len(self.transaction_service.tx_hashes_without_short_id.queue), 1)
         self.assertTrue(self.transaction_service.has_cache_key_no_sid_entry(tx_hash))
-        self.assertIn(tx_hash, self.transaction_service._tx_hash_without_sid.queue.keys())
+        self.assertIn(tx_hash, self.transaction_service.tx_hashes_without_short_id.queue.keys())
 
         time.time = MagicMock(
-            return_value=start_time + constants.TX_CONTENT_NO_SID_EXPIRE_S + constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S)
+            return_value=start_time
+                         + constants.TX_CONTENT_NO_SID_EXPIRE_S
+                         + constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S
+        )
         self.mock_node.alarm_queue.fire_alarms()
 
-        self.assertNotIn(tx_hash, self.transaction_service._tx_hash_without_sid.queue)
+        self.assertNotIn(tx_hash, self.transaction_service.tx_hashes_without_short_id.queue)
         self.assertFalse(self.transaction_service.has_transaction_contents(tx_hash))
 
     def _test_add_sid_without_content(self):
         tx_hash, tx_content = self.get_fake_tx()
-        cache_key = self.transaction_service._tx_hash_to_cache_key(tx_hash)
         sid = 1
         self.transaction_service.assign_short_id(tx_hash, sid)
         self.assertFalse(self.transaction_service.has_transaction_contents(tx_hash))
-        self.assertIn(tx_hash, self.transaction_service._tx_hash_sid_without_content.queue)
+        self.assertIn(tx_hash, self.transaction_service.tx_hashes_without_content.queue)
         self.transaction_service.set_transaction_contents(tx_hash, tx_content)
         self.assertTrue(self.transaction_service.has_transaction_contents(tx_hash))
         self.assertTrue(self.transaction_service.has_transaction_short_id(tx_hash))
         self.assertFalse(self.transaction_service.has_cache_key_no_sid_entry(tx_hash))
-        self.assertNotIn(tx_hash, self.transaction_service._tx_hash_sid_without_content.queue)
+        self.assertNotIn(tx_hash, self.transaction_service.tx_hashes_without_content.queue)
 
     def get_fake_tx(self, content_length=128):
         tx_hash = Sha256Hash(binary=helpers.generate_bytearray(crypto.SHA256_HASH_LEN))

@@ -63,6 +63,3 @@ class _NetworkStatisticsService:
 
 
 connection_stats = _NetworkStatisticsService()
-
-
-

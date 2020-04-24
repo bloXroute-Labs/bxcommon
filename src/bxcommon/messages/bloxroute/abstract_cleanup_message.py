@@ -36,6 +36,7 @@ class AbstractCleanupMessage(AbstractBroadcastMessage):
 
         if buf is None:
             assert tx_hashes is not None and sids is not None
+            # pylint: disable=invalid-name
             self.PAYLOAD_LENGTH = (
                 AbstractBroadcastMessage.PAYLOAD_LENGTH
                 + (constants.UL_INT_SIZE_IN_BYTES * 2)
@@ -91,7 +92,7 @@ class AbstractCleanupMessage(AbstractBroadcastMessage):
         self._sids_count, = struct.unpack_from("<L", self.buf, off)
         off += constants.UL_INT_SIZE_IN_BYTES
 
-        for sid_index in range(self._sids_count):
+        for _ in range(self._sids_count):
             sid, = struct.unpack_from("<L", self.buf, off)
             off += constants.UL_INT_SIZE_IN_BYTES
 

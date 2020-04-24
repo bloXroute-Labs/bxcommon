@@ -9,9 +9,9 @@ from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.services import http_service
 from bxcommon.utils import model_loader, ip_resolver
+from bxutils import log_messages
 from bxutils import logging
 from bxutils.encoding import json_encoder
-from bxutils import log_messages
 
 logger = logging.get_logger(__name__)
 

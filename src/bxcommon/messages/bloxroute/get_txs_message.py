@@ -1,10 +1,9 @@
 import struct
 
-from bxutils.logging.log_level import LogLevel
-
 from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxutils.logging.log_level import LogLevel
 
 
 class GetTxsMessage(AbstractBloxrouteMessage):
@@ -47,8 +46,13 @@ class GetTxsMessage(AbstractBloxrouteMessage):
         return self._short_ids
 
     def _short_ids_to_bytes(self, short_ids):
-        msg_size = constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF + constants.UL_INT_SIZE_IN_BYTES + \
-                   len(short_ids) * constants.UL_INT_SIZE_IN_BYTES + constants.CONTROL_FLAGS_LEN
+        msg_size = (
+            constants.STARTING_SEQUENCE_BYTES_LEN
+            + constants.BX_HDR_COMMON_OFF
+            + constants.UL_INT_SIZE_IN_BYTES
+            + (len(short_ids) * constants.UL_INT_SIZE_IN_BYTES)
+            + constants.CONTROL_FLAGS_LEN
+        )
 
         buf = bytearray(msg_size)
 
@@ -71,7 +75,7 @@ class GetTxsMessage(AbstractBloxrouteMessage):
         short_ids_count, = struct.unpack_from("<L", self.buf, off)
         off += constants.UL_INT_SIZE_IN_BYTES
 
-        for index in range(short_ids_count):
+        for _ in range(short_ids_count):
             short_id, = struct.unpack_from("<L", self.buf, off)
             short_ids.append(short_id)
             off += constants.UL_INT_SIZE_IN_BYTES

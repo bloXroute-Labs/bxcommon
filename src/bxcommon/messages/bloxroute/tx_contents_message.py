@@ -1,15 +1,14 @@
 import struct
 from typing import Optional
 
-from bxutils import logging
-from bxutils.logging.log_level import LogLevel
-
 import bxcommon.utils.crypto
 from bxcommon import constants
-from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.utils.object_hash import Sha256Hash
+from bxutils import logging
+from bxutils.logging.log_level import LogLevel
 
 logger = logging.get_logger(__name__)
 

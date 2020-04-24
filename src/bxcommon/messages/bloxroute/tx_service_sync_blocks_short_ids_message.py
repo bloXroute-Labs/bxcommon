@@ -1,13 +1,12 @@
 import struct
 from typing import List, Optional
 
-from bxutils.logging.log_level import LogLevel
-
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES, CONTROL_FLAGS_LEN
-from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute import blocks_short_ids_serializer
+from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.blocks_short_ids_serializer import BlockShortIds
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxutils.logging.log_level import LogLevel
 
 
 class TxServiceSyncBlocksShortIdsMessage(AbstractBloxrouteMessage):
@@ -63,7 +62,9 @@ class TxServiceSyncBlocksShortIdsMessage(AbstractBloxrouteMessage):
 
     def blocks_short_ids(self) -> List[BlockShortIds]:
         offset = self.HEADER_LENGTH + 2 * UL_INT_SIZE_IN_BYTES
-        return blocks_short_ids_serializer.deserialize_blocks_short_ids_from_buffer(self._memoryview, offset, self.block_count())
+        return blocks_short_ids_serializer.deserialize_blocks_short_ids_from_buffer(
+            self._memoryview, offset, self.block_count()
+        )
 
     def __repr__(self) -> str:
         return "{}<network_num: {}, block_count: {}".\

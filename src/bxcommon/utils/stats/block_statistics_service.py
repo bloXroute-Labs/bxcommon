@@ -7,8 +7,8 @@ from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.utils import crypto, convert
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.statistics_event_service import StatisticsEventService
-from bxutils.logging.log_record_type import LogRecordType
 from bxutils import logging
+from bxutils.logging.log_record_type import LogRecordType
 
 
 class _BlockStatisticsService(StatisticsEventService):
@@ -44,10 +44,16 @@ class _BlockStatisticsService(StatisticsEventService):
                        network_num=network_num, broadcast_type=broadcast_type,
                        **kwargs)
 
-    def add_block_event_by_block_hash(self, block_hash, block_event_settings, network_num,
-                                      broadcast_type=BroadcastMessageType.BLOCK,
-                                      start_date_time=None, end_date_time=None,
-                                      **kwargs):
+    def add_block_event_by_block_hash(
+        self,
+        block_hash,
+        block_event_settings,
+        network_num,
+        broadcast_type=BroadcastMessageType.BLOCK,
+        start_date_time=None,
+        end_date_time=None,
+        **kwargs
+    ):
         if not self._should_log_stat_event(block_event_settings):
             return
 

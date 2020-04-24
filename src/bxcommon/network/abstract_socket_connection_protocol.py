@@ -1,4 +1,3 @@
-import time
 import typing
 from asyncio import BaseTransport, Transport, BaseProtocol
 from typing import TYPE_CHECKING, Optional
@@ -9,12 +8,12 @@ from bxcommon import constants
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.network.socket_connection_state import SocketConnectionState
-from bxcommon.utils import performance_utils
 from bxutils import logging
 from bxutils.logging import LogRecordType
 from bxutils.ssl import ssl_certificate_factory
 
 if TYPE_CHECKING:
+    # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_node import AbstractNode
 
 logger = logging.get_logger(__name__)
@@ -148,6 +147,8 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
     def resume_reading(self) -> None:
         if self.is_alive():
             assert self.transport is not None, "Connection is broken!"
+            # pylint bug
+            # pylint: disable=invalid-unary-operand-type
             self.state &= ~SocketConnectionState.HALT_RECEIVE
             logger.trace("[{}] - resumed writing.", self)
 

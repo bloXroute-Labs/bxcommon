@@ -14,6 +14,7 @@ class ConnectionState(SerializableFlag):
     ULTRA_SLOW = auto()
 
     def __str__(self) -> str:
+        # pylint: disable=using-constant-test
         if self.name:
             return str(self.name)
         else:

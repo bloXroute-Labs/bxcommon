@@ -1,4 +1,5 @@
 from enum import auto
+
 from bxcommon.models.serializable_flag import SerializableFlag
 
 

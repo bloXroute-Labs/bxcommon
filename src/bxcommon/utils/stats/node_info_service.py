@@ -9,6 +9,7 @@ from bxutils.logging.log_record_type import LogRecordType
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
+    # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_node import AbstractNode
 
 
@@ -26,17 +27,16 @@ class NodeInfo(StatisticsService[StatsIntervalData, "AbstractNode"]):
         return StatsIntervalData
 
     def get_info(self) -> Dict[str, Any]:
-        assert self.node is not None
-        # pyre-fixme[16]: Optional type has no attribute `opts`.
-        payload = dict(self.node.opts.__dict__)
+        node = self.node
+        assert node is not None
+        payload = dict(node.opts.__dict__)
         payload["current_time"] = datetime.utcnow()
         payload["node_peers"] = {
             connection_type: len(connections)
             for (
                 connection_type,
                 connections,
-            # pyre-fixme[16]: Optional type has no attribute `connection_pool`.
-            ) in self.node.connection_pool.by_connection_type.items()
+            ) in node.connection_pool.by_connection_type.items()
         }
         payload["threads"] = active_count()
 

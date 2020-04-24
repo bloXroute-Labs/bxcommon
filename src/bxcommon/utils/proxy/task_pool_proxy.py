@@ -2,7 +2,6 @@ import time
 from typing import Optional
 import task_pool_executor as tpe
 
-
 _executor: Optional[tpe.TaskPoolExecutor] = None
 
 
@@ -10,6 +9,7 @@ def init(thread_pool_parallelism_degree: int):
     executor = tpe.TaskPoolExecutor()
     executor.init(thread_pool_parallelism_degree)
 
+    # pylint: disable=global-statement
     global _executor
     _executor = executor
 

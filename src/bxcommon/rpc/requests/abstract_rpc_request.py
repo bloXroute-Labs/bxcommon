@@ -1,11 +1,15 @@
 import json
 from abc import ABCMeta, abstractmethod
-from typing import Union, Dict, List, Any, Type
+from typing import Union, Dict, List, Any, Type, TYPE_CHECKING
 from aiohttp.web_exceptions import HTTPSuccessful, HTTPOk
 from aiohttp.web import Response
 
-from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.rpc.rpc_request_type import RpcRequestType
+
+if TYPE_CHECKING:
+    # noinspection PyUnresolvedReferences
+    # pylint: disable=ungrouped-imports,cyclic-import
+    from bxcommon.connections.abstract_node import AbstractNode
 
 
 class AbstractRpcRequest(metaclass=ABCMeta):

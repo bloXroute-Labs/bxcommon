@@ -41,7 +41,7 @@ class AbstractTestCase(unittest.TestCase):
     def get_ssl_test_files(abs_path: str, relative_path_ssl_files: str) -> str:
         # walk backwards to root till find the "ssl_files" folder
         while abs_path is not None:
-            abs_path, tail = os.path.split(abs_path)
+            abs_path, _tail = os.path.split(abs_path)
             if os.path.exists(os.path.join(abs_path, relative_path_ssl_files)):
                 break
         return os.path.join(abs_path, relative_path_ssl_files)

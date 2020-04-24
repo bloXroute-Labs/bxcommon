@@ -1,6 +1,5 @@
-from bxutils.logging_messages_utils import LogMessage
 from bxutils.log_message_categories import *
-
+from bxutils.logging_messages_utils import LogMessage
 
 EMPTY_BLOCKCHAIN_NETWORK_LIST= LogMessage(
     "C-000000",

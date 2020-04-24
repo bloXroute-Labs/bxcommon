@@ -1,5 +1,5 @@
-import platform
 import os
+import platform
 import socket
 
 from bxcommon.utils import crypto
@@ -123,7 +123,7 @@ ACCEPT_COMPACT_BLOCK = True
 DUMP_MISSING_SHORT_IDS_PATH = "/app/bxrelay/debug/missing-short-ids"
 
 
-class SdnRoutes(object):
+class SdnRoutes:
     nodes = "/nodes"
     node = "/nodes/{0}"
     gateway_node_config = "/configs/gateway_node/{0}"
@@ -297,4 +297,3 @@ TX_SYNC_USE_SNAPSHOT = False
 
 MEM_STATS_OBJECT_SIZE_THRESHOLD = 1024 * 1024
 MEM_STATS_OBJECT_COUNT_THRESHOLD = 2000
-

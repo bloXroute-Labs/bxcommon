@@ -1,8 +1,7 @@
 from bxcommon.network.port_range import PortRange
-
+from bxutils.logging.fluentd_overflow_handler_type import OverflowHandlerType
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
-from bxutils.logging.fluentd_overflow_handler_type import OverflowHandlerType
 
 DEFAULT_LOG_LEVEL = LogLevel.INFO
 DEFAULT_STATS_LOG_LEVEL = LogLevel.CRITICAL

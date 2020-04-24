@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
 
-from cryptography.x509 import BasicConstraints, Certificate, ExtensionNotFound, KeyUsage, UnrecognizedExtension
+from cryptography.x509 import BasicConstraints, Certificate, ExtensionNotFound, KeyUsage, \
+    UnrecognizedExtension
 
 from bxcommon.models.node_type import NodeType
 from bxutils.ssl.extensions.account_id_extension import AccountIdExtension

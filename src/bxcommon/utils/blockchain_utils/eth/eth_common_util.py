@@ -8,9 +8,14 @@ from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.utils.blockchain_utils.eth import eth_common_constants
 from bxcommon.utils.object_hash import Sha256Hash
 
+# pylint: disable=invalid-name
+
 
 def raw_tx_to_bx_tx(
-        txs_bytes: Union[bytearray, memoryview], tx_start_index: int, network_num: int, quota_type: Optional[QuotaType] = None
+    txs_bytes: Union[bytearray, memoryview],
+    tx_start_index: int,
+    network_num: int,
+    quota_type: Optional[QuotaType] = None
 ) -> Tuple[TxMessage, int, int]:
     if isinstance(txs_bytes, bytearray):
         txs_bytes = memoryview(txs_bytes)
@@ -22,20 +27,20 @@ def raw_tx_to_bx_tx(
     return bx_tx, tx_item_length, tx_item_start
 
 
-def keccak_hash(input):
+def keccak_hash(string):
     """
     Ethereum Crypto Utils:
     Calculates SHA3 hash of the string
 
-    :param input: string to calculate hash from
+    :param string: string to calculate hash from
     :return: SHA3 hash
     """
 
-    if not input:
+    if not string:
         raise ValueError("Input is required")
 
-    hash = keccak.new(digest_bits=eth_common_constants.SHA3_LEN_BITS, data=input)
-    return hash.digest()
+    k_hash = keccak.new(digest_bits=eth_common_constants.SHA3_LEN_BITS, data=string)
+    return k_hash.digest()
 
 
 def safe_ord(c):

@@ -1,6 +1,6 @@
 from typing import List, TypeVar, Generic, Iterator
-from bxcommon.utils.object_encoder import ObjectEncoder
 
+from bxcommon.utils.object_encoder import ObjectEncoder
 
 TItemRaw = TypeVar("TItemRaw")
 TItemEncoded = TypeVar("TItemEncoded")

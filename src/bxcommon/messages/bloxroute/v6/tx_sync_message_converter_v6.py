@@ -1,10 +1,12 @@
 from typing import cast
 
-from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage, TxContentShortIds
-from bxcommon.messages.bloxroute.v6.tx_service_sync_txs_message_v6 import TxServiceSyncTxsMessageV6, TxContentShortIdsV6
-from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage, \
+    TxContentShortIds
+from bxcommon.messages.bloxroute.v6.tx_service_sync_txs_message_v6 import TxServiceSyncTxsMessageV6, \
+    TxContentShortIdsV6
+from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 from bxcommon.models.quota_type_model import QuotaType
 
 

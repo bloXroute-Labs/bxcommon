@@ -9,8 +9,8 @@ from prometheus_client import Gauge
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.utils import memory_utils
-from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats import hooks
+from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxutils import logging
 
 logger = logging.get_logger(__name__)
@@ -300,4 +300,3 @@ class ConnectionPool:
 
     def _get_number_of_connections(self, connection_type: ConnectionType) -> int:
         return len(self.get_by_connection_type(connection_type))
-

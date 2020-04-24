@@ -1,11 +1,11 @@
 from typing import Union
 
-from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKeyWithSerialization
-from cryptography.x509 import Certificate, CertificateSigningRequest
 from cryptography import x509
-from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat import backends
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKeyWithSerialization
+from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption
+from cryptography.x509 import Certificate, CertificateSigningRequest
 
 
 def to_binary(data: Union[str, bytes]) -> bytes:

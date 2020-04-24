@@ -1,14 +1,12 @@
 import logging
 import typing
-
 from dataclasses import dataclass
-
-from bxutils.logging.log_record_type import LogRecordType
-from bxutils.logging.log_level import LogLevel
-from bxutils.logging.handler_type import HandlerType
-from typing import Optional, Union, NamedTuple
+from typing import Optional, Union
 
 from bxutils.logging.custom_logger import CustomLogger, CustomLogRecord
+from bxutils.logging.handler_type import HandlerType
+from bxutils.logging.log_level import LogLevel
+from bxutils.logging.log_record_type import LogRecordType
 
 logging.setLogRecordFactory(CustomLogRecord)  # pyre-ignore
 logging.setLoggerClass(CustomLogger)

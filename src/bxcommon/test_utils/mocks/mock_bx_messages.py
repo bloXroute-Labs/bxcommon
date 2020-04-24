@@ -1,4 +1,6 @@
 import struct
+
+from bxcommon import constants
 from bxcommon.constants import DEFAULT_NETWORK_NUM
 from bxcommon.messages.bloxroute import compact_block_short_ids_serializer
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
@@ -9,7 +11,6 @@ from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.test_utils import helpers
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
-from bxcommon import constants
 
 
 def hello_message():

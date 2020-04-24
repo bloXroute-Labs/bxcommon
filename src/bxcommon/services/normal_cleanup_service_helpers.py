@@ -1,9 +1,8 @@
-from bxutils import logging
-from bxutils.logging.log_record_type import LogRecordType
-
 from bxcommon.messages.bloxroute.abstract_cleanup_message import AbstractCleanupMessage
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.services.transaction_service import TxRemovalReason
+from bxutils import logging
+from bxutils.logging.log_record_type import LogRecordType
 
 logger = logging.get_logger(LogRecordType.TransactionCleanup, __name__)
 

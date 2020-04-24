@@ -1,14 +1,18 @@
-from typing import Union, Any, Dict, List, Type
+from typing import Union, Any, Dict, List, Type, TYPE_CHECKING
 from json.decoder import JSONDecodeError
 from aiohttp.web import Request, Response
 from aiohttp.web_exceptions import HTTPBadRequest
 
-from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.requests.blxr_transaction_rpc_request import BlxrTransactionRpcRequest
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
 from bxcommon.rpc.rpc_request_type import RpcRequestType
 from bxutils import logging
+
+if TYPE_CHECKING:
+    # noinspection PyUnresolvedReferences
+    # pylint: disable=ungrouped-imports,cyclic-import
+    from bxcommon.connections.abstract_node import AbstractNode
 
 
 logger = logging.get_logger(__name__)
@@ -53,11 +57,11 @@ class RpcRequestHandler:
             # pyre-ignore
             if method is None:
                 raise HTTPBadRequest(text=f"RPC request does not contain a method!")
-            else:
-                possible_values = [rpc_type.lower() for rpc_type in RpcRequestType.__members__.keys()]
-                raise HTTPBadRequest(
-                    text=f"RPC method: {method} is not recognized (possible_values: {possible_values})."
-                )
+
+            possible_values = [rpc_type.lower() for rpc_type in RpcRequestType.__members__.keys()]
+            raise HTTPBadRequest(
+                text=f"RPC method: {method} is not recognized (possible_values: {possible_values})."
+            )
         self.request_id = payload.get(self.REQUEST_ID, "")
         request_params = payload.get(self.REQUEST_PARAMS, None)
         rpc_request = self._get_rpc_request(method, request_params)

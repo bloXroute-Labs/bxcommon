@@ -7,7 +7,9 @@ from bxcommon.models.serializable_flag import SerializableFlag
 class NodeType(SerializableFlag):
     INTERNAL_GATEWAY = enum.auto()
     EXTERNAL_GATEWAY = enum.auto()
-    GATEWAY = INTERNAL_GATEWAY | EXTERNAL_GATEWAY  # deprecated, use GATEWAY_TYPE for abstract gateway, # GATEWAY for v1.0 gateways
+    # deprecated, use GATEWAY_TYPE for abstract gateway,
+    # GATEWAY for v1.0 gateways
+    GATEWAY = INTERNAL_GATEWAY | EXTERNAL_GATEWAY
     GATEWAY_TYPE = GATEWAY
     RELAY_TRANSACTION = enum.auto()
     RELAY_BLOCK = enum.auto()

@@ -2,8 +2,6 @@ import time
 from datetime import datetime
 from typing import Any, List
 
-import task_pool_executor as tpe
-
 from bxcommon import constants
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.services.transaction_service import TxRemovalReason
@@ -19,6 +17,8 @@ from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
 from bxutils.logging import log_config
 from bxutils.logging.log_record_type import LogRecordType
+
+import task_pool_executor as tpe
 
 logger = logging.get_logger(__name__)
 logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
@@ -44,10 +44,7 @@ class ExtensionTransactionService(TransactionService):
         self._short_id_to_tx_cache_key = MapProxy(
             self.proxy.short_id_to_tx_hash(), raw_encoder, raw_encoder
         )
-        content_encoder = ObjectEncoder(
-            lambda buf_view: memoryview(buf_view),
-            lambda buf: tpe.InputBytes(buf)
-        )
+        content_encoder = ObjectEncoder(memoryview, tpe.InputBytes)
         self._tx_cache_key_to_contents = MapProxy(
             self.proxy.tx_hash_to_contents(), raw_encoder, content_encoder
         )
@@ -62,7 +59,8 @@ class ExtensionTransactionService(TransactionService):
         super(ExtensionTransactionService, self).track_seen_short_ids(block_hash, short_ids)
         wrapped_block_hash = tpe.Sha256(tpe.InputBytes(self._wrap_sha256(block_hash).binary))
         proxy_start_datetime = datetime.now()
-        # TODO when refactoring add `block_hash` to proxy.track_seen_short_ids as first parameter and change ds type in cpp
+        # TODO when refactoring add `block_hash` to proxy.track_seen_short_ids as
+        # first parameter and change ds type in cpp
         result = self.proxy.track_seen_short_ids(wrapped_block_hash, tpe.UIntList(short_ids))
         removed_contents_size, dup_sids = result
         self.update_removed_transactions(removed_contents_size, dup_sids)
@@ -90,7 +88,8 @@ class ExtensionTransactionService(TransactionService):
         self.proxy.on_block_cleaned_up(wrapped_block_hash)
 
     def get_tx_service_sync_buffer(self, sync_tx_content: bool) -> memoryview:
-        byte_array_obj = self.proxy.get_tx_sync_buffer(self._total_tx_contents_size, sync_tx_content)
+        byte_array_obj = self.proxy.get_tx_sync_buffer(self._total_tx_contents_size,
+                                                       sync_tx_content)
         return memoryview(byte_array_obj)
 
     def update_removed_transactions(self, removed_content_size: int, short_ids: List[int]) -> None:
@@ -122,14 +121,17 @@ class ExtensionTransactionService(TransactionService):
             size_type=size_type
         )
 
-    def get_collection_mem_stats(self, collection_obj: Any, estimated_size: int = 0) -> memory_utils.ObjectSize:
+    def get_collection_mem_stats(self, collection_obj: Any,
+                                 estimated_size: int = 0) -> memory_utils.ObjectSize:
         if self.get_object_type(collection_obj) == memory_utils.ObjectType.DEFAULT_MAP_PROXY:
             collection_size = collection_obj.map_obj.get_bytes_length()
             if collection_obj is self._tx_cache_key_to_short_ids:
-                collection_size += (len(self._short_id_to_tx_cache_key) * constants.UL_INT_SIZE_IN_BYTES)
+                collection_size += (
+                        len(self._short_id_to_tx_cache_key) * constants.UL_INT_SIZE_IN_BYTES)
             return memory_utils.ObjectSize(size=collection_size, flat_size=0, is_actual_size=True)
         else:
-            return super(ExtensionTransactionService, self).get_collection_mem_stats(collection_obj, estimated_size)
+            return super(ExtensionTransactionService, self).get_collection_mem_stats(collection_obj,
+                                                                                     estimated_size)
 
     def get_object_type(self, collection_obj: Any):
         super(ExtensionTransactionService, self).get_object_type(collection_obj)
@@ -167,7 +169,8 @@ class ExtensionTransactionService(TransactionService):
         super(ExtensionTransactionService, self)._track_seen_transaction(transaction_cache_key)
         self.proxy.track_seen_transaction(transaction_cache_key)
 
-    def remove_transaction_by_short_id(self, short_id: int, remove_related_short_ids: bool = False, force: bool = False,
+    def remove_transaction_by_short_id(self, short_id: int, remove_related_short_ids: bool = False,
+                                       force: bool = False,
                                        removal_reason: TxRemovalReason = TxRemovalReason.UNKNOWN):
         # overriding this in order to handle removes triggered by either the mem limit or expiration queue
         # if the remove_related_short_ids is True than we assume the call originated by the track seen call
@@ -182,7 +185,8 @@ class ExtensionTransactionService(TransactionService):
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
         else:
-            super(ExtensionTransactionService, self).remove_transaction_by_short_id(short_id, force=force,
+            super(ExtensionTransactionService, self).remove_transaction_by_short_id(short_id,
+                                                                                    force=force,
                                                                                     removal_reason=removal_reason)
 
     def _clear(self):

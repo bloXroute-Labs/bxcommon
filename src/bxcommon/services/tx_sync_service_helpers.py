@@ -22,7 +22,6 @@ def create_txs_service_msg(
     task_start = time.time()
     txs_content_short_ids: List[TxContentShortIds] = []
     txs_msg_len = 0
-    done = False
     while tx_service_snap:
         tx_hash = tx_service_snap.pop()
         short_ids = list(transaction_service.get_short_ids(tx_hash))
@@ -44,16 +43,16 @@ def create_txs_service_msg(
         txs_content_short_ids.append(tx_content_short_ids)
         if txs_msg_len >= constants.TXS_MSG_SIZE or time.time() - task_start > constants.TXS_SYNC_TASK_DURATION:
             break
-    if not tx_service_snap:
-        done = True
     return txs_content_short_ids
 
 
+# pylint: disable=protected-access
 def create_txs_service_msg_from_time(
     transaction_service: TransactionService,
     start_time: float = 0,
     sync_tx_content: bool = True,
-    snapshot_cache_keys: Optional[Set[Sha256Hash]] = None) -> Tuple[List[TxContentShortIds], float, bool, Set[Sha256Hash]]:
+    snapshot_cache_keys: Optional[Set[Sha256Hash]] = None
+) -> Tuple[List[TxContentShortIds], float, bool, Set[Sha256Hash]]:
     task_start = time.time()
     txs_content_short_ids: List[TxContentShortIds] = []
     txs_msg_len = 0
@@ -121,7 +120,12 @@ def create_txs_service_msg_from_buffer(
             current_pos += crypto.SHA256_HASH_LEN
             content_len, = struct.unpack_from("<L", txs_buffer, current_pos)
 
-            short_ids_offset = current_pos + constants.UL_INT_SIZE_IN_BYTES + constants.UL_INT_SIZE_IN_BYTES + content_len
+            short_ids_offset = (
+                current_pos
+                + constants.UL_INT_SIZE_IN_BYTES
+                + constants.UL_INT_SIZE_IN_BYTES
+                + content_len
+            )
             short_ids, = struct.unpack_from("<H", txs_buffer, short_ids_offset)
             current_pos = short_ids_offset + constants.UL_SHORT_SIZE_IN_BYTES + (
                 constants.UL_INT_SIZE_IN_BYTES * short_ids) + short_ids

@@ -52,7 +52,7 @@ class PriorityQueue(Generic[T]):
         return len(self) > 0
 
     def __iter__(self) -> Iterator[T]:
-        for obj in self._items_dict.keys():
+        for obj in self._items_dict:
             yield obj
 
     def add(self, item: ObjectPriority[T]) -> None:

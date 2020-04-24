@@ -119,7 +119,7 @@ class AlarmQueue:
         """
         if fire_delay < 0:
             raise ValueError("Invalid negative fire delay.")
-        elif fn is None:
+        if fn is None:
             raise ValueError("Function cannot be None.")
 
         alarm = Alarm(fn, time.time() + fire_delay, *args, name=alarm_name, **kwargs)
@@ -201,6 +201,7 @@ class AlarmQueue:
                         start_time = time.time()
                         next_delay = alarm.fire()
                         alarms_count += 1
+                    # pylint: disable=broad-except
                     except Exception as e:
                         logger.exception("Alarm {} could not fire and failed with exception: {}", alarm, e)
                     else:

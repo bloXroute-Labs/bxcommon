@@ -1,8 +1,9 @@
 from collections import deque
 from typing import Deque, Union
+from typing import Set, Optional
+
 from bxcommon.utils import memory_utils
 from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
-from typing import Set, Optional
 
 
 class InputBuffer(SpecialMemoryProperties):

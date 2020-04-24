@@ -5,7 +5,6 @@ from typing import Dict, Optional
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.models.node_type import NodeType
 
-
 NODE_TO_CONNECTION_TYPE: Dict[NodeType, Dict[NodeType, ConnectionType]] = {
     NodeType.GATEWAY: {
         NodeType.GATEWAY: ConnectionType.GATEWAY,

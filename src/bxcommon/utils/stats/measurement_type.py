@@ -1,2 +1,2 @@
-class MeasurementType(object):
+class MeasurementType:
     PING = "PING"

@@ -1,9 +1,10 @@
-from pympler import asizeof
-from typing import Any, Optional, Union
 import importlib
+from typing import Any, Optional, Union
+
+from pympler import asizeof
 
 
-class Sizer(object):
+class Sizer:
 
     def __init__(self, excluded_obj: Optional[Union[object, str]] = None):
         self.sizer = asizeof.Asizer()

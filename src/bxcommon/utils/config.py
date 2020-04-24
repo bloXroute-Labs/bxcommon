@@ -1,12 +1,14 @@
+# pylint: disable=global-statement
+
 import configparser
 import json
 import multiprocessing
 import os
 import re
 import shutil
+import sys
 from os import path
 from pathlib import Path
-from sys import platform
 from typing import Dict, Any
 
 from bxcommon import constants
@@ -37,9 +39,15 @@ def set_data_directory(data_directory: str):
     _data_directory = data_directory
     try:
         os.makedirs(data_directory, exist_ok=True)
-    except Exception as ex:
-        logger.fatal("Unable to create data directory '{}'. Error: {}. Exiting.", data_directory, ex)
-        exit(1)
+
+    # pylint: disable=broad-except
+    except Exception as e:
+        logger.fatal(
+            "Unable to create data directory '{}'. Error: {}. Exiting.",
+            data_directory,
+            e
+        )
+        sys.exit(1)
 
 
 def get_default_data_path():
@@ -48,7 +56,7 @@ def get_default_data_path():
     :return: default data directory
     """
 
-    if platform == constants.PLATFORM_MAC:
+    if sys.platform == constants.PLATFORM_MAC:
         return path.join(get_home_path(), "Library", "bloXroute")
     else:
         return path.join(get_home_path(), "bloxroute")
@@ -120,7 +128,7 @@ def is_valid_version(full_version: str) -> bool:
     :param full_version: {version_type}{version_number}
     :return: if the version is valid
     """
-    index = re.search("\d", full_version)
+    index = re.search(r"\d", full_version)
     if index is None:
         raise ValueError(f"Version is incorrectly formated: {full_version}")
     index = index.start()

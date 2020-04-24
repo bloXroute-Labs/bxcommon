@@ -18,6 +18,7 @@ network_num_to_protocol: Dict[int, str]
 
 
 def init(blockchain_networks: List[BlockchainNetworkModel]):
+    # pylint: disable=global-statement
     global network_num_to_protocol
     network_num_to_protocol = {}
     for blockchain_network in blockchain_networks:

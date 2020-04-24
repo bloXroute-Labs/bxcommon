@@ -70,8 +70,13 @@ class _BroadcastMessageConverterV8(AbstractMessageConverter):
 
         new_msg_bytes = bytearray(AbstractBloxrouteMessage.HEADER_LENGTH + new_payload_len)
         new_msg_bytes[:self._BASE_LENGTH] = msg.rawbytes()[:self._BASE_LENGTH]
-        struct.pack_into("<4s", new_msg_bytes, self._BASE_LENGTH,
-                         BroadcastMessageType.BLOCK.value.encode(constants.DEFAULT_TEXT_ENCODING))
+        struct.pack_into(
+            "<4s",
+            new_msg_bytes,
+            self._BASE_LENGTH,
+            # pylint: disable=no-member
+            BroadcastMessageType.BLOCK.value.encode(constants.DEFAULT_TEXT_ENCODING)
+        )
         new_msg_bytes[self._BREAKPOINT:] = msg.rawbytes()[self._BASE_LENGTH:]
 
         return AbstractBloxrouteMessage.initialize_class(
@@ -110,8 +115,13 @@ class _BroadcastMessageConverterV8(AbstractMessageConverter):
 
         result_bytes[:self._BASE_LENGTH] = first_msg_bytes[:self._BASE_LENGTH]
         result_bytes[self._BREAKPOINT:] = first_msg_bytes[self._BASE_LENGTH:]
-        struct.pack_into("<4s", result_bytes, self._BASE_LENGTH,
-                         BroadcastMessageType.BLOCK.value.encode(constants.DEFAULT_TEXT_ENCODING))
+        struct.pack_into(
+            "<4s",
+            result_bytes,
+            self._BASE_LENGTH,
+            # pylint: disable=no-member
+            BroadcastMessageType.BLOCK.value.encode(constants.DEFAULT_TEXT_ENCODING)
+        )
 
         struct.pack_into("<12sL", result_bytes, constants.STARTING_SEQUENCE_BYTES_LEN, command,
                          payload_len + constants.BROADCAST_TYPE_LEN)

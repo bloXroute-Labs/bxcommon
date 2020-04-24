@@ -1,15 +1,14 @@
 import struct
 from typing import List, Optional
 
-from bxutils import logging
-from bxutils.logging.log_level import LogLevel
-
 import bxcommon.utils.crypto
 from bxcommon import constants
-from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.utils.object_hash import Sha256Hash
+from bxutils import logging
+from bxutils.logging.log_level import LogLevel
 
 logger = logging.get_logger(__name__)
 
@@ -62,10 +61,16 @@ class TxsMessage(AbstractBloxrouteMessage):
         tx_count = len(txs_details)
 
         # msg_size = HDR_COMMON_OFF + tx count + (sid + hash + tx size) of each tx
-        msg_size \
-            = self.HEADER_LENGTH + constants.UL_INT_SIZE_IN_BYTES + \
-              tx_count * (
-                      constants.UL_INT_SIZE_IN_BYTES + bxcommon.utils.crypto.SHA256_HASH_LEN + constants.UL_INT_SIZE_IN_BYTES) + constants.CONTROL_FLAGS_LEN
+        msg_size = (
+            self.HEADER_LENGTH
+            + constants.UL_INT_SIZE_IN_BYTES
+            + tx_count * (
+                constants.UL_INT_SIZE_IN_BYTES
+                + bxcommon.utils.crypto.SHA256_HASH_LEN
+                + constants.UL_INT_SIZE_IN_BYTES
+            )
+            + constants.CONTROL_FLAGS_LEN
+        )
 
         # msg_size += size of each tx
         for tx_info in txs_details:
@@ -112,9 +117,9 @@ class TxsMessage(AbstractBloxrouteMessage):
         txs_count, = struct.unpack_from("<L", self.buf, off)
         off += constants.UL_INT_SIZE_IN_BYTES
 
-        logger.debug("Block recovery: received {0} txs in the message.".format(txs_count))
+        logger.debug("Block recovery: received {} txs in the message.", txs_count)
 
-        for tx_index in range(txs_count):
+        for _ in range(txs_count):
             tx_sid, = struct.unpack_from("<L", self.buf, off)
             off += constants.UL_INT_SIZE_IN_BYTES
 

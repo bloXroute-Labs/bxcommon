@@ -1,18 +1,17 @@
 import logging
-import sys
 import os
+import sys
 import time
-
-from typing import Optional, List, Dict, Union, Iterable
 from logging import StreamHandler, FileHandler
+from typing import Optional, List, Dict, Union, Iterable
 
-from bxutils import log_messages
 from bxutils import constants
-from bxutils.logging.log_format import LogFormat
+from bxutils import log_messages
 from bxutils.logging.formatters import JSONFormatter, CustomFormatter, FluentJSONFormatter, AbstractFormatter
-from bxutils.logging.log_level import LogLevel
-from bxutils.logging.handler_type import HandlerType
 from bxutils.logging import log_level, LoggerConfig
+from bxutils.logging.handler_type import HandlerType
+from bxutils.logging.log_format import LogFormat
+from bxutils.logging.log_level import LogLevel
 
 try:
     # TODO: remove try catch clause once the dependencies are installed

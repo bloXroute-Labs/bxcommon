@@ -1,7 +1,7 @@
 import gc
-from typing import Type, Any, TYPE_CHECKING
 from collections import defaultdict
 from typing import Dict
+from typing import Type, Any, TYPE_CHECKING
 
 from bxcommon import constants
 from bxcommon.utils.stats.statistics_service import StatsIntervalData, StatisticsService
@@ -10,6 +10,7 @@ from bxutils.logging import LogRecordType
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
+    # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_node import AbstractNode
 
 

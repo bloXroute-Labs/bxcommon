@@ -14,8 +14,10 @@ from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_vers
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
-from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
-from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
+from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import \
+    TxServiceSyncBlocksShortIdsMessage
+from bxcommon.messages.bloxroute.tx_service_sync_complete_message import \
+    TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.models.node_type import NodeType
@@ -28,8 +30,8 @@ from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
-from bxutils import logging
 from bxutils import log_messages
+from bxutils import logging
 from bxutils.logging import LogRecordType
 
 logger = logging.get_logger(__name__)
@@ -175,10 +177,12 @@ class InternalNodeConnection(AbstractConnection[Node]):
             return self.ping_interval_s
         return constants.CANCEL_ALARMS
 
-    def msg_ping(self, msg):
+    # pylint: disable=arguments-differ
+    def msg_ping(self, msg: PingMessage):
         nonce = msg.nonce()
         self.enqueue_msg(PongMessage(nonce=nonce))
 
+    # pylint: disable=arguments-differ
     def msg_pong(self, msg: PongMessage):
         nonce = msg.nonce()
         if nonce in self.ping_message_timestamps.contents:
@@ -206,10 +210,16 @@ class InternalNodeConnection(AbstractConnection[Node]):
         for tx_content_short_ids in txs_content_short_ids:
             sync_metrics["tx_count"] += 1
             tx_hash = tx_content_short_ids.tx_hash
-            if tx_content_short_ids.tx_content:
+
+            tx_content = tx_content_short_ids.tx_content
+            if tx_content:
                 sync_metrics["tx_content_count"] += 1
-                tx_service.set_transaction_contents(tx_hash, tx_content_short_ids.tx_content)
-            for short_id, quota_type in zip(tx_content_short_ids.short_ids, tx_content_short_ids.short_id_flags):
+                tx_service.set_transaction_contents(tx_hash, tx_content)
+
+            for short_id, quota_type in zip(
+                tx_content_short_ids.short_ids,
+                tx_content_short_ids.short_id_flags
+            ):
                 tx_service.assign_short_id(tx_hash, short_id)
                 if QuotaType.PAID_DAILY_QUOTA in quota_type:
                     tx_service.set_short_id_quota_type(short_id, quota_type)
@@ -490,23 +500,31 @@ class InternalNodeConnection(AbstractConnection[Node]):
             self.send_tx_service_sync_complete(network_num)
 
     def msg_tx_service_sync_complete(self, msg: TxServiceSyncCompleteMessage):
-        if self.node.NODE_TYPE in NodeType.GATEWAY and ConnectionType.RELAY_BLOCK in self.CONNECTION_TYPE:
+        if (
+            self.node.NODE_TYPE in NodeType.GATEWAY
+            # pylint: disable=unsupported-membership-test
+            and ConnectionType.RELAY_BLOCK in self.CONNECTION_TYPE
+        ):
             return
         network_num = msg.network_num()
         self.node.on_network_synced(network_num)
         # pyre-fixme[6]: Expected `float` for 1st param but got `Optional[float]`.
         duration = time.time() - self.node.start_sync_time
-        self.log_info(
-            "TxSync complete. {} is ready and operational. It took {:.3f} seconds to complete transaction state with BDN.",
-            self.node.NODE_TYPE, duration
+        self.log_debug(
+            "TxSync complete. {} is ready and operational. It took {:.3f} seconds to complete "
+            "transaction state with BDN.",
+            self.node.NODE_TYPE,
+            duration
         )
         sync_data = {"peer_id": self.peer_id, "duration": duration}
         for network_num, sync_metrics in self.node.sync_metrics.items():
-            _tx_service = self.node.get_tx_service(network_num)
+            tx_service = self.node.get_tx_service(network_num)
             network_stats = dict(sync_metrics)
-            network_stats["content_without_sid"] = len(_tx_service._tx_hash_without_sid.queue)
-            network_stats["sid_without_content"] = len(_tx_service._tx_hash_sid_without_content.queue)
-            network_stats["tx_content_len"] = len(_tx_service._tx_cache_key_to_contents)
+            network_stats["content_without_sid"] = len(tx_service.tx_hashes_without_short_id.queue)
+            network_stats["sid_without_content"] = len(tx_service.tx_hashes_without_content.queue)
+            # pylint: disable=protected-access
+            # noinspection PyProtectedMember
+            network_stats["tx_content_len"] = len(tx_service._tx_cache_key_to_contents)
             # pyre-fixme[6]: Expected `str` for 1st param but got `int`.
             sync_data[network_num] = network_stats
 

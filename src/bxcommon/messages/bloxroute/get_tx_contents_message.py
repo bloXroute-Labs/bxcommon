@@ -1,11 +1,10 @@
 import struct
 from typing import Optional
 
-from bxutils.logging.log_level import LogLevel
-
 from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxutils.logging.log_level import LogLevel
 
 
 class GetTxContentsMessage(AbstractBloxrouteMessage):

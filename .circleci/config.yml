@@ -68,8 +68,7 @@ jobs:
           command: |
             . venv/bin/activate
             cd bxcommon
-            # The || exit 0 bypasses not failing the build for <10 score
-            pylint src/bxcommon --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" --rcfile=pylintrc || exit 0
+            pylint src/bxcommon --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" --rcfile=pylintrc
       - run:
           name: Static Analysis
           command: |

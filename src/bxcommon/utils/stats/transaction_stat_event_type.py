@@ -2,6 +2,7 @@ from bxcommon.utils.stats.stat_event_logic_flags import StatEventLogicFlags
 from bxcommon.utils.stats.stat_event_type_settings import StatEventTypeSettings
 
 
+# pylint: disable=invalid-name
 class TransactionStatEventType:
     TX_RECEIVED_FROM_BLOCKCHAIN_NODE = StatEventTypeSettings("TxReceivedFromBlockchainNode",
                                                              event_logic_flags=StatEventLogicFlags.SUMMARY)
@@ -33,7 +34,9 @@ class TransactionStatEventType:
         "TxUnknownShortIdsReplySentByRelayToGateway")
     TX_UNKNOWN_TRANSACTION_FOUND_BY_RELAY = StatEventTypeSettings("TxUnknownTransactionFoundByRelay")
     TX_UNKNOWN_TRANSACTION_NOT_FOUND_BY_RELAY = StatEventTypeSettings("TxUnknownTransactionNotFoundByRelay")
-    TX_UNKNOWN_TRANSACTION_RECEIVED_BY_GATEWAY_FROM_RELAY = StatEventTypeSettings("TxUnknownTransactionReceivedByGatewayFromRelay")
+    TX_UNKNOWN_TRANSACTION_RECEIVED_BY_GATEWAY_FROM_RELAY = StatEventTypeSettings(
+        "TxUnknownTransactionReceivedByGatewayFromRelay"
+    )
     TX_REMOVED_FROM_MEMORY = StatEventTypeSettings("TxRemovedFromMemory", event_logic_flags=StatEventLogicFlags.SUMMARY)
     TX_BLOCK_RECOVERY_STATS = StatEventTypeSettings("TxBlockRecoveryStats")
     BDN_TX_RECEIVED_FROM_CLIENT_ACCOUNT = StatEventTypeSettings("BDNTxReceivedFromClientAccount",
