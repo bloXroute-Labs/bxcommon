@@ -164,7 +164,7 @@ class TransactionService:
         self._tx_content_memory_limit = self._get_tx_contents_memory_limit()
         logger.debug("Memory limit for transaction service by network number {} is {} bytes.",
                      self.network_num, self._tx_content_memory_limit)
-        self._removed_txs_hashes_expiration_time_s = self._get_removed_transactions_history_expiration_time_s()
+        self._removed_txs_expiration_time_s = self._get_removed_transactions_history_expiration_time_s()
 
         # short ids seen in block ordered by them block hash
         self._short_ids_seen_in_block: Dict[Sha256Hash, List[int]] = OrderedDict()
@@ -245,7 +245,7 @@ class TransactionService:
             return TransactionInfo(None, None, short_id)
 
     def get_missing_transactions(
-            self, short_ids: List[int]
+        self, short_ids: List[int]
     ) -> Tuple[bool, List[int], List[Sha256Hash]]:
         unknown_tx_sids = []
         unknown_tx_hashes = []
@@ -388,7 +388,7 @@ class TransactionService:
         self._final_tx_confirmations_count = val
 
     def set_transaction_contents(
-            self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
+        self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
     ):
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
@@ -459,15 +459,16 @@ class TransactionService:
                 self._tx_assignment_expire_queue.remove(short_id)
                 if self.node.opts.dump_removed_short_ids:
                     self._removed_short_ids.add(short_id)
+
+                self._tx_hash_to_time_removed[transaction_cache_key] = time.time()
         else:
             short_ids = None
 
         if transaction_cache_key in self._tx_cache_key_to_contents:
             self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
             del self._tx_cache_key_to_contents[transaction_cache_key]
+            self._tx_hash_to_time_removed[transaction_cache_key] = time.time()
             removed_txns += 1
-
-        self._tx_hash_to_time_removed[transaction_cache_key] = time.time()
 
         logger.trace("Removed transaction: {}, with {} associated short ids and {} contents.", transaction_hash,
                      removed_sids, removed_txns)
@@ -1056,7 +1057,7 @@ class TransactionService:
         return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
 
     def _tx_hash_to_cache_key(self, transaction_hash: Union[Sha256Hash, bytes, bytearray, memoryview, str]) \
-            -> str:
+        -> str:
 
         if isinstance(transaction_hash, Sha256Hash):
             return convert.bytes_to_hex(transaction_hash.binary)
@@ -1081,7 +1082,7 @@ class TransactionService:
         return Sha256Hash(binary=convert.hex_to_bytes(transaction_hash))
 
     def _tx_cache_key_to_hash(self, transaction_cache_key: Union[Sha256Hash, bytes, bytearray, memoryview, str]) \
-            -> Sha256Hash:
+        -> Sha256Hash:
         if isinstance(transaction_cache_key, Sha256Hash):
             return transaction_cache_key
 
@@ -1158,13 +1159,9 @@ class TransactionService:
 
             oldest_tx = next(iter(self._tx_hash_to_time_removed))
 
-            while (
-                self._tx_hash_to_time_removed
-                and (
-                    current_time - self._tx_hash_to_time_removed[oldest_tx]
-                    > self._removed_txs_hashes_expiration_time_s
-                )
-            ):
+            while (self._tx_hash_to_time_removed and
+                   ((current_time - self._tx_hash_to_time_removed[oldest_tx] > self._removed_txs_expiration_time_s) or
+                    len(self._tx_hash_to_time_removed) > constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT)):
 
                 del self._tx_hash_to_time_removed[oldest_tx]
 
