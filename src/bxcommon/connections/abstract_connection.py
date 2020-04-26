@@ -343,29 +343,24 @@ class AbstractConnection(Generic[Node]):
                 if self._report_bad_message():
                     return
 
-            except ControlFlagValidationError as e:
-                if e.is_cancelled_cut_through:
-                    self.log_debug(
-                        "Message validation failed for {} message: {}. "
-                        "Probably cut-through cancellation",
-                        msg_type,
-                        e.msg
-                    )
-                raise e
             except MessageValidationError as e:
                 if self.node.NODE_TYPE not in NodeType.GATEWAY_TYPE:
-                    self.log_warning(log_messages.MESSAGE_VALIDATION_FAILED, msg_type, e.msg)
+                    if isinstance(e, ControlFlagValidationError):
+                        if e.is_cancelled_cut_through:
+                            self.log_debug(
+                                "Message validation failed for {} message: {}. Probably cut-through cancellation",
+                                msg_type, e.msg)
+                        else:
+                            self.log_warning(log_messages.MESSAGE_VALIDATION_FAILED, msg_type, e.msg)
+                    else:
+                        self.log_warning(log_messages.MESSAGE_VALIDATION_FAILED, msg_type, e.msg)
                 else:
                     self.log_debug("Message validation failed for {} message: {}.", msg_type, e.msg)
-                self.log_debug(
-                    "Failed message bytes: {}",
-                    self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len)
-                )
+                self.log_debug("Failed message bytes: {}",
+                               self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
 
                 if is_full_msg:
-                    self.clean_up_current_msg(
-                        payload_len, input_buffer_len_before == self.inputbuf.length
-                    )
+                    self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
                 else:
                     self.log_error(log_messages.UNABLE_TO_RECOVER_PARTIAL_MESSAGE)
                     self.mark_for_close()
