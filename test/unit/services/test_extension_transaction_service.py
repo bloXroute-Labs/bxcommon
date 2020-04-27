@@ -49,6 +49,9 @@ class ExtensionTransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_removed_transactions_history_by_sid(self):
         self._test_removed_transactions_history_by_sid()
 
+    def test_removed_transactions_length_limit(self):
+        self._test_removed_transactions_length_limit()
+
     def test_add_tx_without_sid(self):
         self._test_add_tx_without_sid()
 

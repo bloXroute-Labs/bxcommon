@@ -201,7 +201,7 @@ class ExtensionTransactionService(TransactionService):
         )
         history_len_before = len(self._tx_hash_to_time_removed)
         self._tx_hash_to_time_removed.map_obj.cleanup_removed_hashes_history(
-            time.time(), self._removed_txs_expiration_time_s
+            time.time(), self._removed_txs_expiration_time_s, constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT
         )
         history_len_after = len(self._tx_hash_to_time_removed)
         logger.trace(
