@@ -46,6 +46,9 @@ class TransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_removed_transactions_history_by_hash(self):
         self._test_removed_transactions_history_by_hash()
 
+    def test_removed_transactions_length_limit(self):
+        self._test_removed_transactions_length_limit()
+
     def test_removed_transactions_history_by_sid(self):
         self._test_removed_transactions_history_by_sid()
 
