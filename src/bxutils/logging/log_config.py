@@ -55,7 +55,8 @@ def _get_handler_fluentd(fluentd_host: Optional[str], fluentd_tag_suffix: Option
         port=int(fluentd_port),
         buffer_overflow_handler=overflow_handler,
         nanosecond_precision=True,
-        max_queue_size=max_queue_size
+        max_queue_size=max_queue_size,
+        log_unhandled_exceptions=True
     )
 
 
