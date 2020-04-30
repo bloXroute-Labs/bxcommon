@@ -51,7 +51,7 @@ class AbstractFormatter(Formatter):
     instance: str = NO_INSTANCE
 
     def _handle_args(self, record):
-        if isinstance(record.args[0], str) and record.args[0] == constants.HAS_PREFIX:
+        if record.args and isinstance(record.args[0], str) and record.args[0] == constants.HAS_PREFIX:
             prefix = record.args[1]
             r_args = record.args[2:]
             return " ".join([prefix, self._formatter(record.msg, r_args)])
