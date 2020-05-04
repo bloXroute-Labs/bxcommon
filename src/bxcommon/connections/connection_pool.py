@@ -89,9 +89,12 @@ class ConnectionPool:
     def index_conn_node_id(self, node_id: str, conn: AbstractConnection) -> None:
         self.by_node_id[node_id] = conn
 
-    def has_connection(self, ip: str, port: int, node_id: Optional[str] = None) -> bool:
+    def has_connection(
+            self, ip: Optional[str] = None, port: Optional[int] = None, node_id: Optional[str] = None) -> bool:
         if node_id is not None and node_id in self.by_node_id:
             return True
+        if ip is None or port is None:
+            return False
         return (ip, port) in self.by_ipport
 
     def get_by_connection_type(self, connection_type: ConnectionType) -> Set[AbstractConnection]:
