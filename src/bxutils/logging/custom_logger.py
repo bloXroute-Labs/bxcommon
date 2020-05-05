@@ -1,8 +1,10 @@
 import logging
-from typing import Type
 from logging import LogRecord
+from typing import Type
+
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging_messages_utils import LogMessage
+
 logger_class: Type[logging.Logger] = logging.getLoggerClass()
 log_record_class: Type[LogRecord] = logging.getLogRecordFactory()  # pyre-ignore
 
@@ -39,6 +41,7 @@ class CustomLogger(logger_class):
     def critical(self, msg, *args, **kwargs):
         self.log(logging.ERROR, msg, *args, **kwargs)
 
+    # pylint: disable=useless-super-delegation
     def log(self, level, msg, *args, **kwargs):
         super(CustomLogger, self).log(level, msg, *args, **kwargs)
 

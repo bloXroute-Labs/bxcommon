@@ -14,6 +14,7 @@ _gc_start: Optional[float] = None
 
 
 def gc_callback(phase: str, info: Dict[str, Any]):
+    # pylint: disable=global-statement
     global _gc_start
 
     if phase == "start":

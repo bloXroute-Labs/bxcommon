@@ -1,18 +1,17 @@
 import logging
-import sys
 import os
+import sys
 import time
-
-from typing import Optional, List, Dict, Union, Iterable
 from logging import StreamHandler, FileHandler
+from typing import Optional, List, Dict, Union, Iterable
 
-from bxutils import log_messages
 from bxutils import constants
-from bxutils.logging.log_format import LogFormat
+from bxutils import log_messages
 from bxutils.logging.formatters import JSONFormatter, CustomFormatter, FluentJSONFormatter, AbstractFormatter
-from bxutils.logging.log_level import LogLevel
-from bxutils.logging.handler_type import HandlerType
 from bxutils.logging import log_level, LoggerConfig
+from bxutils.logging.handler_type import HandlerType
+from bxutils.logging.log_format import LogFormat
+from bxutils.logging.log_level import LogLevel
 
 try:
     # TODO: remove try catch clause once the dependencies are installed
@@ -38,8 +37,10 @@ def _get_handler_file(folder_path: str):
     return FileHandler(filename)
 
 
-def _get_handler_fluentd(fluentd_host: str, fluentd_tag_suffix: Optional[str], max_queue_size: int):
+def _get_handler_fluentd(fluentd_host: Optional[str], fluentd_tag_suffix: Optional[str], max_queue_size: int):
     assert fluentd_host is not None, "fluentd host name is missing"
+    assert FluentHandler is not None, "fluentd handler is not installed"
+
     if ":" in fluentd_host:
         fluentd_host, fluentd_port = fluentd_host.split(":")
     else:
@@ -54,7 +55,8 @@ def _get_handler_fluentd(fluentd_host: str, fluentd_tag_suffix: Optional[str], m
         port=int(fluentd_port),
         buffer_overflow_handler=overflow_handler,
         nanosecond_precision=True,
-        max_queue_size=max_queue_size
+        max_queue_size=max_queue_size,
+        log_unhandled_exceptions=True
     )
 
 
@@ -112,7 +114,6 @@ def create_logger(
         assert folder_path is not None
         handler = _get_handler_file(folder_path)
     elif handler_type == HandlerType.Fluent:
-        assert fluentd_host is not None
         handler = _get_handler_fluentd(fluentd_host, fluentd_tag_suffix, max_queue_size)
     else:
         handler = StreamHandler(sys.stdout)
@@ -120,6 +121,7 @@ def create_logger(
     handler.setFormatter(formatter)
     if handler_log_level is not None:
         handler.setLevel(handler_log_level)
+
     custom_logger.propagate = False
     if custom_logger.hasHandlers() and flush_handlers:
         custom_logger.handlers = []
@@ -189,7 +191,7 @@ def setup_logging(
         loggers_config.extend(third_party_loggers)
 
     for logger_config in loggers_config:
-        if LoggerConfig.log_handler_type is None or LoggerConfig.log_handler_type == HandlerType.Stream:
+        if logger_config.log_handler_type is None or logger_config.log_handler_type == HandlerType.Stream:
             create_logger(
                 logger_config.name,
                 # pyre-fixme[6]: Expected `LogLevel` for 2nd param but got
