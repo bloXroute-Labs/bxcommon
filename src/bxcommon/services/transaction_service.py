@@ -361,22 +361,43 @@ class TransactionService:
         :param transaction_hash: transaction long hash
         :param short_id: short id to be mapped to transaction
         """
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        has_contents = transaction_cache_key in self._tx_cache_key_to_contents
+        self.assign_short_id_base(transaction_hash, transaction_cache_key, short_id, has_contents, True)
+
+    def assign_short_id_base(self,
+                             transaction_hash: Sha256Hash,
+                             transaction_cache_key: Any,
+                             short_id: int,
+                             has_contents: bool,
+                             call_to_assign_short_id: bool):
+        """
+        Base method to assign short id for a transaction
+
+        :param transaction_hash: transaction hash
+        :param transaction_cache_key: transaction cache key
+        :param short_id: transaction short id
+        :param has_contents: flag indicating if content already exists in cache for given transaction
+        :param call_to_assign_short_id: flag indicating if method should make a call to assign short id form Python code
+        :return:
+        """
+
         if short_id == constants.NULL_TX_SID:
             # TODO: this should be an assertion; requires testing
             logger.warning(log_messages.ATTEMPTED_TO_ASSIGN_NULL_SHORT_ID_TO_TX_HASH, transaction_hash)
             return
         logger.trace("Assigning sid {} to transaction {}", short_id, transaction_hash)
 
-        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
-        if transaction_cache_key not in self._tx_cache_key_to_contents:
+        if not has_contents:
             self.tx_hashes_without_content.add(transaction_hash)
             if not self.tx_without_content_alarm_scheduled:
                 self.node.alarm_queue.register_alarm(constants.TX_CONTENT_NO_SID_EXPIRE_S,
                                                      self.expire_sid_without_content)
                 self.tx_without_content_alarm_scheduled = True
 
-        self._tx_cache_key_to_short_ids[transaction_cache_key].add(short_id)
-        self._short_id_to_tx_cache_key[short_id] = transaction_cache_key
+        if call_to_assign_short_id:
+            self._tx_cache_key_to_short_ids[transaction_cache_key].add(short_id)
+            self._short_id_to_tx_cache_key[short_id] = transaction_cache_key
         self._tx_assignment_expire_queue.add(short_id)
         self.tx_hashes_without_short_id.remove(transaction_hash)
 
@@ -399,19 +420,50 @@ class TransactionService:
         previous_size = 0
         transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
 
-        if transaction_cache_key not in self._tx_cache_key_to_short_ids:
+        if transaction_cache_key in self._tx_cache_key_to_contents:
+            previous_size = len(self._tx_cache_key_to_contents[transaction_cache_key])
+        has_short_id = transaction_cache_key in self._tx_cache_key_to_short_ids
+
+        self.set_transaction_contents_base(
+            transaction_hash,
+            transaction_cache_key,
+            transaction_contents,
+            has_short_id,
+            previous_size,
+            True
+        )
+
+    def set_transaction_contents_base(
+        self,
+        transaction_hash: Sha256Hash,
+        transaction_cache_key: Any,
+        transaction_contents: Union[bytearray, memoryview],
+        has_short_id: bool,
+        previous_size: int,
+        call_set_contents: bool
+    ):
+        """
+        Adds transaction contents to transaction service cache with lookup key by transaction hash
+
+        :param transaction_hash: transaction hash
+        :param transaction_cache_key: transaction cache key
+        :param transaction_contents: transaction contents bytes
+        :param has_short_id: flag indicating if cache already has short id for given transaction
+        :param previous_size: previous size of transaction contents if already exists
+        :param call_set_contents: flag indicating if method should make a call to set content form Python code
+        """
+        if not has_short_id:
             self.tx_hashes_without_short_id.add(transaction_hash)
             if not self.tx_content_without_sid_alarm_scheduled:
                 self.node.alarm_queue.register_alarm(constants.TX_CONTENT_NO_SID_EXPIRE_S,
                                                      self.expire_content_without_sid)
                 self.tx_content_without_sid_alarm_scheduled = True
 
-        if transaction_cache_key in self._tx_cache_key_to_contents:
-            previous_size = len(self._tx_cache_key_to_contents[transaction_cache_key])
-
         self.tx_hashes_without_content.remove(transaction_hash)
 
-        self._tx_cache_key_to_contents[transaction_cache_key] = transaction_contents
+        if call_set_contents:
+            self._tx_cache_key_to_contents[transaction_cache_key] = transaction_contents
+
         self._total_tx_contents_size += len(transaction_contents) - previous_size
 
         self._memory_limit_clean_up()

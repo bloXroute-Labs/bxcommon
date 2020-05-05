@@ -1,6 +1,8 @@
 import time
 from datetime import datetime
-from typing import Any, List
+from typing import Any, List, Union
+
+import task_pool_executor as tpe
 
 from bxcommon import constants
 from bxcommon.services.transaction_service import TransactionService
@@ -17,8 +19,6 @@ from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import logging
 from bxutils.logging import log_config
 from bxutils.logging.log_record_type import LogRecordType
-
-import task_pool_executor as tpe
 
 logger = logging.get_logger(__name__)
 logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
@@ -103,6 +103,41 @@ class ExtensionTransactionService(TransactionService):
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
 
+    def assign_short_id(self, transaction_hash: Sha256Hash, short_id: int):
+        """
+        Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
+        :param transaction_hash: transaction long hash
+        :param short_id: short id to be mapped to transaction
+        """
+        logger.trace("Assigning sid {} to transaction {}", short_id, transaction_hash)
+        tx_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        has_contents = self.proxy.assign_short_id(tx_cache_key, short_id)
+        self.assign_short_id_base(transaction_hash, tx_cache_key, short_id, has_contents, False)
+
+    def set_transaction_contents(
+        self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
+    ):
+        """
+        Adds transaction contents to transaction service cache with lookup key by transaction hash
+
+        :param transaction_hash: transaction hash
+        :param transaction_contents: transaction contents bytes
+        """
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+
+        has_short_id, previous_size = self.proxy.set_transaction_contents(
+            transaction_cache_key,
+            tpe.InputBytes(transaction_contents))
+
+        self.set_transaction_contents_base(
+            transaction_hash,
+            transaction_cache_key,
+            transaction_contents,
+            has_short_id,
+            previous_size,
+            False
+        )
+
     def log_tx_service_mem_stats(self):
         super(ExtensionTransactionService, self).log_tx_service_mem_stats()
         if self.node.opts.stats_calculate_actual_size:
@@ -127,7 +162,7 @@ class ExtensionTransactionService(TransactionService):
             collection_size = collection_obj.map_obj.get_bytes_length()
             if collection_obj is self._tx_cache_key_to_short_ids:
                 collection_size += (
-                        len(self._short_id_to_tx_cache_key) * constants.UL_INT_SIZE_IN_BYTES)
+                    len(self._short_id_to_tx_cache_key) * constants.UL_INT_SIZE_IN_BYTES)
             return memory_utils.ObjectSize(size=collection_size, flat_size=0, is_actual_size=True)
         else:
             return super(ExtensionTransactionService, self).get_collection_mem_stats(collection_obj,
