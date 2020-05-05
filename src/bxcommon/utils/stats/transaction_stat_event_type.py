@@ -40,10 +40,21 @@ class TransactionStatEventType:
     )
     TX_REMOVED_FROM_MEMORY = StatEventTypeSettings("TxRemovedFromMemory", event_logic_flags=StatEventLogicFlags.SUMMARY)
     TX_BLOCK_RECOVERY_STATS = StatEventTypeSettings("TxBlockRecoveryStats")
-    BDN_TX_RECEIVED_FROM_CLIENT_ACCOUNT = StatEventTypeSettings("BDNTxReceivedFromClientAccount",
+    TX_RECEIVED_FROM_RPC_REQUEST = StatEventTypeSettings("TxReceivedFromRpcRequest",
                                                                 event_logic_flags=StatEventLogicFlags.SUMMARY)
-    BDN_TX_RECEIVED_FROM_CLIENT_ACCOUNT_IGNORE_SEEN = StatEventTypeSettings(
-        "BDNTxReceivedFromClientAccountIgnoreSeen"
+    TX_RECEIVED_FROM_RPC_REQUEST_IGNORE_SEEN = StatEventTypeSettings(
+        "TxReceivedFromRpcRequestIgnoreSeen"
     )
     TX_COUNTER_INCREMENTED = StatEventTypeSettings("TxCounterIncremented")
     TX_COUNTER_BLOCKED = StatEventTypeSettings("TxCounterBlocked")
+
+    TX_PUBLIC_API_REQUEST_RECEIVE = StatEventTypeSettings("TxPublicApiRequestReceive")
+    TX_PUBLIC_API_REQUEST_SENT = StatEventTypeSettings("TxPublicApiRequestSent")
+    TX_PUBLIC_API_RESPONSE_RECEIVE = StatEventTypeSettings("TxPublicApiResponseReceive")
+    TX_PUBLIC_API_RESPONSE_SENT = StatEventTypeSettings("TxPublicApiResponseSent")
+    TX_RELAY_HTTPS_SERVER_REQUEST_RECEIVE = StatEventTypeSettings("TxRelayHttpsServerRequestReceive")
+    TX_RELAY_HTTPS_SERVER_RESPONSE_SENT = StatEventTypeSettings("TxRelayHttpsServerResponseSent")
+    TX_GATEWAY_RPC_RESPONSE_SENT = StatEventTypeSettings("TxGatewayRpcResponseSent")
+    TX_RELAY_HTTPS_SERVER_REQUEST_IGNORE_SEEN = StatEventTypeSettings(
+        "TxRelayHttpsServerRequestIgnoreSeen"
+    )

@@ -1,7 +1,8 @@
 import json
 from abc import ABCMeta, abstractmethod
 from typing import Union, Dict, List, Any, Type, TYPE_CHECKING
-from aiohttp.web_exceptions import HTTPSuccessful, HTTPOk
+
+from aiohttp.web_exceptions import HTTPException, HTTPOk
 from aiohttp.web import Response
 
 from bxcommon.rpc.rpc_request_type import RpcRequestType
@@ -38,7 +39,7 @@ class AbstractRpcRequest(metaclass=ABCMeta):
         pass
 
     def _format_response(
-            self, result: Union[str, Dict[str, Any], List[Any]], response_type: Type[HTTPSuccessful] = HTTPOk
+            self, result: Union[str, Dict[str, Any], List[Any]], response_type: Type[HTTPException] = HTTPOk
     ) -> Response:
         request_id = self.request_id
         response_json = {
