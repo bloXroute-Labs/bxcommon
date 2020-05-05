@@ -9,3 +9,4 @@ class RpcRequestType(SerializeableEnum):
     PEERS = 4
     BDN_PERFORMANCE = 5
     HEALTHCHECK = 6
+    PING = 7
