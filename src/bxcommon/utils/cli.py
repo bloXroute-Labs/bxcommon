@@ -259,14 +259,14 @@ def add_argument_parser_logging(arg_parser: ArgumentParser):
         help="The fluentd handler log level",
         type=LogLevel.__getattr__,
         choices=list(LogLevel),
-        default=utils_constants.DEFAULT_LOG_LEVEL
+        default=LogLevel.NOTSET
     )
     arg_parser.add_argument(
         "--log-level-stdout",
         help="The stdout handler log level",
         type=LogLevel.__getattr__,
         choices=list(LogLevel),
-        default=LogLevel.TRACE
+        default=LogLevel.NOTSET
     )
 
 
