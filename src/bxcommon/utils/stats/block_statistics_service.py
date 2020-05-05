@@ -18,7 +18,8 @@ class _BlockStatisticsService(StatisticsEventService):
     def __init__(self):
         super(_BlockStatisticsService, self).__init__()
         self.name = "BlockInfo"
-        self.logger = logging.get_logger(LogRecordType.BlockInfo, __name__)
+        self.logger = logging.get_logger(LogRecordType.BlockInfo)
+        self.priority_logger = logging.get_logger(LogRecordType.BlockPropagationInfo)
 
     def add_block_event(self, block_msg, block_event_settings, network_num, start_date_time=None, end_date_time=None,
                         **kwargs):

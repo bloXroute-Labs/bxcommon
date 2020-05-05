@@ -19,6 +19,8 @@ class _TransactionStatisticsService(StatisticsEventService):
         super(_TransactionStatisticsService, self).__init__()
         self.name = "TransactionInfo"
         self.logger = logging.get_logger(LogRecordType.TransactionInfo)
+        self.priority_logger = logging.get_logger(LogRecordType.TransactionPropagationInfo)
+
         self.log_percentage_for_hash_by_network_num: Dict[int, float] = \
             defaultdict(lambda: constants.TRANSACTIONS_BY_HASH_PERCENTAGE_TO_LOG_STATS_FOR)
         self.log_percentage_for_sid_by_network_num: Dict[int, float] = \

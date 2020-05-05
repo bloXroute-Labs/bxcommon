@@ -4,13 +4,13 @@ from bxcommon.utils.stats.stat_event_type_settings import StatEventTypeSettings
 
 # pylint: disable=invalid-name
 class BlockStatEventType:
-    BLOCK_ANNOUNCED_BY_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockAnnouncedByBlockchainNode")
-    BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockReceivedFromBlockchainNode")
+    BLOCK_ANNOUNCED_BY_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockAnnouncedByBlockchainNode", priority=True)
+    BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockReceivedFromBlockchainNode", priority=True)
     BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = StatEventTypeSettings(
         "BlockReceivedFromBlockchainNodeIgnoreSeen"
     )
     COMPACT_BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE = StatEventTypeSettings(
-        "CompactBlockReceivedFromBlockchainNode"
+        "CompactBlockReceivedFromBlockchainNode", priority=True
     )
     COMPACT_BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = StatEventTypeSettings(
         "CompactBlockReceivedFromBlockchainNodeIgnoreSeen"
@@ -23,6 +23,7 @@ class BlockStatEventType:
     BLOCK_COMPRESSED = StatEventTypeSettings(
         "BlockCompressed",
         event_logic_flags=StatEventLogicFlags.BLOCK_INFO | StatEventLogicFlags.MATCH,
+        priority=True
     )
     BLOCK_ENCRYPTED = StatEventTypeSettings(
         "BlockEncrypted", event_logic_flags=StatEventLogicFlags.MATCH
@@ -44,15 +45,17 @@ class BlockStatEventType:
         "EncBlockSentFromGatewayToNetwork", event_logic_flags=StatEventLogicFlags.SUMMARY
     )
     ENC_BLOCK_CUT_THROUGH_SEND_START = StatEventTypeSettings("EncBlockCutThroughSendStart")
-    ENC_BLOCK_CUT_THROUGH_SEND_END = StatEventTypeSettings("EncBlockCutThroughSendEnd")
+    ENC_BLOCK_CUT_THROUGH_SEND_END = StatEventTypeSettings("EncBlockCutThroughSendEnd", priority=True)
     ENC_BLOCK_CUT_THROUGH_RECEIVE_START = StatEventTypeSettings(
         "EncBlockCutThroughReceiveStart",
         event_logic_flags=StatEventLogicFlags.SUMMARY | StatEventLogicFlags.PROPAGATION_START,
+        priority=True
     )
     ENC_BLOCK_CUT_THROUGH_RECEIVE_END = StatEventTypeSettings(
-        "EncBlockCutThroughReceiveEnd", event_logic_flags=StatEventLogicFlags.PROPAGATION_END
+        "EncBlockCutThroughReceiveEnd", event_logic_flags=StatEventLogicFlags.PROPAGATION_END,
+        priority=True
     )
-    ENC_BLOCK_CUT_THROUGH_REDUNDANT_SEND = StatEventTypeSettings("EncBlockCutThroughReceiveEnd")
+    ENC_BLOCK_CUT_THROUGH_REDUNDANT_SEND = StatEventTypeSettings("EncBlockCutThroughReceiveEnd", priority=True)
     ENC_BLOCK_CUT_THROUGH_IGNORE_SEEN_BLOCK = StatEventTypeSettings(
         "EncBlockCutThroughIgnoreSeenBlock"
     )
@@ -86,10 +89,12 @@ class BlockStatEventType:
     BLOCK_DECOMPRESSED_IGNORE_SEEN = StatEventTypeSettings(
         "BlockDecompressedIgnoreSeen",
         event_logic_flags=StatEventLogicFlags.BLOCK_INFO | StatEventLogicFlags.MATCH,
+        priority=True
     )
     BLOCK_DECOMPRESSED_SUCCESS = StatEventTypeSettings(
         "BlockDecompressedSuccess",
         event_logic_flags=StatEventLogicFlags.BLOCK_INFO | StatEventLogicFlags.MATCH,
+        priority=True
     )
     BLOCK_DECOMPRESSED_WITH_UNKNOWN_TXS = StatEventTypeSettings(
         "BlockDecompressedWithUnknownTxs",
@@ -102,7 +107,7 @@ class BlockStatEventType:
     BLOCK_RECOVERY_CANCELED = StatEventTypeSettings("BlockRecoveryCanceled")
     BLOCK_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings(
         "BlockSentToBlockchainNode",
-        event_logic_flags=StatEventLogicFlags.SUMMARY | StatEventLogicFlags.PROPAGATION_END,
+        event_logic_flags=StatEventLogicFlags.SUMMARY | StatEventLogicFlags.PROPAGATION_END, priority=True
     )
     BLOCK_HEADER_SENT_TO_BLOCKCHAIN_NODE = StatEventTypeSettings(
         "BlockHeaderSentToBlockchainNode", event_logic_flags=StatEventLogicFlags.SUMMARY

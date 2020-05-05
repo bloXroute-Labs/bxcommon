@@ -9,20 +9,21 @@ class TransactionStatEventType:
     TX_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = StatEventTypeSettings("TxReceivedFromBlockchainNodeIgnoreSeen")
     TX_SENT_FROM_GATEWAY_TO_PEERS = StatEventTypeSettings("TxSentFromGatewayToPeers",
                                                           event_logic_flags=StatEventLogicFlags.SUMMARY)
-    TX_SENT_FROM_GATEWAY_TO_BLOCKCHAIN_NODE = StatEventTypeSettings("TxSentFromGatewayToBlockchainNode",
-                                                                    event_logic_flags=StatEventLogicFlags.SUMMARY)
+    TX_SENT_FROM_GATEWAY_TO_BLOCKCHAIN_NODE = StatEventTypeSettings(
+        "TxSentFromGatewayToBlockchainNode", event_logic_flags=StatEventLogicFlags.SUMMARY, priority=True)
     TX_RECEIVED_BY_GATEWAY_FROM_PEER = StatEventTypeSettings("TxReceivedByGatewayFromPeer",
                                                              event_logic_flags=StatEventLogicFlags.SUMMARY)
     TX_RECEIVED_BY_GATEWAY_FROM_PEER_IGNORE_SEEN = StatEventTypeSettings("TxReceivedByGatewayFromPeerIgnoreSeen")
     TX_RECEIVED_BY_RELAY_FROM_PEER = StatEventTypeSettings("TxReceivedByRelayFromPeer",
-                                                           event_logic_flags=StatEventLogicFlags.SUMMARY)
-    TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_SEEN = StatEventTypeSettings("TxReceivedByRelayFromPeerIgnoreSeen")
+                                                           event_logic_flags=StatEventLogicFlags.SUMMARY, priority=True)
+    TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_SEEN = StatEventTypeSettings(
+        "TxReceivedByRelayFromPeerIgnoreSeen", priority=True)
     TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_EXPIRED = StatEventTypeSettings("TxReceivedByRelayFromPeerIgnoreExpired")
     TX_SHORT_ID_ASSIGNED_BY_RELAY = StatEventTypeSettings("TxShortIdAssignedByRelay")
     TX_SHORT_ID_STORED_BY_GATEWAY = StatEventTypeSettings("TxShortIdStoredByGateway")
     TX_SHORT_ID_EMPTY_IN_MSG_FROM_RELAY = StatEventTypeSettings("TxShortIdEmptyInMsgFromRelay")
     TX_SENT_FROM_RELAY_TO_PEERS = StatEventTypeSettings("TxSentFromRelayToPeers",
-                                                        event_logic_flags=StatEventLogicFlags.SUMMARY)
+                                                        event_logic_flags=StatEventLogicFlags.SUMMARY, priority=True)
     TX_CONTENTS_REQUEST_SENT_FROM_RELAY = StatEventTypeSettings("TxContentsRequestSentFromRelay")
     TX_CONTENTS_REPLY_SENT_BY_RELAY = StatEventTypeSettings("TxContentsReplySentFromRelay")
     TX_CONTENTS_REPLY_RECEIVED_BY_RELAY = StatEventTypeSettings("TxContentsReplyReceivedByRelay")

@@ -15,6 +15,7 @@ class StatisticsEventService:
         self.name = None
         self.log_level = LogLevel.STATS
         self.logger = logging.get_logger(__name__)
+        self.priority_logger = logging.get_logger(__name__)
         self.node = None
         self.node_id = None
 
@@ -33,4 +34,7 @@ class StatisticsEventService:
 
         # pyre-fixme[6]: Expected `str` for 3rd param but got `None`.
         stat_event = StatEvent(event_settings, object_id, self.node_id, start_date_time, end_date_time, **kwargs)
-        self.logger.log(self.log_level, {"data": stat_event, "type": self.name})
+        if event_settings.priority:
+            self.priority_logger.log(self.log_level, {"data": stat_event, "type": self.name})
+        else:
+            self.logger.log(self.log_level, {"data": stat_event, "type": self.name})
