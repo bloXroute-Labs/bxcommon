@@ -213,7 +213,7 @@ class AbstractBloxrouteVersionManagerTest(
 
     def notify_message(self) -> NotificationMessage:
         return NotificationMessage(
-            NotificationCode.QUOTA_DEPLETED, str(helpers.generate_bytes(100))
+            NotificationCode.QUOTA_FILL_STATUS, str(helpers.generate_bytes(100))
         )
 
     # </editor-fold>

@@ -37,6 +37,7 @@ from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.version_message import VersionMessage
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
+from bxcommon.models.entity_type_model import EntityType
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.test_utils import helpers
@@ -397,8 +398,9 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(constants.NULL_TX_TIMESTAMP, rebuilt_tx_message.timestamp())
 
     def test_notification_message(self):
-        notification_code = NotificationCode.QUOTA_DEPLETED
-        raw_message = bytes(1 for _ in range(5)).decode()
+        notification_code = NotificationCode.QUOTA_FILL_STATUS
+        args_list = [str(EntityType.TRANSACTION.value), str(QuotaType.FREE_DAILY_QUOTA.value), "10", "100"]
+        raw_message = ",".join(args_list)
 
         notification_message = self.create_message_successfully(
             NotificationMessage(notification_code, raw_message),

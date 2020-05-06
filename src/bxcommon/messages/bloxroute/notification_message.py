@@ -1,11 +1,13 @@
 import struct
-from typing import Union
+from typing import Union, Optional
 
 from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxcommon.models.entity_type_model import EntityType
 from bxcommon.models.notification_code import NotificationCode, NotificationCodeRange
 from bxcommon.models.notification_code_formatting import NotificationFormatting
+from bxcommon.models.quota_type_model import QuotaType
 from bxutils.logging.log_level import LogLevel
 
 
@@ -18,10 +20,8 @@ class NotificationMessage(AbstractBloxrouteMessage):
                           constants.CONTROL_FLAGS_LEN
     MESSAGE_TYPE = BloxrouteMessageType.NOTIFICATION
 
-    # pyre-fixme[9]: notification_code has type `Union[NotificationCode, int]`; used
-    #  as `None`.
-    # pyre-fixme[9]: raw has type `str`; used as `None`.
-    def __init__(self, notification_code: Union[NotificationCode, int] = None, raw: str = None, buf=None):
+    def __init__(self, notification_code: Optional[Union[NotificationCode, int]] = None, raw: Optional[str] = None,
+                 buf: Optional[bytearray] = None):
         if buf is None:
             buffer_len = self.BASE_PAYLOAD_LENGTH + (len(raw) if raw is not None else 0)
             buf = bytearray(buffer_len)
@@ -37,9 +37,9 @@ class NotificationMessage(AbstractBloxrouteMessage):
 
         payload_len = buffer_len - AbstractBloxrouteMessage.HEADER_LENGTH
 
-        self.buf = buf
-        self._raw = None
-        self._notification_code = None
+        self.buf: Optional[bytearray] = buf
+        self._raw: Optional[str] = None
+        self._notification_code: Optional[NotificationCode] = None
         self._memoryview = memoryview(buf)
         super(NotificationMessage, self).__init__(self.MESSAGE_TYPE, payload_len, buf)
 
@@ -49,53 +49,71 @@ class NotificationMessage(AbstractBloxrouteMessage):
     def notification_code(self) -> Union[NotificationCode, int]:
         if self._notification_code is None:
             self._unpack()
-        assert self._notification_code is not None
-        # pyre-fixme[7]: Expected `Union[NotificationCode, int]` but got `None`.
-        return self._notification_code
+        notification_code = self._notification_code
+        assert notification_code is not None
+        return notification_code
 
     def raw_message(self) -> str:
         if self._raw is None:
             self._unpack()
-        assert self._raw is not None
-        # pyre-fixme[7]: Expected `str` but got `None`.
-        return self._raw
+        raw = self._raw
+        assert raw is not None
+        return raw
 
-    def formatted_message(self):
+    def formatted_message(self) -> str:
         if self._notification_code is None:
             self._unpack()
-        if self._notification_code in NotificationFormatting:
+        notification_code = self._notification_code
+        assert notification_code is not None
+        raw = self._raw
+
+        if self._notification_code == NotificationCode.QUOTA_FILL_STATUS:
+            assert raw is not None
+            args_list = raw.split(",")
+            args_list[1] = str(QuotaType(int(args_list[1])))
+            args_list[2] = str(EntityType(int(args_list[2])))
+            return NotificationFormatting[self._notification_code].format(*args_list)
+
+        elif self._notification_code in NotificationFormatting:
+            assert raw is not None
             return NotificationFormatting[self._notification_code].format(
-                self._notification_code.value,
-                self._notification_code.name,
-                *self._raw.split(",")
+                notification_code.value,
+                notification_code.name,
+                *raw.split(",")
             )
         else:
-            return "{}: {}".format(self._notification_code, self._raw)
+            return "{}: {}".format(notification_code, raw)
 
-    def level(self):
+    def level(self) -> LogLevel:
         if self._notification_code is None:
             self._unpack()
-        assert self._notification_code is not None
-        if self._notification_code < NotificationCodeRange.DEBUG:
+        notification_code = self._notification_code
+        assert notification_code is not None
+
+        if notification_code < NotificationCodeRange.DEBUG:
             return LogLevel.DEBUG
-        elif self._notification_code < NotificationCodeRange.INFO:
+        elif notification_code < NotificationCodeRange.INFO:
             return LogLevel.INFO
-        elif self._notification_code < NotificationCodeRange.WARNING:
+        elif notification_code < NotificationCodeRange.WARNING:
             return LogLevel.WARNING
         else:
             return LogLevel.ERROR
 
-    def log_level(self):
+    def log_level(self) -> LogLevel:
         return LogLevel.DEBUG
 
-    def _unpack(self):
+    def _unpack(self) -> None:
+        buf = self.buf
+        assert buf is not None
+
         off = AbstractBloxrouteMessage.HEADER_LENGTH
-        notification_code, = struct.unpack_from("<H", self.buf, off)
+        notification_code, = struct.unpack_from("<H", buf, off)
         off += constants.UL_SHORT_SIZE_IN_BYTES
 
         if notification_code in [item.value for item in NotificationCode]:
             self._notification_code = NotificationCode(notification_code)
         else:
             self._notification_code = notification_code
-        self._raw = self.buf[off:AbstractBloxrouteMessage.HEADER_LENGTH +
+
+        self._raw = buf[off:AbstractBloxrouteMessage.HEADER_LENGTH +
                              self.payload_len() - constants.CONTROL_FLAGS_LEN].decode()

@@ -131,4 +131,3 @@ class BlockStatEventType:
     REMOTE_BLOCK_RECEIVED_BY_GATEWAY = StatEventTypeSettings("RemoteBlockReceivedByGateway")
     REMOTE_BLOCK_REQUESTED_BY_GATEWAY = StatEventTypeSettings("RemoteBlockRequestedByGateway")
     BLOCK_COUNTER_BLOCKED = StatEventTypeSettings("BlockCounterBlocked")
-    BLOCK_COUNTER_INCREMENTED = StatEventTypeSettings("BlockCounterIncremented")

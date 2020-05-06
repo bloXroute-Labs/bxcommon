@@ -45,7 +45,6 @@ class TransactionStatEventType:
     TX_RECEIVED_FROM_RPC_REQUEST_IGNORE_SEEN = StatEventTypeSettings(
         "TxReceivedFromRpcRequestIgnoreSeen"
     )
-    TX_COUNTER_INCREMENTED = StatEventTypeSettings("TxCounterIncremented")
     TX_COUNTER_BLOCKED = StatEventTypeSettings("TxCounterBlocked")
 
     TX_PUBLIC_API_REQUEST_RECEIVE = StatEventTypeSettings("TxPublicApiRequestReceive")
