@@ -70,12 +70,12 @@ class RpcRequestHandler:
     async def help(self) -> List[Any]:
         return [
             {
-                "method": method.lower(),
+                "method": method.name.lower(),
                 "id": "Optional - [unique request identifier string].",
-                "params": self._request_handlers[RpcRequestType[method]].help["params"],
-                "description": self._request_handlers[RpcRequestType[method]].help.get("description"),
+                "params": self._request_handlers[method].help["params"],
+                "description": self._request_handlers[method].help.get("description"),
             }
-            for method in RpcRequestType.__members__.keys()
+            for method in self._request_handlers
         ]
 
     def _get_rpc_request(

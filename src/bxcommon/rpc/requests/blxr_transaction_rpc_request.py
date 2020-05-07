@@ -13,9 +13,10 @@ class BlxrTransactionRpcRequest(AbstractRpcRequest):
     TRANSACTION = rpc_constants.TRANSACTION_PARAMS_KEY
     QUOTA_TYPE: str = "quota_type"
     help = {
-        "params": f"[Required - {TRANSACTION}: [transaction payload in hex string format],"
+        "params": f"[Required - {TRANSACTION}: [transaction payload in hex string format], "
         f"Optional - {QUOTA_TYPE}: [{QuotaType.PAID_DAILY_QUOTA.name.lower()} for binding with a paid account"
-        f"(default) or {QuotaType.FREE_DAILY_QUOTA.name.lower()}]]"
+        f"(default) or {QuotaType.FREE_DAILY_QUOTA.name.lower()}]]",
+        "description": "send transaction to the bloXroute BDN"
     }
 
     async def process_request(self) -> Response:
