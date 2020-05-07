@@ -44,7 +44,7 @@ class BlockStatEventType:
     ENC_BLOCK_SENT_FROM_GATEWAY_TO_NETWORK = StatEventTypeSettings(
         "EncBlockSentFromGatewayToNetwork", event_logic_flags=StatEventLogicFlags.SUMMARY
     )
-    ENC_BLOCK_CUT_THROUGH_SEND_START = StatEventTypeSettings("EncBlockCutThroughSendStart")
+    ENC_BLOCK_CUT_THROUGH_SEND_START = StatEventTypeSettings("EncBlockCutThroughSendStart", priority=True)
     ENC_BLOCK_CUT_THROUGH_SEND_END = StatEventTypeSettings("EncBlockCutThroughSendEnd", priority=True)
     ENC_BLOCK_CUT_THROUGH_RECEIVE_START = StatEventTypeSettings(
         "EncBlockCutThroughReceiveStart",
