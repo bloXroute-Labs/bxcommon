@@ -1,11 +1,10 @@
+import asyncio
 import os
 import socket
-import asyncio
 from argparse import Namespace
 from contextlib import closing
-from typing import Optional, TypeVar, Type, TYPE_CHECKING, List, Callable
+from typing import Optional, TypeVar, Type, TYPE_CHECKING, List
 
-from bxutils.logging.log_level import LogLevel
 from mock import MagicMock
 
 from bxcommon import constants
@@ -23,9 +22,11 @@ from bxcommon.utils import config, crypto, convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
+from bxutils.logging.log_level import LogLevel
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
+    # pylint: disable=ungrouped-imports
     from bxcommon.connections.abstract_connection import AbstractConnection
 
 
@@ -67,7 +68,6 @@ def create_connection(connection_cls: Type[Connection],
         node_opts = get_common_opts(8002)
 
     if node is None:
-        # pyre-fixme[45]: Cannot instantiate abstract class `MockNode`.
         node = MockNode(node_opts, None)
 
     if isinstance(node, MockNode):
@@ -121,7 +121,7 @@ def get_queued_node_messages(node: AbstractNode, fileno: int) -> List[AbstractMe
     messages = []
     (
         is_full_message,
-        message_type,
+        _message_type,
         payload_length
     # pyre-fixme[16]: `Optional` has no attribute
     #  `get_message_header_preview_from_input_buffer`.
@@ -136,7 +136,7 @@ def get_queued_node_messages(node: AbstractNode, fileno: int) -> List[AbstractMe
         messages.append(connection.message_factory.create_message_from_buffer(message_contents))
         (
             is_full_message,
-            message_type,
+            _message_type,
             payload_length
         ) = connection.message_factory.get_message_header_preview_from_input_buffer(input_buffer)
 
@@ -157,7 +157,7 @@ def get_free_port():
     """
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
         sock.bind(("", 0))
-        address, port = sock.getsockname()
+        _address, port = sock.getsockname()
     return port
 
 
@@ -216,10 +216,18 @@ def get_common_opts(port,
         "dump_missing_short_ids": False,
         "sid_expire_time": 30,
         "blockchain_networks": [
-            blockchain_network("Bitcoin", "Mainnet", 0, 15, 15, final_tx_confirmations_count, block_confirmations_count),
-            blockchain_network("Bitcoin", "Testnet", 1, 15, 15, final_tx_confirmations_count, block_confirmations_count),
-            blockchain_network("Ethereum", "Mainnet", 2, 5, 5, final_tx_confirmations_count, block_confirmations_count),
-            blockchain_network("Ethereum", "Testnet", 3, 5, 5, final_tx_confirmations_count, block_confirmations_count)
+            blockchain_network(
+                "Bitcoin", "Mainnet", 0, 15, 15, final_tx_confirmations_count, block_confirmations_count
+            ),
+            blockchain_network(
+                "Bitcoin", "Testnet", 1, 15, 15, final_tx_confirmations_count, block_confirmations_count
+            ),
+            blockchain_network(
+                "Ethereum", "Mainnet", 2, 5, 5, final_tx_confirmations_count, block_confirmations_count
+            ),
+            blockchain_network(
+                "Ethereum", "Testnet", 3, 5, 5, final_tx_confirmations_count, block_confirmations_count
+            )
         ],
         "transaction_pool_memory_limit": 200000000,
         "track_detailed_sent_messages": True,
@@ -241,20 +249,23 @@ def get_common_opts(port,
     return opts
 
 
-def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockchain_address=None,
-                     test_mode=None, peer_gateways=None, peer_relays=None, peer_transaction_relays=None,
-                     split_relays=False, protocol_version=1, sid_expire_time=30, bloxroute_version="bloxroute 1.5",
-                     include_default_btc_args=False, include_default_eth_args=False, pub_key=None,
-                     include_default_ont_args=False,
-                     blockchain_network_num=constants.DEFAULT_NETWORK_NUM, min_peer_gateways=0,
-                     remote_blockchain_ip=None, remote_blockchain_port=None, connect_to_remote_blockchain=False,
-                     is_internal_gateway=False, is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
-                     parallelism_degree=1, cookie_file_path=COOKIE_FILE_PATH, blockchain_block_hold_timeout_s=30,
-                     blockchain_block_recovery_timeout_s=30, stay_alive_duration=30 * 60, source_version="v1.1.1.1",
-                     initial_liveliness_check=30, block_interval=600, continent="NA", country="United States",
-                     non_ssl_port: int = 9001, rpc_port: int = 28332, has_fully_updated_tx_service: bool = False,
-                     max_block_interval: int = 10, default_tx_quota_type: QuotaType = QuotaType.FREE_DAILY_QUOTA,
-                     log_level_overrides=None, **kwargs) -> Namespace:
+# pylint: disable=unused-argument,too-many-branches
+def get_gateway_opts(
+    port, node_id=None, external_ip=constants.LOCALHOST, blockchain_address=None,
+    test_mode=None, peer_gateways=None, peer_relays=None, peer_transaction_relays=None,
+    split_relays=False, protocol_version=1, sid_expire_time=30, bloxroute_version="bloxroute 1.5",
+    include_default_btc_args=False, include_default_eth_args=False, pub_key=None,
+    include_default_ont_args=False,
+    blockchain_network_num=constants.DEFAULT_NETWORK_NUM, min_peer_gateways=0,
+    remote_blockchain_ip=None, remote_blockchain_port=None, connect_to_remote_blockchain=False,
+    is_internal_gateway=False, is_gateway_miner=False, enable_buffered_send=False, encrypt_blocks=True,
+    parallelism_degree=1, cookie_file_path=COOKIE_FILE_PATH, blockchain_block_hold_timeout_s=30,
+    blockchain_block_recovery_timeout_s=30, stay_alive_duration=30 * 60, source_version="v1.1.1.1",
+    initial_liveliness_check=30, block_interval=600, continent="NA", country="United States",
+    non_ssl_port: int = 9001, rpc_port: int = 28332, has_fully_updated_tx_service: bool = False,
+    max_block_interval: int = 10, default_tx_quota_type: QuotaType = QuotaType.FREE_DAILY_QUOTA,
+    log_level_overrides=None, enable_network_content_logs=False, **kwargs
+) -> Namespace:
     if node_id is None:
         node_id = "Gateway at {0}".format(port)
     if peer_gateways is None:
@@ -333,7 +344,8 @@ def get_gateway_opts(port, node_id=None, external_ip=constants.LOCALHOST, blockc
         "rpc_user": "",
         "rpc_password": "",
         "default_tx_quota_type": default_tx_quota_type,
-        "should_update_source_version": False
+        "should_update_source_version": False,
+        "enable_network_content_logs": False
     })
 
     if include_default_btc_args:
@@ -382,8 +394,7 @@ def async_test(method):
     return wrapper
 
 
-# pyre-fixme[39]: `(...) -> Any` is not a valid parent class.
-class AsyncMock(Callable):
+class AsyncMock:
     mock: MagicMock
 
     def __init__(self, *args, **kwargs):

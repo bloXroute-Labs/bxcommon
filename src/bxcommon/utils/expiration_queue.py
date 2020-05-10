@@ -1,7 +1,7 @@
 import time
 
 from collections import OrderedDict
-from typing import TypeVar, Generic, Optional, Callable, Dict, Any, List
+from typing import TypeVar, Generic, Optional, Callable, Dict, Any
 
 T = TypeVar("T")
 
@@ -49,7 +49,6 @@ class ExpirationQueue(Generic[T]):
         current_time: Optional[float] = None,
         remove_callback: Optional[Callable[[T], Any]] = None,
         limit: Optional[int] = None,
-        *args,
         **kwargs
     ):
         """
@@ -57,7 +56,6 @@ class ExpirationQueue(Generic[T]):
         :param current_time: time to use as current time for expiration
         :param remove_callback: reference to a callback function that is being called when item is removed
         :param limit: max number of entries to remove in one call
-        :param args: arguments to pass into the callback method
         :param kwargs: keyword args to pass into the callback method
         """
         if current_time is None:
@@ -74,10 +72,10 @@ class ExpirationQueue(Generic[T]):
         ):
             # noinspection PyArgumentList
             # pyre-fixme[28]: Unexpected keyword argument `last`.
-            item, timestamp = self.queue.popitem(last=False)
+            item, _timestamp = self.queue.popitem(last=False)
 
             if remove_callback is not None:
-                remove_callback(item, *args, **kwargs)
+                remove_callback(item, **kwargs)
 
             iterations += 1
 
@@ -103,14 +101,16 @@ class ExpirationQueue(Generic[T]):
         assert oldest_item is not None
         return self.queue[oldest_item]
 
-    def remove_oldest(self, remove_callback: Optional[Callable[[T], None]] = None, *args, **kwargs):
+    def remove_oldest(
+        self, remove_callback: Optional[Callable[[T], None]] = None, **kwargs
+    ) -> None:
         """
         Remove one oldest item from the queue
         :param remove_callback: reference to a callback function that is being called when item is removed
         """
         if len(self.queue) > 0:
             # pyre-fixme[28]: Unexpected keyword argument `last`.
-            item, timestamp = self.queue.popitem(last=False)
+            item, _timestamp = self.queue.popitem(last=False)
 
             if remove_callback is not None:
-                remove_callback(item, *args, **kwargs)
+                remove_callback(item, **kwargs)

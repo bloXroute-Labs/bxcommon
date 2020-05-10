@@ -1,11 +1,11 @@
 import subprocess
-from bxcommon.utils.concurrency.thread_pool import ThreadPool
 from typing import List, NamedTuple
 
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
-from bxutils import logging
+from bxcommon.utils.concurrency.thread_pool import ThreadPool
 from bxutils import log_messages
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -32,8 +32,11 @@ def get_ping_latency(outbound_peer: OutboundPeerModel) -> NodeLatencyInfo:
             except subprocess.TimeoutExpired:
                 ping_latency = constants.PING_TIMEOUT_S * 1000
                 logger.debug("Ping to {} {} timed out.", outbound_peer.node_type, outbound_peer.ip)
-    except Exception as ex:
-        logger.error(log_messages.PING_TRIGGERED_AN_ERROR, outbound_peer.node_type, outbound_peer.ip, ex)
+    # pylint: disable=broad-except
+    except Exception as e:
+        logger.error(
+            log_messages.PING_TRIGGERED_AN_ERROR, outbound_peer.node_type, outbound_peer.ip, e
+        )
         ping_latency = constants.PING_TIMEOUT_S * 1000
 
     return NodeLatencyInfo(outbound_peer, ping_latency)

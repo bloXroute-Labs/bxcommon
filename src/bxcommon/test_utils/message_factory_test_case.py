@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
-from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils import helpers
+from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 
 
 class MessageFactoryTestCase(AbstractTestCase):
@@ -12,7 +12,9 @@ class MessageFactoryTestCase(AbstractTestCase):
         pass
 
     def get_message_preview_successfully(self, message, expected_command, expected_payload_length):
-        is_full_message, command, payload_length = self.get_message_factory().get_message_header_preview_from_input_buffer(
+        (
+            is_full_message, command, payload_length
+        ) = self.get_message_factory().get_message_header_preview_from_input_buffer(
             helpers.create_input_buffer_with_message(message)
         )
         self.assertTrue(is_full_message)

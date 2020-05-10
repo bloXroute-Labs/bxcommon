@@ -6,19 +6,18 @@ from datetime import datetime
 from threading import Thread, Lock
 from typing import Optional, TypeVar, Generic, Deque, Type, Callable, Dict, Any, TYPE_CHECKING
 
-from bxutils import logging
+from bxcommon import constants
 from bxutils import log_messages
+from bxutils import logging
 from bxutils.logging import CustomLogger
 from bxutils.logging.log_level import LogLevel
 from bxutils.logging.log_record_type import LogRecordType
-
-from bxcommon import constants
-
 
 logger = logging.get_logger(__name__)
 task_duration_logger = logging.get_logger(LogRecordType.TaskDuration, __name__)
 
 if TYPE_CHECKING:
+    # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_node import AbstractNode
 
 
@@ -87,7 +86,6 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
         Constructs response object to be outputted on stat service set interval.
         :return: dictionary to be converted to JSON
         """
-        pass
 
     def set_node(self, node: N) -> None:
         self.node = node
@@ -168,8 +166,8 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
             sleep_time -= constants.THREADED_STATS_SLEEP_INTERVAL_S
             with self._lock:
                 alive = self._alive
-        else:
-            time.sleep(0)  # ensure sleep is called regardless of the sleep time value
+
+        time.sleep(0)  # ensure sleep is called regardless of the sleep time value
         return alive
 
     def loop_record_on_thread(self, record_fn: Callable) -> None:
@@ -183,8 +181,11 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
             start_time = time.time()
             try:
                 record_fn()
+            # pylint: disable=broad-except
             except Exception as e:
-                self.logger.error(log_messages.FAILURE_RECORDING_STATS, self.name, e, traceback.format_exc())
+                self.logger.error(
+                    log_messages.FAILURE_RECORDING_STATS, self.name, e, traceback.format_exc()
+                )
                 runtime = 0
             else:
                 runtime = time.time() - start_time

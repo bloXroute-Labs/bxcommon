@@ -1,12 +1,12 @@
 import time
 
 from bxcommon.connections.abstract_connection import AbstractConnection
-from bxcommon.connections.connection_state import ConnectionState
-from bxcommon.network.socket_connection_state import SocketConnectionState
+
+# pylint: disable=pointless-string-statement,protected-access
 
 """
 These are a set of testing utilities for manually instantiating an event loop to test the full
-connection and send/receive cycle of a Bloxroute node. 
+connection and send/receive cycle of a Bloxroute node.
 
 To use, start some Bloxroute node on a background thread and create an event loop of a node in
 your main thread. You can then call these functions on the event loop or node objects to simulate
@@ -58,7 +58,7 @@ def receive_on_connection(connection: AbstractConnection):
     wait_while(
         lambda: not (process_message_called.is_called or not connection.is_alive()),
         # pyre-fixme[16]: `AbstractSocketConnectionProtocol` has no attribute `receive`.
-        lambda: connection.socket_connection.receive()
+        connection.socket_connection.receive
     )
 
 
@@ -94,7 +94,6 @@ def accept_a_connection(event_loop, server_socket):
     to initiate a connection.
     """
     num_connections = len(event_loop._socket_connections)
-    start_time = time.time()
     wait_while(
         lambda: len(event_loop._socket_connections) == num_connections,
         lambda: event_loop._handle_incoming_connections(server_socket)

@@ -9,6 +9,7 @@ from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import DEFAULT_NETWORK_NUM
 from bxcommon.models.node_type import NodeType
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
+from bxcommon.network.peer_info import ConnectionPeerInfo
 from bxcommon.services.broadcast_service import BroadcastService
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
@@ -31,15 +32,19 @@ class MockNode(AbstractNode):
         self._tx_service = TransactionService(self, self.network_num)
         self._tx_services = {}
 
-    def broadcast(self, msg, broadcasting_conn=None, prepend_to_queue=False, connection_types=None) -> List[
-        AbstractConnection]:
+    def broadcast(
+        self, msg, broadcasting_conn=None, prepend_to_queue=False, connection_types=None
+    ) -> List[AbstractConnection]:
         self.broadcast_messages.append(msg)
         return []
 
-    def get_tx_service(self, _network_num=None):
+    def get_tx_service(self, network_num: Optional[int] = None) -> TransactionService:
         return self._tx_service
 
     def get_outbound_peer_addresses(self):
+        pass
+
+    def get_outbound_peer_info(self) -> List[ConnectionPeerInfo]:
         pass
 
     def get_broadcast_service(self) -> BroadcastService:
@@ -61,4 +66,12 @@ class MockNode(AbstractNode):
         pass
 
     def _check_sync_relay_connections(self):
+        pass
+
+    def broadcast_transaction(
+            self,
+            message,
+            broadcasting_connection,
+            prepend_to_queue: bool = False
+    ) -> None:
         pass

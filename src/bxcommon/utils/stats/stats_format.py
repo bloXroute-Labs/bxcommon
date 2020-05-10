@@ -81,11 +81,10 @@ def ratio(first_value: float, second_value: float) -> str:
     :param second_value: second value
     :return: formatted ratio
     """
-
-    r = 100 - float(first_value) / second_value * 100
-    return percentage(r)
+    return percentage(100 - float(first_value) / second_value * 100)
 
 
+# pylint: disable=unsupported-membership-test
 def _format_connection_type(conn: AbstractConnection) -> str:
     if conn.CONNECTION_TYPE in ConnectionType.RELAY_ALL:
         return "R"

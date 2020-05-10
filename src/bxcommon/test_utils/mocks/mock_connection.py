@@ -16,6 +16,7 @@ from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
 class MockConnection(AbstractConnection, SpecialMemoryProperties):
     CONNECTION_TYPE = ConnectionType.EXTERNAL_GATEWAY
 
+    # pylint: disable=super-init-not-called
     def __init__(self, sock: AbstractSocketConnectionProtocol, node):
         self.socket_connection = sock
         self.file_no = sock.file_no
@@ -63,8 +64,7 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
     def advance_bytes_on_buffer(self, buf, bytes_written):
         buf.advance_buffer(bytes_written)
 
-    def enqueue_msg(self, msg, _prepend_to_queue=False):
-
+    def enqueue_msg(self, msg: AbstractMessage, prepend: bool = False):
         if not self.is_alive():
             return
 

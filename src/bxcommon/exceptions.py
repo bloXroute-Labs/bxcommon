@@ -7,6 +7,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_connection import AbstractConnection
 
 
@@ -29,8 +30,7 @@ class PayloadLenError(ParseError):
 
 
 class UnauthorizedMessageError(ParseError):
-    def __init__(self, msg):
-        super(UnauthorizedMessageError, self).__init__(msg)
+    pass
 
 
 class ChecksumError(ParseError):
@@ -50,5 +50,6 @@ class DecryptionError(Exception):
 
 class ConnectionStateError(Exception):
     def __init__(self, msg: str, conn: "AbstractConnection"):
+        super().__init__(msg)
         self.msg = msg
         self.conn = conn

@@ -1,9 +1,9 @@
 import struct
 from typing import List, Union, NamedTuple
 
+from bxcommon.constants import UL_INT_SIZE_IN_BYTES
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash
-from bxcommon.constants import UL_INT_SIZE_IN_BYTES
 
 
 class BlockShortIds(NamedTuple):
@@ -46,7 +46,9 @@ def serialize_blocks_short_ids_into_bytes(block_short_ids: List[BlockShortIds]) 
     return buffer
 
 
-def deserialize_blocks_short_ids_from_buffer(buffer: Union[bytearray, memoryview], offset: int, block_count: int) -> List[BlockShortIds]:
+def deserialize_blocks_short_ids_from_buffer(
+    buffer: Union[bytearray, memoryview], offset: int, block_count: int
+) -> List[BlockShortIds]:
     """
     Deserialize list of block short ids from buffer
 

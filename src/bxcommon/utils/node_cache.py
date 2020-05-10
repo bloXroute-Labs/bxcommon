@@ -1,16 +1,16 @@
 import json
 import os
+from argparse import Namespace
 from dataclasses import dataclass
 from typing import List, Optional
-from argparse import Namespace
 
-from bxutils import logging
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
-from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.models.node_model import NodeModel
+from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.utils import model_loader, config
-from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 from bxutils import log_messages
+from bxutils import logging
+from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 
 logger = logging.get_logger(__name__)
 
@@ -39,7 +39,7 @@ def update(opts: Namespace, potential_relay_peers: List[OutboundPeerModel]):
 
     cache_network_info = CacheNetworkInfo(
         source_version=opts.source_version,
-        relay_peers=[relay for relay in potential_relay_peers],
+        relay_peers=list(potential_relay_peers),
         blockchain_network=[blockchain for blockchain in opts.blockchain_networks
                             if opts.blockchain_network_num == blockchain.network_num],
         blockchain_networks=opts.blockchain_networks,
@@ -58,8 +58,13 @@ def update(opts: Namespace, potential_relay_peers: List[OutboundPeerModel]):
     try:
         with open(config.get_data_file(opts.cookie_file_path), "w") as cookie_file:
             json.dump(data, cookie_file, indent=4, cls=EnhancedJSONEncoder)
-    except Exception as ex:
-        logger.error(f"Failed when tried to write to cache file: {opts.cookie_file_path} with exception: {ex}")
+    # pylint: disable=broad-except
+    except Exception as e:
+        logger.error(
+            "Failed when tried to write to cache file: {} with exception: {}",
+            opts.cookie_file_path,
+            e
+        )
 
 
 def read(opts: Namespace) -> Optional[CacheNetworkInfo]:
@@ -75,7 +80,11 @@ def read(opts: Namespace) -> Optional[CacheNetworkInfo]:
                 cache_file_info = model_loader.load_model(CacheNetworkInfo, json.load(cookie_file))
         else:
             logger.error(log_messages.READ_CACHE_FILE_ERROR)
-    except Exception as ex:
-        logger.error(f"Failed when tried to read from cache file: {opts.cookie_file_path} with exception: {ex}")
-    finally:
-        return cache_file_info
+    # pylint: disable=broad-except
+    except Exception as e:
+        logger.error(
+            "Failed when tried to read from cache file: {} with exception: {}",
+            opts.cookie_file_path,
+            e
+        )
+    return cache_file_info

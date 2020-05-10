@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass, field
-from typing import Optional, List, Iterable, TypeVar, Generic, Set
+from typing import Optional, List, Iterable, TypeVar, Generic
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_pool import ConnectionPool
@@ -41,14 +41,14 @@ class BroadcastService(Generic[MT, CT], ABC):
     def should_broadcast_to_connection(self, message: MT, connection: CT) -> bool:
         pass
 
-    def get_connections_for_broadcast(self, message: MT, options: BroadcastOptions) -> Set[CT]:
-        connections = set()
+    def get_connections_for_broadcast(self, message: MT, options: BroadcastOptions) -> List[CT]:
+        connections = []
         for connection in self.connection_pool.get_by_connection_types(options.connection_types):
             if (
                 self.should_broadcast_to_connection(message, connection) and
                 connection != options.broadcasting_connection
             ):
-                connections.add(connection)
+                connections.append(connection)
         return connections
 
     def broadcast_to_connections(

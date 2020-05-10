@@ -1,5 +1,6 @@
 import re
 import socket
+import sys
 import time
 from typing import List, Optional
 
@@ -7,8 +8,8 @@ import urllib3
 
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
-from bxutils import logging
 from bxutils import log_messages
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -51,16 +52,20 @@ def get_node_public_ip() -> Optional[str]:
     """
     try:
         http = urllib3.PoolManager()
-        r = http.request("GET", constants.PUBLIC_IP_ADDR_RESOLVER)
-        if r is not None:
-            public_ip_addr = re.findall(constants.PUBLIC_IP_ADDR_REGEX, r.data.decode("utf-8"))
+        result = http.request("GET", constants.PUBLIC_IP_ADDR_RESOLVER)
+        if result is not None:
+            decoded = result.data.decode("utf-8")
+            public_ip_addr = re.findall(constants.PUBLIC_IP_ADDR_REGEX, decoded)
             if public_ip_addr:
                 return public_ip_addr[0]
 
-            raise ConnectionError("Unable to parse IP from response - response was [{}]".format(r.data.decode("utf-8")))
-        else:
-            raise ConnectionError("Unable to parse IP from response - no response was returned")
+            raise ConnectionError(
+                f"Unable to parse IP from response - response was [{decoded}]"
+            )
 
-    except Exception as ex:
-        logger.error(log_messages.UNABLE_TO_DETERMINE_PUBLIC_IP, ex)
-        exit(1)
+        raise ConnectionError("Unable to parse IP from response - no response was returned")
+
+    # pylint: disable=broad-except
+    except Exception as e:
+        logger.error(log_messages.UNABLE_TO_DETERMINE_PUBLIC_IP, e)
+        sys.exit(1)

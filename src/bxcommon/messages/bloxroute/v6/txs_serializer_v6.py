@@ -1,12 +1,11 @@
 import struct
-from typing import List, Union
 from collections import namedtuple
+from typing import List, Union
 
-from bxutils import logging
-
+from bxcommon import constants
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash
-from bxcommon import constants
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 TxContentShortIdsV6 = namedtuple("TxContentAndShortIds", ["tx_hash", "tx_content", "short_ids"])
@@ -17,7 +16,8 @@ def get_serialized_tx_content_short_ids_bytes_len(tx_content_short_ids: TxConten
     Calculates length of tx content and short ids serialized into bytes
 
     :param tx_content_short_ids: transaction content and short ids
-    :return: length of serialized bytes = tx_hash_size + tx_content_size + len(tx_content) + expiration_time_size + short_ids_count + short_ids_count * short_id_size
+    :return: length of serialized bytes = tx_hash_size + tx_content_size + len(tx_content) + expiration_time_size
+             + short_ids_count + short_ids_count * short_id_size
     """
     short_ids_count = 0
     if tx_content_short_ids.short_ids is not None:
@@ -35,7 +35,9 @@ def get_serialized_txs_content_short_ids_bytes_len(txs_content_short_ids: List[T
     return sum([get_serialized_tx_content_short_ids_bytes_len(tx) for tx in txs_content_short_ids])
 
 
-def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxContentShortIdsV6], network_num: int) -> bytearray:
+def serialize_txs_content_short_ids_into_bytes(
+    txs_content_short_ids: List[TxContentShortIdsV6], network_num: int
+) -> bytearray:
     """
     Serializes list of txs content and short ids into bytes
     :param txs_content_short_ids: list of tuple txs content and short ids
@@ -77,7 +79,9 @@ def serialize_txs_content_short_ids_into_bytes(txs_content_short_ids: List[TxCon
     return buffer
 
 
-def deserialize_txs_content_short_ids_from_buffer(buffer: Union[bytearray, memoryview], offset: int, tx_count: int) -> List[TxContentShortIdsV6]:
+def deserialize_txs_content_short_ids_from_buffer(
+    buffer: Union[bytearray, memoryview], offset: int, tx_count: int
+) -> List[TxContentShortIdsV6]:
     """
     Deserialize list of txs content short ids from buffer
 

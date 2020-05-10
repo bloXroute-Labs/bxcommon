@@ -8,7 +8,6 @@ from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxr
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
-from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
@@ -16,14 +15,17 @@ from bxcommon.messages.bloxroute.disconnect_relay_peer_message import Disconnect
 from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
+from bxcommon.messages.bloxroute.notification_message import NotificationMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
-from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
-from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
+from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
+from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import \
+    TxServiceSyncBlocksShortIdsMessage
+from bxcommon.messages.bloxroute.tx_service_sync_complete_message import \
+    TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
-from bxcommon.messages.bloxroute.notification_message import NotificationMessage
 from bxcommon.messages.bloxroute.v7.tx_message_v7 import TxMessageV7
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.buffers.input_buffer import InputBuffer

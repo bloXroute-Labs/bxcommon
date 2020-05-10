@@ -26,19 +26,22 @@ from bxcommon.network.socket_connection_state import SocketConnectionState
 from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
 from bxcommon.services.threaded_request_service import ThreadedRequestService
+from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import memory_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
+from bxcommon.utils.blockchain_utils import bdn_tx_to_bx_tx
+from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
 from bxcommon.utils.stats.node_statistics_service import node_stats_service
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
+from bxutils import log_messages
 from bxutils import logging
 from bxutils.encoding import json_encoder
 from bxutils.exceptions.connection_authentication_error import \
     ConnectionAuthenticationError
-from bxutils import log_messages
 from bxutils.logging import LogRecordType
 from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.extensions import extensions_factory
@@ -60,6 +63,7 @@ class AuthenticatedPeerInfo(NamedTuple):
     account_id: Optional[str]
 
 
+# pylint: disable=too-many-public-methods
 class AbstractNode:
     __meta__ = ABCMeta
     FLUSH_SEND_BUFFERS_INTERVAL = constants.OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME * 2
@@ -147,7 +151,7 @@ class AbstractNode:
         return
 
     @abstractmethod
-    def get_tx_service(self, network_num=None):
+    def get_tx_service(self, network_num: Optional[int] = None) -> TransactionService:
         pass
 
     @abstractmethod
@@ -314,12 +318,6 @@ class AbstractNode:
             outbound_peer.ip, outbound_peer.port, outbound_peer.node_id
         )
 
-    def on_updated_sid_space(self, sid_start, sid_end):
-        """
-        Placeholder interface to receive sid updates from SDN over sockets and pass to relay node
-        """
-        return
-
     def on_bytes_received(self, file_no: int, bytes_received: Union[bytearray, bytes]) -> None:
         """
         :param file_no:
@@ -395,7 +393,7 @@ class AbstractNode:
         shutdown_task = asyncio.ensure_future(self.close_all_connections())
         try:
             await asyncio.wait_for(shutdown_task, constants.NODE_SHUTDOWN_TIMEOUT_S)
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-except
             logger.exception("Node shutdown failed due to an error: {}, force closing!", e)
         self.requester.close()
         self.cleanup_memory_stats_logging()
@@ -504,6 +502,7 @@ class AbstractNode:
             tx_stats.configure_network(blockchain_network.network_num,
                                        blockchain_network.tx_percent_to_log_by_hash,
                                        blockchain_network.tx_percent_to_log_by_sid)
+        bdn_tx_to_bx_tx.init(blockchain_networks)
 
     def dump_memory_usage(self):
         total_mem_usage = memory_utils.get_app_memory_usage()
@@ -551,6 +550,11 @@ class AbstractNode:
     def sync_tx_services(self):
         self.start_sync_time = time.time()
         self.sync_metrics = defaultdict(Counter)
+
+    def log_txs_network_content(
+            self, network_num: int, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
+    ) -> None:
+        pass
 
     @abstractmethod
     def _transaction_sync_timeout(self):

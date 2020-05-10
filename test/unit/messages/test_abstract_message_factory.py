@@ -1,5 +1,7 @@
 import struct
+from typing import Type
 
+from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants
 from bxcommon.constants import MSG_NULL_BYTE
@@ -45,6 +47,9 @@ class AbstractMessageFactoryTest(AbstractTestCase):
             return instance
 
     class TestMessageFactory(AbstractMessageFactory):
+        def get_base_message_type(self) -> Type[AbstractMessage]:
+            pass
+
         def __init__(self):
             super(AbstractMessageFactoryTest.TestMessageFactory, self).__init__()
             self.base_message_type = AbstractMessageFactoryTest.TestMessage

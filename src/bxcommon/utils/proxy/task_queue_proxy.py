@@ -1,9 +1,10 @@
-from typing import Optional, Set, Deque, Callable, TypeVar, Generic
 from collections import deque
+from typing import Optional, Set, Deque, Callable, TypeVar, Generic
+
+from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
 
 import task_pool_executor as tpe
 
-from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
 
 T = TypeVar("T", bound=tpe.MainTaskBase)
 

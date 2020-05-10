@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from ssl import Purpose, SSLContext
 from typing import Dict, Iterator, Optional
 
-from bxutils.ssl.extensions import extensions_factory
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKeyWithSerialization
 from cryptography.x509 import Certificate, CertificateSigningRequest
 
@@ -15,6 +14,7 @@ from bxutils.common import url_helper
 from bxutils.ssl import ssl_certificate_factory
 from bxutils.ssl.data.ssl_file_info import SSLFileInfo
 from bxutils.ssl.data.ssl_storage_info import SSLStorageInfo
+from bxutils.ssl.extensions import extensions_factory
 from bxutils.ssl.ssl_certificate_type import SSLCertificateType
 
 logger = logging.get_logger(__name__)

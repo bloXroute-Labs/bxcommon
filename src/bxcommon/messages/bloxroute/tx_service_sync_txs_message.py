@@ -1,13 +1,12 @@
 import struct
 from typing import Optional, List, Union
 
-from bxutils.logging.log_level import LogLevel
-
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES, CONTROL_FLAGS_LEN, UL_SHORT_SIZE_IN_BYTES
-from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute import txs_serializer
+from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
+from bxutils.logging.log_level import LogLevel
 
 
 class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
@@ -78,5 +77,6 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
         tx_count = len(self._txs_content_short_ids)
         struct.pack_into("<LL", self.buf, off, self._network_num, tx_count)
         off += UL_INT_SIZE_IN_BYTES + UL_SHORT_SIZE_IN_BYTES
-        self.buf.extend(txs_serializer.serialize_txs_content_short_ids_into_bytes(self._txs_content_short_ids, self.network_num()))
-
+        self.buf.extend(
+            txs_serializer.serialize_txs_content_short_ids_into_bytes(self._txs_content_short_ids, self.network_num())
+        )

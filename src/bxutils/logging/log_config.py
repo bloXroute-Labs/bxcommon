@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import time
+from asyncio import AbstractEventLoop
 from logging import StreamHandler, FileHandler
 from typing import Optional, List, Dict, Union, Iterable
 
@@ -37,7 +38,10 @@ def _get_handler_file(folder_path: str):
     return FileHandler(filename)
 
 
-def _get_handler_fluentd(fluentd_host: Optional[str], fluentd_tag_suffix: Optional[str], max_queue_size: int):
+def _get_handler_fluentd(fluentd_host: Optional[str],
+                         fluentd_tag_suffix: Optional[str],
+                         max_queue_size: int,
+                         loop: Optional[AbstractEventLoop] = None):
     assert fluentd_host is not None, "fluentd host name is missing"
     assert FluentHandler is not None, "fluentd handler is not installed"
 
@@ -56,7 +60,8 @@ def _get_handler_fluentd(fluentd_host: Optional[str], fluentd_tag_suffix: Option
         buffer_overflow_handler=overflow_handler,
         nanosecond_precision=True,
         max_queue_size=max_queue_size,
-        log_unhandled_exceptions=True
+        log_unhandled_exceptions=True,
+        loop=loop
     )
 
 
@@ -90,7 +95,8 @@ def create_logger(
         fluentd_host: Optional[str] = None,
         fluentd_tag_suffix: Optional[str] = None,
         max_queue_size=constants.FLUENTD_LOGGER_MAX_QUEUE_SIZE,
-        handler_log_level: Optional[LogLevel] = None
+        handler_log_level: Optional[LogLevel] = None,
+        loop: Optional[AbstractEventLoop] = None
 ) -> None:
     """
     Installs a log configuration under the provided name.
@@ -105,6 +111,7 @@ def create_logger(
     :param fluentd_tag_suffix: optional fluentd tag suffix
     :param max_queue_size: the maximum size of the fluent logger queue
     :param handler_log_level: a specific log level for the handler itself (optional)
+    :param loop: event loop optional, used in the fluentd handler
     """
     formatter = _get_formatter(log_format, root_log_level, style, handler_type)
 
@@ -114,7 +121,7 @@ def create_logger(
         assert folder_path is not None
         handler = _get_handler_file(folder_path)
     elif handler_type == HandlerType.Fluent:
-        handler = _get_handler_fluentd(fluentd_host, fluentd_tag_suffix, max_queue_size)
+        handler = _get_handler_fluentd(fluentd_host, fluentd_tag_suffix, max_queue_size, loop)
     else:
         handler = StreamHandler(sys.stdout)
 
@@ -184,7 +191,8 @@ def setup_logging(
         fluentd_tag_suffix: Optional[str] = None,
         third_party_loggers: Optional[List[LoggerConfig]] = None,
         fluent_log_level: Optional[LogLevel] = None,
-        stdout_log_level: Optional[LogLevel] = None
+        stdout_log_level: Optional[LogLevel] = None,
+        loop: Optional[AbstractEventLoop] = None
         ) -> None:
     loggers_config = [LoggerConfig(None, root_log_style, root_log_level)]
     if third_party_loggers is not None:
@@ -216,7 +224,8 @@ def setup_logging(
                 fluentd_host=fluentd_host,
                 max_queue_size=fluentd_queue_size,
                 fluentd_tag_suffix=fluentd_tag_suffix,
-                handler_log_level=fluent_log_level
+                handler_log_level=fluent_log_level,
+                loop=loop
             )
         elif enable_fluent_logger:
             print("Cannot Init fluentd logger")

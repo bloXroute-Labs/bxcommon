@@ -1,8 +1,7 @@
 from bxcommon.network.port_range import PortRange
-
+from bxutils.logging.fluentd_overflow_handler_type import OverflowHandlerType
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
-from bxutils.logging.fluentd_overflow_handler_type import OverflowHandlerType
 
 DEFAULT_LOG_LEVEL = LogLevel.INFO
 DEFAULT_STATS_LOG_LEVEL = LogLevel.CRITICAL
@@ -38,7 +37,7 @@ DEBUG_LOG_FORMAT_PATTERN = "%(asctime)s - %(process)d - %(name)s - %(levelname)s
 INFO_LOG_FORMAT_PATTERN = "%(asctime)s - %(levelname)s - %(message)s"
 PLAIN_LOG_DATE_FORMAT_PATTERN = "%Y-%m-%dT%H:%M:%S.%f %z"
 DEFAULT_LOG_FORMAT = LogFormat.PLAIN
-FLUENTD_HOST = "fluentd"
+FLUENTD_HOST = None
 FLUENTD_PORT = 24224
 FLUENTD_OVERFLOW_HANDLER = OverflowHandlerType.Ignore
 FLUENTD_LOGGER_MAX_QUEUE_SIZE = 1024 * 1024

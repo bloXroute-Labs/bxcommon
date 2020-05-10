@@ -63,6 +63,3 @@ class MockSocketConnection(SocketConnectionProtocol):
 
     def get_write_buffer_size(self) -> int:
         return 0
-
-
-

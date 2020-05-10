@@ -1,14 +1,13 @@
 # pyre-ignore-all-errors
 # This file does type manipulation that type checkers will not understand.
 
+import dataclasses
 import json
 from enum import Flag
 from typing import Dict, Type, TypeVar, Any, List, Optional, Union, Set
 
-import dataclasses
-
-from bxutils import logging
 from bxutils import log_messages
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 T = TypeVar("T")
@@ -119,6 +118,7 @@ def _load_optional(optional_type: Type[T], optional_value: Any) -> Optional:
 
 
 def _load_union(union_type: Type[T], union_value: Any) -> Any:
+    # pylint: disable=unidiomatic-typecheck
     if len(union_type.__args__) == 2 and type(None) in union_type.__args__:
         # special case of an optional
         return _load_attribute(union_type.__args__[0], union_value)
@@ -127,10 +127,13 @@ def _load_union(union_type: Type[T], union_value: Any) -> Any:
             # noinspection PyBroadException
             try:
                 return _load_attribute(union_param, union_value, cast_basic_values=False)
+            # pylint: disable=broad-except
             except Exception as _e:
                 continue
-        raise NotImplementedError("Could not find a union type that matched value. Types: {}, Value: {}"
-                                  .format(union_type.__args__, union_value))
+        raise NotImplementedError(
+            f"Could not find a union type that matched value. "
+            f"Types: {union_type.__args__}, Value: {union_value}"
+        )
 
 
 # noinspection PyRedeclaration

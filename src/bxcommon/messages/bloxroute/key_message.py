@@ -30,7 +30,7 @@ class KeyMessage(AbstractBroadcastMessage):
 
     def log_level(self):
         return LogLevel.DEBUG
-    
+
     def block_hash(self) -> Sha256Hash:
         return self.message_hash()
 

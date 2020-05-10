@@ -1,23 +1,25 @@
-import os
 import functools
+import os
+import ssl
 import typing
-from typing import Callable, Iterable, Union, IO
-import urllib.request, urllib.response
+import urllib.request
+import urllib.response
+from asyncio import Transport
 from datetime import datetime, timedelta
 from ssl import SSLSocket
-import ssl
-from asyncio import Transport
-from uvloop.loop import TCPTransport # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
+from typing import Callable, Iterable, Union, IO
 
+from cryptography import x509
+from cryptography.hazmat import backends
+from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKeyWithSerialization, \
     EllipticCurvePrivateKey
-from cryptography.hazmat import backends
 from cryptography.hazmat.primitives.hashes import SHA256
-from cryptography.x509 import Certificate, CertificateSigningRequest, CertificateSigningRequestBuilder, \
+from cryptography.x509 import Certificate, CertificateSigningRequest, \
+    CertificateSigningRequestBuilder, \
     SubjectAlternativeName, ExtensionNotFound, KeyUsage, CertificateBuilder, AuthorityKeyIdentifier, \
     UnrecognizedExtension, BasicConstraints
-from cryptography import x509
-from cryptography.hazmat.primitives.asymmetric import ec
+from uvloop.loop import TCPTransport  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
 
 from bxutils import constants
 from bxutils.ssl import ssl_serializer

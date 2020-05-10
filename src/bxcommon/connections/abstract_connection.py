@@ -11,9 +11,9 @@ from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import PayloadLenError, UnauthorizedMessageError, ConnectionStateError
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
+from bxcommon.messages.validation.control_flag_validation_error import ControlFlagValidationError
 from bxcommon.messages.validation.default_message_validator import DefaultMessageValidator
 from bxcommon.messages.validation.message_validation_error import MessageValidationError
-from bxcommon.messages.validation.control_flag_validation_error import ControlFlagValidationError
 from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
@@ -25,8 +25,8 @@ from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.stats import hooks
-from bxutils import logging
 from bxutils import log_messages
+from bxutils import logging
 from bxutils.constants import HAS_PREFIX
 from bxutils.exceptions.connection_authentication_error import ConnectionAuthenticationError
 from bxutils.logging.log_level import LogLevel
@@ -34,6 +34,7 @@ from bxutils.logging.log_record_type import LogRecordType
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
+    # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_node import AbstractNode
 
 logger = logging.get_logger(__name__)
@@ -42,6 +43,7 @@ msg_handling_logger = logging.get_logger(LogRecordType.MessageHandlingTroublesho
 Node = TypeVar("Node", bound="AbstractNode")
 
 
+# pylint: disable=too-many-public-methods
 class AbstractConnection(Generic[Node]):
     __metaclass__ = ABCMeta
 
@@ -246,13 +248,12 @@ class AbstractConnection(Generic[Node]):
         :return:
         """
 
-        pass
-
     def process_message(self):
         """
         Processes the next bytes on the socket's inputbuffer.
         Returns 0 in order to avoid being rescheduled if this was an alarm.
         """
+        # pylint: disable=too-many-return-statements, too-many-branches, too-many-statements
 
         start_time = time.time()
         messages_processed = defaultdict(int)
@@ -343,7 +344,6 @@ class AbstractConnection(Generic[Node]):
                     return
 
             except MessageValidationError as e:
-
                 if self.node.NODE_TYPE not in NodeType.GATEWAY_TYPE:
                     if isinstance(e, ControlFlagValidationError):
                         if e.is_cancelled_cut_through:
@@ -381,7 +381,9 @@ class AbstractConnection(Generic[Node]):
                 self.mark_for_close()
                 return
 
-            # TODO: Throw custom exception for any errors that come from input that has not been validated and only catch that subclass of exceptions
+            # TODO: Throw custom exception for any errors that come from input that has not been
+            # validated and only catch that subclass of exceptions
+            # pylint: disable=broad-except
             except Exception as e:
 
                 # Attempt to recover connection by removing bad full message
@@ -463,7 +465,7 @@ class AbstractConnection(Generic[Node]):
                 self.log_warning(log_messages.DUPLICATE_CONNECTION, self.peer_id, existing_connection)
 
         self.enqueue_msg(self.ack_message)
-        if (ConnectionState.INITIALIZED | ConnectionState.HELLO_ACKD) in self.state:
+        if ConnectionState.INITIALIZED | ConnectionState.HELLO_ACKD in self.state:
             self.on_connection_established()
 
     def msg_ack(self, _msg):
@@ -471,10 +473,10 @@ class AbstractConnection(Generic[Node]):
         Handle an Ack Message
         """
         self.state |= ConnectionState.HELLO_ACKD
-        if (ConnectionState.INITIALIZED | ConnectionState.HELLO_RECVD) in self.state:
+        if ConnectionState.INITIALIZED | ConnectionState.HELLO_RECVD in self.state:
             self.on_connection_established()
 
-    def msg_ping(self, msg):
+    def msg_ping(self, _msg):
         self.enqueue_msg(self.pong_message)
 
     def msg_pong(self, _msg):
@@ -588,7 +590,8 @@ class AbstractConnection(Generic[Node]):
         if self._is_authenticated and account_id != self.account_id:
             raise ConnectionAuthenticationError(
                 f"Invalid account id {account_id} is different than connection account id: {self.account_id}")
-        elif not self._is_authenticated:
+
+        if not self._is_authenticated:
             self.account_id = account_id
 
     def get_backlog_size(self) -> int:

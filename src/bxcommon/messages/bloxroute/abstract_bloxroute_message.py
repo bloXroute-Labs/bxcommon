@@ -1,5 +1,3 @@
-import struct
-
 from bxcommon import constants
 from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
 from bxcommon.messages.bloxroute.bloxroute_message_control_flags import BloxrouteMessageControlFlags
@@ -41,6 +39,6 @@ class AbstractBloxrouteMessage(AbstractInternalMessage):
         """
         Removes control flag value
         :param flag: flag value to remove
-w        """
+        """
         if self.buf[-1] & flag:
             self.buf[-1] ^= flag

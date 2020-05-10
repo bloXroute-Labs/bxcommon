@@ -1,9 +1,8 @@
 from typing import List, TypeVar, Generic, Set
 
-from bxutils import logging
-
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.expiration_queue import ExpirationQueue
+from bxutils import logging
 
 T = TypeVar("T")
 logger = logging.get_logger(__name__)
@@ -19,7 +18,7 @@ class ExpiringSet(Generic[T]):
     _expiration_queue: ExpirationQueue[T]
     _expiration_time: int
     _log_removal: bool
-    _name:  str
+    _name: str
 
     def __init__(
         self, alarm_queue: AlarmQueue, expiration_time_s: int, name: str, log_removal: bool = False
@@ -55,9 +54,8 @@ class ExpiringSet(Generic[T]):
         # noinspection PyTypeChecker
         entries = reversed(self._expiration_queue.queue.keys())
 
-
         try:
-            for i in range(count):
+            for _ in range(count):
                 items.append(next(entries))
         except StopIteration as _e:
             logger.debug("Attempted to fetch {} entries, but only {} existed.", count, len(items))

@@ -1,9 +1,10 @@
 from typing import Optional, Union
 
-from bxcommon.utils.stats.memory_statistics_service import memory_statistics
-from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.utils.stats.measurement_type import MeasurementType
+from bxcommon.utils.stats.memory_statistics_service import memory_statistics
+from bxcommon.utils.stats.throughput_service import throughput_statistics
+
 
 def add_throughput_event(
     direction: NetworkDirection,

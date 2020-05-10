@@ -1,4 +1,5 @@
 import random
+import struct
 import time
 from typing import TypeVar, Type
 from datetime import datetime
@@ -6,7 +7,7 @@ from datetime import datetime
 from bxcommon import constants
 from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, \
     NODE_ID_SIZE_IN_BYTES, \
-    BX_HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN, QUOTA_FLAG_LEN
+    BX_HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN, QUOTA_FLAG_LEN, BROADCAST_TYPE_LEN
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.bloxroute.abstract_broadcast_message import \
     AbstractBroadcastMessage
@@ -35,6 +36,8 @@ from bxcommon.messages.bloxroute.tx_contents_message import TxContentsMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.version_message import VersionMessage
+from bxcommon.models.broadcast_message_type import BroadcastMessageType
+from bxcommon.models.entity_type_model import EntityType
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.test_utils import helpers
@@ -42,7 +45,7 @@ from bxcommon.test_utils.helpers import create_input_buffer_with_bytes
 from bxcommon.test_utils.message_factory_test_case import MessageFactoryTestCase
 from bxcommon.utils import crypto
 from bxcommon.utils.crypto import SHA256_HASH_LEN, KEY_SIZE
-from bxcommon.utils.object_hash import Sha256Hash, NULL_SHA256_HASH
+from bxcommon.utils.object_hash import Sha256Hash, NULL_SHA256_HASH, ConcatHash
 
 T = TypeVar("T")
 
@@ -50,7 +53,14 @@ T = TypeVar("T")
 class BloxrouteMessageFactory(MessageFactoryTestCase):
     HASH = Sha256Hash(crypto.double_sha256(b"123"))
     NETWORK_NUM = 12345
+    NETWORK_NUM_BYTEARRAY = bytearray(constants.NETWORK_NUM_LEN)
+    struct.pack_into("<L", NETWORK_NUM_BYTEARRAY, 0, NETWORK_NUM)
     NODE_ID = "c2b04fd2-7c81-432b-99a5-8b68f43d97e8"
+    BROADCAST_TYPE = BroadcastMessageType.BLOCK
+    MESSAGE_ID = ConcatHash(
+        crypto.double_sha256(b"123") + NETWORK_NUM_BYTEARRAY +
+        bytearray(BROADCAST_TYPE.value.encode(constants.DEFAULT_TEXT_ENCODING)), 0
+    )
 
     def get_message_factory(self):
         return bloxroute_message_factory
@@ -67,11 +77,14 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         return result
 
     def get_hashed_message_preview_successfully(self, message, expected_hash):
-        is_full_message, msg_hash, network_num, node_id, _payload_length = \
+        is_full_message, block_hash, broadcast_type, msg_id, network_num, node_id, _payload_length = \
             bloxroute_message_factory.get_broadcast_message_preview(create_input_buffer_with_bytes(
-                message.rawbytes()[:message.HEADER_LENGTH + SHA256_HASH_LEN + NETWORK_NUM_LEN + NODE_ID_SIZE_IN_BYTES]))
+                message.rawbytes()[:message.HEADER_LENGTH + SHA256_HASH_LEN + NETWORK_NUM_LEN + NODE_ID_SIZE_IN_BYTES +
+                                    BROADCAST_TYPE_LEN]))
         self.assertTrue(is_full_message)
-        self.assertEqual(expected_hash, msg_hash)
+        self.assertEqual(expected_hash, block_hash)
+        self.assertEqual(self.BROADCAST_TYPE, broadcast_type)
+        self.assertEqual(self.MESSAGE_ID, msg_id)
         self.assertEqual(self.NODE_ID, node_id)
         self.assertEqual(self.NETWORK_NUM, network_num)
 
@@ -85,10 +98,12 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.get_message_preview_successfully(PongMessage(), PongMessage.MESSAGE_TYPE, 9)
 
         blob = bytearray(1 for _ in range(4))
-        self.get_message_preview_successfully(BroadcastMessage(self.HASH, 1, self.NODE_ID, True, blob),
+        self.get_message_preview_successfully(BroadcastMessage(self.HASH, 1, self.NODE_ID, self.BROADCAST_TYPE, True,
+                                                               blob),
                                               BroadcastMessage.MESSAGE_TYPE,
-                                              SHA256_HASH_LEN + NETWORK_NUM_LEN + BLOCK_ENCRYPTED_FLAG_LEN +
-                                              constants.NODE_ID_SIZE_IN_BYTES + len(blob) + constants.CONTROL_FLAGS_LEN)
+                                              SHA256_HASH_LEN + NETWORK_NUM_LEN + constants.BROADCAST_TYPE_LEN +
+                                              BLOCK_ENCRYPTED_FLAG_LEN + constants.NODE_ID_SIZE_IN_BYTES + len(blob) +
+                                              constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(TxMessage(self.HASH, 1, self.NODE_ID, 12, blob),
                                               TxMessage.MESSAGE_TYPE,
                                               SHA256_HASH_LEN + NETWORK_NUM_LEN + UL_INT_SIZE_IN_BYTES +
@@ -156,20 +171,22 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
 
     def test_message_hash_preview(self):
         blob = bytearray(1 for _ in range(4))
-        self.get_hashed_message_preview_successfully(BroadcastMessage(self.HASH, self.NETWORK_NUM, self.NODE_ID, True,
-                                                                      blob),
+        self.get_hashed_message_preview_successfully(BroadcastMessage(self.HASH, self.NETWORK_NUM, self.NODE_ID,
+                                                                      self.BROADCAST_TYPE, True, blob),
                                                      self.HASH)
 
     def test_message_hash_preview_incomplete(self):
         blob = bytearray(1 for _ in range(4))
-        broadcast_message = BroadcastMessage(self.HASH, 123, self.NODE_ID, True, blob)
+        broadcast_message = BroadcastMessage(self.HASH, 123, self.NODE_ID, self.BROADCAST_TYPE, True, blob)
 
-        is_full_message, msg_hash, network_num, node_id, payload_length = \
+        is_full_message, block_hash, broadcast_type, msg_id, network_num, node_id, payload_length = \
             bloxroute_message_factory.get_broadcast_message_preview(
                 create_input_buffer_with_bytes(broadcast_message.rawbytes()
                                                [:BX_HDR_COMMON_OFF + SHA256_HASH_LEN + NETWORK_NUM_LEN - 1]))
         self.assertFalse(is_full_message)
-        self.assertIsNone(msg_hash)
+        self.assertIsNone(block_hash)
+        self.assertIsNone(broadcast_type)
+        self.assertIsNone(msg_id)
         self.assertIsNone(network_num)
         self.assertIsNone(node_id)
         self.assertIsNone(payload_length)
@@ -381,8 +398,9 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(constants.NULL_TX_TIMESTAMP, rebuilt_tx_message.timestamp())
 
     def test_notification_message(self):
-        notification_code = NotificationCode.QUOTA_DEPLETED
-        raw_message = bytes(1 for _ in range(5)).decode()
+        notification_code = NotificationCode.QUOTA_FILL_STATUS
+        args_list = [str(EntityType.TRANSACTION.value), str(QuotaType.FREE_DAILY_QUOTA.value), "10", "100"]
+        raw_message = ",".join(args_list)
 
         notification_message = self.create_message_successfully(
             NotificationMessage(notification_code, raw_message),

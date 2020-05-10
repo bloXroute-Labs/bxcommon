@@ -41,7 +41,7 @@ class TransactionServiceTest(AbstractTransactionServiceTestCase):
         self._test_memory_stats()
 
     def test_iter_timestamped_transaction_hashes_from_oldest(self):
-        self._test_iter_timestamped_transaction_hashes_from_oldest()
+        self._test_iter_transaction_hashes_from_oldest()
 
     def test_removed_transactions_history_by_hash(self):
         self._test_removed_transactions_history_by_hash()

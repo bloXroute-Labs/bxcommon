@@ -40,6 +40,7 @@ class TxMessage(AbstractBroadcastMessage):
 
         # override payload length for variable length message
         if tx_val is not None:
+            # pylint: disable=invalid-name
             self.PAYLOAD_LENGTH = (
                 AbstractBroadcastMessage.PAYLOAD_LENGTH
                 + constants.SID_LEN

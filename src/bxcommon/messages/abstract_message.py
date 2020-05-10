@@ -12,7 +12,6 @@ class AbstractMessage(ABC):
         """
         Unpack buffer into command, metadata (e.g. magic number, checksum), and payload.
         """
-        pass
 
     @classmethod
     @abstractmethod
@@ -20,7 +19,6 @@ class AbstractMessage(ABC):
         """
         Validates unpacked content.
         """
-        pass
 
     @classmethod
     @abstractmethod
@@ -28,11 +26,12 @@ class AbstractMessage(ABC):
         """
         Initialize message class with arguments. Returns cls_type instance.
         """
-        pass
 
     def log_level(self):
         return LogLevel.TRACE
 
     @abstractmethod
     def rawbytes(self) -> memoryview:
-        pass
+        """
+        Returns raw message bytes of message.
+        """

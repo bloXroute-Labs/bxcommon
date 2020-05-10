@@ -1,10 +1,9 @@
 from mock import MagicMock
 
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxutils.logging import log_config
 from bxutils.logging.log_level import LogLevel
-
-from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 
 
 class QuietTestCase(AbstractTestCase):

@@ -8,7 +8,6 @@ from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxr
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
-from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
@@ -18,12 +17,15 @@ from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
-from bxcommon.messages.bloxroute.v6.tx_message_v6 import TxMessageV6
-from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
-from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
+from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
+from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import \
+    TxServiceSyncBlocksShortIdsMessage
+from bxcommon.messages.bloxroute.tx_service_sync_complete_message import \
+    TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
-from bxcommon.messages.bloxroute.v6.tx_sync_message_converter_v6 import TxServiceSyncTxsMessageV6
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
+from bxcommon.messages.bloxroute.v6.tx_message_v6 import TxMessageV6
+from bxcommon.messages.bloxroute.v6.tx_sync_message_converter_v6 import TxServiceSyncTxsMessageV6
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.object_hash import Sha256Hash
@@ -37,6 +39,7 @@ class BroadcastMessagePreview(NamedTuple):
     payload_length: Optional[int]
 
 
+# pylint: disable=duplicate-code
 class _BloxrouteMessageFactoryV6(AbstractMessageFactory):
     _MESSAGE_TYPE_MAPPING = {
         BloxrouteMessageType.HELLO: HelloMessage,

@@ -1,4 +1,6 @@
 import time
+from datetime import datetime, timedelta
+from datetime import time as dttime
 from typing import TypeVar, Optional, Callable, Any
 
 T = TypeVar("T")
@@ -25,6 +27,13 @@ def identity(val: T) -> T:
 
 def time_to_date_str(epoch_time: int) -> str:
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(epoch_time))
+
+
+def seconds_until_eod() -> float:
+    dt = datetime.now()
+    tomorrow = dt + timedelta(days=1)
+    timedelta_until_eod = datetime.combine(tomorrow, dttime.min) - dt
+    return timedelta_until_eod.total_seconds()
 
 
 def memoize(fn: Callable) -> Callable:

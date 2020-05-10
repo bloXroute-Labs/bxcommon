@@ -1,9 +1,9 @@
 import json
 import traceback
-from typing import Collection, Any, Iterable
 from datetime import date, time, datetime
 from enum import Enum
 from inspect import istraceback
+from typing import Collection, Any, Iterable
 
 SPECIAL_ITERABLE_TYPES = (type(dict().values()), type(dict().keys()),)
 
@@ -13,11 +13,13 @@ please use bxutils.encoding.json_encoder instead
 """
 
 
+# pylint: disable=invalid-name
 def is_iterable_no_collection(o):
     return isinstance(o, SPECIAL_ITERABLE_TYPES) or \
            (isinstance(o, Iterable) and not isinstance(o, Collection))
 
 
+# pylint: disable=invalid-name,too-many-return-statements,method-hidden
 class ClassJsonEncoder(json.JSONEncoder):
 
     def default(self, o: Any) -> Any:
@@ -51,7 +53,7 @@ class ClassJsonEncoder(json.JSONEncoder):
         obj = self.default(obj)
         if isinstance(obj, dict):
             return {self.default(self._encode(k)): self._encode(v) for k, v in obj.items()}
-        elif isinstance(obj, list) or isinstance(obj, set):
+        elif isinstance(obj, (list, set)):
             return [self._encode(l) for l in obj]
         else:
             return obj

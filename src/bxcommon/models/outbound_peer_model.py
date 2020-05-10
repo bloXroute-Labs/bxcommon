@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 
 from bxcommon import constants
 from bxcommon.models.node_type import NodeType

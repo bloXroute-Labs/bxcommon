@@ -3,7 +3,7 @@ import gc
 import sys
 from argparse import Namespace
 from datetime import datetime
-from typing import Iterable, Optional, Type, Union, Callable
+from typing import Iterable, Optional, Type, Union, Callable, List
 
 import uvloop
 
@@ -15,8 +15,8 @@ from bxcommon.network.node_event_loop import NodeEventLoop
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import cli, model_loader, config, node_cache
 from bxcommon.utils.cli import CommonOpts
-from bxutils import logging
 from bxutils import log_messages
+from bxutils import logging
 from bxutils.logging import log_config, LoggerConfig, gc_logger
 from bxutils.logging.log_level import LogLevel
 from bxutils.services.node_ssl_service import NodeSSLService
@@ -57,7 +57,10 @@ def run_node(
     ssl_service_factory: Callable[
         [NodeType, str, str, str], NodeSSLService
     ] = default_ssl_service_factory,
+    third_party_loggers: Optional[List[LoggerConfig]] = None
 ):
+    if third_party_loggers is None:
+        third_party_loggers = THIRD_PARTY_LOGGERS
     opts.logger_names = logger_names
     log_config.setup_logging(
         opts.log_format,
@@ -69,7 +72,7 @@ def run_node(
         enable_fluent_logger=opts.log_fluentd_enable,
         fluentd_host=opts.log_fluentd_host,
         fluentd_queue_size=opts.log_fluentd_queue_size,
-        third_party_loggers=THIRD_PARTY_LOGGERS,
+        third_party_loggers=third_party_loggers,
         fluent_log_level=opts.log_level_fluentd,
         stdout_log_level=opts.log_level_stdout
     )
@@ -94,11 +97,11 @@ def run_node(
                 task_pool_proxy.get_pool_size(),
             )
         _run_node(
-            opts, node_class, node_type, logger_names, ssl_service_factory=ssl_service_factory
+            opts, node_class, node_type, ssl_service_factory=ssl_service_factory
         )
     except TerminationError:
         logger.fatal("Node terminated")
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         logger.fatal("Unhandled exception {} raised, terminating!", e)
     for handler in logger.handlers:
         if hasattr(handler, "close"):
@@ -109,7 +112,6 @@ def _run_node(
     opts,
     node_class,
     node_type,
-    logger_names: Iterable[Optional[str]],
     ssl_service_factory: Callable[
         [NodeType, str, str, str], NodeSSLService
     ] = default_ssl_service_factory,
@@ -141,9 +143,9 @@ def _run_node(
 
         try:
             node_model = sdn_http_service.register_node(temp_node_model)
-        except ValueError as ve:
-            logger.fatal(ve)
-            exit(1)
+        except ValueError as e:
+            logger.fatal(e)
+            sys.exit(1)
         except EnvironmentError as e:
             logger.info(
                 "Unable to contact SDN to register node using {}, attempting to get information from cache",
@@ -154,7 +156,7 @@ def _run_node(
                 logger.fatal(
                     "Unable to reach the SDN and no local cache information was found. Unable to start the gateway"
                 )
-                exit(1)
+                sys.exit(1)
             node_model = cache_info.node_model
 
         if node_model.should_update_source_version:

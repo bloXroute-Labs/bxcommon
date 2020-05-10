@@ -1,6 +1,6 @@
 from bxcommon import constants
-from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 
 
 class AckMessage(AbstractBloxrouteMessage):

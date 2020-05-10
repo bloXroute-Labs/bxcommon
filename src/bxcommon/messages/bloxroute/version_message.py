@@ -8,11 +8,19 @@ class VersionMessage(AbstractBloxrouteMessage):
     Bloxroute message that contains version info.
     """
 
-    BASE_LENGTH = constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF + constants.VERSION_NUM_LEN + constants.NETWORK_NUM_LEN
-    VERSION_MESSAGE_BLOCK = PayloadBlock(AbstractBloxrouteMessage.HEADER_LENGTH, "VersionMessage", 0,
-                                         PayloadElement(structure="<L", name="protocol_version"),
-                                         PayloadElement(structure="<L", name="network_num")
-                                         )
+    BASE_LENGTH = (
+        constants.STARTING_SEQUENCE_BYTES_LEN
+        + constants.BX_HDR_COMMON_OFF
+        + constants.VERSION_NUM_LEN
+        + constants.NETWORK_NUM_LEN
+    )
+    VERSION_MESSAGE_BLOCK = PayloadBlock(
+        AbstractBloxrouteMessage.HEADER_LENGTH,
+        "VersionMessage",
+        0,
+        PayloadElement(structure="<L", name="protocol_version"),
+        PayloadElement(structure="<L", name="network_num")
+    )
     VERSION_MESSAGE_LENGTH = VERSION_MESSAGE_BLOCK.size + constants.CONTROL_FLAGS_LEN
 
     def __init__(self, msg_type, payload_len, protocol_version, network_num, buf):

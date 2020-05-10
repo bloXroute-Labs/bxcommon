@@ -24,6 +24,7 @@ class TxMessageV7(AbstractBroadcastMessage):
 
         # override payload length for variable length message
         if tx_val is not None:
+            # pylint: disable=invalid-name
             self.PAYLOAD_LENGTH = AbstractBroadcastMessage.PAYLOAD_LENGTH + constants.SID_LEN + \
                                   constants.QUOTA_FLAG_LEN + len(tx_val)
         super().__init__(message_hash, network_num, source_id, buf)

@@ -1,6 +1,6 @@
 from bxcommon.utils.stats.statistics_event_service import StatisticsEventService
-from bxutils.logging.log_record_type import LogRecordType
 from bxutils import logging
+from bxutils.logging.log_record_type import LogRecordType
 
 
 class _ConnectionStatisticsService(StatisticsEventService):

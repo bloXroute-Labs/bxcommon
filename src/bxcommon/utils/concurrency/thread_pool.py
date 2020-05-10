@@ -1,12 +1,11 @@
 import functools
 import threading
-from typing import List, Callable, Any, NamedTuple, Deque, Optional
-from threading import Thread, Condition, RLock
-from concurrent.futures import Future
 from collections import deque
+from concurrent.futures import Future
+from threading import Thread, Condition, RLock
+from typing import List, Callable, Any, NamedTuple, Deque, Optional
 
 from bxutils import logging
-
 
 logger = logging.get_logger(__name__)
 
@@ -87,6 +86,7 @@ class ThreadPool:
                     if self._work_items:
                         work_item = self._work_items.popleft()
                 handle_work_item(work_item)
+        # pylint: disable=broad-except
         except Exception as e:
             logger.fatal(
                 "{} - unhandled error: {}, raised during thread execution!",

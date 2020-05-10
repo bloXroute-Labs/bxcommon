@@ -4,13 +4,13 @@ from bxcommon.exceptions import DecryptionError
 from bxcommon.utils import crypto, convert
 from bxcommon.utils.crypto import symmetric_decrypt, symmetric_encrypt
 from bxcommon.utils.expiration_queue import ExpirationQueue
-from bxutils import logging
 from bxutils import log_messages
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
 
-class EncryptionCacheItem(object):
+class EncryptionCacheItem:
     def __init__(self, key, ciphertext, payload):
         self.key = key
         self.ciphertext = ciphertext
@@ -22,12 +22,12 @@ class EncryptionCacheItem(object):
         try:
             self.payload = symmetric_decrypt(self.key, self.ciphertext)
             return bytearray(self.payload)
-        except (ValueError, CryptoError) as e:
+        except (ValueError, CryptoError) as _e:
             # TODO: need to handle decryption errors, e.g. fake key or ciphertext
             raise DecryptionError("Decryption failed. Key does not match ciphertext.")
 
 
-class EncryptedCache(object):
+class EncryptedCache:
     """
     Storage for in-progress received or sent encrypted blocks.
     """
@@ -125,4 +125,3 @@ class EncryptedCache(object):
             logger.warning(log_messages.DECRYPTION_FAILED,
                            convert.bytes_to_hex(hash_key), convert.bytes_to_hex(failed_ciphertext[-4:]))
             return None
-

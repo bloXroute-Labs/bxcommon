@@ -20,3 +20,8 @@ class AbstractBlockMessage(AbstractMessage):
 
     def extra_stats_data(self):
         return ""
+
+    @abstractmethod
+    def txns(self):
+        # each blockchain network returns its own list format
+        pass

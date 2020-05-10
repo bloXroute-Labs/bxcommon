@@ -5,7 +5,7 @@ from bxutils import logging
 logger = logging.get_logger(__name__)
 
 
-class PayloadElement(object):
+class PayloadElement:
     """payload element
 
     name (str): element block name
@@ -25,7 +25,7 @@ class PayloadElement(object):
         self.offset = None
 
 
-class PayloadBlock(object):
+class PayloadBlock:
     """PayloadBlock element use to create a message block template from PayloadElements and PayloadBlocks
 
         Args:
@@ -83,7 +83,7 @@ class PayloadBlock(object):
                 raise Exception
         return buf
 
-    def read(self, buf, payload_len=None):
+    def read(self, buf):
         """unpacks buffer contents into dictionary"""
         contents = dict()
         for element in self.elements:
@@ -92,14 +92,12 @@ class PayloadBlock(object):
                              element.name, element.block_name, element.block_version, len(buf))
                 contents[element.name] = None
                 continue
-            else:
-                s, = struct.unpack_from(element.structure, buf, element.offset)
-                if element.decode:
-                    s = element.decode(s)
-                contents[element.name] = s
+            s, = struct.unpack_from(element.structure, buf, element.offset)
+            if element.decode:
+                s = element.decode(s)
+            contents[element.name] = s
         return contents
 
     def __iter__(self):
         for item in self.elements:
             yield item
-

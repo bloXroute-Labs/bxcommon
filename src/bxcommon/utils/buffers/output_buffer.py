@@ -2,10 +2,10 @@ import time
 from collections import deque
 from typing import Set, Optional
 
-from bxutils import logging
 from bxcommon import constants
 from bxcommon.utils import memory_utils
 from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -72,7 +72,7 @@ class OutputBuffer(SpecialMemoryProperties):
             raise ValueError("Num_bytes must be a positive integer.")
 
         if (not self.output_msgs and num_bytes > 0) or (self.index + num_bytes) > len(self.output_msgs[0]):
-            if len(self.output_msgs):
+            if self.output_msgs:
                 output_message = self.output_msgs[0].tobytes().hex()
             else:
                 output_message = None

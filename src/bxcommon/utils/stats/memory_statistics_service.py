@@ -6,12 +6,13 @@ from bxcommon import constants
 from bxcommon.utils import memory_utils
 from bxcommon.utils.sizer import Sizer
 from bxcommon.utils.stats.class_mem_stats import ClassMemStats
-from bxcommon.utils.stats.statistics_service import StatsIntervalData, ThreadedStatisticsService, T
-from bxutils.logging.log_record_type import LogRecordType
+from bxcommon.utils.stats.statistics_service import StatsIntervalData, ThreadedStatisticsService
 from bxutils import logging
+from bxutils.logging.log_record_type import LogRecordType
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
+    # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_node import AbstractNode
 
 

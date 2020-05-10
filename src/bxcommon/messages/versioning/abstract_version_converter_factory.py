@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class AbstractMessageConverterFactory(object):
+class AbstractMessageConverterFactory:
 
     __metaclass__ = ABCMeta
 
@@ -12,4 +12,3 @@ class AbstractMessageConverterFactory(object):
         :param msg_type: message type
         :return: message converter
         """
-        pass

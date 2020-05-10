@@ -4,4 +4,3 @@ class NodeStartArgs:
     SDN_ROOT_URL = "sdn_root_url"
     CA_CERT_URL = "ca_cert_url"
     PRIVATE_SSL_BASE_URL = "private_ssl_base_url"
-

@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
-
-from typing import Tuple, Optional, NamedTuple, Dict, Type
+from typing import Optional, NamedTuple, Dict, Type
 
 from bxcommon.exceptions import ParseError, UnrecognizedCommandError
 from bxcommon.messages.abstract_message import AbstractMessage

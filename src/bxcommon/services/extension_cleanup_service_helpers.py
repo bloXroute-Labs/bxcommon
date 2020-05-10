@@ -1,14 +1,13 @@
-from datetime import datetime
 import time
 import typing
+from datetime import datetime
 
+from bxcommon.messages.bloxroute.abstract_cleanup_message import AbstractCleanupMessage
+from bxcommon.services.extension_transaction_service import ExtensionTransactionService
+from bxcommon.services.transaction_service import TransactionService
+from bxcommon.utils.proxy import task_pool_proxy
 from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
-
-from bxcommon.utils.proxy import task_pool_proxy
-from bxcommon.services.transaction_service import TransactionService
-from bxcommon.services.extension_transaction_service import ExtensionTransactionService
-from bxcommon.messages.bloxroute.abstract_cleanup_message import AbstractCleanupMessage
 
 
 import task_pool_executor as tpe

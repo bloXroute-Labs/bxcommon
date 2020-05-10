@@ -16,12 +16,22 @@ class HelloMessage(VersionMessage):
 
     """
     MESSAGE_TYPE = BloxrouteMessageType.HELLO
-    HELLO_MESSAGE_BLOCK = PayloadBlock(VersionMessage.BASE_LENGTH, "HelloMessage", PROTOCOL_VERSION,
-                                       PayloadElement(name="node_id", structure="%ss" % constants.NODE_ID_SIZE_IN_BYTES,
-                                                      encode=lambda x: uuid_pack.to_bytes(x),
-                                                      decode=lambda x: uuid_pack.from_bytes(x))
-                                       )
-    HELLO_MESSAGE_LENGTH = VersionMessage.VERSION_MESSAGE_BLOCK.size + HELLO_MESSAGE_BLOCK.size + constants.CONTROL_FLAGS_LEN
+    HELLO_MESSAGE_BLOCK = PayloadBlock(
+        VersionMessage.BASE_LENGTH,
+        "HelloMessage",
+        PROTOCOL_VERSION,
+        PayloadElement(
+            name="node_id",
+            structure="%ss" % constants.NODE_ID_SIZE_IN_BYTES,
+            encode=uuid_pack.to_bytes,
+            decode=uuid_pack.from_bytes
+        )
+    )
+    HELLO_MESSAGE_LENGTH = (
+        VersionMessage.VERSION_MESSAGE_BLOCK.size
+        + HELLO_MESSAGE_BLOCK.size
+        + constants.CONTROL_FLAGS_LEN
+    )
 
     # pyre-fixme[9]: node_id has type `str`; used as `None`.
     def __init__(self, protocol_version: Optional[int] = None, network_num: Optional[int] = None, node_id: str = None,

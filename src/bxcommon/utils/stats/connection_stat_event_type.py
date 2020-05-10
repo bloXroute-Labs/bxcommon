@@ -9,5 +9,3 @@ class ConnectionStateEventType:
     RE_REGISTERED = StatEventTypeSettings("ConnectionReRegistered")
     GROUP_CHANGED = StatEventTypeSettings("ConnectionDDoSGroupChanged")
     CONNECTION_DISCONNECTED = StatEventTypeSettings("ConnectionDisconnected")
-
-

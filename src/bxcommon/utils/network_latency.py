@@ -18,7 +18,7 @@ def get_best_relays_by_ping_latency_one_per_country(relays: List[OutboundPeerMod
     :return:
     """
     if len(relays) == 1:
-        logger.debug("First (and only) recommended relay from api is: {}".format(relays[0]))
+        logger.debug("First (and only) recommended relay from api is: {}", relays[0])
         return relays
 
     relays_ping_latency = ping_latency.get_ping_latencies(relays)
@@ -29,9 +29,13 @@ def get_best_relays_by_ping_latency_one_per_country(relays: List[OutboundPeerMod
     # if the absolute between fastest relay and recommended relay latency is less than RELAY_LATENCY_THRESHOLD_MS,
     # select api's relay
     first_recommended_relay_latency = _get_node_latency_from_list(relays_ping_latency, relays[0].node_id)
-    best_relay_node = relays[0] \
-        if abs(best_relays_by_latency[0].latency - first_recommended_relay_latency) < constants.NODE_LATENCY_THRESHOLD_MS \
-        else best_relays_by_latency[0].node
+    if (
+        abs(best_relays_by_latency[0].latency - first_recommended_relay_latency)
+        < constants.NODE_LATENCY_THRESHOLD_MS
+    ):
+        best_relay_node = relays[0]
+    else:
+        best_relay_node = best_relays_by_latency[0].node
 
     logger.info("Latency results for potential relays: [{}]",
                 ", ".join([f"{relay_latency.node.ip} with {_format_latency(relay_latency.latency)}" for relay_latency in

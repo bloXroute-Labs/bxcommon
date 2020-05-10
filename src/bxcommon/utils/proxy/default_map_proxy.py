@@ -1,4 +1,5 @@
 from typing import TypeVar, Iterator, Generic, Dict, Optional, Tuple
+
 from bxcommon.utils.object_encoder import ObjectEncoder
 
 TKeyRaw = TypeVar("TKeyRaw")

@@ -9,8 +9,8 @@ from prometheus_client import Gauge
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.utils import memory_utils
-from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats import hooks
+from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxutils import logging
 
 logger = logging.get_logger(__name__)
@@ -89,9 +89,12 @@ class ConnectionPool:
     def index_conn_node_id(self, node_id: str, conn: AbstractConnection) -> None:
         self.by_node_id[node_id] = conn
 
-    def has_connection(self, ip: str, port: int, node_id: Optional[str] = None) -> bool:
+    def has_connection(
+            self, ip: Optional[str] = None, port: Optional[int] = None, node_id: Optional[str] = None) -> bool:
         if node_id is not None and node_id in self.by_node_id:
             return True
+        if ip is None or port is None:
+            return False
         return (ip, port) in self.by_ipport
 
     def get_by_connection_type(self, connection_type: ConnectionType) -> Set[AbstractConnection]:
@@ -300,4 +303,3 @@ class ConnectionPool:
 
     def _get_number_of_connections(self, connection_type: ConnectionType) -> int:
         return len(self.get_by_connection_type(connection_type))
-

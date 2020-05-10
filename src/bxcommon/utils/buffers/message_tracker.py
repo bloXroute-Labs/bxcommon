@@ -12,6 +12,7 @@ from bxutils.logging.log_level import LogLevel
 logger = logging.get_logger(__name__)
 
 if TYPE_CHECKING:
+    # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_connection import AbstractConnection
 
 
@@ -229,7 +230,7 @@ class MessageTracker:
             index += 1
             if bytes_skipped == skip_bytes:
                 break
-            elif bytes_skipped > skip_bytes:
+            if bytes_skipped > skip_bytes:
                 index -= 1
                 break
 

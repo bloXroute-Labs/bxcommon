@@ -1,10 +1,12 @@
-from psutil import Process
 from abc import ABC, abstractmethod
-from pympler import asizeof
-from pympler.asizeof import Asized
+from enum import Enum
 from sys import getsizeof
 from typing import Union, Deque, Set, Any, List, Optional, NamedTuple
-from enum import Enum
+
+from psutil import Process
+from pympler import asizeof
+from pympler.asizeof import Asized
+
 DEFAULT_DETAILED_MEMORY_BREAKDOWN_LIMIT = 50 * 1024
 
 _process: Optional[Process] = None
@@ -15,7 +17,7 @@ class SpecialTuple(NamedTuple):
     seen_ids: Set[int]
 
 
-class ObjectSize(object):
+class ObjectSize:
     """
     Represents size of object with detailed breakdown by object field
     """
@@ -40,8 +42,8 @@ class SpecialMemoryProperties(ABC):
         return SpecialTuple(size=0, seen_ids=ids)
 
 
-def get_app_memory_usage():
-    # type: () -> int
+# pylint: disable=global-statement
+def get_app_memory_usage() -> int:
     """
     Provides total application memory usage in bytes
     :return: int
@@ -49,8 +51,10 @@ def get_app_memory_usage():
     global _process
     if _process is None:
         _process = Process()
-    # pyre-fixme[16]: `Optional` has no attribute `memory_info`.
-    return _process.memory_info().rss
+
+    process = _process
+    assert process is not None
+    return process.memory_info().rss
 
 
 def get_object_size(obj, sizer=asizeof):
@@ -79,8 +83,7 @@ def get_detailed_object_size(obj, detailed_if_greater_than=DEFAULT_DETAILED_MEMO
     return _to_size_obj(obj_size, detailed_if_greater_than)
 
 
-def _to_size_obj(obj_size, detailed_if_greater_than):
-    # type: (Asized, int) -> ObjectSize
+def _to_size_obj(obj_size: Asized, detailed_if_greater_than: int) -> ObjectSize:
     references = []
 
     if obj_size.refs is not None:

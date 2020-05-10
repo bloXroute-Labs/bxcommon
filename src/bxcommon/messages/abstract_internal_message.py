@@ -1,10 +1,9 @@
 import struct
 
-from bxutils import logging
-
 from bxcommon import constants
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
@@ -49,6 +48,7 @@ class AbstractInternalMessage(AbstractMessage):
             logger.error(error_message)
             raise PayloadLenError(error_message)
 
+    # pylint: disable=protected-access
     @classmethod
     def initialize_class(cls, cls_type, buf, unpacked_args):
         command, payload_length = unpacked_args

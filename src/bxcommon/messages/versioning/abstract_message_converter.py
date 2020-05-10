@@ -14,7 +14,6 @@ class AbstractMessageConverter:
         :param msg: message in current protocol version
         :return: converted message
         """
-        pass
 
     @abstractmethod
     def convert_from_older_version(self, msg: AbstractInternalMessage) -> AbstractInternalMessage:
@@ -24,7 +23,6 @@ class AbstractMessageConverter:
         :param msg: message in older protocol version
         :return: converted message
         """
-        pass
 
     @abstractmethod
     def convert_first_bytes_to_older_version(self, first_msg_bytes):
@@ -34,7 +32,6 @@ class AbstractMessageConverter:
         :param first_msg_bytes: first bytes of message in current protocol version
         :return: converted message bytes
         """
-        pass
 
     @abstractmethod
     def convert_first_bytes_from_older_version(self, first_msg_bytes):
@@ -44,7 +41,6 @@ class AbstractMessageConverter:
         :param first_msg_bytes: first message bytes in older protocol version
         :return: converted message bytes
         """
-        pass
 
     @abstractmethod
     def convert_last_bytes_to_older_version(self, last_msg_bytes):
@@ -54,7 +50,6 @@ class AbstractMessageConverter:
         :param last_msg_bytes: first bytes of message in current protocol version
         :return: converted message bytes
         """
-        pass
 
     @abstractmethod
     def convert_last_bytes_from_older_version(self, last_msg_bytes):
@@ -64,7 +59,6 @@ class AbstractMessageConverter:
         :param last_msg_bytes: first message bytes in older protocol version
         :return: converted message bytes
         """
-        pass
 
     @abstractmethod
     def get_message_size_change_to_older_version(self):
@@ -73,7 +67,6 @@ class AbstractMessageConverter:
 
         :return: message size difference
         """
-        pass
 
     @abstractmethod
     def get_message_size_change_from_older_version(self):
@@ -82,4 +75,3 @@ class AbstractMessageConverter:
 
         :return: message size difference
         """
-        pass

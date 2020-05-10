@@ -1,4 +1,4 @@
-class TransportLayerProtocol(object):
+class TransportLayerProtocol:
     """
     Transport Layer Protocols
 

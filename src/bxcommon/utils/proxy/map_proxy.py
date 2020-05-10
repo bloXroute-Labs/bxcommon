@@ -1,4 +1,5 @@
 import typing
+
 from bxcommon.utils.object_encoder import ObjectEncoder
 from bxcommon.utils.proxy.default_map_proxy import DefaultMapProxy, TKeyRaw, TKeyEncoded, \
     TValueRaw, TValueEncoded

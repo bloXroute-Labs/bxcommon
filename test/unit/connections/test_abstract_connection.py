@@ -1,4 +1,3 @@
-import timeit
 from mock import MagicMock
 
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -44,8 +43,15 @@ class AbstractConnectionTest(AbstractTestCase):
         self.connection.pop_next_message.assert_not_called()
 
     def test_process_message_quit_on_bad_message(self):
-        bad_message = AbstractBloxrouteMessage(b"badtype", 0, bytearray(
-            constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF + constants.CONTROL_FLAGS_LEN)).rawbytes()
+        bad_message = AbstractBloxrouteMessage(
+            b"badtype",
+            0,
+            bytearray(
+                constants.STARTING_SEQUENCE_BYTES_LEN
+                + constants.BX_HDR_COMMON_OFF
+                + constants.CONTROL_FLAGS_LEN
+            )
+        ).rawbytes()
         self.connection.inputbuf.add_bytes(bad_message)
         self.connection.inputbuf.add_bytes(bad_message)
         self.connection.inputbuf.add_bytes(bad_message)

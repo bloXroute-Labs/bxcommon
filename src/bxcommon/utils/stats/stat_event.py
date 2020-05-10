@@ -1,5 +1,4 @@
 import datetime
-import json
 from typing import Optional
 
 from bxcommon.utils.stats.stat_event_type_settings import StatEventTypeSettings
@@ -16,4 +15,3 @@ class StatEvent:
         self.end_date_time = end_date_time if end_date_time is not None else start_date_time
 
         self.extra_data = kwargs
-
