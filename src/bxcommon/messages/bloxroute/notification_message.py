@@ -66,7 +66,7 @@ class NotificationMessage(AbstractBloxrouteMessage):
         raw = self._raw
         if self._notification_code == NotificationCode.QUOTA_FILL_STATUS:
             args_list = raw.split(",")
-            return args_list[0]
+            return int(args_list[0])
         else:
             return 0
 
