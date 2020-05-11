@@ -8,14 +8,16 @@ from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
 
 
-
 class BlxrTransactionRpcRequest(AbstractRpcRequest):
     TRANSACTION = rpc_constants.TRANSACTION_PARAMS_KEY
     QUOTA_TYPE: str = "quota_type"
+    SYNCHRONOUS = rpc_constants.SYNCHRONOUS_PARAMS_KEY
     help = {
-        "params": f"[Required - {TRANSACTION}: [transaction payload in hex string format], "
-        f"Optional - {QUOTA_TYPE}: [{QuotaType.PAID_DAILY_QUOTA.name.lower()} for binding with a paid account"
-        f"(default) or {QuotaType.FREE_DAILY_QUOTA.name.lower()}]]",
+        "params": f"[Required - {TRANSACTION}: [transaction payload in hex string format]\n"
+                  f"Optional - {QUOTA_TYPE}: [{QuotaType.PAID_DAILY_QUOTA.name.lower()} for binding with a paid account"
+                  f"(default) or {QuotaType.FREE_DAILY_QUOTA.name.lower()}]\n"
+                  f"{SYNCHRONOUS}: [True (wait for response from the relay - default), "
+                  "False (don't wait for response)]",
         "description": "send transaction to the bloXroute BDN"
     }
 
