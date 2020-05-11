@@ -16,10 +16,11 @@ from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
     EllipticCurvePrivateKey
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.x509 import Certificate, CertificateSigningRequest, \
-    CertificateSigningRequestBuilder, \
-    SubjectAlternativeName, ExtensionNotFound, KeyUsage, CertificateBuilder, AuthorityKeyIdentifier, \
-    UnrecognizedExtension, BasicConstraints
-from uvloop.loop import TCPTransport  # pyre-ignore for now, figure this out later (stub file or Python wrapper?)
+    CertificateSigningRequestBuilder, SubjectAlternativeName, ExtensionNotFound, \
+    CertificateBuilder, AuthorityKeyIdentifier
+from cryptography.x509.extensions import KeyUsage, UnrecognizedExtension, BasicConstraints
+# pyre-fixme[21]: Could not find `loop`.
+from uvloop.loop import TCPTransport  
 
 from bxutils import constants
 from bxutils.ssl import ssl_serializer
@@ -161,7 +162,8 @@ def get_socket_cert(ssl_socket: SSLSocket) -> Certificate:
     return ssl_serializer.deserialize_cert(pem_cert)
 
 
-def get_transport_cert(transport: Union[Transport, TCPTransport]) -> Certificate:  # pyre-ignore
+# pyre-fixme[11]: Annotation `TCPTransport` is not defined as a type.
+def get_transport_cert(transport: Union[Transport, TCPTransport]) -> Certificate:
     """
     Obtain a peer certificate from a Transport socket wrapper
     :param transport: the SSL socket transport wrapper
@@ -177,14 +179,11 @@ def get_transport_cert(transport: Union[Transport, TCPTransport]) -> Certificate
 
 
 def sign_csr(
-        csr: CertificateSigningRequest,
-        ca_cert: Certificate,
-        key: EllipticCurvePrivateKey,
-        validation_period_days: int,
-        # pyre-fixme[11]: Annotation `BasicConstraints` is not defined as a type.
-        # pyre-fixme[11]: Annotation `KeyUsage` is not defined as a type.
-        # pyre-fixme[11]: Annotation `UnrecognizedExtension` is not defined as a type.
-        custom_extensions: Iterable[Union[KeyUsage, UnrecognizedExtension, BasicConstraints]]
+    csr: CertificateSigningRequest,
+    ca_cert: Certificate,
+    key: EllipticCurvePrivateKey,
+    validation_period_days: int,
+    custom_extensions: Iterable[Union[KeyUsage, UnrecognizedExtension, BasicConstraints]]
 ) -> Certificate:
     """
     Sign a CSR with CA credentials.
@@ -214,11 +213,11 @@ def sign_csr(
     except ExtensionNotFound:
         pass
     for extension in custom_extensions:
-        # pyre-fixme[6]: Expected `Union[typing.Type[typing.Any],
-        #  typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd param but got `Any`.
         if isinstance(extension, UnrecognizedExtension):
             critical = False
         else:
             critical = True
+        # pyre-fixme[6]: Expected `ExtensionType` for 1st param but got
+        #  `Union[BasicConstraints, KeyUsage, UnrecognizedExtension]`.
         cert_builder = cert_builder.add_extension(extension, critical=critical)
     return cert_builder.sign(key, SHA256(), backends.default_backend())

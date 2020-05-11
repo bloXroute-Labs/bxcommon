@@ -61,6 +61,7 @@ class AuthenticatedPeerInfo(NamedTuple):
     connection_type: ConnectionType
     peer_id: str
     account_id: Optional[str]
+    node_privileges: str
 
 
 # pylint: disable=too-many-public-methods
@@ -586,7 +587,8 @@ class AbstractNode:
                 f"Peer ssl certificate ({cert}) does not contain a node id!")
 
         account_id = extensions_factory.get_account_id(cert)
-        return AuthenticatedPeerInfo(connection_type, peer_id, account_id)
+        node_privileges = extensions_factory.get_node_privileges(cert)
+        return AuthenticatedPeerInfo(connection_type, peer_id, account_id, node_privileges)
 
     def _destroy_conn(self, conn: AbstractConnection):
         """
@@ -610,8 +612,9 @@ class AbstractNode:
         self.connection_pool.delete(conn)
         self.handle_connection_closed(should_retry, ConnectionPeerInfo(conn.endpoint, conn.CONNECTION_TYPE))
 
-    def _initialize_connection(self, socket_connection: AbstractSocketConnectionProtocol) -> Optional[
-        AbstractConnection]:
+    def _initialize_connection(
+        self, socket_connection: AbstractSocketConnectionProtocol
+    ) -> Optional[AbstractConnection]:
         conn_obj = self.build_connection(socket_connection)
         ip, port = socket_connection.endpoint
         if conn_obj is not None:

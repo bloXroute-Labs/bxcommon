@@ -4,6 +4,7 @@ from typing import Optional
 from bxcommon import constants
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.platform_provider import PlatformProvider
+from bxutils import constants as util_constants
 
 
 @dataclass
@@ -115,6 +116,10 @@ class NodeModel:
     should_update_source_version: bool = False
 
     assigning_short_ids: Optional[bool] = False
+
+    # blockchain node privileges for segmenting gateway types within a blockchain network
+    # this property is ignored for relays
+    node_privileges: str = util_constants.DEFAULT_NODE_PRIVILEGES
 
     def __post_init__(self):
         self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS

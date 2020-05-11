@@ -45,12 +45,16 @@ class ExtensionsFactoryTest(AbstractTestCase):
     def test_get_node_credentials(self):
         node_type = NodeType.EXTERNAL_GATEWAY
         node_id = str(uuid.uuid4())
+        node_privileges = "privileged_node"
         cert = ssl_certificate_factory.sign_csr(
             self.template_csr,
             self.template_cert,
             self.template_key,
             365,
-            extensions_factory.get_custom_extensions(node_type, node_id)
+            extensions_factory.get_custom_extensions(
+                node_type, node_id, node_privileges=node_privileges
+            )
         )
         self.assertEqual(node_type, extensions_factory.get_node_type(cert))
         self.assertEqual(node_id, extensions_factory.get_node_id(cert))
+        self.assertEqual(node_privileges, extensions_factory.get_node_privileges(cert))

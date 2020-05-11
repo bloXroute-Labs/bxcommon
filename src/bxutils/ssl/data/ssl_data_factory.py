@@ -25,15 +25,15 @@ def get_key_file_name(node_type: NodeType) -> str:
 
 
 def create_storage_info(
-            *,
-            node_type: NodeType,
-            is_ca: bool = False,
-            ca_cert_url: Optional[str] = None,
-            private_ssl_base_url: Optional[str] = None,
-            data_dir: str,
-            ca_dir_name: str = CA_DIR_NAME,
-            registration_dir_name: str = REGISTRATION_DIR_NAME,
-            private_dir_name: str = PRIVATE_DIR_NAME
+    *,
+    node_type: NodeType,
+    is_ca: bool = False,
+    ca_cert_url: Optional[str] = None,
+    private_ssl_base_url: Optional[str] = None,
+    data_dir: str,
+    ca_dir_name: str = CA_DIR_NAME,
+    registration_dir_name: str = REGISTRATION_DIR_NAME,
+    private_dir_name: str = PRIVATE_DIR_NAME
 ) -> SSLStorageInfo:
     node_name = node_type.name.lower()
     node_ssl_directory = os.path.join(data_dir, constants.SSL_FOLDER, node_name)
