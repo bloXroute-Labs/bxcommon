@@ -108,6 +108,7 @@ class AbstractConnection(Generic[Node]):
         self.account_id: Optional[str] = None
 
         self._close_waiter: Optional[Future] = None
+        self.format_connection()
 
         self.log_debug("Connection initialized.")
 
@@ -599,6 +600,22 @@ class AbstractConnection(Generic[Node]):
         socket_buffer_backlog = self.socket_connection.get_write_buffer_size()
         self.log_trace("Output backlog: {}, socket backlog: {}", output_buffer_backlog, socket_buffer_backlog)
         return output_buffer_backlog + socket_buffer_backlog
+
+    def format_connection(self) -> None:
+        if self.CONNECTION_TYPE in ConnectionType.RELAY_ALL:
+            _short_connection_type = "R"
+
+        if self.CONNECTION_TYPE in ConnectionType.BLOCKCHAIN_NODE:
+            _short_connection_type = "B"
+
+        if self.CONNECTION_TYPE in ConnectionType.REMOTE_BLOCKCHAIN_NODE:
+            _short_connection_type = "RemoteB"
+
+        if self.CONNECTION_TYPE in ConnectionType.GATEWAY or self.network_num != constants.ALL_NETWORK_NUM:
+            _short_connection_type = "G"
+
+        _short_connection_type = self.CONNECTION_TYPE.name
+        self.format_connection_desc = "{} - {}".format(self.peer_desc, _short_connection_type)
 
     def _pong_msg_timeout(self):
         self.log_info("Connection appears to be broken. Peer did not reply to PING message within allocated time. "

@@ -41,9 +41,10 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
 
         # Number of bad messages I've received in a row.
         self.num_bad_messages = 0
-        self.peer_desc = "%s %d" % (self.peer_ip, self.peer_port)
+        self.peer_desc = "{} {}".format(self.peer_ip, self.peer_port)
         self.message_handlers = None
         self.network_num = node.opts.blockchain_network_num
+        self.format_connection()
 
         self.enqueued_messages = []
 

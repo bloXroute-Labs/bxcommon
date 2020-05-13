@@ -80,6 +80,7 @@ class ConnectionPool:
 
         # pyre-ignore this is how we currently identify connections
         conn.CONNECTION_TYPE = connection_type
+        conn.format_connection()
         self.add(conn.file_no, conn.peer_ip, conn.peer_port, conn)
 
         peer_id = conn.peer_id

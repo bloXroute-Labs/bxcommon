@@ -1,8 +1,6 @@
 from typing import List
 
-from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
-from bxcommon.connections.connection_type import ConnectionType
 
 SUFFIXES = ["bytes", "kB", "MB", "GB"]
 
@@ -23,7 +21,7 @@ def connections(conns: List[AbstractConnection]) -> str:
     :return: formatted string
     """
 
-    return ", ".join(connection(conn) for conn in conns)
+    return ", ".join(conn.format_connection_desc for conn in conns)
 
 
 def connection(conn: AbstractConnection) -> str:
@@ -36,7 +34,7 @@ def connection(conn: AbstractConnection) -> str:
     if conn is None:
         return "<None>"
 
-    return "{} - {}".format(conn.peer_desc, _format_connection_type(conn))
+    return conn.format_connection_desc
 
 
 def duration(duration_ms: float) -> str:
@@ -82,20 +80,3 @@ def ratio(first_value: float, second_value: float) -> str:
     :return: formatted ratio
     """
     return percentage(100 - float(first_value) / second_value * 100)
-
-
-# pylint: disable=unsupported-membership-test
-def _format_connection_type(conn: AbstractConnection) -> str:
-    if conn.CONNECTION_TYPE in ConnectionType.RELAY_ALL:
-        return "R"
-
-    if conn.CONNECTION_TYPE in ConnectionType.BLOCKCHAIN_NODE:
-        return "B"
-
-    if conn.CONNECTION_TYPE in ConnectionType.REMOTE_BLOCKCHAIN_NODE:
-        return "RemoteB"
-
-    if conn.CONNECTION_TYPE in ConnectionType.GATEWAY or conn.network_num != constants.ALL_NETWORK_NUM:
-        return "G"
-
-    return conn.CONNECTION_TYPE.name
