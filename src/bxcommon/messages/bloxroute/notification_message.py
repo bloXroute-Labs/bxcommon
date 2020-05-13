@@ -60,16 +60,6 @@ class NotificationMessage(AbstractBloxrouteMessage):
         assert raw is not None
         return raw
 
-    def quota_level(self):
-        if self._raw is None:
-            self._unpack()
-        raw = self._raw
-        if self._notification_code == NotificationCode.QUOTA_FILL_STATUS:
-            args_list = raw.split(",")
-            return int(args_list[0])
-        else:
-            return 0
-
     def formatted_message(self) -> str:
         if self._notification_code is None:
             self._unpack()
