@@ -59,23 +59,13 @@ def run_node(
     ] = default_ssl_service_factory,
     third_party_loggers: Optional[List[LoggerConfig]] = None
 ):
-    if third_party_loggers is None:
-        third_party_loggers = THIRD_PARTY_LOGGERS
+
     opts.logger_names = logger_names
-    log_config.setup_logging(
-        opts.log_format,
-        opts.log_level,
-        # pyre-fixme[6]: Expected `Iterable[str]` for 3rd param but got
-        #  `Iterable[Optional[str]]`.
-        logger_names,
-        opts.log_level_overrides,
-        enable_fluent_logger=opts.log_fluentd_enable,
-        fluentd_host=opts.log_fluentd_host,
-        fluentd_queue_size=opts.log_fluentd_queue_size,
-        third_party_loggers=third_party_loggers,
-        fluent_log_level=opts.log_level_fluentd,
-        stdout_log_level=opts.log_level_stdout
-    )
+    if third_party_loggers:
+        opts.third_party_loggers = third_party_loggers
+    else:
+        opts.third_party_loggers = THIRD_PARTY_LOGGERS
+
     startup_param = sys.argv[1:]
     logger.info("Startup Parameters are: {}", " ".join(startup_param))
 
@@ -185,6 +175,20 @@ def _run_node(
     node = node_class(opts, node_ssl_service)
     log_config.set_instance(node.opts.node_id)
     loop = asyncio.get_event_loop()
+    log_config.setup_logging(
+        opts.log_format,
+        opts.log_level,
+        opts.logger_names,
+        opts.log_level_overrides,
+        enable_fluent_logger=opts.log_fluentd_enable,
+        fluentd_host=opts.log_fluentd_host,
+        fluentd_queue_size=opts.log_fluentd_queue_size,
+        third_party_loggers=opts.third_party_loggers,
+        fluent_log_level=opts.log_level_fluentd,
+        stdout_log_level=opts.log_level_stdout,
+        loop=loop
+    )
+
     node_event_loop = NodeEventLoop(node)
 
     logger.trace("Running node...")
