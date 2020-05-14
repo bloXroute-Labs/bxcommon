@@ -44,3 +44,4 @@ class LogRecordType(Enum):
     ShortIdAllocation = "sid.allocation"
     Config = "config"
     QuotaNotification = "stats.quota.notification"
+    QuotaFillStatus = "stats.quota.fill"
