@@ -242,7 +242,8 @@ def get_common_opts(port,
         "enable_node_cache": True,
         "log_fluentd_queue_size": 1000,
         "log_level_fluentd": LogLevel.DEBUG,
-        "log_level_stdout": LogLevel.TRACE
+        "log_level_stdout": LogLevel.TRACE,
+        "log_level_overrides": {}
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val

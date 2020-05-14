@@ -6,7 +6,7 @@ from bxcommon import constants
 from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
-from bxcommon.services.transaction_service import TransactionService
+from bxcommon.services.transaction_service import TransactionService, TransactionCacheKeyType
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
 from bxutils import logging
@@ -51,8 +51,8 @@ def create_txs_service_msg_from_time(
     transaction_service: TransactionService,
     start_time: float = 0,
     sync_tx_content: bool = True,
-    snapshot_cache_keys: Optional[Set[Sha256Hash]] = None
-) -> Tuple[List[TxContentShortIds], float, bool, Set[Sha256Hash]]:
+    snapshot_cache_keys: Optional[Set[TransactionCacheKeyType]] = None
+) -> Tuple[List[TxContentShortIds], float, bool, Set[TransactionCacheKeyType]]:
     task_start = time.time()
     txs_content_short_ids: List[TxContentShortIds] = []
     txs_msg_len = 0
@@ -66,11 +66,10 @@ def create_txs_service_msg_from_time(
             cache_key = transaction_service._short_id_to_tx_cache_key.get(short_id, None)
             if cache_key is not None:
                 if cache_key not in snapshot_cache_keys:
-                    # pyre-fixme[6]: Expected `Sha256Hash` for 1st param but got `str`.
                     snapshot_cache_keys.add(cache_key)
                     tx_hash = transaction_service._tx_cache_key_to_hash(cache_key)
                     short_ids = list(transaction_service._tx_cache_key_to_short_ids[cache_key])
-                    if sync_tx_content and transaction_service.has_transaction_contents(cache_key):
+                    if sync_tx_content and transaction_service.has_transaction_contents_by_cache_key(cache_key):
                         tx_content = transaction_service._tx_cache_key_to_contents[cache_key]
                     else:
                         tx_content = bytearray(0)

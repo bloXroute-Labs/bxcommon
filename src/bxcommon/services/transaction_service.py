@@ -2,6 +2,7 @@
 
 import functools
 import time
+import typing
 from collections import defaultdict, OrderedDict, Counter
 from dataclasses import dataclass
 from datetime import datetime
@@ -12,9 +13,11 @@ from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iter
 from prometheus_client import Gauge
 
 from bxcommon import constants
+from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import memory_utils, convert
+from bxcommon.utils import performance_utils
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
@@ -30,10 +33,15 @@ from bxutils.logging.log_record_type import LogRecordType
 if TYPE_CHECKING:
     # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_node import AbstractNode
+    from task_pool_executor import Sha256 as tpe_Sha256
+else:
+    tpe_Sha256 = Any
 
 logger = logging.get_logger(__name__)
 logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
 logger_tx_histogram = logging.get_logger(LogRecordType.TransactionHistogram, __name__)
+performance_logger = logging.get_logger(LogRecordType.PerformanceTroubleshooting, __name__)
+
 total_cached_transactions = Gauge(
     "cached_transaction_total",
     "Number of cached transactions",
@@ -44,6 +52,8 @@ total_cached_transactions_size = Gauge(
     "Size of cached transactions",
     ("network",)
 )
+
+TransactionCacheKeyType = Union[Sha256Hash, bytes, bytearray, memoryview, str, tpe_Sha256]
 
 
 def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash]) -> Sha256Hash:
@@ -85,6 +95,14 @@ class TransactionServiceStats:
         )
 
 
+class TransactionFromBdnGatewayProcessingResult(typing.NamedTuple):
+    ignore_seen: bool = False
+    existing_short_id: bool = False
+    assigned_short_id: bool = False
+    existing_contents: bool = False
+    set_content: bool = False
+
+
 # pylint: disable=too-many-public-methods
 class TransactionService:
     """
@@ -113,10 +131,10 @@ class TransactionService:
     tx_assign_alarm_scheduled: bool
     tx_content_without_sid_alarm_scheduled: bool
     network_num: int
-    _short_id_to_tx_cache_key: Dict[int, str]
+    _short_id_to_tx_cache_key: Dict[int, TransactionCacheKeyType]
     _short_id_to_tx_quota_flag: Dict[int, QuotaType]
-    _tx_cache_key_to_contents: Dict[str, Union[bytearray, memoryview]]
-    _tx_cache_key_to_short_ids: Dict[str, Set[int]]
+    _tx_cache_key_to_contents: Dict[TransactionCacheKeyType, Union[bytearray, memoryview]]
+    _tx_cache_key_to_short_ids: Dict[TransactionCacheKeyType, Set[int]]
     _tx_assignment_expire_queue: ExpirationQueue[int]
     _tx_hash_to_time_removed: OrderedDict
     tx_hashes_without_short_id: ExpirationQueue[Sha256Hash]
@@ -232,8 +250,7 @@ class TransactionService:
         :return: transaction hash, transaction contents.
         """
         if short_id in self._short_id_to_tx_cache_key:
-            transaction_hash = self._short_id_to_tx_cache_key[short_id]
-            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+            transaction_cache_key = self._short_id_to_tx_cache_key[short_id]
             if transaction_cache_key in self._tx_cache_key_to_contents:
                 transaction_contents = self._tx_cache_key_to_contents[transaction_cache_key]
                 return TransactionInfo(self._tx_cache_key_to_hash(transaction_cache_key),
@@ -306,14 +323,23 @@ class TransactionService:
     def get_short_id_count(self):
         return len(self._short_id_to_tx_cache_key)
 
-    def has_transaction_contents(self, transaction_hash: Union[Sha256Hash, str]) -> bool:
+    def has_transaction_contents(self, transaction_hash: Sha256Hash) -> bool:
         """
         Checks if transaction contents is available in transaction service cache
 
         :param transaction_hash: transaction hash
         :return: Boolean indicating if transaction contents exists
         """
-        return self._tx_hash_to_cache_key(transaction_hash) in self._tx_cache_key_to_contents
+        return self.has_transaction_contents_by_cache_key(self._tx_hash_to_cache_key(transaction_hash))
+
+    def has_transaction_contents_by_cache_key(self, cache_key: TransactionCacheKeyType) -> bool:
+        """
+        Checks if transaction contents is available in transaction service cache
+
+        :param cache_key: transaction cache key
+        :return: Boolean indicating if transaction contents exists
+        """
+        return cache_key in self._tx_cache_key_to_contents
 
     def has_transaction_short_id(self, transaction_hash: Sha256Hash) -> bool:
         """
@@ -341,7 +367,26 @@ class TransactionService:
         :param transaction_hash: transaction hash
         :return: Boolean indicating in transaction was seen
         """
-        return self._tx_hash_to_cache_key(transaction_hash) in self._tx_hash_to_time_removed
+        return self.removed_transaction_by_cache_key(self._tx_hash_to_cache_key(transaction_hash))
+
+    def removed_transaction_by_cache_key(self, cache_key: TransactionCacheKeyType) -> bool:
+        """
+        Check if transaction was seen and removed from cache
+        :param cache_key: transaction cache key
+        :return: Boolean indicating in transaction was seen
+        """
+        return cache_key in self._tx_hash_to_time_removed
+
+    def process_bx_tx_messages(
+        self, bx_tx_messages: List[Tuple[TxMessage, Sha256Hash, Union[bytearray, memoryview]]]
+    ) -> Iterator[Tuple[TxMessage, Sha256Hash, Any, Union[bytearray, memoryview], bool]]:
+
+        for bx_tx_message, tx_hash, tx_bytes in bx_tx_messages:
+            tx_cache_key = self._tx_hash_to_cache_key(tx_hash)
+            tx_seen_flag = self.has_transaction_contents_by_cache_key(tx_cache_key) or \
+                           self.removed_transaction_by_cache_key(tx_cache_key)
+
+            yield bx_tx_message, tx_hash, tx_cache_key, tx_bytes, tx_seen_flag
 
     def remove_sid_by_tx_hash(self, transaction_hash: Sha256Hash):
         transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
@@ -367,7 +412,7 @@ class TransactionService:
 
     def assign_short_id_base(self,
                              transaction_hash: Sha256Hash,
-                             transaction_cache_key: Any,
+                             transaction_cache_key: TransactionCacheKeyType,
                              short_id: int,
                              has_contents: bool,
                              call_to_assign_short_id: bool):
@@ -409,16 +454,19 @@ class TransactionService:
         self._final_tx_confirmations_count = val
 
     def set_transaction_contents(
-        self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
+        self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview],
+        transaction_cache_key: Optional[TransactionCacheKeyType] = None
     ):
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
 
         :param transaction_hash: transaction hash
         :param transaction_contents: transaction contents bytes
+        :param transaction_cache_key: transaction cache key optional
         """
         previous_size = 0
-        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        if not transaction_cache_key:
+            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
 
         if transaction_cache_key in self._tx_cache_key_to_contents:
             previous_size = len(self._tx_cache_key_to_contents[transaction_cache_key])
@@ -436,7 +484,7 @@ class TransactionService:
     def set_transaction_contents_base(
         self,
         transaction_hash: Sha256Hash,
-        transaction_cache_key: Any,
+        transaction_cache_key: TransactionCacheKeyType,
         transaction_contents: Union[bytearray, memoryview],
         has_short_id: bool,
         previous_size: int,
@@ -822,6 +870,43 @@ class TransactionService:
             short_ids
         )
 
+    def process_gateway_transaction_from_bdn(
+        self,
+        tx_hash: Sha256Hash,
+        short_id: int,
+        tx_contents: Union[bytearray, memoryview],
+        is_compact: bool) -> TransactionFromBdnGatewayProcessingResult:
+
+        if not short_id and self.has_transaction_short_id(tx_hash) and \
+            self.has_transaction_contents(tx_hash) and not self.removed_transaction(tx_hash):
+            ignore_seen = True
+            return TransactionFromBdnGatewayProcessingResult(ignore_seen=ignore_seen)
+
+        existing_short_ids = self.get_short_ids(tx_hash)
+        if (self.has_transaction_contents(tx_hash) or is_compact) \
+            and short_id and short_id in existing_short_ids:
+            existing_short_id = True
+            return TransactionFromBdnGatewayProcessingResult(existing_short_id=existing_short_id)
+
+        assigned_short_id = False
+        set_content = False
+
+        if short_id and short_id not in existing_short_ids:
+            self.assign_short_id(tx_hash, short_id)
+            assigned_short_id = True
+
+        existing_contents = self.has_transaction_contents(tx_hash)
+
+        if not is_compact and not existing_contents:
+            self.set_transaction_contents(tx_hash, tx_contents)
+            set_content = True
+
+        return TransactionFromBdnGatewayProcessingResult(
+            assigned_short_id=assigned_short_id,
+            existing_contents=existing_contents,
+            set_content=set_content
+        )
+
     def log_block_transaction_cleanup_stats(self, block_hash: Sha256Hash, tx_count: int, tx_before_cleanup: int,
                                             tx_after_cleanup: int, short_id_count_before_cleanup: int,
                                             short_id_count_after_cleanup: int):
@@ -1033,7 +1118,7 @@ class TransactionService:
             self._removed_short_ids.clear()
         return constants.DUMP_REMOVED_SHORT_IDS_INTERVAL_S
 
-    def _memory_limit_clean_up(self):
+    def _memory_limit_clean_up(self) -> None:
         """
         Removes oldest transactions if total bytes consumed by transaction contents exceed memory limit
         """
@@ -1108,8 +1193,7 @@ class TransactionService:
                        self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES)
         return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
 
-    def _tx_hash_to_cache_key(self, transaction_hash: Union[Sha256Hash, bytes, bytearray, memoryview, str]) \
-        -> str:
+    def _tx_hash_to_cache_key(self, transaction_hash: Union[Sha256Hash, bytes, bytearray, memoryview, str]) -> str:
 
         if isinstance(transaction_hash, Sha256Hash):
             return convert.bytes_to_hex(transaction_hash.binary)
@@ -1133,8 +1217,7 @@ class TransactionService:
 
         return Sha256Hash(binary=convert.hex_to_bytes(transaction_hash))
 
-    def _tx_cache_key_to_hash(self, transaction_cache_key: Union[Sha256Hash, bytes, bytearray, memoryview, str]) \
-        -> Sha256Hash:
+    def _tx_cache_key_to_hash(self, transaction_cache_key: TransactionCacheKeyType) -> Sha256Hash:
         if isinstance(transaction_cache_key, Sha256Hash):
             return transaction_cache_key
 
@@ -1231,3 +1314,18 @@ class TransactionService:
         )
 
         return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S
+
+    def set_transactions_contents(
+        self, pending_tx_to_set: List[Tuple[Sha256Hash, Union[memoryview, bytearray], str]]
+    ) -> None:
+        start = time.time()
+        for tx_hash, tx_bytes, tx_cache_key in pending_tx_to_set:
+            self.set_transaction_contents(tx_hash, tx_bytes, tx_cache_key)
+        performance_utils.log_operation_duration(
+            performance_logger,
+            "set_tx_content",
+            start,
+            constants.TX_SERVICE_SET_TXS_WARN_THRESHOLD,
+            tx_count=len(pending_tx_to_set),
+            duration=time.time() - start
+        )

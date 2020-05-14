@@ -1,11 +1,11 @@
 import time
 from datetime import datetime
-from typing import Any, List, Union
+from typing import Any, List, Union, Optional
 
 import task_pool_executor as tpe
 
 from bxcommon import constants
-from bxcommon.services.transaction_service import TransactionService
+from bxcommon.services.transaction_service import TransactionService, TransactionCacheKeyType
 from bxcommon.services.transaction_service import TxRemovalReason
 from bxcommon.utils import memory_utils
 from bxcommon.utils.object_encoder import ObjectEncoder
@@ -115,16 +115,20 @@ class ExtensionTransactionService(TransactionService):
         self.assign_short_id_base(transaction_hash, tx_cache_key, short_id, has_contents, False)
 
     def set_transaction_contents(
-        self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
+        self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview],
+        transaction_cache_key: Optional[TransactionCacheKeyType] = None
     ):
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
 
         :param transaction_hash: transaction hash
         :param transaction_contents: transaction contents bytes
+        :param transaction_cache_key: transaction cache key optional
         """
-        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        if not transaction_cache_key:
+            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
 
+        assert isinstance(transaction_cache_key, tpe.Sha256)
         has_short_id, previous_size = self.proxy.set_transaction_contents(
             transaction_cache_key,
             tpe.InputBytes(transaction_contents))

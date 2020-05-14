@@ -1,7 +1,7 @@
 import time
 from datetime import datetime, timedelta
 from datetime import time as dttime
-from typing import TypeVar, Optional, Callable, Any
+from typing import TypeVar, Optional, Callable, Any, Union
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -74,3 +74,10 @@ def is_greater_or_eq_version(version1: str, version2: str) -> bool:
         elif v1_list[i] < v2_list[i]:
             return False
     return True
+
+
+def safe_divide(value1: float, value2: float) -> float:
+    if value2 == 0:
+        return 0
+
+    return value1 / value2
