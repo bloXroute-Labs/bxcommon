@@ -877,16 +877,14 @@ class TransactionService:
         tx_contents: Union[bytearray, memoryview],
         is_compact: bool) -> TransactionFromBdnGatewayProcessingResult:
 
-        if not short_id and self.has_transaction_short_id(tx_hash) and \
-            self.has_transaction_contents(tx_hash) and not self.removed_transaction(tx_hash):
-            ignore_seen = True
-            return TransactionFromBdnGatewayProcessingResult(ignore_seen=ignore_seen)
+        if (not short_id and self.has_transaction_short_id(tx_hash) and self.has_transaction_contents(tx_hash)) or \
+            self.removed_transaction(tx_hash):
+            return TransactionFromBdnGatewayProcessingResult(ignore_seen=True)
 
         existing_short_ids = self.get_short_ids(tx_hash)
         if (self.has_transaction_contents(tx_hash) or is_compact) \
             and short_id and short_id in existing_short_ids:
-            existing_short_id = True
-            return TransactionFromBdnGatewayProcessingResult(existing_short_id=existing_short_id)
+            return TransactionFromBdnGatewayProcessingResult(existing_short_id=True)
 
         assigned_short_id = False
         set_content = False
