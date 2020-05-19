@@ -83,4 +83,4 @@ class RpcRequestHandler:
             method: RpcRequestType,
             request_params: Union[Dict[str, Any], List[Any], None]
     ) -> AbstractRpcRequest:
-        return self._request_handlers[method](method, self._node, self.request_id, request_params)  # pyre-ignore
+        return self._request_handlers[method](method, self._node, self.request_id, request_params)

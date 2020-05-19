@@ -1,5 +1,5 @@
 import json
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from typing import Union, Dict, List, Any, Type, TYPE_CHECKING
 
 from aiohttp.web_exceptions import HTTPException, HTTPOk
@@ -34,7 +34,6 @@ class AbstractRpcRequest(metaclass=ABCMeta):
         self._node = node
         self.help = {}
 
-    @abstractmethod
     async def process_request(self) -> Response:
         pass
 
