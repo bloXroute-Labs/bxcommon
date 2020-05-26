@@ -1,7 +1,7 @@
 import functools
 from collections import defaultdict
 from typing import Iterable
-from typing import List, Dict, Set, Optional, Tuple, ClassVar
+from typing import List, Dict, Optional, Tuple, ClassVar
 import time
 
 from prometheus_client import Gauge
@@ -34,7 +34,7 @@ class ConnectionPool:
 
     by_fileno: List[Optional[AbstractConnection]]
     by_ipport: Dict[Tuple[str, int], AbstractConnection]
-    by_connection_type: Dict[ConnectionType, Set[AbstractConnection]]
+    by_connection_type: Dict[ConnectionType, List[AbstractConnection]]
     by_node_id: Dict[str, AbstractConnection]
     len_fileno: int
     count_conn_by_ip: Dict[str, int]
@@ -42,7 +42,7 @@ class ConnectionPool:
     def __init__(self):
         self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO
         self.by_ipport = {}
-        self.by_connection_type = defaultdict(set)
+        self.by_connection_type = defaultdict(list)
         self.by_node_id = {}
         self.len_fileno = ConnectionPool.INITIAL_FILENO
         self.count_conn_by_ip = defaultdict(lambda: 0)
@@ -62,7 +62,7 @@ class ConnectionPool:
 
         self.by_fileno[fileno] = conn
         self.by_ipport[(ip, port)] = conn
-        self.by_connection_type[conn.CONNECTION_TYPE].add(conn)
+        self.by_connection_type[conn.CONNECTION_TYPE].append(conn)
         self.count_conn_by_ip[ip] += 1
 
     def update_port(self, old_port: int, new_port: int, conn: AbstractConnection) -> None:
@@ -80,6 +80,7 @@ class ConnectionPool:
 
         # pyre-ignore this is how we currently identify connections
         conn.CONNECTION_TYPE = connection_type
+        conn.format_connection()
         self.add(conn.file_no, conn.peer_ip, conn.peer_port, conn)
 
         peer_id = conn.peer_id
@@ -97,18 +98,19 @@ class ConnectionPool:
             return False
         return (ip, port) in self.by_ipport
 
-    def get_by_connection_type(self, connection_type: ConnectionType) -> Set[AbstractConnection]:
+    def get_by_connection_type(self, connection_type: ConnectionType) -> List[AbstractConnection]:
         """
         Returns list of connections that match the connection type.
         """
         return self.get_by_connection_types({connection_type})
 
-    def get_by_connection_types(self, connection_types: Iterable[ConnectionType]) -> Set[AbstractConnection]:
+    def get_by_connection_types(self, connection_types: Iterable[ConnectionType]) -> List[AbstractConnection]:
         matching_types = [stored_type for stored_type in self.by_connection_type.keys() if
                           any(stored_type & connection_type for connection_type in connection_types)]
-        return {connection
-                for matching_type in matching_types
-                for connection in self.by_connection_type[matching_type]}
+        connections: List[AbstractConnection] = []
+        for matching_type in matching_types:
+            connections += self.by_connection_type[matching_type]
+        return connections
 
     def get_by_ipport(self, ip: str, port: int, node_id: Optional[str] = None) -> AbstractConnection:
         ip_port = (ip, port)
@@ -145,7 +147,7 @@ class ConnectionPool:
             if len(self.by_connection_type[conn.CONNECTION_TYPE]) == 1:
                 del self.by_connection_type[conn.CONNECTION_TYPE]
             else:
-                self.by_connection_type[conn.CONNECTION_TYPE].discard(conn)
+                self.by_connection_type[conn.CONNECTION_TYPE].remove(conn)
 
         # Decrement the count- if it's 0, we delete the key.
         if self.count_conn_by_ip[conn.peer_ip] == 1:

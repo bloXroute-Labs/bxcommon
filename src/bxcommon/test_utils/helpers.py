@@ -123,16 +123,12 @@ def get_queued_node_messages(node: AbstractNode, fileno: int) -> List[AbstractMe
         is_full_message,
         _message_type,
         payload_length
-    # pyre-fixme[16]: `Optional` has no attribute
-    #  `get_message_header_preview_from_input_buffer`.
     ) = connection.message_factory.get_message_header_preview_from_input_buffer(input_buffer)
     while is_full_message:
-        # pyre-fixme[16]: `Optional` has no attribute `base_message_type`.
         message_length = connection.message_factory.base_message_type.HEADER_LENGTH + payload_length
         message_contents = input_buffer.remove_bytes(message_length)
         total_bytes += message_length
 
-        # pyre-fixme[16]: `Optional` has no attribute `create_message_from_buffer`.
         messages.append(connection.message_factory.create_message_from_buffer(message_contents))
         (
             is_full_message,
@@ -242,7 +238,8 @@ def get_common_opts(port,
         "enable_node_cache": True,
         "log_fluentd_queue_size": 1000,
         "log_level_fluentd": LogLevel.DEBUG,
-        "log_level_stdout": LogLevel.TRACE
+        "log_level_stdout": LogLevel.TRACE,
+        "log_level_overrides": {}
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val

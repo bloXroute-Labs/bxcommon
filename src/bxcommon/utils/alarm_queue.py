@@ -117,6 +117,11 @@ class AlarmQueue:
         :param args: function arguments
         :return: (fire time, unique count, alarm function)
         """
+        try:
+            hash(fn)
+        except Exception:
+            raise ValueError(f"Could not register an unhashable alarm: {fn}")
+
         if fire_delay < 0:
             raise ValueError("Invalid negative fire delay.")
         if fn is None:
@@ -146,6 +151,11 @@ class AlarmQueue:
         :param fn: function to be fired
         :param args: function arguments
         """
+        try:
+            hash(fn)
+        except Exception:
+            raise ValueError(f"Could not register an unhashable alarm: {fn}")
+
         if fire_delay < 0:
             raise ValueError("Invalid negative fire delay.")
         if slop < 0:

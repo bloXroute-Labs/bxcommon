@@ -30,6 +30,7 @@ from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
+from bxcommon.services.transaction_service import TransactionCacheKeyType
 from bxutils import log_messages
 from bxutils import logging
 from bxutils.logging import LogRecordType
@@ -337,7 +338,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         total_tx_count: int = 0,
         sending_tx_msgs_start_time: float = 0,
         start_time: float = 0,
-        snapshot_cache_keys: Optional[Set[Sha256Hash]] = None
+        snapshot_cache_keys: Optional[Set[TransactionCacheKeyType]] = None
     ) -> None:
         if sending_tx_msgs_start_time == 0:
             sending_tx_msgs_start_time = time.time()

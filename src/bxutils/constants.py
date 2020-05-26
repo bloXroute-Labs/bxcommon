@@ -55,8 +55,11 @@ SSL_CERT_FILE_FORMAT = "{}_cert.pem"
 DEFAULT_PUBLIC_CA_URL = "https://s3.amazonaws.com/credentials.blxrbdn.com/"
 DEFAULT_CERTIFICATE_RENEWAL_PERIOD_DAYS: int = 10
 SSL_PORT_RANGE: PortRange = PortRange(1800, 2000)
+DEFAULT_NODE_PRIVILEGES = "general"
 
 DEFAULT_SDN_SOCKET_PORT = 1800
 
 CATEGORIZED_LOG_LEVELS = ["ERROR", "WARNING"]
 HAS_PREFIX = "with_logging_prefix"
+
+DEFAULT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"

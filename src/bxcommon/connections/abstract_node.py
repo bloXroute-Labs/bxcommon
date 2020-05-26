@@ -61,6 +61,7 @@ class AuthenticatedPeerInfo(NamedTuple):
     connection_type: ConnectionType
     peer_id: str
     account_id: Optional[str]
+    node_privileges: str
 
 
 # pylint: disable=too-many-public-methods
@@ -69,7 +70,8 @@ class AbstractNode:
     FLUSH_SEND_BUFFERS_INTERVAL = constants.OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME * 2
     NODE_TYPE: Optional[NodeType] = None
 
-    def __init__(self, opts: Namespace, node_ssl_service: NodeSSLService):
+    def __init__(self, opts: Namespace, node_ssl_service: NodeSSLService,
+                 connection_pool: Optional[ConnectionPool] = None):
         self.node_ssl_service = node_ssl_service
         logger.debug("Initializing node of type: {}", self.NODE_TYPE)
         self.server_endpoints = [
@@ -84,7 +86,11 @@ class AbstractNode:
         self.pending_connection_attempts: Set[ConnectionPeerInfo] = set()
         self.outbound_peers: Set[OutboundPeerModel] = opts.outbound_peers.copy()
 
-        self.connection_pool = ConnectionPool()
+        if connection_pool is not None:
+            self.connection_pool = connection_pool
+        else:
+            self.connection_pool = ConnectionPool()
+
         self.should_force_exit = False
 
         self.num_retries_by_ip: Dict[Tuple[str, int], int] = defaultdict(int)
@@ -586,7 +592,8 @@ class AbstractNode:
                 f"Peer ssl certificate ({cert}) does not contain a node id!")
 
         account_id = extensions_factory.get_account_id(cert)
-        return AuthenticatedPeerInfo(connection_type, peer_id, account_id)
+        node_privileges = extensions_factory.get_node_privileges(cert)
+        return AuthenticatedPeerInfo(connection_type, peer_id, account_id, node_privileges)
 
     def _destroy_conn(self, conn: AbstractConnection):
         """
@@ -610,8 +617,9 @@ class AbstractNode:
         self.connection_pool.delete(conn)
         self.handle_connection_closed(should_retry, ConnectionPeerInfo(conn.endpoint, conn.CONNECTION_TYPE))
 
-    def _initialize_connection(self, socket_connection: AbstractSocketConnectionProtocol) -> Optional[
-        AbstractConnection]:
+    def _initialize_connection(
+        self, socket_connection: AbstractSocketConnectionProtocol
+    ) -> Optional[AbstractConnection]:
         conn_obj = self.build_connection(socket_connection)
         ip, port = socket_connection.endpoint
         if conn_obj is not None:

@@ -43,3 +43,5 @@ class LogRecordType(Enum):
     GarbageCollection = "stats.gc"
     ShortIdAllocation = "sid.allocation"
     Config = "config"
+    QuotaNotification = "stats.quota.notification"
+    QuotaFillStatus = "stats.quota.fill"
