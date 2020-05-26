@@ -53,7 +53,7 @@ def run_node(
     opts: Union[Namespace, CommonOpts],
     node_class: Type[AbstractNode],
     node_type: Optional[NodeType] = None,
-    logger_names: Iterable[Optional[str]] = tuple(LOGGER_NAMES),
+    logger_names: Optional[Iterable[str]] = tuple(LOGGER_NAMES),
     ssl_service_factory: Callable[
         [NodeType, str, str, str], NodeSSLService
     ] = default_ssl_service_factory,

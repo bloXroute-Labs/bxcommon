@@ -1174,7 +1174,7 @@ class TransactionService:
         """
         if self.node.opts.transaction_pool_memory_limit is not None:
             # convert MB to bytes
-            return self.node.opts.transaction_pool_memory_limit * 1024 * 1024
+            return int(self.node.opts.transaction_pool_memory_limit * 1024 * 1024)
 
         for blockchain_network in self.node.opts.blockchain_networks:
             if blockchain_network.network_num == self.network_num:

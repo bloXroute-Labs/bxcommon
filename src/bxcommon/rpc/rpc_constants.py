@@ -18,3 +18,11 @@ DEFAULT_RPC_USER: str = ""
 DEFAULT_RPC_PASSWORD: str = ""
 MAINNET_NETWORK_NAME: str = "Mainnet"
 PUBLIC_API_URL: str = "https://api.bloxroute.com/{0}/blxr_transaction"  # TODO: confirm url
+
+JSON_RPC_VERSION = "2.0"
+JSON_RPC_REQUEST_ID = "id"
+JSON_RPC_METHOD = "method"
+JSON_RPC_PARAMS = "params"
+JSON_RPC_VERSION_FIELD = "jsonrpc"
+JSON_RPC_RESULT = "result"
+JSON_RPC_ERROR = "error"

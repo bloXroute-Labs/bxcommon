@@ -3,7 +3,6 @@ import gc
 import os
 import time
 from abc import ABCMeta, abstractmethod
-from argparse import Namespace
 from collections import defaultdict, Counter
 from ssl import SSLContext
 from typing import List, Optional, Tuple, Dict, NamedTuple, Union, Set
@@ -30,6 +29,7 @@ from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import memory_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.blockchain_utils import bdn_tx_to_bx_tx
+from bxcommon.utils.cli import CommonOpts
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
@@ -70,8 +70,12 @@ class AbstractNode:
     FLUSH_SEND_BUFFERS_INTERVAL = constants.OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME * 2
     NODE_TYPE: Optional[NodeType] = None
 
-    def __init__(self, opts: Namespace, node_ssl_service: NodeSSLService,
-                 connection_pool: Optional[ConnectionPool] = None):
+    def __init__(
+        self,
+        opts: CommonOpts,
+        node_ssl_service: NodeSSLService,
+        connection_pool: Optional[ConnectionPool] = None
+    ):
         self.node_ssl_service = node_ssl_service
         logger.debug("Initializing node of type: {}", self.NODE_TYPE)
         self.server_endpoints = [
@@ -81,7 +85,7 @@ class AbstractNode:
         ]
 
         self.set_node_config_opts_from_sdn(opts)
-        self.opts = opts
+        self.opts: CommonOpts = opts
         self.pending_connection_requests: Set[ConnectionPeerInfo] = set()
         self.pending_connection_attempts: Set[ConnectionPeerInfo] = set()
         self.outbound_peers: Set[OutboundPeerModel] = opts.outbound_peers.copy()
@@ -399,7 +403,7 @@ class AbstractNode:
         shutdown_task = asyncio.ensure_future(self.close_all_connections())
         try:
             await asyncio.wait_for(shutdown_task, constants.NODE_SHUTDOWN_TIMEOUT_S)
-        except Exception as e: # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-except
             logger.exception("Node shutdown failed due to an error: {}, force closing!", e)
         self.requester.close()
         self.cleanup_memory_stats_logging()
@@ -498,11 +502,7 @@ class AbstractNode:
         self.connection_pool.log_connection_pool_mem_stats()
         return memory_statistics.flush_info()
 
-    def set_node_config_opts_from_sdn(self, opts):
-        # TODO: currently hard-coding configuration values
-        opts.stats_calculate_actual_size = False
-        opts.log_detailed_block_stats = False
-
+    def set_node_config_opts_from_sdn(self, opts: CommonOpts) -> None:
         blockchain_networks: List[BlockchainNetworkModel] = opts.blockchain_networks
         for blockchain_network in blockchain_networks:
             tx_stats.configure_network(blockchain_network.network_num,

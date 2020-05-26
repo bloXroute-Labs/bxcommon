@@ -5,6 +5,7 @@ from mock import MagicMock
 from prometheus_client import REGISTRY
 
 from bxcommon.services import http_service
+from bxcommon.test_utils import helpers
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxutils.common import url_helper
 from bxutils.logging import log_config
@@ -32,6 +33,7 @@ class AbstractTestCase(unittest.TestCase):
         memory_statistics.start_recording = MagicMock()
 
         REGISTRY.register = MagicMock()
+        helpers.set_extensions_parallelism()
 
     def set_ssl_folder(self) -> None:
         self.ssl_folder_path = self.get_ssl_test_files(os.path.abspath(__file__), RELATIVE_PATH_SSL_FILES)

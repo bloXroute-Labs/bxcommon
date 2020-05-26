@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 
@@ -24,7 +24,7 @@ def connections(conns: List[AbstractConnection]) -> str:
     return ", ".join(conn.format_connection_desc for conn in conns)
 
 
-def connection(conn: AbstractConnection) -> str:
+def connection(conn: Optional[AbstractConnection]) -> str:
     """
     Formats connection to a string logged in stats
     :param conn: Connection

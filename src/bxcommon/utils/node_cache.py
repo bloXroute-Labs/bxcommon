@@ -1,8 +1,10 @@
+# pyre-ignore-all-errors
+# TODO: this file should be bxgateway, since it depends on bxgateway opts
+
 import json
 import os
-from argparse import Namespace
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_model import NodeModel
@@ -14,6 +16,10 @@ from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 
 logger = logging.get_logger(__name__)
 
+if TYPE_CHECKING:
+    # pylint: disable=ungrouped-imports,cyclic-import
+    from bxcommon.utils.cli import CommonOpts
+
 
 @dataclass
 class CacheNetworkInfo:
@@ -24,7 +30,7 @@ class CacheNetworkInfo:
     node_model: NodeModel
 
 
-def update(opts: Namespace, potential_relay_peers: List[OutboundPeerModel]):
+def update(opts: "CommonOpts", potential_relay_peers: List[OutboundPeerModel]):
     try:
         cookie_file_path = config.get_data_file(opts.cookie_file_path)
         os.makedirs(os.path.dirname(cookie_file_path), exist_ok=True)
@@ -67,7 +73,7 @@ def update(opts: Namespace, potential_relay_peers: List[OutboundPeerModel]):
         )
 
 
-def read(opts: Namespace) -> Optional[CacheNetworkInfo]:
+def read(opts: "CommonOpts") -> Optional[CacheNetworkInfo]:
     cache_file_info = None
     if not opts.enable_node_cache:
         return cache_file_info
