@@ -17,7 +17,7 @@ class NodeType(SerializableFlag):
     RELAY_TYPE = RELAY  # use RELAY_TYPE for abstract relay, use RELAY for `non split` relay
     API = enum.auto()
     API_SOCKET = enum.auto()
-    BLOXROUTE_PUBLIC_API = enum.auto()
+    BLOXROUTE_CLOUD_API = enum.auto()
 
     def get_subtypes(self) -> Iterable["NodeType"]:
         for subtype in self.__class__:

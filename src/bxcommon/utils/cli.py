@@ -392,7 +392,7 @@ def parse_blockchain_opts(opts, node_type: NodeType):
     """
     opts_dict = opts.__dict__
 
-    if node_type in NodeType.RELAY or node_type in NodeType.BLOXROUTE_PUBLIC_API:
+    if node_type in NodeType.RELAY or node_type in NodeType.BLOXROUTE_CLOUD_API:
         opts_dict["blockchain_network_num"] = ALL_NETWORK_NUM
         return
 
