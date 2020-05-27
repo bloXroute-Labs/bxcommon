@@ -10,7 +10,7 @@ class LogRecordType(Enum):
     TransactionInfo = "stats.transactions.events"
     TransactionPropagationInfo = "stats.transactions.events.p"
     TransactionStats = "stats.transactions.summary"
-    CloudApIPerformance = "stats.publicapi.performance"
+    CloudApiPerformance = "stats.publicapi.performance"
     Throughput = "stats.throughput"
     Memory = "stats.memory"
     NodeStatus = "stats.node.status"
