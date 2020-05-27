@@ -108,6 +108,36 @@ def run_node(
             handler.close()
 
 
+def process_node_model(node_model: NodeModel, node_ssl_service: NodeSSLService, opts: Namespace) -> None:
+    if node_model.should_update_source_version:
+        logger.info(
+            "UPDATE AVAILABLE! An updated software version is available, please download and install the "
+            "latest version"
+        )
+
+    if node_model.cert is not None:
+        private_cert = ssl_serializer.deserialize_cert(node_model.cert)
+        node_ssl_service.blocking_store_node_certificate(private_cert)
+        ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
+        sdn_http_service.reset_pool(ssl_context)
+
+    account_id = node_model.account_id
+    if account_id and node_model.cert is not None:
+        opts.account_model = sdn_http_service.fetch_account_model(account_id)
+    else:
+        opts.account_model = None
+
+    # Add opts from SDN, but don't overwrite CLI args
+    for key, val in node_model.__dict__.items():
+        if opts.__dict__.get(key) is None:
+            opts.__dict__[key] = val
+
+    if not hasattr(opts, "outbound_peers"):
+        opts.__dict__["outbound_peers"] = []
+
+    logger.debug({"type": "node_init", "data": opts})
+
+
 def _run_node(
     opts,
     node_class,
@@ -159,27 +189,7 @@ def _run_node(
                 sys.exit(1)
             node_model = cache_info.node_model
 
-        if node_model.should_update_source_version:
-            logger.info(
-                "UPDATE AVAILABLE! An updated software version is available, please download and install the "
-                "latest version"
-            )
-
-        if node_model.cert is not None:
-            private_cert = ssl_serializer.deserialize_cert(node_model.cert)
-            node_ssl_service.blocking_store_node_certificate(private_cert)
-            ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
-            sdn_http_service.reset_pool(ssl_context)
-
-    # Add opts from SDN, but don't overwrite CLI args
-    for key, val in node_model.__dict__.items():
-        if opts.__dict__.get(key) is None:
-            opts.__dict__[key] = val
-
-    if not hasattr(opts, "outbound_peers"):
-        opts.__dict__["outbound_peers"] = []
-
-    logger.debug({"type": "node_init", "data": opts})
+    process_node_model(node_model, node_ssl_service, opts)
 
     # Start main loop
     node = node_class(opts, node_ssl_service)

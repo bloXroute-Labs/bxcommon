@@ -128,6 +128,7 @@ DUMP_MISSING_SHORT_IDS_PATH = "/app/bxrelay/debug/missing-short-ids"
 class SdnRoutes:
     nodes = "/nodes"
     node = "/nodes/{0}"
+    account = "/account/{0}"
     gateway_node_config = "/configs/gateway_node/{0}"
     node_potential_relays_by_network = "/nodes/{0}/{1}/potential-relays"
     node_gateways = "/nodes/{0}/gateways"

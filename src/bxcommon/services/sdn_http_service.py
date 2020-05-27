@@ -7,6 +7,7 @@ from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.models.bdn_account_model_base import BdnAccountModelBase
 from bxcommon.services import http_service
 from bxcommon.utils import model_loader, ip_resolver
 from bxutils import log_messages
@@ -166,3 +167,13 @@ def register_node(node_model: NodeModel) -> NodeModel:
 
 def reset_pool(ssl_context: SSLContext):
     http_service.update_http_ssl_context(ssl_context)
+
+
+def fetch_account_model(account_id: str) -> Optional[BdnAccountModelBase]:
+    account_url = SdnRoutes.account.format(account_id)
+    response = cast(Dict[str, Any], http_service.get_json(account_url))
+
+    if response:
+        return model_loader.load_model(BdnAccountModelBase, response)
+    else:
+        return None
