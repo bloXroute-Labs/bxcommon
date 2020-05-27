@@ -1,7 +1,7 @@
 {
   "binary": ".venv/bin/pyre.bin",
   "search_path": [
-    ".venv/lib/python3.7/site-packages",
+    ".venv/lib/python3.8/site-packages",
     "../bxextensions"
   ],
   "source_directories": [
