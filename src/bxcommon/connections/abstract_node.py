@@ -18,6 +18,7 @@ from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.models.authenticated_peer_info import AuthenticatedPeerInfo
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
@@ -55,13 +56,6 @@ performance_troubleshooting_logger = logging.get_logger(LogRecordType.Performanc
 class DisconnectRequest(NamedTuple):
     file_no: int
     should_retry: bool
-
-
-class AuthenticatedPeerInfo(NamedTuple):
-    connection_type: ConnectionType
-    peer_id: str
-    account_id: Optional[str]
-    node_privileges: str
 
 
 # pylint: disable=too-many-public-methods
@@ -237,9 +231,7 @@ class AbstractNode:
 
         if peer_info is not None:
             connection.on_connection_authenticated(
-                peer_info.peer_id,
-                peer_info.connection_type,
-                peer_info.account_id
+                peer_info
             )
             self.connection_pool.index_conn_node_id(
                 peer_info.peer_id, connection
