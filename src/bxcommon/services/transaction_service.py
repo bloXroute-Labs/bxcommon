@@ -13,11 +13,9 @@ from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iter
 from prometheus_client import Gauge
 
 from bxcommon import constants
-from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import memory_utils, convert
-from bxcommon.utils import performance_utils
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
@@ -376,17 +374,6 @@ class TransactionService:
         :return: Boolean indicating in transaction was seen
         """
         return cache_key in self._tx_hash_to_time_removed
-
-    def process_bx_tx_messages(
-        self, bx_tx_messages: List[Tuple[TxMessage, Sha256Hash, Union[bytearray, memoryview]]]
-    ) -> Iterator[Tuple[TxMessage, Sha256Hash, Any, Union[bytearray, memoryview], bool]]:
-
-        for bx_tx_message, tx_hash, tx_bytes in bx_tx_messages:
-            tx_cache_key = self._tx_hash_to_cache_key(tx_hash)
-            tx_seen_flag = self.has_transaction_contents_by_cache_key(tx_cache_key) or \
-                           self.removed_transaction_by_cache_key(tx_cache_key)
-
-            yield bx_tx_message, tx_hash, tx_cache_key, tx_bytes, tx_seen_flag
 
     def remove_sid_by_tx_hash(self, transaction_hash: Sha256Hash):
         transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
@@ -1312,18 +1299,3 @@ class TransactionService:
         )
 
         return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S
-
-    def set_transactions_contents(
-        self, pending_tx_to_set: List[Tuple[Sha256Hash, Union[memoryview, bytearray], str]]
-    ) -> None:
-        start = time.time()
-        for tx_hash, tx_bytes, tx_cache_key in pending_tx_to_set:
-            self.set_transaction_contents(tx_hash, tx_bytes, tx_cache_key)
-        performance_utils.log_operation_duration(
-            performance_logger,
-            "set_tx_content",
-            start,
-            constants.TX_SERVICE_SET_TXS_WARN_THRESHOLD,
-            tx_count=len(pending_tx_to_set),
-            duration=time.time() - start
-        )
