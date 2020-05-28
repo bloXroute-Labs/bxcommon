@@ -1,51 +1,48 @@
-import json
 from typing import List, Any, Union, Dict, Optional
 
 from bxcommon.rpc import rpc_constants
+from bxcommon.rpc.json_rpc_request import JsonRpcRequest
 from bxcommon.rpc.rpc_errors import RpcMethodNotFound
-from bxcommon.utils import json_utils
+from bxcommon.rpc.rpc_request_type import RpcRequestType
 
 
-class JsonRpcRequest:
-    id: Optional[str]
-    method_name: str
-    params: Union[List[Any], Dict[Any, Any], None]
+class BxJsonRpcRequest(JsonRpcRequest):
+    method: RpcRequestType
 
     def __init__(
         self,
         request_id: Optional[str],
-        method: str,
+        method: RpcRequestType,
         params: Union[List[Any], Dict[Any, Any], None],
     ) -> None:
-        self.id = request_id
-        self.method_name = method
-        self.params = params
-        self.json_rpc_version = rpc_constants.JSON_RPC_VERSION
+        super().__init__(request_id, method.name.lower(), params)
+        self.method = method
 
     def __str__(self):
-        return f"JsonRpcRequest<{self.to_json()}>"
+        return f"BxJsonRpcRequest<{self.to_json()}>"
 
     def to_json(self) -> Dict[str, Any]:
         return {
             rpc_constants.JSON_RPC_VERSION_FIELD: self.json_rpc_version,
             rpc_constants.JSON_RPC_REQUEST_ID: self.id,
-            rpc_constants.JSON_RPC_METHOD: self.method_name,
+            rpc_constants.JSON_RPC_METHOD: self.method.name.lower(),
             rpc_constants.JSON_RPC_PARAMS: self.params,
         }
 
-    def to_jsons(self) -> str:
-        return json_utils.serialize(self.to_json())
-
     @classmethod
-    def from_json(cls, payload: Dict[str, Any]) -> "JsonRpcRequest":
+    def from_json(cls, payload: Dict[str, Any]) -> "BxJsonRpcRequest":
         request_id = payload.get(rpc_constants.JSON_RPC_REQUEST_ID, None)
         if rpc_constants.JSON_RPC_METHOD not in payload:
             raise RpcMethodNotFound(request_id, "RPC request does not contain a method!")
 
-        method = payload[rpc_constants.JSON_RPC_METHOD]
+        str_method = payload[rpc_constants.JSON_RPC_METHOD]
+        try:
+            method = RpcRequestType[str_method.upper()]
+        except KeyError:
+            possible_values = [rpc_type.lower() for rpc_type in RpcRequestType.__members__.keys()]
+            raise RpcMethodNotFound(
+                request_id,
+                f"RPC method: {str_method} is not recognized (possible_values: {possible_values}).",
+            )
         request_params = payload.get(rpc_constants.JSON_RPC_PARAMS, None)
         return cls(request_id, method, request_params)
-
-    @classmethod
-    def from_jsons(cls, payload: str) -> "JsonRpcRequest":
-        return cls.from_json(json.loads(payload))

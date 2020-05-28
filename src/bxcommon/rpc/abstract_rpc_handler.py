@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABCMeta
 from typing import Generic, TypeVar, Any, Dict, List, TYPE_CHECKING, Type
 
-from bxcommon.rpc.json_rpc_request import JsonRpcRequest
+from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
 from bxcommon.rpc.rpc_errors import RpcParseError, RpcError, RpcInternalError
@@ -31,7 +31,7 @@ class AbstractRpcHandler(Generic[Node, Req, Res], metaclass=ABCMeta):
         except Exception:
             raise RpcParseError()
 
-        rpc_request = JsonRpcRequest.from_json(payload)
+        rpc_request = BxJsonRpcRequest.from_json(payload)
         request_handler = self.get_request_handler(rpc_request)
         try:
             return self.serialize_response(
@@ -58,7 +58,7 @@ class AbstractRpcHandler(Generic[Node, Req, Res], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_request_handler(self, request: JsonRpcRequest) -> AbstractRpcRequest:
+    def get_request_handler(self, request: BxJsonRpcRequest) -> AbstractRpcRequest:
         pass
 
     @abstractmethod

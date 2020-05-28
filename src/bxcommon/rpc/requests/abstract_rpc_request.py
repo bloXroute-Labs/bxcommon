@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from typing import Union, Dict, List, Any, TYPE_CHECKING, Optional, TypeVar, Generic
 
-from bxcommon.rpc.json_rpc_request import JsonRpcRequest
+from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.rpc_request_type import RpcRequestType
 
@@ -22,7 +22,7 @@ class AbstractRpcRequest(Generic[Node], metaclass=ABCMeta):
 
     def __init__(
         self,
-        request: JsonRpcRequest,
+        request: BxJsonRpcRequest,
         node: Node,
     ) -> None:
         self.method = request.method

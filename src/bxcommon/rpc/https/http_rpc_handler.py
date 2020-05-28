@@ -6,7 +6,7 @@ from aiohttp.web_exceptions import HTTPBadRequest, HTTPOk
 
 from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.abstract_rpc_handler import AbstractRpcHandler
-from bxcommon.rpc.json_rpc_request import JsonRpcRequest
+from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
 from bxcommon.rpc.rpc_errors import RpcParseError
@@ -44,7 +44,7 @@ class HttpRpcHandler(Generic[Node], AbstractRpcHandler[Node, Request, Response])
             raise RpcParseError()
         return payload
 
-    def get_request_handler(self, request: JsonRpcRequest) -> AbstractRpcRequest:
+    def get_request_handler(self, request: BxJsonRpcRequest) -> AbstractRpcRequest:
         # seems to be pyre bug: https://github.com/facebook/pyre-check/issues/267
         # pyre-fixme[45]: Cannot instantiate abstract class `Abstract` with abstract method `run`.
         return self.request_handlers[request.method](request, self.node)
