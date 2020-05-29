@@ -2,7 +2,7 @@ version: 2.1
 executors:
   bloxroute-executor:
     docker:
-      - image: circleci/python:3.8
+      - image: circleci/python:3.7.0
     environment:
       PYTHONPATH: /home/circleci/ws/bxcommon/src:/home/circleci/ws/bxextensions:/home/circleci/ws/bxcommon-internal/src/
     working_directory: ~/ws
@@ -162,7 +162,7 @@ jobs:
             python -m unittest discover --verbose
   build:
     docker:
-      - image: circleci/python:3.8
+      - image: circleci/python:3.7
     working_directory: ~/ws
 
     steps:
@@ -175,7 +175,7 @@ jobs:
 
   deploy:
     docker:
-      - image: circleci/python:3.8
+      - image: circleci/python:3.7
     working_directory: ~/ws
 
     steps:

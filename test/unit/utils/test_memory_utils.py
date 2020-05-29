@@ -77,24 +77,23 @@ class MemoryUtilsTest(AbstractTestCase):
         object_size2 = memory_utils.get_object_size(m2)
         actual_size = memory_utils.get_special_size(m).size
         d = deque("0" * 64)
-
-        # TODO: fix the platforms memory size defaults
-        self.assertIn(memory_utils.getsizeof(d), (1152, 1160, 1168))  # Size of deque ADT
         if "Darwin" not in platform.platform():
             self.assertEqual(adt_size, adt_size2)  # memoryviews are 200 byte ADTs
-            # self.assertEqual(object_size.size, object_size2.size)  # object_size cant calculate contents
-            # self.assertEqual(memory_utils.get_special_size(d).size, 4744)  # Actual size of deque ADT + contents
+            self.assertEqual(object_size.size, object_size2.size)  # object_size cant calculate contents
+            self.assertEqual(memory_utils.getsizeof(d), 1160)  # Size of deque ADT
+            self.assertEqual(memory_utils.get_special_size(d).size, 4744)  # Actual size of deque ADT + contents
             self.assertEqual(actual_size,
                              m.nbytes + adt_size)  # get_special_size actually calculates contents + ADT size
             d.append("0")
-            # self.assertEqual(memory_utils.getsizeof(d), 1160)  # Didn't register change
-            # self.assertEqual(memory_utils.get_special_size(d).size, 4800)  # Actual size of deque ADT + contents
+            self.assertEqual(memory_utils.getsizeof(d), 1160)  # Didn't register change
+            self.assertEqual(memory_utils.get_special_size(d).size, 4800)  # Actual size of deque ADT + contents
             d.append(m)  # Adding the memoryview to the deque to test recursion
-            # self.assertEqual(memory_utils.getsizeof(d), 1160)  # Didn't register change
-            # self.assertEqual(memory_utils.get_special_size(d).size, 4800 + actual_size)
+            self.assertEqual(memory_utils.getsizeof(d), 1160)  # Didn't register change
+            self.assertEqual(memory_utils.get_special_size(d).size, 4800 + actual_size)
         else:
             self.assertEqual(adt_size, 200)  # memoryviews are 200 byte ADTs
             self.assertEqual(object_size.size, 200)  # object_size cant calculate contents
+            self.assertEqual(memory_utils.getsizeof(d), 1168)  # Size of deque ADT
             self.assertEqual(memory_utils.get_special_size(d).size, 4752)  # Actual size of deque ADT + contents
             self.assertEqual(actual_size,
                              m.nbytes + adt_size)  # get_special_size actually calculates contents + ADT size
