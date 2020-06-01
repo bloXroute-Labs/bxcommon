@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from typing import Optional, Any, Dict
 
@@ -48,6 +49,14 @@ class RpcError(Exception):
 
     def to_jsons(self) -> str:
         return json_utils.serialize(self.to_json())
+
+    @classmethod
+    def from_json(cls, payload: Dict[str, Any]) -> "RpcError":
+        return cls(RpcErrorCode(payload["code"]), None, payload["data"])
+
+    @classmethod
+    def from_jsons(cls, payload: str) -> "RpcError":
+        return cls.from_json(json.loads(payload))
 
 
 class RpcParseError(RpcError):

@@ -4,6 +4,7 @@ from typing import Any, Optional, Dict
 from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.rpc_errors import RpcError
 from bxcommon.utils import json_utils
+from bxutils import utils
 
 
 class JsonRpcResponse:
@@ -17,9 +18,9 @@ class JsonRpcResponse:
         result: Optional[Any] = None,
         error: Optional[RpcError] = None,
     ) -> None:
-        if result is not None and error is not None:
+        if not (result is not None) ^ (error is not None):
             raise ValueError(
-                "Cannot instantiate a JsonRpcResponse with both an error and a result!"
+                "Cannot instantiate a JsonRpcResponse with both (or neither) an error and a result!"
             )
 
         self.id = request_id
@@ -52,7 +53,10 @@ class JsonRpcResponse:
         return cls(
             payload.get(rpc_constants.JSON_RPC_REQUEST_ID, None),
             payload.get(rpc_constants.JSON_RPC_RESULT, None),
-            payload.get(rpc_constants.JSON_RPC_ERROR, None)
+            utils.optional_map(
+                payload.get(rpc_constants.JSON_RPC_ERROR, None),
+                RpcError.from_json
+            )
         )
 
     @classmethod
