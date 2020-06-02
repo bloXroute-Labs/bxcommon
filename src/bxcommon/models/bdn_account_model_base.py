@@ -14,5 +14,5 @@ class BdnAccountModelBase:
     tx_free: Optional[BdnServiceModelConfigBase] = None
     tx_paid: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
     block_paid: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
-    public_api: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
+    cloud_api: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
     new_transaction_streaming: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
