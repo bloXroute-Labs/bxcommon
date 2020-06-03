@@ -40,7 +40,7 @@ class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node], metac
         network_num = self.get_network_num()
         account_id = self.get_account_id()
         quota_type = self._get_quota_type(params)
-        return self.process_transaction(network_num, account_id, quota_type, transaction_str)
+        return await self.process_transaction(network_num, account_id, quota_type, transaction_str)
 
     def _get_quota_type(self, params: Dict[str, Any]) -> QuotaType:
         account_id = self.get_account_id()
@@ -56,7 +56,7 @@ class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node], metac
         return quota_type
 
     @abstractmethod
-    def process_transaction(
+    async def process_transaction(
         self, network_num: int, account_id: str, quota_type: QuotaType, transaction_str: str
     ) -> JsonRpcResponse:
         pass
