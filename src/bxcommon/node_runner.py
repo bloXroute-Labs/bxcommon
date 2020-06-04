@@ -51,8 +51,8 @@ def default_ssl_service_factory(
 def run_node(
     process_id_file_path: str,
     opts: Union[Namespace, CommonOpts],
-    get_node_class: Callable[[], Type[AbstractNode]],
-    node_type: NodeType,
+    node_class: Type[AbstractNode],
+    node_type: Optional[NodeType] = None,
     logger_names: Optional[Iterable[str]] = tuple(LOGGER_NAMES),
     ssl_service_factory: Callable[
         [NodeType, str, str, str], NodeSSLService
@@ -81,6 +81,9 @@ def run_node(
 
     _verify_environment()
 
+    if node_type is None:
+        node_type = node_class.NODE_TYPE
+
     config.log_pid(process_id_file_path)
     gc.callbacks.append(gc_logger.gc_callback)
 
@@ -94,7 +97,7 @@ def run_node(
                 task_pool_proxy.get_pool_size(),
             )
         _run_node(
-            opts, get_node_class, node_type, ssl_service_factory=ssl_service_factory
+            opts, node_class, node_type, ssl_service_factory=ssl_service_factory
         )
     except TerminationError:
         logger.fatal("Node terminated")
@@ -121,7 +124,6 @@ def process_node_model(node_model: NodeModel, node_ssl_service: NodeSSLService, 
     account_id = node_model.account_id
     if account_id and node_model.cert is not None:
         opts.account_model = sdn_http_service.fetch_account_model(account_id)
-
     else:
         opts.account_model = None
 
@@ -133,21 +135,17 @@ def process_node_model(node_model: NodeModel, node_ssl_service: NodeSSLService, 
     if not hasattr(opts, "outbound_peers"):
         opts.__dict__["outbound_peers"] = []
 
-    if hasattr(opts, "post_init_tasks"):
-        opts.post_init_tasks()
-
     logger.debug({"type": "node_init", "data": opts})
 
 
 def _run_node(
     opts,
-    get_node_class,
+    node_class,
     node_type,
     ssl_service_factory: Callable[
         [NodeType, str, str, str], NodeSSLService
     ] = default_ssl_service_factory,
 ):
-
     node_model = None
     if opts.node_id:
         # Test network, get pre-configured peers from the SDN.
@@ -194,7 +192,7 @@ def _run_node(
     process_node_model(node_model, node_ssl_service, opts)
 
     # Start main loop
-    node = get_node_class()(opts, node_ssl_service)
+    node = node_class(opts, node_ssl_service)
     log_config.set_instance(node.opts.node_id)
     loop = asyncio.get_event_loop()
     node_event_loop = NodeEventLoop(node)
