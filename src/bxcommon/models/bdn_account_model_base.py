@@ -16,3 +16,5 @@ class BdnAccountModelBase:
     block_paid: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
     cloud_api: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
     new_transaction_streaming: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
+    blockchain_protocol: Optional[str] = None
+    blockchain_network: Optional[str] = None

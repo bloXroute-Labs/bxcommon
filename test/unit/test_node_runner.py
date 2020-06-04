@@ -101,5 +101,5 @@ class TestNodeRunner(AbstractTestCase):
         get_argument_parser_mock.return_value = argparse.ArgumentParser()
         parse_arguments_mock.return_value = self.opts
         node_runner._init_ssl_service = MagicMock()
-        node_runner.run_node("", self.opts, NodeMock)
+        node_runner.run_node("", self.opts, lambda: NodeMock, NodeType.EXTERNAL_GATEWAY)
         self.assertEqual(self.event_loop_mock.run_count, 1)
