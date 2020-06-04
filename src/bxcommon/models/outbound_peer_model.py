@@ -48,6 +48,11 @@ class OutboundPeerModel:
 
         return None
 
+    def is_transaction_streamer(self) -> bool:
+        return self.attributes.get(
+            constants.TRANSACTION_STREAMER_ATTRIBUTE_NAME, False
+        )
+
     def __str__(self):
         return (
             f"({self.node_type}, {self.ip}, {self.port}, {self.node_id}, "

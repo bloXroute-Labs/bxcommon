@@ -208,3 +208,8 @@ NETWORK_NUMBER_MISMATCH = LogMessage(
     PROCESSING_FAILED_CATEGORY,
     "Network number mismatch. Current network num {}, remote network num {}. Closing connection."
 )
+RPC_COULD_NOT_PARSE_TRANSACTION = LogMessage(
+    "C-000041",
+    REQUEST_RESPONSE_CATEGORY,
+    "Error parsing the transaction:\n{}",
+)

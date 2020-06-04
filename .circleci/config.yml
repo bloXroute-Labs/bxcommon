@@ -30,10 +30,10 @@ jobs:
             pip install -r bxcommon/requirements-dev.txt
             pip install -r bxcommon/requirements-optional.txt
       - restore_cache: # restores saved dependency cache if the Branch key template or requirements.txt files have not changed since the previous run
-          key: deps1-{{ .Branch }}-{{ checksum "bxcommon/requirements.txt" }}-{{ checksum "bxcommon/requirements-dev.txt" }}-\
+          key: deps2-{{ .Branch }}-{{ checksum "bxcommon/requirements.txt" }}-{{ checksum "bxcommon/requirements-dev.txt" }}-\
                {{ checksum "bxcommon/requirements-optional.txt" }}
       - save_cache: # special step to save dependency cache
-          key: deps1-{{ .Branch }}-{{ checksum "bxcommon/requirements.txt" }}-{{ checksum "bxcommon/requirements-dev.txt" }}-\
+          key: deps2-{{ .Branch }}-{{ checksum "bxcommon/requirements.txt" }}-{{ checksum "bxcommon/requirements-dev.txt" }}-\
                {{ checksum "bxcommon/requirements-optional.txt" }}
           paths:
             - "venv"

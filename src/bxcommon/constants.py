@@ -131,7 +131,7 @@ class SdnRoutes:
     account = "/account/{0}"
     gateway_node_config = "/configs/gateway_node/{0}"
     node_potential_relays_by_network = "/nodes/{0}/{1}/potential-relays"
-    node_gateways = "/nodes/{0}/gateways"
+    node_gateways = "/nodes/{0}/gateways?streaming={1}"
     node_remote_blockchain = "/nodes/{0}/potential-remote-blockchain-peers"
     node_event = "/nodes/{0}/events"
     blockchain_network = "/blockchain-networks/{0}/{1}"
@@ -304,3 +304,4 @@ MEM_STATS_OBJECT_SIZE_THRESHOLD = 1024 * 1024
 MEM_STATS_OBJECT_COUNT_THRESHOLD = 2000
 
 TX_FROM_PUB_API_TO_RELAY_THRESHOLD_S = 2.0
+TRANSACTION_STREAMER_ATTRIBUTE_NAME = "tx_streamer"

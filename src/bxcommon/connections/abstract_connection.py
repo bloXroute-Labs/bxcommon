@@ -102,6 +102,7 @@ class AbstractConnection(Generic[Node]):
         self._debug_message_tracker = defaultdict(int)
         self._last_debug_message_log_time = time.time()
         self.ping_interval_s: int = constants.PING_INTERVAL_S
+
         self.peer_model: Optional[OutboundPeerModel] = None
 
         self.pong_timeout_alarm_id = None
@@ -163,6 +164,16 @@ class AbstractConnection(Generic[Node]):
             # Reset num_retries when a connection established in order to support resetting the Fibonnaci logic
             # to determine next retry
             self.node.num_retries_by_ip[(self.peer_ip, self.peer_port)] = 0
+
+            for peer_model in self.node.outbound_peers:
+                if (
+                    (
+                        peer_model.ip == self.peer_ip
+                        and peer_model.port == self.peer_port
+                    )
+                    or peer_model.node_id == self.peer_id
+                ):
+                    self.peer_model = peer_model
 
     def add_received_bytes(self, bytes_received: Union[bytearray, bytes]):
         """

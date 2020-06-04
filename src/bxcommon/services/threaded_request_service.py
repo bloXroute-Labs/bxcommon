@@ -35,9 +35,12 @@ class ThreadedRequestService:
         self.thread_pool.stop()
         self.thread_pool.close()
 
-    def send_threaded_request(self, request: Callable[..., None], *args: Any,
-                              done_callback: Optional[Callable[[Future], Any]] = None
-                              ) -> Future:
+    def send_threaded_request(
+        self,
+        request: Callable[..., Any],
+        *args: Any,
+        done_callback: Optional[Callable[[Future], Any]] = None
+    ) -> Future:
         """
         Submit a function to be executed in a separate thread in a thread pool,
         and set up an alarm to verify the correct result of the function
