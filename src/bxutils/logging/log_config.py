@@ -13,6 +13,7 @@ from bxutils.logging import log_level, LoggerConfig
 from bxutils.logging.handler_type import HandlerType
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
+from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 
 try:
     # TODO: remove try catch clause once the dependencies are installed
@@ -61,7 +62,8 @@ def _get_handler_fluentd(fluentd_host: Optional[str],
         nanosecond_precision=True,
         max_queue_size=max_queue_size,
         log_unhandled_exceptions=True,
-        loop=loop
+        loop=loop,
+        packer_kwargs={"default": EnhancedJSONEncoder().default}
     )
 
 
