@@ -1,6 +1,7 @@
 import time
 import unittest
 from abc import abstractmethod
+from datetime import datetime
 from typing import TypeVar, cast, Generic, List, Any
 
 from bxcommon import constants
@@ -8,6 +9,7 @@ from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.bloxroute import protocol_version
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
+from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
 from bxcommon.messages.bloxroute.blocks_short_ids_serializer import BlockShortIds
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
@@ -54,12 +56,13 @@ M13 = TypeVar("M13", bound=AbstractMessage)
 M14 = TypeVar("M14", bound=AbstractMessage)
 M15 = TypeVar("M15", bound=AbstractMessage)
 M16 = TypeVar("M16", bound=AbstractMessage)
+M17 = TypeVar("M17", bound=AbstractMessage)
 
 
 # pylint: disable=too-many-public-methods
 class AbstractBloxrouteVersionManagerTest(
     AbstractTestCase,
-    Generic[M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16],
+    Generic[M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17],
 ):
     """
     Template to get you started:
@@ -82,6 +85,7 @@ class AbstractBloxrouteVersionManagerTest(
             BlockConfirmationMessage,
             TransactionCleanupMessage,
             NotificationMessage,
+            BdnPerformanceStatsMessage,
         ]
     ):
 
@@ -216,6 +220,9 @@ class AbstractBloxrouteVersionManagerTest(
             NotificationCode.QUOTA_FILL_STATUS, str(helpers.generate_bytes(100))
         )
 
+    def bdn_performance_stats_message(self) -> BdnPerformanceStatsMessage:
+        return BdnPerformanceStatsMessage(datetime.utcnow(), datetime.utcnow(), 100, 200, 300, 400)
+
     # </editor-fold>
 
     # <editor-fold desc="OLD DEFINITIONS" defaultstate="collapsed">
@@ -270,6 +277,9 @@ class AbstractBloxrouteVersionManagerTest(
 
     def old_notify_message(self, original_message: NotificationMessage) -> M16:
         return cast(M16, original_message)
+
+    def old_bdn_performance_stats_message(self, original_message: BdnPerformanceStatsMessage) -> M17:
+        return cast(M17, original_message)
 
     # </editor-fold>
 
@@ -706,6 +716,34 @@ class AbstractBloxrouteVersionManagerTest(
 
         self.compare_notify_current_to_old(current_to_old_message, old_message)
         self.compare_notify_old_to_current(old_to_current_message, current_message)
+
+    def compare_bdn_performance_stats_current_to_old(
+        self, converted_old_message: M17, original_old_message: M17,
+    ):
+        self.assertEqual(
+            original_old_message.rawbytes(), converted_old_message.rawbytes(),
+        )
+
+    def compare_bdn_performance_stats_old_to_current(
+            self,
+            converted_current_message: BdnPerformanceStatsMessage,
+            original_current_message: BdnPerformanceStatsMessage,
+    ):
+        self.assertEqual(
+            original_current_message.rawbytes(), converted_current_message.rawbytes(),
+        )
+
+    def test_bdn_performance_stats_message(self):
+        current_message = self.bdn_performance_stats_message()
+        old_message = self.old_bdn_performance_stats_message(current_message)
+
+        current_to_old_message = self._convert_to_older_version(current_message, old_message)
+        old_to_current_message = cast(
+            M16, self._convert_to_current_version(old_message, current_message)
+        )
+
+        self.compare_bdn_performance_stats_current_to_old(current_to_old_message, old_message)
+        self.compare_bdn_performance_stats_old_to_current(old_to_current_message, current_message)
 
     # </editor-fold>
 

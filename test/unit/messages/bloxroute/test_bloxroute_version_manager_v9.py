@@ -1,4 +1,3 @@
-from bxcommon import constants
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
@@ -16,18 +15,18 @@ from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServi
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
-from bxcommon.messages.bloxroute.v7.tx_message_v7 import TxMessageV7
+from bxcommon.messages.bloxroute.v9.bdn_performance_stats_message_v9 import BdnPerformanceStatsMessageV9
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
-class BloxrouteVersionManagerV7Test(
+class BloxrouteVersionManagerV9Test(
     AbstractBloxrouteVersionManagerTest[
         HelloMessage,
         AckMessage,
         PingMessage,
         PongMessage,
         BroadcastMessage,
-        TxMessageV7,
+        TxMessage,
         GetTxsMessage,
         TxsMessage,
         KeyMessage,
@@ -38,55 +37,61 @@ class BloxrouteVersionManagerV7Test(
         BlockConfirmationMessage,
         TransactionCleanupMessage,
         NotificationMessage,
-        BdnPerformanceStatsMessage,
+        BdnPerformanceStatsMessageV9,
     ]
 ):
-    def version_to_test(self) -> int:
-        return 7
 
-    def old_tx_message(self, original_message: TxMessage) -> TxMessageV7:
-        return TxMessageV7(
-            original_message.message_hash(),
-            original_message.network_num(),
-            original_message.source_id(),
-            original_message.short_id(),
-            original_message.tx_val(),
-            original_message.quota_type(),
+    def version_to_test(self) -> int:
+        return 9
+
+    def old_bdn_performance_stats_message(
+            self,
+            original_message: BdnPerformanceStatsMessage
+    ) -> BdnPerformanceStatsMessageV9:
+
+        return BdnPerformanceStatsMessageV9(
+            original_message.interval_start_time(),
+            original_message.interval_end_time(),
+            original_message.new_blocks_from_blockchain_node(),
+            original_message.new_blocks_from_bdn(),
+            original_message.new_tx_from_blockchain_node(),
+            original_message.new_tx_from_bdn()
         )
 
-    def compare_tx_current_to_old(
-        self,
-        converted_old_message: TxMessageV7,
-        original_old_message: TxMessageV7,
+    def compare_bdn_performance_stats_current_to_old(
+            self,
+            converted_old_message: BdnPerformanceStatsMessageV9,
+            original_old_message: BdnPerformanceStatsMessageV9,
     ):
+
         self.assert_attributes_equal(
             original_old_message,
             converted_old_message,
             [
-                "message_hash",
-                "tx_val",
-                "source_id",
-                "network_num",
-                "quota_type",
+                "interval_start_time",
+                "interval_end_time",
+                "new_blocks_from_blockchain_node",
+                "new_blocks_from_bdn",
+                "new_tx_from_blockchain_node",
+                "new_tx_from_bdn",
             ],
         )
 
-    def compare_tx_old_to_current(
+    def compare_bdn_performance_stats_old_to_current(
         self,
-        converted_current_message: TxMessage,
-        original_current_message: TxMessage,
+        converted_current_message: BdnPerformanceStatsMessage,
+        original_current_message: BdnPerformanceStatsMessage,
     ):
-        self.assertEqual(
-            constants.NULL_TX_TIMESTAMP, converted_current_message.timestamp()
-        )
+
         self.assert_attributes_equal(
             converted_current_message,
             original_current_message,
             [
-                "message_hash",
-                "tx_val",
-                "source_id",
-                "network_num",
-                "quota_type",
+                "interval_start_time",
+                "interval_end_time",
+                "new_blocks_from_blockchain_node",
+                "new_blocks_from_bdn",
+                "new_tx_from_blockchain_node",
+                "new_tx_from_bdn",
             ],
         )

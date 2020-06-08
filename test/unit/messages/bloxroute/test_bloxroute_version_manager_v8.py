@@ -1,4 +1,5 @@
 from bxcommon.messages.bloxroute.ack_message import AckMessage
+from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.v8.broadcast_message_v8 import BroadcastMessageV8
@@ -37,6 +38,7 @@ class BloxrouteVersionManagerV8Test(
         BlockConfirmationMessage,
         TransactionCleanupMessage,
         NotificationMessage,
+        BdnPerformanceStatsMessage,
     ]
 ):
     def version_to_test(self) -> int:
