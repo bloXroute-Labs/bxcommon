@@ -18,6 +18,9 @@ class TransactionStatEventType:
                                                            event_logic_flags=StatEventLogicFlags.SUMMARY, priority=True)
     TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_SEEN = StatEventTypeSettings(
         "TxReceivedByRelayFromPeerIgnoreSeen", priority=True)
+    TX_RECEIVED_BY_RELAY_FROM_PEER_FULL_QUOTA_IGNORED = StatEventTypeSettings(
+        "TxReceivedByRelayFromPeerFullQuotaIgnored"
+    )
     TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_EXPIRED = StatEventTypeSettings("TxReceivedByRelayFromPeerIgnoreExpired")
     TX_SHORT_ID_ASSIGNED_BY_RELAY = StatEventTypeSettings("TxShortIdAssignedByRelay")
     TX_SHORT_ID_STORED_BY_GATEWAY = StatEventTypeSettings("TxShortIdStoredByGateway")
