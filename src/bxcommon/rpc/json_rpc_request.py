@@ -40,7 +40,7 @@ class JsonRpcRequest:
     def from_json(cls, payload: Dict[str, Any]) -> "JsonRpcRequest":
         request_id = payload.get(rpc_constants.JSON_RPC_REQUEST_ID, None)
         if rpc_constants.JSON_RPC_METHOD not in payload:
-            raise RpcMethodNotFound(request_id, "RPC request does not contain a method!")
+            raise RpcMethodNotFound(request_id, "RPC request does not contain a method.")
 
         method = payload[rpc_constants.JSON_RPC_METHOD]
         request_params = payload.get(rpc_constants.JSON_RPC_PARAMS, None)

@@ -213,3 +213,8 @@ RPC_COULD_NOT_PARSE_TRANSACTION = LogMessage(
     REQUEST_RESPONSE_CATEGORY,
     "Error parsing the transaction:\n{}",
 )
+INTERNAL_ERROR_HANDLING_RPC_REQUEST = LogMessage(
+    "C-000042",
+    RPC_ERROR,
+    "Internal error {} while handling request {}"
+)

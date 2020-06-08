@@ -13,20 +13,21 @@ class RpcErrorCode(Enum):
     INTERNAL_ERROR = -32603
 
     # implementation specific codes
-    # SERVER_ERROR_START = -32000
-    ALREADY_SEEN = -32000
-    REJECTED = -32001
-    # SERVER_ERROR_END = -32099
-
+    BLOCKED = -32001
+    TIMED_OUT = -32002
+    ACCOUNT_ID_ERROR = -32003
+    UNKNOWN = -32004
 
 ERROR_MESSAGE_MAPPINGS = {
     RpcErrorCode.PARSE_ERROR: "Parse error",
-    RpcErrorCode.INVALID_REQUEST: "Invalid Request",
-    RpcErrorCode.METHOD_NOT_FOUND: "Method not found",
+    RpcErrorCode.INVALID_REQUEST: "Invalid request",
+    RpcErrorCode.METHOD_NOT_FOUND: "Invalid method",
     RpcErrorCode.INVALID_PARAMS: "Invalid params",
     RpcErrorCode.INTERNAL_ERROR: "Internal error",
-    RpcErrorCode.ALREADY_SEEN: "Already seen",
-    RpcErrorCode.REJECTED: "Rejected",
+    RpcErrorCode.BLOCKED: "Insufficient quota",
+    RpcErrorCode.TIMED_OUT: "Timeout error",
+    RpcErrorCode.ACCOUNT_ID_ERROR: "Invalid Account ID",
+    RpcErrorCode.UNKNOWN: "Invalid result from BDN",
 }
 
 
@@ -84,11 +85,21 @@ class RpcInternalError(RpcError):
         super().__init__(RpcErrorCode.INTERNAL_ERROR, request_id, data)
 
 
-class RpcAlreadySeen(RpcError):
+class RpcBlocked(RpcError):
     def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
-        super().__init__(RpcErrorCode.ALREADY_SEEN, request_id, data)
+        super().__init__(RpcErrorCode.BLOCKED, request_id, data)
 
 
-class RpcRejected(RpcError):
+class RpcTimedOut(RpcError):
     def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
-        super().__init__(RpcErrorCode.REJECTED, request_id, data)
+        super().__init__(RpcErrorCode.TIMED_OUT, request_id, data)
+
+
+class RpcAccountIdError(RpcError):
+    def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
+        super().__init__(RpcErrorCode.ACCOUNT_ID_ERROR, request_id, data)
+
+
+class RpcUnknownError(RpcError):
+    def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
+        super().__init__(RpcErrorCode.UNKNOWN, request_id, data)

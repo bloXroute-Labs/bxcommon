@@ -6,7 +6,7 @@ from typing import Callable, Awaitable, Optional, TYPE_CHECKING, TypeVar, Generi
 from aiohttp import web
 from aiohttp.abc import StreamResponse
 from aiohttp.web import Application, Request, Response, AppRunner, TCPSite
-from aiohttp.web_exceptions import HTTPClientError, HTTPBadRequest, HTTPInternalServerError, HTTPOk
+from aiohttp.web_exceptions import HTTPClientError, HTTPBadRequest, HTTPInternalServerError
 from aiohttp.web_exceptions import HTTPUnauthorized
 
 from bxcommon.rpc import rpc_constants
@@ -14,8 +14,8 @@ from bxcommon.rpc.https.http_rpc_handler import HttpRpcHandler
 from bxcommon.rpc.https.request_formatter import RequestFormatter
 from bxcommon.rpc.https.response_formatter import ResponseFormatter
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
-from bxcommon.rpc.rpc_errors import RpcError, RpcParseError, RpcInvalidRequest, RpcMethodNotFound, \
-    RpcInvalidParams, RpcAlreadySeen, RpcRejected
+from bxcommon.rpc.rpc_errors import RpcError, RpcParseError, RpcMethodNotFound, \
+    RpcInvalidParams, RpcAccountIdError
 from bxcommon.utils import json_utils
 
 from bxutils import logging
@@ -112,11 +112,10 @@ class AbstractHttpRpcServer(Generic[Node], metaclass=ABCMeta):
             return await self._handler.handle_request(request)
         except HTTPClientError as e:
             return self._format_http_error(e)
-        except (RpcParseError, RpcInvalidRequest, RpcMethodNotFound, RpcInvalidParams) as e:
+        except RpcAccountIdError as e:
+            return self._format_rpc_error(e, HTTPUnauthorized.status_code)
+        except (RpcParseError, RpcMethodNotFound, RpcInvalidParams) as e:
             return self._format_rpc_error(e, HTTPBadRequest.status_code)
-        except (RpcAlreadySeen, RpcRejected) as e:
-            # request ok, rejected by relay
-            return self._format_rpc_error(e, HTTPOk.status_code)
         except RpcError as e:
             return self._format_rpc_error(e, HTTPInternalServerError.status_code)
 

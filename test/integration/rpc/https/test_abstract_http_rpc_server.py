@@ -23,7 +23,7 @@ class RpcRequest(AbstractRpcRequest):
     def validate_params(self) -> None:
         params = self.params
         if not isinstance(params, dict):
-            raise RpcInvalidParams(self.request_id, "Must be dict param")
+            raise RpcInvalidParams(self.request_id, "Params request field must be a dictionary type.")
 
     async def process_request(self) -> JsonRpcResponse:
         params = self.params
@@ -92,6 +92,7 @@ class AbstractHttpRpcServerTest(AbstractTestCase):
             "id": None,
             "error": {
                 "code": RpcErrorCode.PARSE_ERROR.value,
+                'data': 'Unable to parse the request: <Request POST / >',
                 "message": "Parse error"
             }
         }
@@ -112,7 +113,7 @@ class AbstractHttpRpcServerTest(AbstractTestCase):
             "id": 1,
             "error": {
                 "code": RpcErrorCode.METHOD_NOT_FOUND.value,
-                "message": "Method not found"
+                "message": "Invalid method"
             }
         }
         result = json.loads(await result.json())
@@ -134,7 +135,7 @@ class AbstractHttpRpcServerTest(AbstractTestCase):
             "id": 1,
             "error": {
                 "code": RpcErrorCode.METHOD_NOT_FOUND.value,
-                "message": "Method not found"
+                "message": "Invalid method"
             }
         }
         result = json.loads(await result.json())
@@ -182,7 +183,7 @@ class AbstractHttpRpcServerTest(AbstractTestCase):
             "error": {
                 "code": RpcErrorCode.INTERNAL_ERROR.value,
                 "message": "Internal error",
-                "data": "boom!"
+                "data": "Please contact bloXroute support."
             }
         }
         result = json.loads(await result.json())

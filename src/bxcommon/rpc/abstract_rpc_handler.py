@@ -6,6 +6,9 @@ from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
 from bxcommon.rpc.rpc_errors import RpcParseError, RpcError, RpcInternalError
 from bxcommon.rpc.rpc_request_type import RpcRequestType
+from bxutils import logging, log_messages
+
+logger = logging.get_logger(__name__)
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
@@ -29,7 +32,7 @@ class AbstractRpcHandler(Generic[Node, Req, Res], metaclass=ABCMeta):
         try:
             payload = await self.parse_request(request)
         except Exception:
-            raise RpcParseError()
+            raise RpcParseError(None, f"Unable to parse the request: {request}")
 
         rpc_request = BxJsonRpcRequest.from_json(payload)
         request_handler = self.get_request_handler(rpc_request)
@@ -40,7 +43,10 @@ class AbstractRpcHandler(Generic[Node, Req, Res], metaclass=ABCMeta):
         except RpcError as e:
             raise e
         except Exception as e:
-            raise RpcInternalError(rpc_request.id, str(e))
+            logger.error(
+                log_messages.INTERNAL_ERROR_HANDLING_RPC_REQUEST, e, rpc_request
+            )
+            raise RpcInternalError(rpc_request.id, f"Please contact bloXroute support.")
 
     async def help(self) -> List[Any]:
         return [

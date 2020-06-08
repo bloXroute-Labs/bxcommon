@@ -41,7 +41,7 @@ class HttpRpcHandler(Generic[Node], AbstractRpcHandler[Node, Request, Response])
     async def parse_request(self, request: Request) -> Dict[str, Any]:
         payload = await request.json()
         if not isinstance(payload, dict):
-            raise RpcParseError()
+            raise RpcParseError(None, f"Unable to parse the request: {payload}")
         return payload
 
     def get_request_handler(self, request: BxJsonRpcRequest) -> AbstractRpcRequest:
