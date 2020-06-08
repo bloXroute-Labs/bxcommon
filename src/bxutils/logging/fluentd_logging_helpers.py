@@ -2,6 +2,7 @@ import logging
 from io import BytesIO
 
 import msgpack
+import sys
 
 from bxutils import constants
 from bxutils import log_messages
@@ -14,7 +15,7 @@ def overflow_handler_print(pending_records_buffer):
     logger.error(log_messages.FLUENTD_LOGGER_BUFFER_OVERFLOW)
     unpacker = msgpack.Unpacker(BytesIO(pending_records_buffer))
     for unpacked in unpacker:
-        print(unpacked)
+        sys.stdout.write(unpacked)
 
 
 def overflow_handler_ignore(_pending_records_buffer):
