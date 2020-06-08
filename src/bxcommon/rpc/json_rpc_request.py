@@ -47,5 +47,5 @@ class JsonRpcRequest:
         return cls(request_id, method, request_params)
 
     @classmethod
-    def from_jsons(cls, payload: str) -> "JsonRpcRequest":
+    def from_jsons(cls, payload: Union[bytes, str]) -> "JsonRpcRequest":
         return cls.from_json(json.loads(payload))

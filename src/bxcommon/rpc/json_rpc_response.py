@@ -1,5 +1,5 @@
 import json
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, Union
 
 from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.rpc_errors import RpcError
@@ -60,5 +60,5 @@ class JsonRpcResponse:
         )
 
     @classmethod
-    def from_jsons(cls, payload: str) -> "JsonRpcResponse":
+    def from_jsons(cls, payload: Union[bytes, str]) -> "JsonRpcResponse":
         return cls.from_json(json.loads(payload))
