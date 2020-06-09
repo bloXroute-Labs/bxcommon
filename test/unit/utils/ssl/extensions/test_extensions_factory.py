@@ -8,6 +8,7 @@ from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
 
 from bxcommon.models.node_type import NodeType
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxutils import constants
 from bxutils.ssl import ssl_certificate_factory
 from bxutils.ssl.extensions import extensions_factory
 
@@ -50,7 +51,7 @@ class ExtensionsFactoryTest(AbstractTestCase):
             self.template_csr,
             self.template_cert,
             self.template_key,
-            365,
+            constants.DEFAULT_EXPIRATION_DATE,
             extensions_factory.get_custom_extensions(
                 node_type, node_id, node_privileges=node_privileges
             )

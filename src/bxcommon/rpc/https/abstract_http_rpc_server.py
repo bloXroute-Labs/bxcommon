@@ -142,6 +142,8 @@ class AbstractHttpRpcServer(Generic[Node], metaclass=ABCMeta):
         self._started = True
         await self._runner.setup()
         opts = self.node.opts
+
+        # TODO: add ssl certificate
         site = TCPSite(self._runner, opts.rpc_host, opts.rpc_port)
         self._site = site
         await site.start()

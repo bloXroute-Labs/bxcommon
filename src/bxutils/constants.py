@@ -1,3 +1,5 @@
+from datetime import datetime, date, timedelta
+
 from bxcommon.network.port_range import PortRange
 from bxutils.logging.fluentd_overflow_handler_type import OverflowHandlerType
 from bxutils.logging.log_format import LogFormat
@@ -48,7 +50,7 @@ FLUENTD_DEFAULT_TAG = "bx"
 
 # TODO: use the data dir configurations (https://github.com/bloXroute-Labs/bxcommon-private/pull/510) after merging
 #  bxutils back into bxcommon
-DEFAULT_VALIDATION_PERIOD_DAYS: int = 365
+DEFAULT_EXPIRATION_DATE: date = datetime.today().date() + timedelta(365)
 SSL_FOLDER = ".ssl"
 SSL_KEY_FILE_FORMAT = "{}_key.pem"
 SSL_CERT_FILE_FORMAT = "{}_cert.pem"
@@ -61,5 +63,3 @@ DEFAULT_SDN_SOCKET_PORT = 1800
 
 CATEGORIZED_LOG_LEVELS = ["ERROR", "WARNING"]
 HAS_PREFIX = "with_logging_prefix"
-
-DEFAULT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"

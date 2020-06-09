@@ -5,7 +5,7 @@ import typing
 import urllib.request
 import urllib.response
 from asyncio import Transport
-from datetime import datetime, timedelta
+from datetime import datetime, time, date
 from ssl import SSLSocket
 from typing import Callable, Iterable, Union, IO
 
@@ -182,7 +182,7 @@ def sign_csr(
     csr: CertificateSigningRequest,
     ca_cert: Certificate,
     key: EllipticCurvePrivateKey,
-    validation_period_days: int,
+    expiration_date: date,
     custom_extensions: Iterable[Union[KeyUsage, UnrecognizedExtension, BasicConstraints]]
 ) -> Certificate:
     """
@@ -190,7 +190,7 @@ def sign_csr(
     :param csr: the CSR
     :param ca_cert: the CA certificate
     :param key: the CA private key
-    :param validation_period_days: the validation period in days
+    :param expiration_date: expiration date
     :param custom_extensions: custom extensions to be added to the certificate
     :return: a certificate object
     """
@@ -201,7 +201,7 @@ def sign_csr(
     ).serial_number(
         x509.random_serial_number()
     ).not_valid_before(now).not_valid_after(
-        now + timedelta(days=validation_period_days)
+        datetime.combine(expiration_date, time(), None)
     ).add_extension(
         extension=AuthorityKeyIdentifier.from_issuer_public_key(ca_cert.public_key()),
         critical=False
