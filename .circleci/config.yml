@@ -16,31 +16,13 @@ jobs:
       - checkout:
           path:
             "bxcommon"
-      - run:
-          command: |
-            sudo apt update &&
-            sudo apt install build-essential automake autogen autoconf libtool libtool-bin libssl-dev cmake linux-headers-amd64
       - run: # install and activate virtual environment with pip
           command: |
             cd ~/ws
             python -m virtualenv venv
-            . venv/bin/activate
-            pip install pip==18.1
-            pip install -r bxcommon/requirements.txt
-            pip install -r bxcommon/requirements-dev.txt
-            pip install -r bxcommon/requirements-optional.txt
-      - restore_cache: # restores saved dependency cache if the Branch key template or requirements.txt files have not changed since the previous run
-          key: deps2-{{ .Branch }}-{{ checksum "bxcommon/requirements.txt" }}-{{ checksum "bxcommon/requirements-dev.txt" }}-\
-               {{ checksum "bxcommon/requirements-optional.txt" }}
-      - save_cache: # special step to save dependency cache
-          key: deps2-{{ .Branch }}-{{ checksum "bxcommon/requirements.txt" }}-{{ checksum "bxcommon/requirements-dev.txt" }}-\
-               {{ checksum "bxcommon/requirements-optional.txt" }}
-          paths:
-            - "venv"
       - run:
-          name: Install bxextensions dependency
+          name: clone bxextensions dependency
           command: |
-            . venv/bin/activate
             { # try
                 echo "Trying to clone identical branch name '$CIRCLE_BRANCH' from bxextensions."
                 git clone -b $CIRCLE_BRANCH --single-branch --depth=1 --recursive git@github.com:bloXroute-Labs/bxextensions-private.git bxextensions
@@ -49,13 +31,41 @@ jobs:
                 git clone -b develop --single-branch --depth=1 --recursive git@github.com:bloXroute-Labs/bxextensions-private.git bxextensions
             }
             cd bxextensions
+            echo "$(git rev-parse HEAD)" > ~/ws/ext_tmp_file
+      - restore_cache: # restores saved dependency cache
+          key: bxextensions-{{ checksum "~/ws/ext_tmp_file" }}
+      - restore_cache: # restores saved dependency cache
+          key: bxcommon-{{ checksum "bxcommon/requirements.txt" }}-{{ checksum "bxcommon/requirements-dev.txt" }}-\
+            {{ checksum "bxcommon/requirements-optional.txt" }}
+      - run: # install and activate virtual environment with pip
+          command: |
+            cd ~/ws
+            . venv/bin/activate
+            pip install -r bxcommon/requirements.txt \
+             -r bxcommon/requirements-dev.txt \
+             -r bxcommon/requirements-optional.txt
+      - run:
+          command: |
+            sudo apt update &&
+            sudo apt install build-essential automake autogen autoconf libtool libtool-bin libssl-dev cmake linux-headers-amd64
+            . venv/bin/activate
+            cd bxextensions
             python build_extensions.py
+      - save_cache: # special step to save dependency cache
+          key: bxcommon-{{ checksum "bxcommon/requirements.txt" }}-{{ checksum "bxcommon/requirements-dev.txt" }}-\
+            {{ checksum "bxcommon/requirements-optional.txt" }}
+          paths:
+            - "venv"
+      - save_cache: # special step to save dependency cache
+          key: bxextensions-{{ checksum "~/ws/ext_tmp_file" }}
+          paths:
+            - "bxextensions"
       - persist_to_workspace:
           root: .
           paths:
             - venv
-            - bxextensions
             - bxcommon
+            - bxextensions
 
   check:
     executor: bloxroute-executor
