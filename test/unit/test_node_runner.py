@@ -10,6 +10,8 @@ from bxcommon.models.node_model import NodeModel
 from bxcommon.models.node_type import NodeType
 from bxcommon.test_utils import helpers
 from bxcommon.utils import config
+from bxcommon.utils.cli import CommonOpts
+from bxcommon.utils import cli
 
 from bxutils.logging import log_config
 from bxutils.logging.log_format import LogFormat
@@ -21,7 +23,7 @@ class NodeMock:
     NODE_TYPE = NodeType.EXTERNAL_GATEWAY
 
     def __init__(self, opts: Namespace, node_ssl_service: Optional[NodeSSLService] = None):
-        self.opts: Namespace = opts
+        self.opts: CommonOpts = CommonOpts(opts)
         self.node_ssl_service = node_ssl_service
 
 
@@ -32,6 +34,10 @@ class EventLoopMock:
 
     async def run(self):
         self.run_count += 1
+
+
+def get_mock_node():
+    return NodeMock
 
 
 class TestNodeRunner(AbstractTestCase):
@@ -71,16 +77,20 @@ class TestNodeRunner(AbstractTestCase):
             "private_ssl_base_url": self.ssl_folder_url,
             "data_dir": config.get_default_data_path(),
             "log_level_fluentd": LogLevel.DEBUG,
-            "log_level_stdout": LogLevel.TRACE
+            "log_level_stdout": LogLevel.TRACE,
+            "sdn_url": "https://localhost:8080",
         }
-        self.opts = Namespace()
-        self.opts.__dict__ = opts
+        for item in CommonOpts.__dataclass_fields__:
+            if item not in opts:
+                opts[item] = None
+        self.opts = CommonOpts(Namespace(**opts))
         log_config.create_logger(None, LogLevel.WARNING)
         self.event_loop_mock = EventLoopMock()
 
     @mock.patch("bxcommon.utils.cli.get_argument_parser")
     @mock.patch("bxcommon.utils.cli.parse_arguments")
     @mock.patch("bxcommon.services.sdn_http_service.fetch_blockchain_networks")
+    @mock.patch("bxcommon.services.sdn_http_service.fetch_account_model")
     @mock.patch("bxcommon.node_runner.NodeEventLoop")
     @mock.patch("bxcommon.services.sdn_http_service.register_node")
     @mock.patch("bxcommon.utils.config.log_pid")
@@ -89,6 +99,7 @@ class TestNodeRunner(AbstractTestCase):
             log_pid_mock,
             register_node_mock,
             create_event_loop_mock,
+            fetch_account_model_mock,
             fetch_blockchain_networks_mock,
             get_argument_parser_mock,
             parse_arguments_mock,
@@ -97,9 +108,11 @@ class TestNodeRunner(AbstractTestCase):
         node_runner._init_ssl_service = MagicMock()
         create_event_loop_mock.return_value = self.event_loop_mock
         register_node_mock.return_value = NodeModel(external_ip="1.1.1.1", external_port=1234, node_type=NodeType.RELAY)
+        fetch_account_model_mock.return_value = None
         fetch_blockchain_networks_mock.return_value = [self.blockchain_network]
         get_argument_parser_mock.return_value = argparse.ArgumentParser()
         parse_arguments_mock.return_value = self.opts
         node_runner._init_ssl_service = MagicMock()
-        node_runner.run_node("", self.opts, NodeMock)
+        node_runner.run_node("", self.opts, get_mock_node, NodeType.RELAY)
+        self.assertEqual(self.opts.blockchain_networks, [self.blockchain_network])
         self.assertEqual(self.event_loop_mock.run_count, 1)

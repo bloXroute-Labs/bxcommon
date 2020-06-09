@@ -6,12 +6,14 @@ from dataclasses import dataclass
 from ipaddress import ip_address
 from typing import Dict, List, Set, Iterable, Optional
 from urllib.parse import urlparse
+from datetime import datetime
 
 from bxcommon import constants
 from bxcommon.constants import ALL_NETWORK_NUM
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.models.bdn_account_model_base import BdnAccountModelBase
 from bxcommon.rpc import rpc_constants
 from bxcommon.services import http_service
 from bxcommon.services import sdn_http_service
@@ -27,7 +29,7 @@ from bxutils.logging.log_level import LogLevel
 logger = logging.get_logger(__name__)
 
 
-@dataclass()
+@dataclass
 class CommonOpts:
     external_ip: str
     external_port: int
@@ -56,7 +58,7 @@ class CommonOpts:
     import_extensions: bool
     thread_pool_parallelism_degree: int
     tx_mem_pool_bucket_size: int
-    source_version: int
+    source_version: str
     ca_cert_url: str
     private_ssl_base_url: str
     log_fluentd_queue_size: int
@@ -78,6 +80,7 @@ class CommonOpts:
     has_fully_updated_tx_service: bool
     logger_names: Optional[Iterable[str]]
     third_party_loggers: Optional[List[LoggerConfig]]
+    node_start_time: datetime
 
     # pylint: disable=too-many-statements
     def __init__(self, opts: Namespace):
@@ -143,6 +146,9 @@ class CommonOpts:
         # Validation
         self.validate_external_ip()
 
+        self.node_start_time = datetime.utcnow()
+        self.os_version = constants.OS_VERSION
+
     def validate_external_ip(self):
         parsed_sdn_url = urlparse(self.sdn_url)
         sdn_host = parsed_sdn_url.netloc.split(":")[0]
@@ -154,6 +160,12 @@ class CommonOpts:
                 exc_info=False
             )
             sys.exit(1)
+
+    def validate_network_opts(self) -> None:
+        pass
+
+    def set_account_options(self, account_model: BdnAccountModelBase) -> None:
+        pass
 
 
 def get_argument_parser() -> argparse.ArgumentParser:
@@ -413,7 +425,7 @@ def parse_blockchain_opts(opts, node_type: NodeType):
 def _set_blockchain_networks_from_cache(opts):
     cache_info = node_cache.read(opts)
     if cache_info:
-        opts.blockchain_networks = cache_info.blockchain_network
+        opts.blockchain_networks = cache_info.blockchain_networks
     if not opts.blockchain_networks:
         logger.warning(log_messages.EMPTY_BLOCKCHAIN_NETWORK_CACHE)
 
@@ -448,7 +460,3 @@ def _get_blockchain_network_info(opts) -> BlockchainNetworkModel:
         logger.fatal("Could not reach the SDN to fetch network information. Check that {} is the actual address "
                      "you are trying to reach.", opts.sdn_url, exc_info=False)
     sys.exit(1)
-
-
-def set_os_version(opts):
-    opts.__dict__["os_version"] = constants.OS_VERSION

@@ -203,6 +203,17 @@ class NodeSSLService:
             raise TypeError(f"Node id is missing in private certificate: {cert}!")
         return node_id
 
+    def get_account_id(self) -> Optional[str]:
+        try:
+            cert = self.get_certificate(SSLCertificateType.PRIVATE)
+        except ValueError:
+            logger.info("Could not find private SSL certificate, continue without account settings")
+            return None
+        account_id = extensions_factory.get_account_id(cert)
+        if account_id is None:
+            logger.info("Account id is missing in private certificate: {}!", cert)
+        return account_id
+
     def _store_cert(self, cert_type: SSLCertificateType, cert: Certificate) -> None:
         if not self._store_local:
             logger.debug("{} skip saving {} to local storage.", self, cert)
