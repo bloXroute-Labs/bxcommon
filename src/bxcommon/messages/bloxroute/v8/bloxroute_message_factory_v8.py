@@ -7,7 +7,6 @@ from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
-from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
 from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
@@ -26,6 +25,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyn
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.notification_message import NotificationMessage
 from bxcommon.messages.bloxroute.v8.broadcast_message_v8 import BroadcastMessageV8
+from bxcommon.messages.bloxroute.v9.bdn_performance_stats_message_v9 import BdnPerformanceStatsMessageV9
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -62,7 +62,7 @@ class _BloxrouteMessageFactoryV8(AbstractMessageFactory):
         BloxrouteMessageType.BLOCK_CONFIRMATION: BlockConfirmationMessage,
         BloxrouteMessageType.TRANSACTION_CLEANUP: TransactionCleanupMessage,
         BloxrouteMessageType.NOTIFICATION: NotificationMessage,
-        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessage
+        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV9
     }
 
     def __init__(self):
