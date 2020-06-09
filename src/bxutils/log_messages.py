@@ -218,3 +218,8 @@ INTERNAL_ERROR_HANDLING_RPC_REQUEST = LogMessage(
     RPC_ERROR,
     "Internal error {} while handling request {}"
 )
+BDN_ACCOUNT_INFORMATION_TIMEOUT = LogMessage(
+    "C-000043",
+    CONNECTION_PROBLEM_CATEGORY,
+    "BDN does not send the account information within {} seconds."
+)

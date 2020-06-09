@@ -8,5 +8,4 @@ from bxcommon.models.time_interval_type import TimeIntervalType
 class BdnServiceModelBase:
     interval: TimeIntervalType = TimeIntervalType.DAILY
     service_type: BdnServiceType = BdnServiceType.MSG_QUOTA
-    expire_date: str = "1970-01-01"
     limit: int = 0

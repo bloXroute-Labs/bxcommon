@@ -2,7 +2,6 @@ from typing import Optional
 from dataclasses import dataclass
 from datetime import datetime, date
 
-from bxutils import constants as utils_constants
 from bxcommon.models.bdn_service_model_base import BdnServiceModelBase
 
 
@@ -10,7 +9,7 @@ from bxcommon.models.bdn_service_model_base import BdnServiceModelBase
 class BdnServiceModelConfigBase:
     msg_quota: Optional[BdnServiceModelBase] = None
     permit: Optional[BdnServiceModelBase] = None
-    expire_date: str = utils_constants.DEFAULT_EXPIRATION_DATE.isoformat()
+    expire_date: str = "1970-01-01"
 
     def is_service_valid(self) -> bool:
         today = datetime.utcnow().date()
