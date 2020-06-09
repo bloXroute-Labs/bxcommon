@@ -3,7 +3,7 @@ from typing import List, Any, Union, Dict, Optional
 
 from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.rpc_errors import RpcMethodNotFound
-from bxcommon.utils import json_utils
+from bxutils.encoding import json_encoder
 
 
 class JsonRpcRequest:
@@ -34,7 +34,7 @@ class JsonRpcRequest:
         }
 
     def to_jsons(self) -> str:
-        return json_utils.serialize(self.to_json())
+        return json_encoder.to_json(self.to_json())
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "JsonRpcRequest":

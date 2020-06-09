@@ -2,7 +2,7 @@ import json
 from enum import Enum
 from typing import Optional, Any, Dict
 
-from bxcommon.utils import json_utils
+from bxutils.encoding import json_encoder
 
 
 class RpcErrorCode(Enum):
@@ -49,7 +49,7 @@ class RpcError(Exception):
         return fields
 
     def to_jsons(self) -> str:
-        return json_utils.serialize(self.to_json())
+        return json_encoder.to_json(self.to_json())
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "RpcError":

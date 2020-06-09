@@ -14,9 +14,10 @@ from bxcommon.rpc.https.http_rpc_handler import HttpRpcHandler
 from bxcommon.rpc.https.request_formatter import RequestFormatter
 from bxcommon.rpc.https.response_formatter import ResponseFormatter
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
+
 from bxcommon.rpc.rpc_errors import RpcError, RpcParseError, RpcMethodNotFound, \
     RpcInvalidParams, RpcAccountIdError
-from bxcommon.utils import json_utils
+from bxutils.encoding import json_encoder
 
 from bxutils import logging
 
@@ -154,7 +155,7 @@ class AbstractHttpRpcServer(Generic[Node], metaclass=ABCMeta):
             "code": code,
             "message": err_msg,
         }
-        client_error.text = json_utils.serialize(response_json)
+        client_error.text = json_encoder.to_json(response_json)
         return client_error
 
     def _format_rpc_error(self, rpc_error: RpcError, status_code: int) -> Response:

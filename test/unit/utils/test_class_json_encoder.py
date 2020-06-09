@@ -1,6 +1,5 @@
 import unittest
 
-from bxcommon.utils.class_json_encoder import ClassJsonEncoder
 from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 from bxcommon.utils import convert
 import json
@@ -37,13 +36,13 @@ class EnhancedJSONEncoderTest(unittest.TestCase):
     def test_encode_sha256(self):
         hash_ = "96e900d13d89eb12219e18ddc7aae8ec173a3cff196f09556b5d730df4a10732"
         items = [sha256(hash_.encode())]
-        js = json.dumps(items, cls=ClassJsonEncoder)
+        js = json.dumps(items, cls=EnhancedJSONEncoder)
         self.assertEqual(json.loads(js), [sha256(hash_.encode()).hexdigest()])
 
     def test_encode_sha256_tpe(self):
         hash_ = "96e900d13d89eb12219e18ddc7aae8ec173a3cff196f09556b5d730df4a10732"
         items = [tpe.Sha256(tpe.InputBytes(convert.hex_to_bytes(hash_)))]
-        js = json.dumps(items, cls=ClassJsonEncoder)
+        js = json.dumps(items, cls=EnhancedJSONEncoder)
         self.assertEqual(json.loads(js), [hash_])
 
     def test_encode_list(self):
