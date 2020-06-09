@@ -399,7 +399,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
 
     def test_notification_message(self):
         notification_code = NotificationCode.QUOTA_FILL_STATUS
-        args_list = [str(EntityType.TRANSACTION.value), str(QuotaType.FREE_DAILY_QUOTA.value), "10", "100"]
+        args_list = ["10", str(EntityType.TRANSACTION.value), "100"]
         raw_message = ",".join(args_list)
 
         notification_message = self.create_message_successfully(
@@ -408,6 +408,10 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
 
         self.assertEqual(notification_code, notification_message.notification_code())
         self.assertEqual(raw_message, notification_message.raw_message())
+        self.assertEqual(
+            notification_message.formatted_message(),
+            "10% of daily transaction quota with limit of 100 transactions per day is depleted."
+        )
 
     def test_bdn_performance_stats_message(self):
         start_time = datetime.utcnow()
