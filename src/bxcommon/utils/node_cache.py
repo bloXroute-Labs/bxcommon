@@ -46,8 +46,9 @@ def update(opts: "CommonOpts", potential_relay_peers: List[OutboundPeerModel]) -
         data.node_model = node_model
 
     try:
-        os.makedirs(os.path.dirname(opts.cookie_file_path), exist_ok=True)
-        with open(config.get_data_file(opts.cookie_file_path), "w") as cookie_file:
+        cookie_file_path = config.get_data_file(opts.cookie_file_path)
+        os.makedirs(os.path.dirname(cookie_file_path), exist_ok=True)
+        with open(cookie_file_path, "w") as cookie_file:
             json.dump(data, cookie_file, indent=4, cls=EnhancedJSONEncoder)
     # pylint: disable=broad-except
     except Exception as e:
