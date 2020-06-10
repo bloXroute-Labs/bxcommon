@@ -12,3 +12,4 @@ class RpcRequestType(SerializeableEnum):
     PING = 7
     SUBSCRIBE = 8
     UNSUBSCRIBE = 9
+    QUOTA_USAGE = 10
