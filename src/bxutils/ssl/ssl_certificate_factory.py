@@ -151,7 +151,7 @@ def fetch_key(url: str) -> EllipticCurvePrivateKeyWithSerialization:
         return ssl_serializer.deserialize_key(key_file.read())
 
 
-def get_socket_cert(ssl_socket: SSLSocket) -> Certificate:
+def get_socket_cert(ssl_socket: Union[SSLSocket, ssl.SSLObject]) -> Certificate:
     """
     Obtain a peer certificate from an SSL socket.
     :param ssl_socket: the SSL socket object
@@ -170,8 +170,7 @@ def get_transport_cert(transport: Union[Transport, TCPTransport]) -> Certificate
     :return: a certificate object
     :raise: ValueError if the transport doesn't wrap an SSL socket
     """
-    ssl_socket = typing.cast(SSLSocket, transport.get_extra_info("ssl_object"))
-    # pyre-fixme[25]: Assertion will always fail.
+    ssl_socket = transport.get_extra_info("ssl_object")
     if isinstance(ssl_socket, (SSLSocket, ssl.SSLObject)):
         return get_socket_cert(ssl_socket)
     else:

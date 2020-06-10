@@ -193,7 +193,11 @@ class NodeSSLService:
             self._get_file_path(cert_info.cert_file_info), self._get_file_path(cert_info.key_file_info)  # pyre-ignore
         )
         context.check_hostname = False
-        logger.debug("{} successfully created SSL context for certificate: {}.", self, self.certificates[cert_type])
+        logger.debug(
+            "{} successfully created SSL context for certificate: {}.",
+            self,
+            self.certificates[cert_type]
+        )
         return context
 
     def get_node_id(self) -> str:

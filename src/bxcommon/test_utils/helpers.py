@@ -340,7 +340,8 @@ if get_trace is not None and get_trace():
 
 def async_test(method):
     def wrapper(*args, **kwargs):
-        async_method = asyncio.coroutine(method)
+        async def async_method(*args, **kwargs):
+            await method(*args, **kwargs)
         future = async_method(*args, **kwargs)
         task = asyncio.wait_for(future, timeout=ASYNC_TEST_TIMEOUT_S)
         loop = asyncio.get_event_loop()
