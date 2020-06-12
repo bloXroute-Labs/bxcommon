@@ -95,6 +95,15 @@ def fetch_blockchain_networks() -> List[BlockchainNetworkModel]:
     return blockchain_networks
 
 
+def fetch_quota_status(account_id: str) -> Optional[Dict[str, Any]]:
+    result = http_service.get_json_with_payload(SdnRoutes.quota_status, {"account_id": account_id})
+    if result:
+        result = cast(Dict[str, Any], result)
+        return result
+    else:
+        return None
+
+
 def submit_sid_space_switch(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.SID_SPACE_SWITCH))
 

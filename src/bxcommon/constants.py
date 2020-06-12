@@ -138,6 +138,7 @@ class SdnRoutes:
     blockchain_networks = "/blockchain-networks"
     gateway_inbound_connection = "/nodes/{0}/gateway-inbound-connection"
     bdn_services = "/configs/bdn-services"
+    quota_status = "/accounts/quota-status"
 
 
 # </editor-fold>
