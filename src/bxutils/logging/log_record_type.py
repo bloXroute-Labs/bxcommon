@@ -13,6 +13,7 @@ class LogRecordType(Enum):
     CloudApiPerformance = "stats.publicapi.performance"
     Throughput = "stats.throughput"
     Memory = "stats.memory"
+    TransactionFeedStats = "stats.transaction.feed"
     NodeStatus = "stats.node.status"
     NodeInfo = "stats.node.info"
     NodeEvent = "stats.node.event"

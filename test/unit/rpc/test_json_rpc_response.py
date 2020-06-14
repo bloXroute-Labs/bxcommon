@@ -1,3 +1,4 @@
+from bxcommon.rpc.json_rpc_request import JsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.rpc_errors import RpcInvalidParams, RpcError
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -33,3 +34,8 @@ class JsonRpcResponseTest(AbstractTestCase):
         self.assertEqual(rpc_response.error.code, deserialized.error.code)
         self.assertEqual(rpc_response.error.message, deserialized.error.message)
         self.assertEqual(rpc_response.error.data, deserialized.error.data)
+
+    def test_serialize_error_rpc_notification(self):
+        rpc_notification = JsonRpcRequest(None, "sub", ["subid", {}])
+        with self.assertRaises(ValueError):
+            JsonRpcResponse.from_json(rpc_notification.to_json())

@@ -18,9 +18,9 @@ class JsonRpcResponse:
         result: Optional[Any] = None,
         error: Optional[RpcError] = None,
     ) -> None:
-        if not (result is not None) ^ (error is not None):
+        if (result is not None) and (error is not None):
             raise ValueError(
-                "Cannot instantiate a JsonRpcResponse with both (or neither) an error and a result!"
+                "Cannot instantiate a JsonRpcResponse with both an error and a result."
             )
 
         self.id = request_id
@@ -50,6 +50,10 @@ class JsonRpcResponse:
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "JsonRpcResponse":
+        if not (rpc_constants.JSON_RPC_RESULT not in payload) ^ (rpc_constants.JSON_RPC_ERROR not in payload):
+            raise ValueError(
+                "Cannot instantiate a message with neither (or both) a result and error."
+            )
         return cls(
             payload.get(rpc_constants.JSON_RPC_REQUEST_ID, None),
             payload.get(rpc_constants.JSON_RPC_RESULT, None),
