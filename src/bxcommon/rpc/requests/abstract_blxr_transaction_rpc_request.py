@@ -12,9 +12,9 @@ from bxcommon.rpc.rpc_errors import RpcInvalidParams, RpcAccountIdError
 class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node], metaclass=ABCMeta):
     SYNCHRONOUS = rpc_constants.SYNCHRONOUS_PARAMS_KEY
     help = {
-        "params": f"[Required - {rpc_constants.TRANSACTION_PARAMS_KEY}: [transaction payload in hex string format]\n"
-                  f"{SYNCHRONOUS}: [True (wait for response from the relay - default), "
-                  "False (don't wait for response)]",
+        "params": f"[Required - {rpc_constants.TRANSACTION_PARAMS_KEY}: [transaction payload in hex string format]]. "
+                  f"Optional - {SYNCHRONOUS}: [True (wait for response from the relay - default), "
+                  "False (don't wait for response)].",
         "description": "send transaction to the bloXroute BDN"
     }
 

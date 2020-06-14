@@ -126,8 +126,8 @@ class AbstractHttpRpcServer(Generic[Node], metaclass=ABCMeta):
         except HTTPUnauthorized as e:
             return self._format_http_error(e)
         else:
-            return web.json_response(
-                {
+            response_dict = {
+                "result": {
                     "required_request_type": "POST",
                     "required_headers": [
                         {
@@ -136,7 +136,8 @@ class AbstractHttpRpcServer(Generic[Node], metaclass=ABCMeta):
                     ],
                     "payload_structures": await self._handler.help(),
                 }
-            )
+            }
+            return web.json_response(json_encoder.to_json(response_dict))
 
     async def _start(self) -> None:
         self._started = True
