@@ -1,15 +1,22 @@
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.connections.connection_type import ConnectionType
 from logging import Formatter, LogRecord
+from bxutils.logging.formatters import FluentJSONFormatter
 from bxutils import logging
 from bxutils.logging import log_config
-from bxutils.logging import log_format
+from bxutils.logging import formatters
+from bxutils.logging.log_level import LogLevel
 from bxutils import log_messages
+from bxutils.encoding import json_encoder
+
+import msgpack
 import json
+
 
 import unittest
 
 
-class JsonFormatterTesting(AbstractTestCase):
+class JsonFormatterTest(AbstractTestCase):
     def setUp(self) -> None:
         log_config.setup_logging(
             log_format=log_config.LogFormat.JSON,
@@ -32,7 +39,7 @@ class JsonFormatterTesting(AbstractTestCase):
                          cm.output[0])
 
     def test_json_formatter_item_order(self):
-        formatter = log_format.JSONFormatter()
+        formatter = formatters.JSONFormatter()
         log_record = LogRecord(
             __name__,
             logging.log_level.LogLevel.DEBUG,
@@ -46,6 +53,41 @@ class JsonFormatterTesting(AbstractTestCase):
         msg_list = list(msg_.items())
         self.assertEqual(msg_list[0][0], "timestamp")
         self.assertEqual(msg_list[1][0], "level")
+
+
+class JsonFluentdFormatterTesting(AbstractTestCase):
+    def setUp(self) -> None:
+        self.formatter = FluentJSONFormatter()
+
+    def test_logging(self):
+        formatted_record = self.formatter.format(
+            LogRecord(
+                name=__name__,
+                level=LogLevel.DEBUG,
+                pathname="",
+                lineno=0,
+                msg={ConnectionType: 1},
+                args=(),
+                exc_info=None
+            )
+        )
+        self.assertIsInstance(formatted_record, dict)
+        print(formatted_record)
+
+    def test_msgpack_encode_custom_objects(self):
+        packed = msgpack.packb(
+            {"key": ConnectionType.GATEWAY},
+            default=json_encoder.EnhancedJSONEncoder().default
+        )
+        self.assertEqual(msgpack.unpackb(packed),
+                         {"key": str(ConnectionType.GATEWAY)})
+
+        packed = msgpack.packb(
+            {ConnectionType.GATEWAY: 1},
+            default=json_encoder.EnhancedJSONEncoder().default
+        )
+        self.assertEqual(msgpack.unpackb(packed),
+                         {str(ConnectionType.GATEWAY): 1})
 
 
 if __name__ == '__main__':

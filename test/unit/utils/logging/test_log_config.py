@@ -1,18 +1,17 @@
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
-from logging import Formatter, LogRecord, StreamHandler
+from logging import StreamHandler
 from bxutils import logging
 from bxutils.logging import handler_type
 from bxutils.logging import log_config
-from bxutils.logging import log_format
-from bxutils import log_messages
-from bxutils.logging import log_format
+from bxutils.logging import formatters
 from aiofluent.handler import FluentHandler
-import json
-
+from bxutils.logging import fluentd_logging_helpers
+import io
 import unittest
+import msgpack
 
 
-class JsonFormatterTesting(AbstractTestCase):
+class LogConfigTest(AbstractTestCase):
     def setUp(self) -> None:
         pass
 
@@ -39,7 +38,7 @@ class JsonFormatterTesting(AbstractTestCase):
         self.assertEqual(len(handlers), 1)
         for handler in handlers:
             self.assertIsInstance(handler, StreamHandler)
-            self.assertIsInstance(handler.formatter, log_format.JSONFormatter)
+            self.assertIsInstance(handler.formatter, formatters.JSONFormatter)
 
     def test_create_logger_fluentd(self):
         log_config.setup_logging(
@@ -62,8 +61,8 @@ class JsonFormatterTesting(AbstractTestCase):
 
         fluentd_handler = fluentd_handlers[0]
         stream_handler = stream_handlers[0]
-        self.assertIsInstance(fluentd_handler.formatter, log_format.JSONFormatter)
-        self.assertIsInstance(stream_handler.formatter, log_format.JSONFormatter)
+        self.assertIsInstance(fluentd_handler.formatter, formatters.JSONFormatter)
+        self.assertIsInstance(stream_handler.formatter, formatters.JSONFormatter)
 
     def test_custom_logger(self):
         log_config.setup_logging(
@@ -89,7 +88,21 @@ class JsonFormatterTesting(AbstractTestCase):
             self.assertEqual(handler.level, 0)
 
         fluentd_handler = fluentd_handlers[0]
-        self.assertIsInstance(fluentd_handler.formatter, log_format.JSONFormatter)
+        self.assertIsInstance(fluentd_handler.formatter, formatters.FluentJSONFormatter)
+
+    def test_buffer_overflow_print(self):
+        pending_records = b""
+        records = []
+        for i in range(10):
+            record = {"key": i}
+            pending_records += msgpack.packb(record)
+            records.append(str(record))
+        mock_stdout = io.StringIO()
+        fluentd_logging_helpers.overflow_handler_print(pending_records, mock_stdout)
+
+        mock_stdout.seek(0)
+        for line_no, line in enumerate(mock_stdout.readlines()):
+            self.assertEqual(line.strip(), records[line_no])
 
 
 if __name__ == '__main__':
