@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime, date
 
 from bxcommon.models.bdn_service_model_config_base import BdnServiceModelConfigBase
+from bxcommon import constants
 
 
 @dataclass
@@ -11,7 +12,7 @@ class BdnAccountModelBase:
     logical_account_name: str
     certificate: str
     # TODO change expire_date to datetime type
-    expire_date: str = "1970-01-01"
+    expire_date: str = constants.EPOCH_DATE
     tx_free: Optional[BdnServiceModelConfigBase] = None
     tx_paid: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
     block_paid: BdnServiceModelConfigBase = BdnServiceModelConfigBase()

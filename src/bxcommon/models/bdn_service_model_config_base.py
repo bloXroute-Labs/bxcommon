@@ -3,13 +3,14 @@ from dataclasses import dataclass
 from datetime import datetime, date
 
 from bxcommon.models.bdn_service_model_base import BdnServiceModelBase
+from bxcommon import constants
 
 
 @dataclass
 class BdnServiceModelConfigBase:
     msg_quota: Optional[BdnServiceModelBase] = None
     permit: Optional[BdnServiceModelBase] = None
-    expire_date: str = "1970-01-01"
+    expire_date: str = constants.EPOCH_DATE
 
     def is_service_valid(self) -> bool:
         today = datetime.utcnow().date()
