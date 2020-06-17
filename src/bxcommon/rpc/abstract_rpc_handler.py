@@ -39,9 +39,10 @@ class AbstractRpcHandler(Generic[Node, Req, Res], metaclass=ABCMeta):
 
         rpc_request = BxJsonRpcRequest.from_json(payload)
 
-        # pyre-fixme[16]: `Optional` has no attribute `headers`.
-        if rpc_constants.AUTHORIZATION_HEADER_KEY in request.headers:
-            request_auth_key = request.headers[rpc_constants.AUTHORIZATION_HEADER_KEY]
+        # request can be many types, not all of them have "headers"
+        headers = getattr(request, "headers", None)
+        if headers and rpc_constants.AUTHORIZATION_HEADER_KEY in headers:
+            request_auth_key = headers[rpc_constants.AUTHORIZATION_HEADER_KEY]
             account_cache_key = base64.b64decode(request_auth_key).decode(constants.DEFAULT_TEXT_ENCODING)
             # pyre-fixme[16]: `Optional` has no attribute `__setitem__`.
             rpc_request.params[rpc_constants.ACCOUNT_CACHE_KEY_PARAMS_KEY] = account_cache_key
