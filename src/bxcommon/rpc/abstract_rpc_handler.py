@@ -1,6 +1,9 @@
 from abc import abstractmethod, ABCMeta
 from typing import Generic, TypeVar, Any, Dict, List, TYPE_CHECKING, Type
+import base64
 
+from bxcommon import constants
+from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
@@ -35,6 +38,14 @@ class AbstractRpcHandler(Generic[Node, Req, Res], metaclass=ABCMeta):
             raise RpcParseError(None, f"Unable to parse the request: {request}")
 
         rpc_request = BxJsonRpcRequest.from_json(payload)
+
+        # pyre-fixme[16]: `Optional` has no attribute `headers`.
+        if rpc_constants.AUTHORIZATION_HEADER_KEY in request.headers:
+            request_auth_key = request.headers[rpc_constants.AUTHORIZATION_HEADER_KEY]
+            account_cache_key = base64.b64decode(request_auth_key).decode(constants.DEFAULT_TEXT_ENCODING)
+            # pyre-fixme[16]: `Optional` has no attribute `__setitem__`.
+            rpc_request.params[rpc_constants.ACCOUNT_CACHE_KEY_PARAMS_KEY] = account_cache_key
+
         request_handler = self.get_request_handler(rpc_request)
         try:
             return self.serialize_response(
