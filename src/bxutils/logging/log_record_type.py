@@ -46,3 +46,4 @@ class LogRecordType(Enum):
     Config = "config"
     QuotaNotification = "stats.quota.notification"
     QuotaFillStatus = "stats.quota.fill"
+    TransactionQuota = "transaction.quota"
