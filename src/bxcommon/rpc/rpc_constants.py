@@ -17,7 +17,7 @@ DEFAULT_RPC_HOST: str = "127.0.0.1"
 DEFAULT_RPC_USER: str = ""
 DEFAULT_RPC_PASSWORD: str = ""
 MAINNET_NETWORK_NAME: str = "Mainnet"
-CLOUD_API_URL: str = "http://api.blxrbdn.com"
+CLOUD_API_URL: str = "http://api.blxrbdn.com:443"
 
 JSON_RPC_VERSION = "2.0"
 JSON_RPC_REQUEST_ID = "id"
