@@ -31,6 +31,17 @@ class JsonRpcResponse:
     def __str__(self) -> str:
         return f"JsonRpcResponse<{self.to_jsons()}>"
 
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, JsonRpcResponse):
+            return (
+                self.id == o.id
+                and self.result == o.result
+                and self.error == o.error
+                and self.json_rpc_version == o.json_rpc_version
+            )
+        else:
+            return False
+
     def to_json(self) -> Dict[str, Any]:
         fields = {
             rpc_constants.JSON_RPC_VERSION_FIELD: self.json_rpc_version,
