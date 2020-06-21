@@ -104,5 +104,8 @@ class ExtensionTransactionServiceTest(AbstractTransactionServiceTestCase):
         self.assertEqual(convert.bytes_to_hex(tx_contents), convert.bytes_to_hex(saved_contents.tobytes()))
         self.assertEqual(len(new_content), self.transaction_service._total_tx_contents_size)
 
+    def test_process_gateway_transaction_from_bdn(self):
+        self._test_process_gateway_transaction_from_bdn()
+
     def _get_transaction_service(self) -> TransactionService:
         return ExtensionTransactionService(self.mock_node, 0)

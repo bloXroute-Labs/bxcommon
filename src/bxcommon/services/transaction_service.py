@@ -859,17 +859,17 @@ class TransactionService:
 
     def process_gateway_transaction_from_bdn(
         self,
-        tx_hash: Sha256Hash,
+        transaction_hash: Sha256Hash,
         short_id: int,
-        tx_contents: Union[bytearray, memoryview],
+        transaction_contents: Union[bytearray, memoryview],
         is_compact: bool) -> TransactionFromBdnGatewayProcessingResult:
 
-        if (not short_id and self.has_transaction_short_id(tx_hash) and self.has_transaction_contents(tx_hash)) or \
-            self.removed_transaction(tx_hash):
+        if (not short_id and self.has_transaction_short_id(transaction_hash) and
+            self.has_transaction_contents(transaction_hash)) or self.removed_transaction(transaction_hash):
             return TransactionFromBdnGatewayProcessingResult(ignore_seen=True)
 
-        existing_short_ids = self.get_short_ids(tx_hash)
-        if (self.has_transaction_contents(tx_hash) or is_compact) \
+        existing_short_ids = self.get_short_ids(transaction_hash)
+        if (self.has_transaction_contents(transaction_hash) or is_compact) \
             and short_id and short_id in existing_short_ids:
             return TransactionFromBdnGatewayProcessingResult(existing_short_id=True)
 
@@ -877,13 +877,13 @@ class TransactionService:
         set_content = False
 
         if short_id and short_id not in existing_short_ids:
-            self.assign_short_id(tx_hash, short_id)
+            self.assign_short_id(transaction_hash, short_id)
             assigned_short_id = True
 
-        existing_contents = self.has_transaction_contents(tx_hash)
+        existing_contents = self.has_transaction_contents(transaction_hash)
 
         if not is_compact and not existing_contents:
-            self.set_transaction_contents(tx_hash, tx_contents)
+            self.set_transaction_contents(transaction_hash, transaction_contents)
             set_content = True
 
         return TransactionFromBdnGatewayProcessingResult(

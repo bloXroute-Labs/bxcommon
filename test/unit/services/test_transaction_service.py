@@ -59,7 +59,10 @@ class TransactionServiceTest(AbstractTransactionServiceTestCase):
         self._test_add_tx_without_sid_expire()
 
     def test_add_sid_without_content(self):
-        self._test_add_sid_without_content
+        self._test_add_sid_without_content()
+
+    def test_process_gateway_transaction_from_bdn(self):
+        self._test_process_gateway_transaction_from_bdn()
 
     def _get_transaction_service(self) -> TransactionService:
         return TransactionService(self.mock_node, 0)
