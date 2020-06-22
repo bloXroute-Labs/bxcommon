@@ -130,7 +130,7 @@ class CommonOpts:
         self.blockchain_networks = []
         self.blockchain_network_num = 0
         self.outbound_peers = set()
-        self.sid_expire_time = 0
+        self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
         self.node_type = NodeType.EXTERNAL_GATEWAY
         self.split_relays = True
         self.logger_names = []
