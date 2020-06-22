@@ -634,7 +634,10 @@ class AbstractNode:
         self.network_synced[network_num] = True
 
     def on_fully_updated_tx_service(self):
-        logger.debug("Synced transaction state with BDN.")
+        logger.debug(
+            "Synced transaction state with BDN, last_sync_message_received_by_network: {}",
+            self.last_sync_message_received_by_network
+        )
         self.opts.has_fully_updated_tx_service = True
 
     def _connection_timeout(self, conn: AbstractConnection) -> int:
