@@ -100,6 +100,7 @@ class CommonOpts:
         self.log_level_fluentd = opts.log_level_fluentd
         self.log_level_stdout = opts.log_level_stdout
         self.log_fluentd_queue_size = opts.log_fluentd_queue_size
+        self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
 
         # Validation
         self.validate_external_ip()

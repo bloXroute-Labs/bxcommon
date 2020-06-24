@@ -5,6 +5,7 @@ from mock import MagicMock, patch
 
 from bxcommon import constants
 from bxcommon.constants import NULL_TX_SID
+from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionInfo
@@ -580,6 +581,75 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.assertTrue(self.transaction_service.has_transaction_short_id(tx_hash))
         self.assertFalse(self.transaction_service.has_cache_key_no_sid_entry(tx_hash))
         self.assertNotIn(tx_hash, self.transaction_service.tx_hashes_without_content.queue)
+
+    def _test_process_gateway_transaction_from_bdn(self):
+        tx_hash = helpers.generate_object_hash()
+        tx_contnets = helpers.generate_bytearray(500)
+
+        # Receive tx without short id
+        self.transaction_service.process_gateway_transaction_from_bdn(
+            tx_hash,
+            NULL_TX_SID,
+            tx_contnets,
+            False
+        )
+
+        self.assertTrue(self.transaction_service.has_transaction_contents(tx_hash))
+        self.assertFalse(self.transaction_service.has_transaction_short_id(tx_hash))
+        self.assertEqual(0, len(self.transaction_service._tx_assignment_expire_queue.queue))
+        self.assertEqual(1, len(self.transaction_service.tx_hashes_without_short_id))
+        self.assertEqual(0, len(self.transaction_service.tx_hashes_without_content))
+        self.assertEqual(len(tx_contnets), self.transaction_service._total_tx_contents_size)
+
+        short_id = 100
+
+        self.transaction_service.process_gateway_transaction_from_bdn(
+            tx_hash,
+            short_id,
+            TxMessage.EMPTY_TX_VAL,
+            False
+        )
+
+        self.assertTrue(self.transaction_service.has_transaction_contents(tx_hash))
+        self.assertTrue(self.transaction_service.has_transaction_short_id(tx_hash))
+        self.assertEqual(1, len(self.transaction_service._tx_assignment_expire_queue.queue))
+        self.assertEqual(0, len(self.transaction_service.tx_hashes_without_short_id))
+        self.assertEqual(0, len(self.transaction_service.tx_hashes_without_content))
+        self.assertEqual(len(tx_contnets), self.transaction_service._total_tx_contents_size)
+
+        tx_hash2 = helpers.generate_object_hash()
+        short_id2 = 200
+
+        # Receive tx without short id
+        self.transaction_service.process_gateway_transaction_from_bdn(
+            tx_hash2,
+            short_id2,
+            TxMessage.EMPTY_TX_VAL,
+            True
+        )
+
+        self.assertFalse(self.transaction_service.has_transaction_contents(tx_hash2))
+        self.assertTrue(self.transaction_service.has_transaction_short_id(tx_hash2))
+        self.assertEqual(2, len(self.transaction_service._tx_assignment_expire_queue.queue))
+        self.assertEqual(0, len(self.transaction_service.tx_hashes_without_short_id))
+        self.assertEqual(1, len(self.transaction_service.tx_hashes_without_content))
+        self.assertEqual(len(tx_contnets), self.transaction_service._total_tx_contents_size)
+
+        tx_contnets2 = helpers.generate_bytearray(1000)
+
+        self.transaction_service.process_gateway_transaction_from_bdn(
+            tx_hash2,
+            NULL_TX_SID,
+            tx_contnets2,
+            False
+        )
+
+        self.assertTrue(self.transaction_service.has_transaction_contents(tx_hash2))
+        self.assertTrue(self.transaction_service.has_transaction_short_id(tx_hash2))
+        self.assertEqual(2, len(self.transaction_service._tx_assignment_expire_queue.queue))
+        self.assertEqual(0, len(self.transaction_service.tx_hashes_without_short_id))
+        self.assertEqual(0, len(self.transaction_service.tx_hashes_without_content))
+        self.assertEqual(len(tx_contnets) + len(tx_contnets2), self.transaction_service._total_tx_contents_size)
 
     def get_fake_tx(self, content_length=128):
         tx_hash = Sha256Hash(binary=helpers.generate_bytearray(crypto.SHA256_HASH_LEN))
