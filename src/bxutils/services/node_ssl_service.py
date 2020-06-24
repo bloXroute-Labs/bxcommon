@@ -208,14 +208,19 @@ class NodeSSLService:
         return node_id
 
     def get_account_id(self) -> Optional[str]:
-        try:
-            cert = self.get_certificate(SSLCertificateType.PRIVATE)
-        except ValueError:
-            logger.info("Could not find private SSL certificate, continue without account settings")
+        cert = None
+        for certificate_type in [SSLCertificateType.REGISTRATION_ONLY, SSLCertificateType.REGISTRATION_ONLY]:
+            try:
+                cert = self.get_certificate(certificate_type)
+                break
+            except ValueError:
+                pass
+        if cert is None:
+            logger.info("Could not find SSL certificate, continue without account settings")
             return None
         account_id = extensions_factory.get_account_id(cert)
         if account_id is None:
-            logger.info("Account id is missing in private certificate: {}!", cert)
+            logger.info("Account id is missing in certificate: {}!", cert)
         return account_id
 
     def _store_cert(self, cert_type: SSLCertificateType, cert: Certificate) -> None:
