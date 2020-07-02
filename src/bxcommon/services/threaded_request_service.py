@@ -57,7 +57,14 @@ class ThreadedRequestService:
             )
             task.add_done_callback(main_thread_callback)
 
-        self.alarm_queue.register_alarm(self.timeout, self._threaded_post_alarm, task, request, *args)
+        self.alarm_queue.register_alarm(
+            self.timeout,
+            self._threaded_post_alarm,
+            task,
+            request,
+            *args,
+            alarm_name=f"threaded_status_check: {str(done_callback)}"
+        )
         return task
 
     def _threaded_post_alarm(self, task: Future, request: Callable[..., None], *args: Any) -> None:
