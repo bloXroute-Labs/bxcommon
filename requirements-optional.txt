@@ -1,3 +1,3 @@
 # TODO: create a pip package
-https://github.com/bloXroute-Labs/aiofluent/archive/1.2.2c.zip
+https://github.com/bloXroute-Labs/aiofluent/archive/1.2.2d.zip
 pyinstrument==3.1.0

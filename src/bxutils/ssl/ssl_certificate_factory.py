@@ -5,7 +5,7 @@ import typing
 import urllib.request
 import urllib.response
 from asyncio import Transport
-from datetime import datetime, timedelta
+from datetime import datetime, time, date
 from ssl import SSLSocket
 from typing import Callable, Iterable, Union, IO
 
@@ -151,7 +151,7 @@ def fetch_key(url: str) -> EllipticCurvePrivateKeyWithSerialization:
         return ssl_serializer.deserialize_key(key_file.read())
 
 
-def get_socket_cert(ssl_socket: SSLSocket) -> Certificate:
+def get_socket_cert(ssl_socket: Union[SSLSocket, ssl.SSLObject]) -> Certificate:
     """
     Obtain a peer certificate from an SSL socket.
     :param ssl_socket: the SSL socket object
@@ -170,8 +170,7 @@ def get_transport_cert(transport: Union[Transport, TCPTransport]) -> Certificate
     :return: a certificate object
     :raise: ValueError if the transport doesn't wrap an SSL socket
     """
-    ssl_socket = typing.cast(SSLSocket, transport.get_extra_info("ssl_object"))
-    # pyre-fixme[25]: Assertion will always fail.
+    ssl_socket = transport.get_extra_info("ssl_object")
     if isinstance(ssl_socket, (SSLSocket, ssl.SSLObject)):
         return get_socket_cert(ssl_socket)
     else:
@@ -182,7 +181,7 @@ def sign_csr(
     csr: CertificateSigningRequest,
     ca_cert: Certificate,
     key: EllipticCurvePrivateKey,
-    validation_period_days: int,
+    expiration_date: date,
     custom_extensions: Iterable[Union[KeyUsage, UnrecognizedExtension, BasicConstraints]]
 ) -> Certificate:
     """
@@ -190,7 +189,7 @@ def sign_csr(
     :param csr: the CSR
     :param ca_cert: the CA certificate
     :param key: the CA private key
-    :param validation_period_days: the validation period in days
+    :param expiration_date: expiration date
     :param custom_extensions: custom extensions to be added to the certificate
     :return: a certificate object
     """
@@ -201,7 +200,7 @@ def sign_csr(
     ).serial_number(
         x509.random_serial_number()
     ).not_valid_before(now).not_valid_after(
-        now + timedelta(days=validation_period_days)
+        datetime.combine(expiration_date, time(), None)
     ).add_extension(
         extension=AuthorityKeyIdentifier.from_issuer_public_key(ca_cert.public_key()),
         critical=False

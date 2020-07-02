@@ -7,7 +7,6 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.models.entity_type_model import EntityType
 from bxcommon.models.notification_code import NotificationCode, NotificationCodeRange
 from bxcommon.models.notification_code_formatting import NotificationFormatting
-from bxcommon.models.quota_type_model import QuotaType
 from bxutils.logging.log_level import LogLevel
 
 
@@ -70,8 +69,7 @@ class NotificationMessage(AbstractBloxrouteMessage):
         if self._notification_code == NotificationCode.QUOTA_FILL_STATUS:
             assert raw is not None
             args_list = raw.split(",")
-            args_list[1] = str(QuotaType(int(args_list[1])))
-            args_list[2] = str(EntityType(int(args_list[2])))
+            args_list[1] = str(EntityType(int(args_list[1])))
             return NotificationFormatting[self._notification_code].format(*args_list)
 
         elif self._notification_code in NotificationFormatting:

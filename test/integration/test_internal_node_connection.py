@@ -13,7 +13,7 @@ from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 class InternalNodeConnectionTest(AbstractTestCase):
 
     def setUp(self):
-        self.connection = helpers.create_connection(InternalNodeConnection, node_opts=helpers.get_gateway_opts(9000))
+        self.connection = helpers.create_connection(InternalNodeConnection)
         self.connection.state = self.connection.state | ConnectionState.ESTABLISHED
 
     def test_pong_msg_timeout_pong_not_received(self):

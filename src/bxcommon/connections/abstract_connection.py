@@ -17,6 +17,7 @@ from bxcommon.messages.validation.message_validation_error import MessageValidat
 from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.models.authenticated_peer_info import AuthenticatedPeerInfo
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.utils import convert, performance_utils
@@ -101,6 +102,7 @@ class AbstractConnection(Generic[Node]):
         self._debug_message_tracker = defaultdict(int)
         self._last_debug_message_log_time = time.time()
         self.ping_interval_s: int = constants.PING_INTERVAL_S
+
         self.peer_model: Optional[OutboundPeerModel] = None
 
         self.pong_timeout_alarm_id = None
@@ -162,6 +164,16 @@ class AbstractConnection(Generic[Node]):
             # Reset num_retries when a connection established in order to support resetting the Fibonnaci logic
             # to determine next retry
             self.node.num_retries_by_ip[(self.peer_ip, self.peer_port)] = 0
+
+            for peer_model in self.node.outbound_peers:
+                if (
+                    (
+                        peer_model.ip == self.peer_ip
+                        and peer_model.port == self.peer_port
+                    )
+                    or peer_model.node_id == self.peer_id
+                ):
+                    self.peer_model = peer_model
 
     def add_received_bytes(self, bytes_received: Union[bytearray, bytes]):
         """
@@ -568,13 +580,11 @@ class AbstractConnection(Generic[Node]):
             self.node.alarm_queue.unregister_alarm(self.pong_timeout_alarm_id)
             self.pong_timeout_alarm_id = None
 
-    def on_connection_authenticated(
-        self, peer_id: str, connection_type: ConnectionType, account_id: Optional[str]
-    ) -> None:
-        self.peer_id = peer_id
-        if self.CONNECTION_TYPE != connection_type:
-            self.node.connection_pool.update_connection_type(self, connection_type)
-        self.account_id = account_id
+    def on_connection_authenticated(self, peer_info: AuthenticatedPeerInfo) -> None:
+        self.peer_id = peer_info.peer_id
+        if self.CONNECTION_TYPE != peer_info.connection_type:
+            self.node.connection_pool.update_connection_type(self, peer_info.connection_type)
+        self.account_id = peer_info.account_id
         self._is_authenticated = True
 
     async def wait_closed(self):

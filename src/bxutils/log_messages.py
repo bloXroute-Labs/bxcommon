@@ -208,3 +208,18 @@ NETWORK_NUMBER_MISMATCH = LogMessage(
     PROCESSING_FAILED_CATEGORY,
     "Network number mismatch. Current network num {}, remote network num {}. Closing connection."
 )
+RPC_COULD_NOT_PARSE_TRANSACTION = LogMessage(
+    "C-000041",
+    REQUEST_RESPONSE_CATEGORY,
+    "Error parsing the transaction:\n{}",
+)
+INTERNAL_ERROR_HANDLING_RPC_REQUEST = LogMessage(
+    "C-000042",
+    RPC_ERROR,
+    "Internal error {} while handling request {}"
+)
+BDN_ACCOUNT_INFORMATION_TIMEOUT = LogMessage(
+    "C-000043",
+    CONNECTION_PROBLEM_CATEGORY,
+    "BDN does not send the account information within {} seconds."
+)

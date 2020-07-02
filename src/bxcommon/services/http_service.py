@@ -99,7 +99,7 @@ def _http_request(method: str, endpoint: str, **kwargs) -> Optional[JT]:
         logger.trace("HTTP {0} to {1}", method, url)
         response = http_pool_manager.request(
             method=method,
-            url=url,
+            url=parsed_url.url,
             timeout=constants.HTTP_REQUEST_TIMEOUT,
             **kwargs
         )

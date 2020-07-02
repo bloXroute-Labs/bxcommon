@@ -7,6 +7,7 @@ from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.models.bdn_account_model_base import BdnAccountModelBase
 from bxcommon.services import http_service
 from bxcommon.utils import model_loader, ip_resolver
 from bxutils import log_messages
@@ -28,7 +29,7 @@ def fetch_node_attributes(node_id: str) -> Optional[NodeModel]:
         return None
 
 
-def _fetch_peers(node_url: str, node_id=None) -> List[OutboundPeerModel]:
+def _fetch_peers(node_url: str, node_id: Optional[str] = None) -> List[OutboundPeerModel]:
     outbound_peers_response = cast(List[Dict[str, Any]], http_service.get_json(node_url))
     logger.debug(
         "Retrieved outbound peers for node {0} from endpoint {1}: {2}",
@@ -41,7 +42,9 @@ def _fetch_peers(node_url: str, node_id=None) -> List[OutboundPeerModel]:
         logger.warning(log_messages.BDN_RETURNED_NO_PEERS, node_url)
         return []
 
-    outbound_peers = [model_loader.load_model(OutboundPeerModel, o) for o in outbound_peers_response]
+    outbound_peers = [
+        model_loader.load_model(OutboundPeerModel, o) for o in outbound_peers_response
+    ]
     ip_resolver.blocking_resolve_peers(outbound_peers)
     return outbound_peers
 
@@ -51,8 +54,8 @@ def fetch_potential_relay_peers_by_network(node_id: str, network_num: int) -> Op
     return _fetch_peers(node_url, node_id)
 
 
-def fetch_gateway_peers(node_id: str) -> Optional[List[OutboundPeerModel]]:
-    node_url = SdnRoutes.node_gateways.format(node_id)
+def fetch_gateway_peers(node_id: str, request_streaming: bool) -> Optional[List[OutboundPeerModel]]:
+    node_url = SdnRoutes.node_gateways.format(node_id, request_streaming)
     return _fetch_peers(node_url, node_id)
 
 
@@ -90,6 +93,15 @@ def fetch_blockchain_networks() -> List[BlockchainNetworkModel]:
     blockchain_networks = [model_loader.load_model(BlockchainNetworkModel, b) for b in blockchain_networks]
 
     return blockchain_networks
+
+
+def fetch_quota_status(account_id: str) -> Optional[Dict[str, Any]]:
+    result = http_service.get_json_with_payload(SdnRoutes.quota_status, {"account_id": account_id})
+    if result:
+        result = cast(Dict[str, Any], result)
+        return result
+    else:
+        return None
 
 
 def submit_sid_space_switch(node_id: str) -> None:
@@ -166,3 +178,13 @@ def register_node(node_model: NodeModel) -> NodeModel:
 
 def reset_pool(ssl_context: SSLContext):
     http_service.update_http_ssl_context(ssl_context)
+
+
+def fetch_account_model(account_id: str) -> Optional[BdnAccountModelBase]:
+    account_url = SdnRoutes.account.format(account_id)
+    response = cast(Dict[str, Any], http_service.get_json(account_url))
+
+    if response:
+        return model_loader.load_model(BdnAccountModelBase, response)
+    else:
+        return None

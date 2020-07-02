@@ -1,4 +1,3 @@
-from argparse import Namespace
 from typing import List, Optional
 
 from mock import MagicMock
@@ -14,13 +13,14 @@ from bxcommon.services.broadcast_service import BroadcastService
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
 from bxcommon.utils.alarm_queue import AlarmQueue
+from bxcommon.utils.cli import CommonOpts
 from bxutils.services.node_ssl_service import NodeSSLService
 
 
 class MockNode(AbstractNode):
     NODE_TYPE = NodeType.RELAY
 
-    def __init__(self, opts: Namespace, node_ssl_service: Optional[NodeSSLService] = None):
+    def __init__(self, opts: CommonOpts, node_ssl_service: Optional[NodeSSLService] = None):
         if node_ssl_service is None:
             node_ssl_service = MockNodeSSLService(self.NODE_TYPE, MagicMock())
         super(MockNode, self).__init__(opts, node_ssl_service)

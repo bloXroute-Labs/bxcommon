@@ -18,6 +18,9 @@ class TransactionStatEventType:
                                                            event_logic_flags=StatEventLogicFlags.SUMMARY, priority=True)
     TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_SEEN = StatEventTypeSettings(
         "TxReceivedByRelayFromPeerIgnoreSeen", priority=True)
+    TX_RECEIVED_BY_RELAY_FROM_PEER_FULL_QUOTA_IGNORED = StatEventTypeSettings(
+        "TxReceivedByRelayFromPeerFullQuotaIgnored"
+    )
     TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_EXPIRED = StatEventTypeSettings("TxReceivedByRelayFromPeerIgnoreExpired")
     TX_SHORT_ID_ASSIGNED_BY_RELAY = StatEventTypeSettings("TxShortIdAssignedByRelay")
     TX_SHORT_ID_STORED_BY_GATEWAY = StatEventTypeSettings("TxShortIdStoredByGateway")
@@ -47,10 +50,10 @@ class TransactionStatEventType:
     )
     TX_COUNTER_BLOCKED = StatEventTypeSettings("TxCounterBlocked")
 
-    TX_PUBLIC_API_REQUEST_RECEIVE = StatEventTypeSettings("TxPublicApiRequestReceive")
-    TX_PUBLIC_API_REQUEST_SENT = StatEventTypeSettings("TxPublicApiRequestSent")
-    TX_PUBLIC_API_RESPONSE_RECEIVE = StatEventTypeSettings("TxPublicApiResponseReceive")
-    TX_PUBLIC_API_RESPONSE_SENT = StatEventTypeSettings("TxPublicApiResponseSent")
+    TX_CLOUD_API_REQUEST_RECEIVE = StatEventTypeSettings("TxCloudApiRequestReceive")
+    TX_CLOUD_API_REQUEST_SENT = StatEventTypeSettings("TxCloudApiRequestSent")
+    TX_CLOUD_API_RESPONSE_RECEIVE = StatEventTypeSettings("TxCloudApiResponseReceive")
+    TX_CLOUD_API_RESPONSE_SENT = StatEventTypeSettings("TxCloudApiResponseSent")
     TX_RELAY_HTTPS_SERVER_REQUEST_RECEIVE = StatEventTypeSettings("TxRelayHttpsServerRequestReceive")
     TX_RELAY_HTTPS_SERVER_RESPONSE_SENT = StatEventTypeSettings("TxRelayHttpsServerResponseSent")
     TX_GATEWAY_RPC_RESPONSE_SENT = StatEventTypeSettings("TxGatewayRpcResponseSent")

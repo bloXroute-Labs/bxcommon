@@ -1,9 +1,9 @@
 import asyncio
 import gc
 import sys
-from argparse import Namespace
-from datetime import datetime
-from typing import Iterable, Optional, Type, Union, Callable, List
+import argparse
+
+from typing import Iterable, Optional, Type, Callable, List, Union
 
 import uvloop
 
@@ -50,15 +50,15 @@ def default_ssl_service_factory(
 
 def run_node(
     process_id_file_path: str,
-    opts: Union[Namespace, CommonOpts],
-    node_class: Type[AbstractNode],
-    node_type: Optional[NodeType] = None,
-    logger_names: Iterable[Optional[str]] = tuple(LOGGER_NAMES),
+    opts: Union[CommonOpts, argparse.Namespace],
+    get_node_class: Callable[[], Type[AbstractNode]],
+    node_type: NodeType,
+    logger_names: Optional[Iterable[str]] = tuple(LOGGER_NAMES),
     ssl_service_factory: Callable[
         [NodeType, str, str, str], NodeSSLService
     ] = default_ssl_service_factory,
     third_party_loggers: Optional[List[LoggerConfig]] = None
-):
+) -> None:
     if third_party_loggers is None:
         third_party_loggers = THIRD_PARTY_LOGGERS
     opts.logger_names = logger_names
@@ -81,9 +81,6 @@ def run_node(
 
     _verify_environment()
 
-    if node_type is None:
-        node_type = node_class.NODE_TYPE
-
     config.log_pid(process_id_file_path)
     gc.callbacks.append(gc_logger.gc_callback)
 
@@ -97,7 +94,7 @@ def run_node(
                 task_pool_proxy.get_pool_size(),
             )
         _run_node(
-            opts, node_class, node_type, ssl_service_factory=ssl_service_factory
+            opts, get_node_class, node_type, ssl_service_factory=ssl_service_factory
         )
     except TerminationError:
         logger.fatal("Node terminated")
@@ -108,14 +105,48 @@ def run_node(
             handler.close()
 
 
+def register_node(opts: Union[CommonOpts, argparse.Namespace], node_ssl_service: NodeSSLService) -> NodeModel:
+    temp_node_model = model_loader.load_model(NodeModel, opts.__dict__)
+    if node_ssl_service.should_renew_node_certificate():
+        temp_node_model.csr = ssl_serializer.serialize_csr(node_ssl_service.create_csr())
+
+    try:
+        node_model = sdn_http_service.register_node(temp_node_model)
+    except ValueError as e:
+        logger.fatal(e)
+        sys.exit(1)
+    except EnvironmentError as e:
+        logger.info(
+            "Unable to contact SDN to register node using {}, attempting to get information from cache",
+            opts.sdn_url,
+        )
+
+        cache_info = node_cache.read(opts)
+        if not cache_info or not cache_info.node_model:
+            logger.fatal(
+                "Unable to reach the SDN and no local cache information was found. Unable to start the gateway"
+            )
+            sys.exit(1)
+        node_model = cache_info.node_model
+
+    if node_model.should_update_source_version:
+        logger.info(
+            "UPDATE AVAILABLE! An updated software version is available, please download and install the "
+            "latest version"
+        )
+
+    return node_model
+
+
 def _run_node(
-    opts,
-    node_class,
+    opts: Union[CommonOpts, argparse.Namespace],
+    get_node_class,
     node_type,
     ssl_service_factory: Callable[
         [NodeType, str, str, str], NodeSSLService
     ] = default_ssl_service_factory,
-):
+) -> None:
+
     node_model = None
     if opts.node_id:
         # Test network, get pre-configured peers from the SDN.
@@ -129,47 +160,31 @@ def _run_node(
         ssl_service_factory=ssl_service_factory,
     )
 
+    account_id = node_ssl_service.get_account_id()
+    if account_id:
+        # TODO: use local cache for account_model
+        account_model = sdn_http_service.fetch_account_model(account_id)
+        if account_model:
+            set_account_options = getattr(opts, "set_account_options", None)
+            if set_account_options is not None:
+                set_account_options(account_model)
+
+    validate_network_opts = getattr(opts, "validate_network_opts", None)
+    if validate_network_opts is not None:
+        validate_network_opts()
+
     cli.set_blockchain_networks_info(opts)
     cli.parse_blockchain_opts(opts, node_type)
-    cli.set_os_version(opts)
 
-    opts.node_start_time = datetime.utcnow()
     if not node_model:
         opts.node_type = node_type
+        node_model = register_node(opts, node_ssl_service)
 
-        temp_node_model = model_loader.load_model(NodeModel, opts.__dict__)
-        if node_ssl_service.should_renew_node_certificate():
-            temp_node_model.csr = ssl_serializer.serialize_csr(node_ssl_service.create_csr())
-
-        try:
-            node_model = sdn_http_service.register_node(temp_node_model)
-        except ValueError as e:
-            logger.fatal(e)
-            sys.exit(1)
-        except EnvironmentError as e:
-            logger.info(
-                "Unable to contact SDN to register node using {}, attempting to get information from cache",
-                opts.sdn_url,
-            )
-            cache_info = node_cache.read(opts)
-            if not cache_info or not cache_info.node_model:
-                logger.fatal(
-                    "Unable to reach the SDN and no local cache information was found. Unable to start the gateway"
-                )
-                sys.exit(1)
-            node_model = cache_info.node_model
-
-        if node_model.should_update_source_version:
-            logger.info(
-                "UPDATE AVAILABLE! An updated software version is available, please download and install the "
-                "latest version"
-            )
-
-        if node_model.cert is not None:
-            private_cert = ssl_serializer.deserialize_cert(node_model.cert)
-            node_ssl_service.blocking_store_node_certificate(private_cert)
-            ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
-            sdn_http_service.reset_pool(ssl_context)
+    if node_model.cert is not None:
+        private_cert = ssl_serializer.deserialize_cert(node_model.cert)
+        node_ssl_service.blocking_store_node_certificate(private_cert)
+        ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
+        sdn_http_service.reset_pool(ssl_context)
 
     # Add opts from SDN, but don't overwrite CLI args
     for key, val in node_model.__dict__.items():
@@ -181,8 +196,9 @@ def _run_node(
 
     logger.debug({"type": "node_init", "data": opts})
 
+
     # Start main loop
-    node = node_class(opts, node_ssl_service)
+    node = get_node_class()(opts, node_ssl_service)
     log_config.set_instance(node.opts.node_id)
     loop = asyncio.get_event_loop()
     node_event_loop = NodeEventLoop(node)

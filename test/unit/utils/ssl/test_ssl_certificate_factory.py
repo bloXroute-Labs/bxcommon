@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives import serialization
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils import helpers
 
+from bxutils import constants
 from bxutils.ssl import ssl_certificate_factory
 from bxutils.common import url_helper
 
@@ -125,7 +126,7 @@ class SSLCertificateFactoryTest(AbstractTestCase):
         ))
         csr = ssl_certificate_factory.create_csr(key, self.template_cert)
         cert = ssl_certificate_factory.sign_csr(
-            csr, ca_cert, ca_key, 365, []
+            csr, ca_cert, ca_key, constants.DEFAULT_EXPIRATION_DATE, []
         )
         self.assertEqual(self.template_cert.issuer, cert.issuer)
         self.assertEqual(self.template_cert.subject, cert.subject)

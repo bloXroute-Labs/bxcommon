@@ -10,3 +10,6 @@ class RpcRequestType(SerializeableEnum):
     BDN_PERFORMANCE = 5
     HEALTHCHECK = 6
     PING = 7
+    SUBSCRIBE = 8
+    UNSUBSCRIBE = 9
+    QUOTA_USAGE = 10

@@ -132,8 +132,8 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                len(tx.contents) for tx in txs) + constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(TxsMessage(txs), TxsMessage.MESSAGE_TYPE, expected_length)
 
-        expected_length = (2 * constants.DOUBLE_SIZE_IN_BYTES) + (4 * constants.UL_SHORT_SIZE_IN_BYTES) + \
-                          constants.CONTROL_FLAGS_LEN
+        expected_length = (2 * constants.DOUBLE_SIZE_IN_BYTES) + (2 * constants.UL_SHORT_SIZE_IN_BYTES) + \
+                          (2 * constants.UL_INT_SIZE_IN_BYTES) + constants.CONTROL_FLAGS_LEN
         self.get_message_preview_successfully(
             BdnPerformanceStatsMessage(datetime.utcnow(), datetime.utcnow(), 100, 200, 300, 400),
             BdnPerformanceStatsMessage.MESSAGE_TYPE,
@@ -399,7 +399,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
 
     def test_notification_message(self):
         notification_code = NotificationCode.QUOTA_FILL_STATUS
-        args_list = [str(EntityType.TRANSACTION.value), str(QuotaType.FREE_DAILY_QUOTA.value), "10", "100"]
+        args_list = ["10", str(EntityType.TRANSACTION.value), "100"]
         raw_message = ",".join(args_list)
 
         notification_message = self.create_message_successfully(
@@ -408,13 +408,17 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
 
         self.assertEqual(notification_code, notification_message.notification_code())
         self.assertEqual(raw_message, notification_message.raw_message())
+        self.assertEqual(
+            notification_message.formatted_message(),
+            "10% of daily transaction quota with limit of 100 transactions per day is depleted."
+        )
 
     def test_bdn_performance_stats_message(self):
         start_time = datetime.utcnow()
         new_blocks_received_from_blockchain_node = 100
         new_blocks_received_from_bdn = 200
         new_tx_received_from_blockchain_node = 300
-        new_tx_received_from_bdn = 400
+        new_tx_received_from_bdn = 65535 + 1  # unsigned short max (0xffff) + 1
         end_time = datetime.utcnow()
 
         bdn_stats_msg = \

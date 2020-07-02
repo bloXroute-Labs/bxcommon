@@ -1,11 +1,14 @@
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.v8.broadcast_message_converter_v8 import broadcast_message_converter_v8
+from bxcommon.messages.bloxroute.v9.bdn_performance_stats_message_converter_v9 \
+    import bdn_performance_stats_message_converter_v9
 from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
 from bxcommon.messages.versioning.no_changes_message_converter import no_changes_message_converter
 
 
 class _MessageConverterFactoryV8(AbstractMessageConverterFactory):
     _MESSAGE_CONVERTER_MAPPING = {
+        BloxrouteMessageType.BDN_PERFORMANCE_STATS: bdn_performance_stats_message_converter_v9,
         BloxrouteMessageType.BROADCAST: broadcast_message_converter_v8,
     }
 

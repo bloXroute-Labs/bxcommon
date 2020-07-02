@@ -193,7 +193,11 @@ class NodeSSLService:
             self._get_file_path(cert_info.cert_file_info), self._get_file_path(cert_info.key_file_info)  # pyre-ignore
         )
         context.check_hostname = False
-        logger.debug("{} successfully created SSL context for certificate: {}.", self, self.certificates[cert_type])
+        logger.debug(
+            "{} successfully created SSL context for certificate: {}.",
+            self,
+            self.certificates[cert_type]
+        )
         return context
 
     def get_node_id(self) -> str:
@@ -202,6 +206,22 @@ class NodeSSLService:
         if node_id is None:
             raise TypeError(f"Node id is missing in private certificate: {cert}!")
         return node_id
+
+    def get_account_id(self) -> Optional[str]:
+        cert = None
+        for certificate_type in [SSLCertificateType.REGISTRATION_ONLY, SSLCertificateType.REGISTRATION_ONLY]:
+            try:
+                cert = self.get_certificate(certificate_type)
+                break
+            except ValueError:
+                pass
+        if cert is None:
+            logger.info("Could not find SSL certificate, continue without account settings")
+            return None
+        account_id = extensions_factory.get_account_id(cert)
+        if account_id is None:
+            logger.info("Account id is missing in certificate: {}!", cert)
+        return account_id
 
     def _store_cert(self, cert_type: SSLCertificateType, cert: Certificate) -> None:
         if not self._store_local:

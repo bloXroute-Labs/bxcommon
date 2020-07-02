@@ -14,7 +14,8 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
     """
 
     MSG_SIZE = AbstractBloxrouteMessage.HEADER_LENGTH + (2 * constants.DOUBLE_SIZE_IN_BYTES) + \
-               (4 * constants.UL_SHORT_SIZE_IN_BYTES) + constants.CONTROL_FLAGS_LEN
+               (2 * constants.UL_SHORT_SIZE_IN_BYTES) + (2 * constants.UL_INT_SIZE_IN_BYTES) \
+               + constants.CONTROL_FLAGS_LEN
     MESSAGE_TYPE = BloxrouteMessageType.BDN_PERFORMANCE_STATS
 
     _interval_start_time: Optional[float] = None
@@ -57,11 +58,11 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
             struct.pack_into("<H", buf, off, new_blocks_received_from_bdn)
             off += constants.UL_SHORT_SIZE_IN_BYTES
 
-            struct.pack_into("<H", buf, off, new_tx_received_from_blockchain_node)
-            off += constants.UL_SHORT_SIZE_IN_BYTES
+            struct.pack_into("<I", buf, off, new_tx_received_from_blockchain_node)
+            off += constants.UL_INT_SIZE_IN_BYTES
 
-            struct.pack_into("<H", buf, off, new_tx_received_from_bdn)
-            off += constants.UL_SHORT_SIZE_IN_BYTES
+            struct.pack_into("<I", buf, off, new_tx_received_from_bdn)
+            off += constants.UL_INT_SIZE_IN_BYTES
 
         self.buf = buf
         payload_length = len(buf) - AbstractBloxrouteMessage.HEADER_LENGTH
@@ -128,10 +129,10 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
         off += constants.UL_SHORT_SIZE_IN_BYTES
         self._new_blocks_received_from_bdn, = struct.unpack_from("<H", self.buf, off)
         off += constants.UL_SHORT_SIZE_IN_BYTES
-        self._new_tx_received_from_blockchain_node, = struct.unpack_from("<H", self.buf, off)
-        off += constants.UL_SHORT_SIZE_IN_BYTES
-        self._new_tx_received_from_bdn, = struct.unpack_from("<H", self.buf, off)
-        off += constants.UL_SHORT_SIZE_IN_BYTES
+        self._new_tx_received_from_blockchain_node, = struct.unpack_from("<I", self.buf, off)
+        off += constants.UL_INT_SIZE_IN_BYTES
+        self._new_tx_received_from_bdn, = struct.unpack_from("<I", self.buf, off)
+        off += constants.UL_INT_SIZE_IN_BYTES
 
     def __repr__(self):
         return "BdnPerformanceStatsMessage<blocks_from_blockchain_node: {}, blocks_from_bdn: {}, " \

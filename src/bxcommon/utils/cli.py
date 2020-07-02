@@ -4,13 +4,16 @@ from argparse import ArgumentParser
 from argparse import Namespace
 from dataclasses import dataclass
 from ipaddress import ip_address
-from typing import Dict
+from typing import Dict, List, Set, Iterable, Optional
 from urllib.parse import urlparse
+from datetime import datetime
 
 from bxcommon import constants
 from bxcommon.constants import ALL_NETWORK_NUM
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_type import NodeType
+from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.models.bdn_account_model_base import BdnAccountModelBase
 from bxcommon.rpc import rpc_constants
 from bxcommon.services import http_service
 from bxcommon.services import sdn_http_service
@@ -19,14 +22,14 @@ from bxcommon.utils.node_start_args import NodeStartArgs
 from bxutils import constants as utils_constants
 from bxutils import log_messages
 from bxutils import logging
-from bxutils.logging import log_config
+from bxutils.logging import log_config, LoggerConfig
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
 
 logger = logging.get_logger(__name__)
 
 
-@dataclass()
+@dataclass
 class CommonOpts:
     external_ip: str
     external_port: int
@@ -42,7 +45,7 @@ class CommonOpts:
     log_fluentd_enable: bool
     log_fluentd_host: str
     node_id: str
-    transaction_pool_memory_limit: int
+    transaction_pool_memory_limit: float
     info_stats_interval: int
     throughput_stats_interval: int
     memory_stats_interval: int
@@ -55,14 +58,31 @@ class CommonOpts:
     import_extensions: bool
     thread_pool_parallelism_degree: int
     tx_mem_pool_bucket_size: int
-    protocol_version: int
-    source_version: int
+    source_version: str
     ca_cert_url: str
     private_ssl_base_url: str
     log_fluentd_queue_size: int
     log_level_fluentd: LogLevel
     log_level_stdout: LogLevel
+    split_relays: bool
+    stats_calculate_actual_size: bool
+    log_detailed_block_stats: bool
+    blockchain_networks: List[BlockchainNetworkModel]
+    blockchain_network_num: int
+    outbound_peers: Set[OutboundPeerModel]
+    rpc: bool
+    rpc_port: int
+    rpc_host: str
+    rpc_user: str
+    rpc_password: str
+    sync_tx_service: bool
+    node_type: NodeType
+    has_fully_updated_tx_service: bool
+    logger_names: Optional[Iterable[str]]
+    third_party_loggers: Optional[List[LoggerConfig]]
+    node_start_time: datetime
 
+    # pylint: disable=too-many-statements
     def __init__(self, opts: Namespace):
         self.external_ip = opts.external_ip
         self.external_port = opts.external_port
@@ -92,7 +112,6 @@ class CommonOpts:
         self.thread_pool_parallelism_degree = opts.thread_pool_parallelism_degree
         self.tx_mem_pool_bucket_size = opts.tx_mem_pool_bucket_size
         self.data_dir = opts.data_dir
-        self.protocol_version = opts.protocol_version
         self.source_version = opts.source_version
         self.ca_cert_url = opts.ca_cert_url
         self.private_ssl_base_url = opts.private_ssl_base_url
@@ -100,10 +119,35 @@ class CommonOpts:
         self.log_level_fluentd = opts.log_level_fluentd
         self.log_level_stdout = opts.log_level_stdout
         self.log_fluentd_queue_size = opts.log_fluentd_queue_size
+        self.rpc = opts.rpc
+        self.rpc_port = opts.rpc_port
+        self.rpc_host = opts.rpc_host
+        self.rpc_user = opts.rpc_user
+        self.rpc_password = opts.rpc_password
+        self.sync_tx_service = opts.sync_tx_service
+
+        # set by node runner
+        self.blockchain_networks = []
+        self.blockchain_network_num = 0
+        self.outbound_peers = set()
         self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
+        self.node_type = NodeType.EXTERNAL_GATEWAY
+        self.split_relays = True
+        self.logger_names = []
+        self.third_party_loggers = None
+
+        # set after node runner
+        self.has_fully_updated_tx_service = False
+
+        # TODO: currently hard-coding configuration values
+        self.stats_calculate_actual_size = False
+        self.log_detailed_block_stats = False
 
         # Validation
         self.validate_external_ip()
+
+        self.node_start_time = datetime.utcnow()
+        self.os_version = constants.OS_VERSION
 
     def validate_external_ip(self):
         parsed_sdn_url = urlparse(self.sdn_url)
@@ -116,6 +160,12 @@ class CommonOpts:
                 exc_info=False
             )
             sys.exit(1)
+
+    def validate_network_opts(self) -> None:
+        pass
+
+    def set_account_options(self, account_model: BdnAccountModelBase) -> None:
+        pass
 
 
 def get_argument_parser() -> argparse.ArgumentParser:
@@ -138,7 +188,12 @@ def get_argument_parser() -> argparse.ArgumentParser:
         "--node-id",
         help="(TEST ONLY) Set the node_id for using in testing."
     )
-
+    arg_parser.add_argument(
+        "--rpc",
+        help="Start a JSON-RPC server",
+        type=convert.str_to_bool,
+        default=True
+    )
     arg_parser.add_argument(
         "--rpc-host",
         help="The node RPC host (default: {}).".format(rpc_constants.DEFAULT_RPC_HOST),
@@ -228,6 +283,12 @@ def get_argument_parser() -> argparse.ArgumentParser:
         f"(default: {constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE})",
         default=constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
         type=int
+    )
+    arg_parser.add_argument(
+        "--sync-tx-service",
+        help="sync tx service in node",
+        type=convert.str_to_bool,
+        default=True
     )
 
     add_argument_parser_logging(arg_parser)
@@ -343,7 +404,7 @@ def parse_blockchain_opts(opts, node_type: NodeType):
     """
     opts_dict = opts.__dict__
 
-    if node_type in NodeType.RELAY or node_type in NodeType.BLOXROUTE_PUBLIC_API:
+    if node_type in NodeType.RELAY or node_type in NodeType.BLOXROUTE_CLOUD_API:
         opts_dict["blockchain_network_num"] = ALL_NETWORK_NUM
         return
 
@@ -364,7 +425,7 @@ def parse_blockchain_opts(opts, node_type: NodeType):
 def _set_blockchain_networks_from_cache(opts):
     cache_info = node_cache.read(opts)
     if cache_info:
-        opts.blockchain_networks = cache_info.blockchain_network
+        opts.blockchain_networks = cache_info.blockchain_networks
     if not opts.blockchain_networks:
         logger.warning(log_messages.EMPTY_BLOCKCHAIN_NETWORK_CACHE)
 
@@ -399,7 +460,3 @@ def _get_blockchain_network_info(opts) -> BlockchainNetworkModel:
         logger.fatal("Could not reach the SDN to fetch network information. Check that {} is the actual address "
                      "you are trying to reach.", opts.sdn_url, exc_info=False)
     sys.exit(1)
-
-
-def set_os_version(opts):
-    opts.__dict__["os_version"] = constants.OS_VERSION

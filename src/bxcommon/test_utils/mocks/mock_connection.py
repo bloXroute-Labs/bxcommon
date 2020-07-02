@@ -11,6 +11,7 @@ from bxcommon.utils import memory_utils
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
+from bxcommon.models.broadcast_message_type import BroadcastMessageType
 
 
 class MockConnection(AbstractConnection, SpecialMemoryProperties):
@@ -47,6 +48,8 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
         self.format_connection()
 
         self.enqueued_messages = []
+        self.node_privileges = "general"
+        self.subscribed_broadcasts = [BroadcastMessageType.BLOCK]
 
     def __repr__(self):
         return f"MockConnection<file_no: {self.file_no}, address: ({self.peer_ip}, {self.peer_port}), " \
