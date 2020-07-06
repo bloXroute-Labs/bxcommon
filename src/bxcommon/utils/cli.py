@@ -383,8 +383,8 @@ def add_argument_parser_common(arg_parser: ArgumentParser):
     )
 
 
-def parse_arguments(arg_parser: argparse.ArgumentParser) -> argparse.Namespace:
-    opts, _unknown = arg_parser.parse_known_args()
+def parse_arguments(arg_parser: argparse.ArgumentParser, args: Optional[List[str]] = None) -> argparse.Namespace:
+    opts, _unknown = arg_parser.parse_known_args(args)
     if not opts.external_ip:
         opts.external_ip = ip_resolver.get_node_public_ip()
     assert opts.external_ip is not None
