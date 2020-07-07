@@ -2,8 +2,10 @@ import functools
 import threading
 from collections import deque
 from concurrent.futures import Future
+from concurrent import futures
 from threading import Thread, Condition, RLock
 from typing import List, Callable, Any, NamedTuple, Deque, Optional
+
 
 from bxutils import logging
 
@@ -22,7 +24,15 @@ def handle_work_item(work_item: Optional[WorkItem]) -> None:
         except BaseException as e:
             work_item.future.set_exception(e)
         else:
-            work_item.future.set_result(result)
+            try:
+                work_item.future.set_result(result)
+            except futures.Error as e:
+                logger.exception(
+                    "{} - unhandled error: {}, failed to set task result {}",
+                    threading.current_thread().name,
+                    e,
+                    result
+                )
 
 
 class ThreadPool:
