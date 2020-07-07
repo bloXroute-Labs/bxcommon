@@ -19,7 +19,7 @@ logger = logging.get_logger(__name__)
 
 if TYPE_CHECKING:
     # pylint: disable=ungrouped-imports,cyclic-import
-    from bxcommon.utils.cli import CommonOpts
+    from bxcommon.common_opts import CommonOpts
 
 
 @dataclass

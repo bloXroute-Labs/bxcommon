@@ -30,7 +30,7 @@ from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import memory_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.blockchain_utils import bdn_tx_to_bx_tx
-from bxcommon.utils.cli import CommonOpts
+from bxcommon.common_opts import CommonOpts
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
