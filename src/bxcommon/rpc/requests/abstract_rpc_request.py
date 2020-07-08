@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from typing import Union, Dict, List, Any, TYPE_CHECKING, Optional, TypeVar, Generic
 
 from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 Node = TypeVar("Node", bound="AbstractNode")
 
 
-class AbstractRpcRequest(Generic[Node], metaclass=ABCMeta):
+class AbstractRpcRequest(Generic[Node]):
     method: RpcRequestType
     request_id: Optional[str]
     params: Union[Dict[str, Any], List[Any], None]

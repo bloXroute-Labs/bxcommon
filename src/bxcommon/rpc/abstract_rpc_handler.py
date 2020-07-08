@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod
 from typing import Generic, TypeVar, Any, Dict, List, TYPE_CHECKING, Type
 import base64
 
@@ -23,7 +23,7 @@ Req = TypeVar("Req")
 Res = TypeVar("Res")
 
 
-class AbstractRpcHandler(Generic[Node, Req, Res], metaclass=ABCMeta):
+class AbstractRpcHandler(Generic[Node, Req, Res]):
     node: Node
     request_handlers: Dict[RpcRequestType, Type[AbstractRpcRequest[Node]]]
 

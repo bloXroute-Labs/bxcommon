@@ -1,6 +1,6 @@
 import asyncio
 import base64
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from asyncio import Future
 from typing import Callable, Awaitable, Optional, TYPE_CHECKING, TypeVar, Generic
 from aiohttp import web
@@ -45,7 +45,7 @@ async def request_middleware(
     return response
 
 
-class AbstractHttpRpcServer(Generic[Node], metaclass=ABCMeta):
+class AbstractHttpRpcServer(Generic[Node]):
     RUN_SLEEP_INTERVAL_S: int = 5
 
     node: Node

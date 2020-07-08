@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from typing import Generic
 
 from bxcommon.models.quota_type_model import QuotaType
@@ -9,7 +9,7 @@ from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest, Node
 from bxcommon.rpc.rpc_errors import RpcInvalidParams, RpcAccountIdError
 
 
-class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node], metaclass=ABCMeta):
+class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node]):
     SYNCHRONOUS = rpc_constants.SYNCHRONOUS_PARAMS_KEY
     help = {
         "params": f"[Required - {rpc_constants.TRANSACTION_PARAMS_KEY}: [transaction payload in hex string format]]. "
