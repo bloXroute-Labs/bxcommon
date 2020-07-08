@@ -26,7 +26,7 @@ class AbstractObjectHash:
         return self._hash
 
     def __eq__(self, other):
-        return other is not None and self.binary == other.binary
+        return isinstance(other, AbstractObjectHash) and self.binary == other.binary
 
     def __lt__(self, other):
         return other is None or self.binary < other.binary
