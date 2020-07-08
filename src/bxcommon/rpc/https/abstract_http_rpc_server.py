@@ -86,6 +86,9 @@ class AbstractHttpRpcServer(Generic[Node], metaclass=ABCMeta):
     def request_handler(self) -> HttpRpcHandler:
         pass
 
+    def status(self) -> bool:
+        return self._started
+
     async def run(self) -> None:
         try:
             await self._start()
@@ -106,6 +109,7 @@ class AbstractHttpRpcServer(Generic[Node], metaclass=ABCMeta):
         self._stop_requested = True
         await self._stop_waiter
         await self._runner.cleanup()
+        self._started = False
 
     async def handle_request(self, request: Request) -> Response:
         try:
