@@ -6,7 +6,10 @@ class MockRpcRequest:
 
     def __init__(self, headers: Dict[str, Any], json_body: str, text: Optional[str] = None):
         self.headers = headers
+        self.raw_headers = headers
+        self.remote = "test"
         self._json_body = json_body
+        self.raw_path = "/"
         if text is None:
             text = json_body
         self._text = text
