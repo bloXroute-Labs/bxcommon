@@ -19,7 +19,7 @@ class NodeTransactionStatInterval(StatsIntervalData):
     generation_zero_size: int
     generation_one_size: int
     generation_two_size: int
-    time_spent_in_gc: int
+    time_spent_in_gc: float
     collection_counts: Dict[int, int]
 
     def __init__(self, *args, **kwargs):
@@ -48,28 +48,25 @@ class _NodeStatisticsService(StatisticsService[NodeTransactionStatInterval, "Abs
         return NodeTransactionStatInterval
 
     def get_info(self) -> Dict[str, Any]:
-        assert self.interval_data is not None
+        interval_data = self.interval_data
+        assert interval_data is not None
         gen0, gen1, gen2 = gc.get_count()
         return {
             "garbage_collection": {
                 "uncollectable": len(gc.garbage),
                 "collection_counts": {
-                    # pyre-fixme[16]: Optional type has no attribute
-                    #  `collection_counts`.
-                    f"gen{k}": v for k, v in self.interval_data.collection_counts.items()
+                    f"gen{k}": v for k, v in interval_data.collection_counts.items()
                 },
                 "sizes": {"gen0": gen0, "gen1": gen1, "gen2": gen2,},
-                # pyre-fixme[16]: Optional type has no attribute `time_spent_in_gc`.
-                "total_elapsed_time": self.interval_data.time_spent_in_gc,
+                "total_elapsed_time": interval_data.time_spent_in_gc,
             }
         }
 
-    def log_gc_duration(self, generation: int, duration_s: int) -> None:
-        assert self.interval_data is not None
-        # pyre-fixme[16]: Optional type has no attribute `time_spent_in_gc`.
-        self.interval_data.time_spent_in_gc += duration_s
-        # pyre-fixme[16]: Optional type has no attribute `collection_counts`.
-        self.interval_data.collection_counts[generation] += 1
+    def log_gc_duration(self, generation: int, duration_s: float) -> None:
+        interval_data = self.interval_data
+        assert interval_data is not None
+        interval_data.time_spent_in_gc += duration_s
+        interval_data.collection_counts[generation] += 1
 
 
 node_stats_service = _NodeStatisticsService()
