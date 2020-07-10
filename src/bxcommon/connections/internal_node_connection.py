@@ -80,7 +80,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.outputbuf.enable_buffering = False
         self.socket_connection.send()
 
-    def set_protocol_version_and_message_factory(self):
+    def set_protocol_version_and_message_factory(self) -> bool:
         """
         Gets protocol version from the first bytes of hello message if not known.
         Sets protocol version and creates message factory for that protocol version
