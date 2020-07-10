@@ -111,6 +111,7 @@ class TestNodeRunner(AbstractTestCase):
         fetch_account_model_mock.return_value = None
         fetch_blockchain_networks_mock.return_value = [self.blockchain_network]
         get_argument_parser_mock.return_value = argparse.ArgumentParser()
+        self.assertEqual(constants.SID_EXPIRE_TIME_SECONDS, self.opts.sid_expire_time)
         parse_arguments_mock.return_value = self.opts
         node_runner._init_ssl_service = MagicMock()
         node_runner.run_node("", self.opts, get_mock_node, NodeType.RELAY)

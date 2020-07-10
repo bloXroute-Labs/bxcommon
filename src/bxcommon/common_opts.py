@@ -105,7 +105,7 @@ class CommonOpts:
         opts.third_party_loggers = None
         opts.node_start_time = datetime.utcnow()
         opts.os_version = constants.OS_VERSION
-        opts.sid_expire_time = 0
+        opts.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
         return opts
 
     @classmethod
