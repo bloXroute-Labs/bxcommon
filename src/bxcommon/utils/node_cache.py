@@ -62,21 +62,21 @@ def update(opts: "CommonOpts", potential_relay_peers: List[OutboundPeerModel]) -
 def read(opts: Union["CommonOpts", Namespace]) -> Optional[CacheNetworkInfo]:
     cache_file_info = None
     enable_node_cache = opts.__dict__.get("enable_node_cache", False)
-    relative_path = opts.__dict__.get("cookie_file_path", None)
-    if enable_node_cache and relative_path is not None:
+    cookie_file_path = opts.__dict__.get("cookie_file_path", None)
+    if enable_node_cache and cookie_file_path is not None:
         try:
-            cookie_file_path = config.get_data_file(relative_path)
-            if os.path.exists(cookie_file_path):
-                with open(cookie_file_path, "r") as cookie_file:
+            relative_path = config.get_data_file(cookie_file_path)
+            if os.path.exists(relative_path):
+                with open(relative_path, "r") as cookie_file:
                     cache_file_info = model_loader.load_model(CacheNetworkInfo, json.load(cookie_file))
                     assert cache_file_info.source_version == opts.source_version
             else:
-                logger.warning(log_messages.READ_CACHE_FILE_WARNING, cookie_file_path)
+                logger.error(log_messages.READ_CACHE_FILE_ERROR)
         # pylint: disable=broad-except
         except Exception as e:
             logger.error(
                 "Failed when tried to read from cache file: {} with exception: {}",
-                relative_path,
+                cookie_file_path,
                 e
             )
     return cache_file_info
