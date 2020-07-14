@@ -13,3 +13,4 @@ class RpcRequestType(SerializeableEnum):
     SUBSCRIBE = 8
     UNSUBSCRIBE = 9
     QUOTA_USAGE = 10
+    MEMORY_USAGE = 11

@@ -1,19 +1,12 @@
 import argparse
 import sys
 from argparse import ArgumentParser
-from argparse import Namespace
-from dataclasses import dataclass
-from ipaddress import ip_address
-from typing import Dict, List, Set, Iterable, Optional
-from urllib.parse import urlparse
-from datetime import datetime
+from typing import List, Optional
 
 from bxcommon import constants
 from bxcommon.constants import ALL_NETWORK_NUM
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_type import NodeType
-from bxcommon.models.outbound_peer_model import OutboundPeerModel
-from bxcommon.models.bdn_account_model_base import BdnAccountModelBase
 from bxcommon.rpc import rpc_constants
 from bxcommon.services import http_service
 from bxcommon.services import sdn_http_service
@@ -22,150 +15,11 @@ from bxcommon.utils.node_start_args import NodeStartArgs
 from bxutils import constants as utils_constants
 from bxutils import log_messages
 from bxutils import logging
-from bxutils.logging import log_config, LoggerConfig
+from bxutils.logging import log_config
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
 
 logger = logging.get_logger(__name__)
-
-
-@dataclass
-class CommonOpts:
-    external_ip: str
-    external_port: int
-    non_ssl_port: int
-    continent: str
-    country: str
-    hostname: str
-    sdn_url: str
-    log_level: LogLevel
-    log_format: LogFormat
-    log_flush_immediately: bool
-    log_level_overrides: Dict[str, LogLevel]
-    log_fluentd_enable: bool
-    log_fluentd_host: str
-    node_id: str
-    transaction_pool_memory_limit: float
-    info_stats_interval: int
-    throughput_stats_interval: int
-    memory_stats_interval: int
-    dump_detailed_report_at_memory_usage: int
-    dump_removed_short_ids: bool
-    dump_removed_short_ids_path: str
-    enable_buffered_send: bool
-    track_detailed_sent_messages: bool
-    use_extensions: bool
-    import_extensions: bool
-    thread_pool_parallelism_degree: int
-    tx_mem_pool_bucket_size: int
-    source_version: str
-    ca_cert_url: str
-    private_ssl_base_url: str
-    log_fluentd_queue_size: int
-    log_level_fluentd: LogLevel
-    log_level_stdout: LogLevel
-    split_relays: bool
-    stats_calculate_actual_size: bool
-    log_detailed_block_stats: bool
-    blockchain_networks: List[BlockchainNetworkModel]
-    blockchain_network_num: int
-    outbound_peers: Set[OutboundPeerModel]
-    rpc: bool
-    rpc_port: int
-    rpc_host: str
-    rpc_user: str
-    rpc_password: str
-    sync_tx_service: bool
-    node_type: NodeType
-    has_fully_updated_tx_service: bool
-    logger_names: Optional[Iterable[str]]
-    third_party_loggers: Optional[List[LoggerConfig]]
-    node_start_time: datetime
-
-    # pylint: disable=too-many-statements
-    def __init__(self, opts: Namespace):
-        self.external_ip = opts.external_ip
-        self.external_port = opts.external_port
-        self.non_ssl_port = opts.non_ssl_port
-        self.continent = opts.continent
-        self.country = opts.country
-        self.hostname = opts.hostname
-        self.sdn_url = opts.sdn_url
-        self.log_level = opts.log_level
-        self.log_format = opts.log_format
-        self.log_flush_immediately = opts.log_flush_immediately
-        self.log_level_overrides = opts.log_level_overrides
-        self.log_fluentd_enable = opts.log_fluentd_enable
-        self.log_fluentd_host = opts.log_fluentd_host
-        self.node_id = opts.node_id
-        self.transaction_pool_memory_limit = opts.transaction_pool_memory_limit
-        self.info_stats_interval = opts.info_stats_interval
-        self.throughput_stats_interval = opts.throughput_stats_interval
-        self.memory_stats_interval = opts.memory_stats_interval
-        self.dump_detailed_report_at_memory_usage = opts.dump_detailed_report_at_memory_usage
-        self.dump_removed_short_ids = opts.dump_removed_short_ids
-        self.dump_removed_short_ids_path = opts.dump_removed_short_ids_path
-        self.enable_buffered_send = opts.enable_buffered_send
-        self.track_detailed_sent_messages = opts.track_detailed_sent_messages
-        self.use_extensions = opts.use_extensions
-        self.import_extensions = opts.import_extensions
-        self.thread_pool_parallelism_degree = opts.thread_pool_parallelism_degree
-        self.tx_mem_pool_bucket_size = opts.tx_mem_pool_bucket_size
-        self.data_dir = opts.data_dir
-        self.source_version = opts.source_version
-        self.ca_cert_url = opts.ca_cert_url
-        self.private_ssl_base_url = opts.private_ssl_base_url
-        self.non_ssl_port = opts.non_ssl_port
-        self.log_level_fluentd = opts.log_level_fluentd
-        self.log_level_stdout = opts.log_level_stdout
-        self.log_fluentd_queue_size = opts.log_fluentd_queue_size
-        self.rpc = opts.rpc
-        self.rpc_port = opts.rpc_port
-        self.rpc_host = opts.rpc_host
-        self.rpc_user = opts.rpc_user
-        self.rpc_password = opts.rpc_password
-        self.sync_tx_service = opts.sync_tx_service
-
-        # set by node runner
-        self.blockchain_networks = []
-        self.blockchain_network_num = 0
-        self.outbound_peers = set()
-        self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
-        self.node_type = NodeType.EXTERNAL_GATEWAY
-        self.split_relays = True
-        self.logger_names = []
-        self.third_party_loggers = None
-
-        # set after node runner
-        self.has_fully_updated_tx_service = False
-
-        # TODO: currently hard-coding configuration values
-        self.stats_calculate_actual_size = False
-        self.log_detailed_block_stats = False
-
-        # Validation
-        self.validate_external_ip()
-
-        self.node_start_time = datetime.utcnow()
-        self.os_version = constants.OS_VERSION
-
-    def validate_external_ip(self):
-        parsed_sdn_url = urlparse(self.sdn_url)
-        sdn_host = parsed_sdn_url.netloc.split(":")[0]
-        sdn_ip = ip_address(ip_resolver.blocking_resolve_ip(sdn_host))
-        if not sdn_ip.is_private and self.external_ip and ip_address(self.external_ip).is_private:
-            logger.fatal(
-                "The specified external IP ({}) is a known private IP address. Try omitting this argument",
-                self.external_ip,
-                exc_info=False
-            )
-            sys.exit(1)
-
-    def validate_network_opts(self) -> None:
-        pass
-
-    def set_account_options(self, account_model: BdnAccountModelBase) -> None:
-        pass
 
 
 def get_argument_parser() -> argparse.ArgumentParser:
@@ -383,8 +237,8 @@ def add_argument_parser_common(arg_parser: ArgumentParser):
     )
 
 
-def parse_arguments(arg_parser: argparse.ArgumentParser) -> argparse.Namespace:
-    opts, _unknown = arg_parser.parse_known_args()
+def parse_arguments(arg_parser: argparse.ArgumentParser, args: Optional[List[str]] = None) -> argparse.Namespace:
+    opts, _unknown = arg_parser.parse_known_args(args)
     if not opts.external_ip:
         opts.external_ip = ip_resolver.get_node_public_ip()
     assert opts.external_ip is not None

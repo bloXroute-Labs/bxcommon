@@ -211,11 +211,7 @@ class AbstractVersionManager:
 
         return msg_converter.get_message_size_change_from_older_version()
 
-    def get_connection_protocol_version(self, input_buffer):
-        if not isinstance(input_buffer, InputBuffer):
-            raise TypeError("Argument input_buffer expected to have type InputBuffer but was {}"
-                            .format(type(input_buffer)))
-
+    def get_connection_protocol_version(self, input_buffer: InputBuffer) -> int:
         if (
             input_buffer.length <
             (
@@ -233,6 +229,7 @@ class AbstractVersionManager:
         else:
             command = bytearray(header_buf[:constants.MSG_TYPE_LEN])
             payload_len = constants.MSG_TYPE_LEN
+            header_len = constants.BX_HDR_COMMON_OFF
 
         if command != self.version_message_command:
             if constants.HTTP_MESSAGE in command:

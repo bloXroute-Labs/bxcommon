@@ -287,7 +287,7 @@ class AbstractNodeTest(AbstractTestCase):
         # expect that memory details are logged
         self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
                          self.node.next_report_mem_usage_bytes)
-        logger_mock.statistics.assert_called_once()
+        logger_mock.debug.assert_called_once()
 
         # current memory usage goes up to 15 MB
         memory_utils.get_app_memory_usage = MagicMock(return_value=15 * 1024 * 1024)
@@ -296,7 +296,7 @@ class AbstractNodeTest(AbstractTestCase):
         # expect that memory details are not logged again
         self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
                          self.node.next_report_mem_usage_bytes)
-        logger_mock.statistics.assert_called_once()
+        logger_mock.debug.assert_called_once()
 
     def _assert_socket_connected(self):
         self.assertFalse(SocketConnectionState.MARK_FOR_CLOSE in self.socket_connection.state)

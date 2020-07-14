@@ -10,7 +10,7 @@ from bxcommon.models.node_model import NodeModel
 from bxcommon.models.node_type import NodeType
 from bxcommon.test_utils import helpers
 from bxcommon.utils import config
-from bxcommon.utils.cli import CommonOpts
+from bxcommon.common_opts import CommonOpts
 from bxcommon.utils import cli
 
 from bxutils.logging import log_config
@@ -23,7 +23,7 @@ class NodeMock:
     NODE_TYPE = NodeType.EXTERNAL_GATEWAY
 
     def __init__(self, opts: Namespace, node_ssl_service: Optional[NodeSSLService] = None):
-        self.opts: CommonOpts = CommonOpts(opts)
+        self.opts: CommonOpts = CommonOpts.from_opts(opts)
         self.node_ssl_service = node_ssl_service
 
 
@@ -83,7 +83,7 @@ class TestNodeRunner(AbstractTestCase):
         for item in CommonOpts.__dataclass_fields__:
             if item not in opts:
                 opts[item] = None
-        self.opts = CommonOpts(Namespace(**opts))
+        self.opts = CommonOpts.from_opts(Namespace(**opts))
         log_config.create_logger(None, LogLevel.WARNING)
         self.event_loop_mock = EventLoopMock()
 
@@ -111,8 +111,8 @@ class TestNodeRunner(AbstractTestCase):
         fetch_account_model_mock.return_value = None
         fetch_blockchain_networks_mock.return_value = [self.blockchain_network]
         get_argument_parser_mock.return_value = argparse.ArgumentParser()
+        self.assertEqual(constants.SID_EXPIRE_TIME_SECONDS, self.opts.sid_expire_time)
         parse_arguments_mock.return_value = self.opts
         node_runner._init_ssl_service = MagicMock()
         node_runner.run_node("", self.opts, get_mock_node, NodeType.RELAY)
-        self.assertEqual(self.opts.blockchain_networks, [self.blockchain_network])
         self.assertEqual(self.event_loop_mock.run_count, 1)

@@ -14,7 +14,7 @@ from bxcommon.models.node_type import NodeType
 from bxcommon.network.node_event_loop import NodeEventLoop
 from bxcommon.services import sdn_http_service
 from bxcommon.utils import cli, model_loader, config, node_cache
-from bxcommon.utils.cli import CommonOpts
+from bxcommon.common_opts import CommonOpts
 from bxutils import log_messages
 from bxutils import logging
 from bxutils.logging import log_config, LoggerConfig, gc_logger

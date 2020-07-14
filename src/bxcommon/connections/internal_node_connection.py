@@ -80,7 +80,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.outputbuf.enable_buffering = False
         self.socket_connection.send()
 
-    def set_protocol_version_and_message_factory(self):
+    def set_protocol_version_and_message_factory(self) -> bool:
         """
         Gets protocol version from the first bytes of hello message if not known.
         Sets protocol version and creates message factory for that protocol version
@@ -269,11 +269,24 @@ class InternalNodeConnection(AbstractConnection[Node]):
     def send_tx_service_sync_txs(self, network_num: int, tx_service_snap: List[Sha256Hash],
                                  sync_tx_content: bool = True, duration: float = 0, msgs_count: int = 0,
                                  total_tx_count: int = 0, sending_tx_msgs_start_time: float = 0) -> None:
+        if not self.is_active():
+            self.log_info(
+                "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s. "
+                "{} transactions were not synced. Connection had been closed",
+                network_num,
+                total_tx_count,
+                msgs_count,
+                duration,
+                len(tx_service_snap)
+            )
+            self.send_tx_service_sync_complete(network_num)
+            return
+
         if sending_tx_msgs_start_time == 0:
             sending_tx_msgs_start_time = time.time()
         tx_service = self.node.get_tx_service(network_num)
         sync_ping_latency = self._sync_ping_latencies.get(network_num, 0.0)
-        if (time.time() - sending_tx_msgs_start_time) < constants.SENDING_TX_MSGS_TIMEOUT_MS:
+        if (time.time() - sending_tx_msgs_start_time) < constants.SENDING_TX_MSGS_TIMEOUT_S:
             if tx_service_snap and sync_ping_latency is not None:
                 start = time.time()
                 txs_content_short_ids = tx_sync_service_helpers.create_txs_service_msg(
@@ -308,8 +321,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
                 )
             else:  # if all txs were sent, send complete msg
                 self.log_debug(
-                    "TxSync to: {} network: {}, Sent: transactions {}, messages: {}. took {:.3f}s.",
-                    self,
+                    "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s.",
                     network_num,
                     total_tx_count,
                     msgs_count,
@@ -318,13 +330,12 @@ class InternalNodeConnection(AbstractConnection[Node]):
                 self.send_tx_service_sync_complete(network_num)
         else:  # if time is up - upgrade this node as synced - giving up
             self.log_debug(
-                "TxSync to: {} network: {}, Sent: transactions {}, messages {}. took more than {}s. Giving up. "
+                "TxSync on network {}, sent {} transactions, and {} messages, took more than {}s. Giving up. "
                 "{} transactions were not synced",
-                self,
                 network_num,
                 total_tx_count,
                 msgs_count,
-                constants.SENDING_TX_MSGS_TIMEOUT_MS,
+                constants.SENDING_TX_MSGS_TIMEOUT_S,
                 len(tx_service_snap)
             )
             self.send_tx_service_sync_complete(network_num)
@@ -340,20 +351,41 @@ class InternalNodeConnection(AbstractConnection[Node]):
         start_time: float = 0,
         snapshot_cache_keys: Optional[Set[TransactionCacheKeyType]] = None
     ) -> None:
+        if not self.is_active():
+            self.log_info(
+                "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s. "
+                "Connection had been closed",
+                self,
+                network_num,
+                total_tx_count,
+                msgs_count,
+                duration
+            )
+            self.send_tx_service_sync_complete(network_num)
+            return
+
         if sending_tx_msgs_start_time == 0:
             sending_tx_msgs_start_time = time.time()
         done = False
         last_tx_timestamp = start_time
         sync_ping_latency = self._sync_ping_latencies.get(network_num, 0.0)
         tx_service = self.node.get_tx_service(network_num)
-        if (time.time() - sending_tx_msgs_start_time) < constants.SENDING_TX_MSGS_TIMEOUT_MS:
+        if (time.time() - sending_tx_msgs_start_time) < constants.SENDING_TX_MSGS_TIMEOUT_S:
             if sync_ping_latency is not None:
                 start = time.time()
                 txs_content_short_ids, last_tx_timestamp, done, snapshot_cache_keys = \
                     tx_sync_service_helpers.create_txs_service_msg_from_time(
                         tx_service, start_time, sync_tx_content, snapshot_cache_keys)
-                self.log_info("TxSync start {} end {} done: {} len: {}, took {:.3f}s",
-                              start_time, last_tx_timestamp, done, len(txs_content_short_ids), time.time() - start)
+                self.log_info(
+                    "TxSync on network {}, syncing {} transactions created between {} and {} start {} end {}, "
+                    "took {:.3f}s. {} transactions were synced.",
+                    network_num,
+                    len(snapshot_cache_keys),
+                    start_time,
+                    last_tx_timestamp,
+                    time.time() - start,
+                    "All" if done else "Not all"
+                )
                 performance_utils.log_operation_duration(
                     performance_troubleshooting_logger,
                     "Create tx service sync message from time",
@@ -392,8 +424,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
                 )
             else:  # if all txs were sent, send complete msg
                 self.log_info(
-                    "TxSync to: {} network: {}, Sent: transactions {}, messages: {}. took {:.3f}s.",
-                    self,
+                    "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s.",
                     network_num,
                     total_tx_count,
                     msgs_count,
@@ -402,13 +433,12 @@ class InternalNodeConnection(AbstractConnection[Node]):
                 self.send_tx_service_sync_complete(network_num)
         else:  # if time is up - upgrade this node as synced - giving up
             self.log_info(
-                "TxSync to: {} network: {}, Sent: transactions {}, messages {}. took more than {}s. Giving up. "
+                "TxSync on network {}, sent {} transactions, and {} messages, took more than {:.3f}s. Giving up. "
                 "{} transactions since were not synced",
-                self,
                 network_num,
                 total_tx_count,
                 msgs_count,
-                constants.SENDING_TX_MSGS_TIMEOUT_MS,
+                constants.SENDING_TX_MSGS_TIMEOUT_S,
                 last_tx_timestamp
             )
             self.send_tx_service_sync_complete(network_num)
@@ -423,6 +453,18 @@ class InternalNodeConnection(AbstractConnection[Node]):
         sending_tx_msgs_start_time: float = 0,
         start_offset: int = 0
     ) -> None:
+        if not self.is_active():
+            self.log_info(
+                "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s. "
+                "Connection had been closed",
+                network_num,
+                total_tx_count,
+                msgs_count,
+                duration
+            )
+            self.send_tx_service_sync_complete(network_num)
+            return
+
         if sending_tx_msgs_start_time == 0:
             sending_tx_msgs_start_time = time.time()
 
@@ -431,15 +473,25 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
         sync_ping_latency = self._sync_ping_latencies.get(network_num, 0.0)
         tx_service = self.node.get_tx_service(network_num)
-        if (time.time() - sending_tx_msgs_start_time) < constants.SENDING_TX_MSGS_TIMEOUT_MS:
+        if (time.time() - sending_tx_msgs_start_time) < constants.SENDING_TX_MSGS_TIMEOUT_S:
             if sync_ping_latency is not None:
                 start = time.time()
 
                 txs_msg, txs_count, end_offset, done = \
                     tx_sync_service_helpers.create_txs_service_msg_from_buffer(
                         tx_service, txs_buffer, start_offset)
-                self.log_info("TxSync start {} end {} offset out of {}. Done: {}. Len: {}. Took {:.3f}s",
-                              start_offset, end_offset, len(txs_buffer), done, txs_count, time.time() - start)
+                self.log_info(
+                    "TxSync on network {}, syncing {} transactions, took {:.3f}s. "
+                    "Starting offset {}, ending offset {}, total offset {}. "
+                    "{} transactions were synced.",
+                    network_num,
+                    txs_count,
+                    time.time() - start,
+                    start_offset,
+                    end_offset,
+                    len(txs_buffer),
+                    "All" if done else "Not all"
+                )
                 performance_utils.log_operation_duration(
                     performance_troubleshooting_logger,
                     "Create tx service sync message from time",
@@ -478,8 +530,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
                 )
             else:  # if all txs were sent, send complete msg
                 self.log_info(
-                    "TxSync to: {} network: {}, Sent: transactions {}, messages: {}. took {:.3f}s.",
-                    self,
+                    "TxSync on network {}, sent {} transactions, and {} messages. took {:.3f}s.",
                     network_num,
                     total_tx_count,
                     msgs_count,
@@ -488,13 +539,12 @@ class InternalNodeConnection(AbstractConnection[Node]):
                 self.send_tx_service_sync_complete(network_num)
         else:  # if time is up - upgrade this node as synced - giving up
             self.log_info(
-                "TxSync to: {} network: {}, Sent: transactions {}, messages {}. took more than {}s. Giving up. "
+                "TxSync on network {}, sent {} transactions, and {} messages, took more than {:.3f}s. Giving up. "
                 "{} bytes out of {} total were synced",
-                self,
                 network_num,
                 total_tx_count,
                 msgs_count,
-                constants.SENDING_TX_MSGS_TIMEOUT_MS,
+                constants.SENDING_TX_MSGS_TIMEOUT_S,
                 start_offset,
                 len(txs_buffer)
             )
@@ -511,10 +561,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.node.on_network_synced(network_num)
         # pyre-fixme[6]: Expected `float` for 1st param but got `Optional[float]`.
         duration = time.time() - self.node.start_sync_time
-        self.log_debug(
-            "TxSync complete. {} is ready and operational. It took {:.3f} seconds to complete "
-            "transaction state with BDN.",
-            self.node.NODE_TYPE,
+        self.log_info(
+            "TxSync complete. It took {:.3f} seconds to complete transaction state with BDN.",
             duration
         )
         sync_data = {"peer_id": self.peer_id, "duration": duration}

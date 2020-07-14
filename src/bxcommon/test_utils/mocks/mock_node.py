@@ -13,7 +13,7 @@ from bxcommon.services.broadcast_service import BroadcastService
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
 from bxcommon.utils.alarm_queue import AlarmQueue
-from bxcommon.utils.cli import CommonOpts
+from bxcommon.common_opts import CommonOpts
 from bxutils.services.node_ssl_service import NodeSSLService
 
 

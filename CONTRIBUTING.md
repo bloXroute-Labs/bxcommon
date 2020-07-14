@@ -30,7 +30,6 @@ Make sure your pull request passes all builds and add the following users as rev
  * [sergeyi23]
  * [shanevc]
  * [Uri-Margalit-bloXroute][urim]
- * [avrahamblx]
  
 They will help delegate reviews and merge the PR.
 
@@ -107,5 +106,4 @@ you add.
 [sergeyi23]: https://github.com/sergeyi23
 [shanevc]: https://github.com/shanevc
 [urim]: https://github.com/Uri-Margalit-bloXroute
-[avrahamblx]: https://github.com/avrahamblx
 [style]: https://github.com/google/styleguide/blob/gh-pages/pyguide.md

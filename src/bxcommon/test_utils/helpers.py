@@ -20,7 +20,7 @@ from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
 from bxcommon.utils import config, crypto, convert
 from bxcommon.utils.buffers.input_buffer import InputBuffer
-from bxcommon.utils.cli import CommonOpts
+from bxcommon.common_opts import CommonOpts
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
 from bxutils.logging.log_format import LogFormat
@@ -278,7 +278,7 @@ def get_common_opts(
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val
-    common_opts = CommonOpts(opts)
+    common_opts = CommonOpts.from_opts(opts)
 
     # some attributes are usually set by the node runner
     common_opts.__dict__.update({

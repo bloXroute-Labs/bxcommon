@@ -1,11 +1,12 @@
 import asyncio
-import gc
 import os
 import time
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict, Counter
 from ssl import SSLContext
 from typing import List, Optional, Tuple, Dict, NamedTuple, Union, Set
+
+import gc
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
@@ -14,11 +15,11 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import TerminationError
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.models.authenticated_peer_info import AuthenticatedPeerInfo
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
-from bxcommon.models.authenticated_peer_info import AuthenticatedPeerInfo
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
@@ -30,7 +31,7 @@ from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import memory_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.blockchain_utils import bdn_tx_to_bx_tx
-from bxcommon.utils.cli import CommonOpts
+from bxcommon.common_opts import CommonOpts
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
@@ -40,7 +41,6 @@ from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import log_messages
 from bxutils import logging
-from bxutils.encoding import json_encoder
 from bxutils.exceptions.connection_authentication_error import \
     ConnectionAuthenticationError
 from bxutils.logging import LogRecordType
@@ -502,13 +502,18 @@ class AbstractNode:
 
     def dump_memory_usage(self):
         total_mem_usage = memory_utils.get_app_memory_usage()
-
         if total_mem_usage >= self.next_report_mem_usage_bytes:
-            node_size = memory_utils.get_detailed_object_size(self)
-            memory_logger.statistics(
+            node_size = self.get_node_memory_size()
+            memory_logger.debug(
                 "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}",
-                total_mem_usage, self.next_report_mem_usage_bytes, json_encoder.to_json(node_size))
+                total_mem_usage,
+                self.next_report_mem_usage_bytes,
+                node_size
+            )
             self.next_report_mem_usage_bytes = total_mem_usage + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES
+
+    def get_node_memory_size(self):
+        return memory_utils.get_detailed_object_size(self)
 
     def on_input_received(self, file_no: int) -> bool:
         """handles an input event from the event loop
@@ -548,7 +553,7 @@ class AbstractNode:
         self.sync_metrics = defaultdict(Counter)
 
     def log_txs_network_content(
-            self, network_num: int, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
+        self, network_num: int, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
     ) -> None:
         pass
 

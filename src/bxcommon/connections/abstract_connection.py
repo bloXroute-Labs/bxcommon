@@ -158,6 +158,8 @@ class AbstractConnection(Generic[Node]):
 
     def on_connection_established(self):
         if not self.is_active():
+            self.state |= ConnectionState.HELLO_RECVD
+            self.state |= ConnectionState.HELLO_ACKD
             self.state |= ConnectionState.ESTABLISHED
             self.log_info("Connection established.")
 
