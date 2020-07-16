@@ -28,6 +28,6 @@ class SocketConnectionProtocol(AbstractSocketConnectionProtocol, BufferedProtoco
     def get_buffer(self, _sizehint: int):
         return self._receive_buf
 
-    def buffer_updated(self, nbytes: int):
+    def buffer_updated(self, nbytes: int) -> None:
         if self.is_receivable():
             self._node.on_bytes_received(self.file_no, self._receive_buf[:nbytes])

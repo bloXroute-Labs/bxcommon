@@ -50,7 +50,7 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
             self.buf
         )
 
-    def log_level(self):
+    def log_level(self) -> LogLevel:
         return LogLevel.DEBUG
 
     def network_num(self) -> int:

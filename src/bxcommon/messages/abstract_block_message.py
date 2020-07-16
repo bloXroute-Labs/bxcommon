@@ -18,7 +18,7 @@ class AbstractBlockMessage(AbstractMessage):
     def timestamp(self) -> int:
         pass
 
-    def extra_stats_data(self):
+    def extra_stats_data(self) -> str:
         return ""
 
     @abstractmethod

@@ -15,7 +15,7 @@ logger = logging.get_logger(__name__)
 
 
 class _TransactionStatisticsService(StatisticsEventService):
-    def __init__(self):
+    def __init__(self) -> None:
         super(_TransactionStatisticsService, self).__init__()
         self.name = "TransactionInfo"
         self.logger = logging.get_logger(LogRecordType.TransactionInfo)

@@ -14,7 +14,7 @@ class GetTxsMessage(AbstractBloxrouteMessage):
     Node needs to reply with TxsWithShortIdsMessage
     """
 
-    def __init__(self, short_ids=None, buf=None):
+    def __init__(self, short_ids=None, buf=None) -> None:
 
         """
         Constructor. Expects list of short ids or message bytes.

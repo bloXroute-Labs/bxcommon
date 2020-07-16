@@ -18,7 +18,7 @@ class BxJsonRpcRequest(JsonRpcRequest):
         super().__init__(request_id, method.name.lower(), params)
         self.method = method
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"BxJsonRpcRequest<{self.to_json()}>"
 
     def to_json(self) -> Dict[str, Any]:

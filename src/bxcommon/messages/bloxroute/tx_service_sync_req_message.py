@@ -12,7 +12,7 @@ class TxServiceSyncReqMessage(AbstractBloxrouteMessage):
     """
     MESSAGE_TYPE = BloxrouteMessageType.TX_SERVICE_SYNC_REQ
 
-    def __init__(self, network_num: Optional[int] = None, buf: Optional[bytearray] = None):
+    def __init__(self, network_num: Optional[int] = None, buf: Optional[bytearray] = None) -> None:
         if buf is None and network_num is not None:
             buf = bytearray(self.HEADER_LENGTH + constants.NETWORK_NUM_LEN + constants.CONTROL_FLAGS_LEN)
             self.buf = buf

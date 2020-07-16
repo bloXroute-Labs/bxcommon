@@ -62,7 +62,7 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         BloxrouteMessageType.NOTIFICATION: NotificationMessage
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         super(_BloxrouteMessageFactory, self).__init__()
         self.message_type_mapping = self._MESSAGE_TYPE_MAPPING
 
@@ -101,7 +101,7 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
             return BroadcastMessagePreview(is_full_header, Sha256Hash(message_hash), network_num, source_id,
                                            payload_length)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}; message_type_mapping: {self.message_type_mapping}"
 
 

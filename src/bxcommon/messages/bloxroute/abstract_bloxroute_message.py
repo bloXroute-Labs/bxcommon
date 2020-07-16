@@ -1,6 +1,7 @@
 from bxcommon import constants
 from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
 from bxcommon.messages.bloxroute.bloxroute_message_control_flags import BloxrouteMessageControlFlags
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 
 
 class AbstractBloxrouteMessage(AbstractInternalMessage):
@@ -8,11 +9,11 @@ class AbstractBloxrouteMessage(AbstractInternalMessage):
     Base class for internal communication between relays and gateways
     """
 
-    MESSAGE_TYPE = b"internal"
+    MESSAGE_TYPE = BloxrouteMessageType.ABSTRACT_INTERNAL
     HEADER_LENGTH = constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF
     STARTING_BYTES_LEN = constants.STARTING_SEQUENCE_BYTES_LEN
 
-    def __init__(self, msg_type: bytes, payload_len: int, buf: bytearray):
+    def __init__(self, msg_type: bytes, payload_len: int, buf: bytearray) -> None:
 
         super().__init__(msg_type=msg_type, payload_len=payload_len, buf=buf)
 

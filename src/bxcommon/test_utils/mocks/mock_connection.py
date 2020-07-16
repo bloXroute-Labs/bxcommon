@@ -18,7 +18,7 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
     CONNECTION_TYPE = ConnectionType.EXTERNAL_GATEWAY
 
     # pylint: disable=super-init-not-called
-    def __init__(self, sock: AbstractSocketConnectionProtocol, node):
+    def __init__(self, sock: AbstractSocketConnectionProtocol, node) -> None:
         self.socket_connection = sock
         self.file_no = sock.file_no
 

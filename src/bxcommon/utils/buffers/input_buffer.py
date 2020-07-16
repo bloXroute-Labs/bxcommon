@@ -7,7 +7,7 @@ from bxcommon.utils.memory_utils import SpecialMemoryProperties, SpecialTuple
 
 
 class InputBuffer(SpecialMemoryProperties):
-    def __init__(self):
+    def __init__(self) -> None:
         self.input_list: Deque[Union[memoryview, bytearray, bytes]] = deque()
         self.length = 0
 
@@ -89,10 +89,10 @@ class InputBuffer(SpecialMemoryProperties):
         self._shrink_if_needed(end)
         return self.input_list[0][start:end]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.length
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> Union[memoryview, bytearray, bytes]:
         if not isinstance(item, slice):
             raise ValueError("Input buffer does not support nonslice indexing")
 

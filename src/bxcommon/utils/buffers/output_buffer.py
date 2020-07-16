@@ -20,7 +20,7 @@ class OutputBuffer(SpecialMemoryProperties):
     """
     EMPTY = memoryview(bytearray(0))  # The empty outputbuffer
 
-    def __init__(self, min_size=None, max_hold_time=None, enable_buffering=False):
+    def __init__(self, min_size=None, max_hold_time=None, enable_buffering=False) -> None:
         if min_size is None:
             min_size = constants.OUTPUT_BUFFER_MIN_SIZE
         if max_hold_time is None:

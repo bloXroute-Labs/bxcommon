@@ -71,7 +71,7 @@ class _BloxrouteMessageFactoryV9(AbstractMessageFactory):
         BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV9
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         super(_BloxrouteMessageFactoryV9, self).__init__()
         self.message_type_mapping = self._MESSAGE_TYPE_MAPPING
 

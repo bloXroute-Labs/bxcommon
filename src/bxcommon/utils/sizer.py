@@ -6,7 +6,7 @@ from pympler import asizeof
 
 class Sizer:
 
-    def __init__(self, excluded_obj: Optional[Union[object, str]] = None):
+    def __init__(self, excluded_obj: Optional[Union[object, str]] = None) -> None:
         self.sizer = asizeof.Asizer()
         self.excluded = []
 
@@ -28,10 +28,10 @@ class Sizer:
             self.sizer.exclude_types(class_instance)
             self.excluded.append(str(excluded_obj))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Sizer(sizer={0.sizer!r}, excluded={0.excluded!r})".format(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "Sizer(sizer={0.sizer!s}, excluded={0.excluded!s})".format(self)
 
 

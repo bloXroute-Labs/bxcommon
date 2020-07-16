@@ -37,7 +37,7 @@ def handle_work_item(work_item: Optional[WorkItem]) -> None:
 
 class ThreadPool:
 
-    def __init__(self, workers: int, thread_name_prefix: str):
+    def __init__(self, workers: int, thread_name_prefix: str) -> None:
         self._workers = workers
         self._stop_requested = False
         self._threads: List[Thread] = []

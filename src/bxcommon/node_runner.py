@@ -228,6 +228,6 @@ def _init_ssl_service(
     return node_ssl_service
 
 
-def _verify_environment():
+def _verify_environment() -> None:
     if sys.version.startswith("3.6."):
         logger.warning(log_messages.DETECTED_PYTHON3_6)

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class NodeInfo(StatisticsService[StatsIntervalData, "AbstractNode"]):
-    def __init__(self, interval: int = 0):
+    def __init__(self, interval: int = 0) -> None:
         super(NodeInfo, self).__init__(
             "NodeInfo",
             interval=interval,

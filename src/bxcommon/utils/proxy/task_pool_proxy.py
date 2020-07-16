@@ -5,7 +5,7 @@ import task_pool_executor as tpe
 _executor: Optional[tpe.TaskPoolExecutor] = None
 
 
-def init(thread_pool_parallelism_degree: int):
+def init(thread_pool_parallelism_degree: int) -> None:
     executor = tpe.TaskPoolExecutor()
     executor.init(thread_pool_parallelism_degree)
 
@@ -15,7 +15,7 @@ def init(thread_pool_parallelism_degree: int):
 
 
 # TODO : convert to async
-def run_task(tsk: tpe.MainTaskBase):
+def run_task(tsk: tpe.MainTaskBase) -> None:
     executor = _executor
 
     assert executor is not None

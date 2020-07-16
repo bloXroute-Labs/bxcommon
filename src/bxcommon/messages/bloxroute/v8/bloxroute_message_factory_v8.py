@@ -65,7 +65,7 @@ class _BloxrouteMessageFactoryV8(AbstractMessageFactory):
         BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV9
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         super(_BloxrouteMessageFactoryV8, self).__init__()
         self.message_type_mapping = self._MESSAGE_TYPE_MAPPING
 
@@ -112,7 +112,7 @@ class _BloxrouteMessageFactoryV8(AbstractMessageFactory):
             return BroadcastMessagePreview(is_full_header, Sha256Hash(block_hash), BroadcastMessageType.BLOCK,
                                            message_id, network_num, source_id, payload_length)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}; message_type_mapping: {self.message_type_mapping}"
 
 

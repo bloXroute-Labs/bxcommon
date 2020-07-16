@@ -52,7 +52,7 @@ class AbstractConnection(Generic[Node]):
     node: Node
     message_tracker: Optional[MessageTracker]
 
-    def __init__(self, socket_connection: AbstractSocketConnectionProtocol, node: Node):
+    def __init__(self, socket_connection: AbstractSocketConnectionProtocol, node: Node) -> None:
         self.socket_connection = socket_connection
         self.file_no = socket_connection.file_no
 

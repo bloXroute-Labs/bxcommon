@@ -20,7 +20,7 @@ class TxsMessage(AbstractBloxrouteMessage):
     """
 
     # pyre-fixme[9]: buf has type `bytearray`; used as `None`.
-    def __init__(self, txs: Optional[List[TransactionInfo]] = None, buf: bytearray = None):
+    def __init__(self, txs: Optional[List[TransactionInfo]] = None, buf: bytearray = None) -> None:
 
         """
         Constructor. Expects list of transaction details or message bytes.

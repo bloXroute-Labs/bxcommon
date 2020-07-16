@@ -10,7 +10,7 @@ class ObjectPriority(Generic[T]):
     I.E: implement both __eq__ and __lt__
     """
 
-    def __init__(self, get_priority: Callable[[T], Any], obj: T):
+    def __init__(self, get_priority: Callable[[T], Any], obj: T) -> None:
         self._get_priority = get_priority
         self._obj = obj
 
@@ -33,7 +33,7 @@ class PriorityQueue(Generic[T]):
      sorting by priority should be performed by explicitly call the update_priority method.
      """
 
-    def __init__(self, is_reversed: bool = True):
+    def __init__(self, is_reversed: bool = True) -> None:
         """
         initialize the priority queue collection object.
         :param is_reversed: indicate if the sorting should be performed in revered order.

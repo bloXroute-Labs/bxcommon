@@ -27,7 +27,7 @@ logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
 
 class ExtensionTransactionService(TransactionService):
 
-    def __init__(self, node, network_num):
+    def __init__(self, node, network_num) -> None:
         super(ExtensionTransactionService, self).__init__(node, network_num)
 
         # Log levels need to be set again to include the loggers created in this conditionally imported class
@@ -45,8 +45,10 @@ class ExtensionTransactionService(TransactionService):
         self._short_id_to_tx_cache_key = MapProxy(
             self.proxy.short_id_to_tx_hash(), raw_encoder, raw_encoder
         )
+        # pyre-fixme[6]: Incompatible parameter type
         content_encoder = ObjectEncoder(memoryview, tpe.InputBytes)
         self._tx_cache_key_to_contents = MapProxy(
+            # pyre-fixme[6]: Incompatible parameter type
             self.proxy.tx_hash_to_contents(), raw_encoder, content_encoder
         )
         self._tx_not_seen_in_blocks = self.proxy.tx_not_seen_in_blocks()

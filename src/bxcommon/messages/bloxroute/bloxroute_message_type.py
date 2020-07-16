@@ -1,5 +1,6 @@
 # TODO: make these integers to save us some bytes
 class BloxrouteMessageType:
+    ABSTRACT_INTERNAL = None
     HELLO = b"hello"
     ACK = b"ack"
     PING = b"ping"

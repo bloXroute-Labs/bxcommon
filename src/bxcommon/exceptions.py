@@ -12,14 +12,14 @@ if TYPE_CHECKING:
 
 
 class ParseError(Exception):
-    def __init__(self, msg):
+    def __init__(self, msg) -> None:
         super(ParseError, self).__init__(msg)
 
         self.msg = msg
 
 
 class UnrecognizedCommandError(ParseError):
-    def __init__(self, msg, raw_data):
+    def __init__(self, msg, raw_data) -> None:
         super(UnrecognizedCommandError, self).__init__(msg)
 
         self.raw_data = raw_data
@@ -34,7 +34,7 @@ class UnauthorizedMessageError(ParseError):
 
 
 class ChecksumError(ParseError):
-    def __init__(self, msg, raw_data):
+    def __init__(self, msg, raw_data) -> None:
         super(ChecksumError, self).__init__(msg)
 
         self.raw_data = raw_data
@@ -49,7 +49,7 @@ class DecryptionError(Exception):
 
 
 class ConnectionStateError(Exception):
-    def __init__(self, msg: str, conn: "AbstractConnection"):
+    def __init__(self, msg: str, conn: "AbstractConnection") -> None:
         super().__init__(msg)
         self.msg = msg
         self.conn = conn

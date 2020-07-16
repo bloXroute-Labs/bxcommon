@@ -48,7 +48,7 @@ class NodeSSLService:
     _store_local: bool
     _node_name: str
 
-    def __init__(self, node_type: NodeType, storage_info: SSLStorageInfo, store_local: bool = True):
+    def __init__(self, node_type: NodeType, storage_info: SSLStorageInfo, store_local: bool = True) -> None:
         if storage_info.certificates_info[SSLCertificateType.PRIVATE].key_file_info is None:
             raise ValueError(f"Storage info {storage_info} is missing key file storage info for a private certificate.")
         self.storage_info = storage_info

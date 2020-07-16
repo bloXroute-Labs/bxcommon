@@ -31,7 +31,7 @@ class _BloxrouteVersionManager(AbstractVersionManager):
         10: bloxroute_message_factory,
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         super(_BloxrouteVersionManager, self).__init__()
         self.protocol_to_factory_mapping = self._PROTOCOL_TO_FACTORY_MAPPING
         self.protocol_to_converter_factory_mapping = self._PROTOCOL_TO_CONVERTER_FACTORY_MAPPING

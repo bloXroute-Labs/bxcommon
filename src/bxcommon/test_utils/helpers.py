@@ -353,7 +353,7 @@ def async_test(method):
 class AsyncMock:
     mock: MagicMock
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self.mock = MagicMock(*args, **kwargs)
 
     async def __call__(self, *args, **kwargs):

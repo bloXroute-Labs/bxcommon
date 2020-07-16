@@ -17,7 +17,7 @@ def check_port(port: int) -> bool:
 
 class PortAllocator:
 
-    def __init__(self, port_range: PortRange):
+    def __init__(self, port_range: PortRange) -> None:
         self._port_range = port_range
         self._last_allocated_port: Optional[int] = None
 

@@ -15,11 +15,17 @@ class _BlockStatisticsService(StatisticsEventService):
     BROADCAST_TYPE_OFFSET = BX_HDR_COMMON_OFF + crypto.SHA256_HASH_LEN + \
                             constants.NETWORK_NUM_LEN + constants.NODE_ID_SIZE_IN_BYTES
 
-    def __init__(self):
+    def __init__(self) -> None:
         super(_BlockStatisticsService, self).__init__()
         self.name = "BlockInfo"
         self.logger = logging.get_logger(LogRecordType.BlockInfo)
         self.priority_logger = logging.get_logger(LogRecordType.BlockPropagationInfo)
+        self.log_detailed_block_stats = False
+
+    def set_node(self, node) -> None:
+        super(_BlockStatisticsService, self).set_node(node)
+        assert node.opts is not None
+        self.log_detailed_block_stats = node.opts.log_detailed_block_stats
 
     def add_block_event(self, block_msg, block_event_settings, network_num, start_date_time=None, end_date_time=None,
                         **kwargs):
@@ -69,8 +75,8 @@ class _BlockStatisticsService(StatisticsEventService):
                        network_num=network_num, broadcast_type=broadcast_type.value,
                        **kwargs)
 
-    def _should_log_stat_event(self, event_type_settings):
-        return self.node.opts.log_detailed_block_stats or not event_type_settings.detailed_stat_event
+    def _should_log_stat_event(self, event_type_settings) -> bool:
+        return self.log_detailed_block_stats or not event_type_settings.detailed_stat_event
 
 
 block_stats = _BlockStatisticsService()

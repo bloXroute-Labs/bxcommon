@@ -39,7 +39,8 @@ class ConnectionPool:
     len_fileno: int
     count_conn_by_ip: Dict[str, int]
 
-    def __init__(self):
+    def __init__(self) -> None:
+        # pyre-fixme[8]: Attribute has type `List[Optional[AbstractConnection[typing.Any]]]` used as type `List[None]`.
         self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO
         self.by_ipport = {}
         self.by_connection_type = defaultdict(list)

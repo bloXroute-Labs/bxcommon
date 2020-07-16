@@ -5,5 +5,5 @@ class StatBlockType(Enum):
     ENCRYPTED = "encrypted"
     COMPRESSED = "compressed"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.value

@@ -3,17 +3,18 @@ import struct
 from bxcommon import constants
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxutils import logging
 
 logger = logging.get_logger(__name__)
 
 
 class AbstractInternalMessage(AbstractMessage):
-    MESSAGE_TYPE = b"internal"
+    MESSAGE_TYPE = BloxrouteMessageType.ABSTRACT_INTERNAL
     HEADER_LENGTH = constants.BX_HDR_COMMON_OFF
     STARTING_BYTES_LEN = 0
 
-    def __init__(self, msg_type: bytes, payload_len: int, buf: bytearray):
+    def __init__(self, msg_type: bytes, payload_len: int, buf: bytearray) -> None:
 
         if len(buf) < self.HEADER_LENGTH:
             raise ValueError("Buffer must be at least {0} in length.".format(self.HEADER_LENGTH))
@@ -40,7 +41,7 @@ class AbstractInternalMessage(AbstractMessage):
         return command.rstrip(constants.MSG_NULL_BYTE), payload_length
 
     @classmethod
-    def validate_payload(cls, buf, unpacked_args):
+    def validate_payload(cls, buf, unpacked_args) -> None:
         _command, payload_length = unpacked_args
         if payload_length != len(buf) - cls.HEADER_LENGTH:
             error_message = "Payload length does not match buffer size: {} vs {} bytes" \
@@ -71,12 +72,12 @@ class AbstractInternalMessage(AbstractMessage):
         else:
             return self._memoryview[0:self._payload_len + self.HEADER_LENGTH]
 
-    def msg_type(self):
+    def msg_type(self) -> bytes:
         if self._msg_type is None:
             self._msg_type = struct.unpack_from("<12s", self.buf, self.STARTING_BYTES_LEN)[0]
         return self._msg_type
 
-    def payload_len(self):
+    def payload_len(self) -> int:
         if self._payload_len is None:
             self._payload_len = struct.unpack_from("<L", self.buf, self.STARTING_BYTES_LEN + constants.MSG_TYPE_LEN)[0]
         return self._payload_len
@@ -96,7 +97,7 @@ class AbstractInternalMessage(AbstractMessage):
     def get_priority(self) -> bool:
         return self._priority
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """
         Expensive equality comparison. Use only for tests.
         """
@@ -105,5 +106,5 @@ class AbstractInternalMessage(AbstractMessage):
         else:
             return self.rawbytes().tobytes() == other.rawbytes().tobytes()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Message<type: {}, length: {}>".format(self.MESSAGE_TYPE, len(self.rawbytes()))

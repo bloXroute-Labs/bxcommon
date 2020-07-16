@@ -42,7 +42,7 @@ class BroadcastMessageV8(AbstractBroadcastMessage):
             #  `Optional[bytearray]`.
             self.buf[off:off + len(blob)] = blob
 
-    def log_level(self):
+    def log_level(self) -> LogLevel:
         return LogLevel.DEBUG
 
     def is_encrypted(self) -> bool:
@@ -65,7 +65,7 @@ class BroadcastMessageV8(AbstractBroadcastMessage):
         return self._blob
 
     @classmethod
-    def peek_network_num(cls, input_buffer: InputBuffer):
+    def peek_network_num(cls, input_buffer: InputBuffer) -> int:
         off = AbstractBloxrouteMessage.HEADER_LENGTH + crypto.SHA256_HASH_LEN
 
         if input_buffer.length < off + constants.NETWORK_NUM_LEN:
@@ -77,7 +77,7 @@ class BroadcastMessageV8(AbstractBroadcastMessage):
 
         return network_num
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "BroadcastMessage<network_num: {}, block_id: {}, blob_length: {}, is_encrypted: {}, source_id: {}>" \
             .format(self.network_num(), self.message_id(), len(self.blob()), self.is_encrypted(),
                     self.source_id_as_str())

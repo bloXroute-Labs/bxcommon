@@ -3,6 +3,7 @@ from bxcommon.messages.bloxroute.v7.tx_message_converter_v7 import \
     tx_message_converter_v7
 from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
 from bxcommon.messages.versioning.no_changes_message_converter import no_changes_message_converter
+from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 
 
 class _MessageConverterFactoryV7(AbstractMessageConverterFactory):
@@ -10,7 +11,7 @@ class _MessageConverterFactoryV7(AbstractMessageConverterFactory):
         BloxrouteMessageType.TRANSACTION: tx_message_converter_v7,
     }
 
-    def get_message_converter(self, msg_type):
+    def get_message_converter(self, msg_type) -> AbstractMessageConverter:
         if not msg_type:
             raise ValueError("msg_type is required.")
 

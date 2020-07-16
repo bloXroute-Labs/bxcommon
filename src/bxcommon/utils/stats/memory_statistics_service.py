@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 class MemoryStatsIntervalData(StatsIntervalData):
     class_mem_stats: Dict[str, ClassMemStats]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(MemoryStatsIntervalData, self).__init__(*args, **kwargs)
         self.class_mem_stats = defaultdict(ClassMemStats)
 
@@ -29,7 +29,7 @@ class MemoryStatsIntervalData(StatsIntervalData):
 # pyre-fixme[24]: Type parameter `MemoryStatsIntervalData` violates constraints on
 #  `N` in generic type `ThreadedStatisticsService`.
 class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "AbstractNode"]):
-    def __init__(self, interval: int = 0):
+    def __init__(self, interval: int = 0) -> None:
         self.sizer_obj = Sizer()
         super(MemoryStatsService, self).__init__(
             "MemoryStats",
@@ -86,14 +86,13 @@ class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "Abs
 
     def get_info(self) -> Dict[str, Any]:
         # total_mem_usage is the peak mem usage fo the process (kilobytes on Linux, bytes on OS X)
-        assert self.node is not None
-        assert self.interval_data is not None
+        node = self.node
+        assert node is not None
         payload = {
-            # pyre-fixme[16]: Optional type has no attribute `opts`.
-            "node_id": self.node.opts.node_id,
-            "node_type": self.node.opts.node_type,
-            "node_network_num": self.node.opts.blockchain_network_num,
-            "node_address": f"{self.node.opts.external_ip}:{self.node.opts.external_port}",
+            "node_id": node.opts.node_id,
+            "node_type": node.opts.node_type,
+            "node_network_num": node.opts.blockchain_network_num,
+            "node_address": f"{node.opts.external_ip}:{node.opts.external_port}",
             "total_mem_usage": memory_utils.get_app_memory_usage(),
             # pyre-ignore having some difficulty with subclassing generics
             "classes": self.interval_data.class_mem_stats,
@@ -137,9 +136,10 @@ class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "Abs
         mem_stats.networks[network_num].analyzed_objects[obj_name].object_type = object_type
         mem_stats.networks[network_num].analyzed_objects[obj_name].size_type = size_type
 
-    def reset_class_mem_stats(self, class_name):
+    def reset_class_mem_stats(self, class_name) -> None:
         mem_stats = ClassMemStats()
         mem_stats.timestamp = datetime.utcnow()
+        # pyre-ignore having some difficulty with subclassing generics
         self.interval_data.class_mem_stats[class_name] = mem_stats
 
 

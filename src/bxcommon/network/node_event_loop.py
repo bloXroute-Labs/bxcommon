@@ -38,7 +38,7 @@ class NodeEventLoop:
     _node: AbstractNode
     _stop_requested: bool
 
-    def __init__(self, node: AbstractNode):
+    def __init__(self, node: AbstractNode) -> None:
         self._node = node
         self._stop_requested = False
         loop = asyncio.get_event_loop()
@@ -90,7 +90,7 @@ class NodeEventLoop:
             for server in node_servers:
                 server.close()
 
-    async def _process_new_connections_requests(self):
+    async def _process_new_connections_requests(self) -> None:
         peers_info = self._node.dequeue_connection_requests()
         if peers_info is not None:
             await asyncio.gather(*self._gather_connections(iter(peers_info)))

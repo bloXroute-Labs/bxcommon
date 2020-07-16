@@ -97,11 +97,12 @@ class AbstractBloxrouteVersionManagerTest(
     NETWORK_NUMBER = 7
     BROADCAST_TYPE = BroadcastMessageType.BLOCK
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         # hack to avoid unit test discovery of this class
         super().__init__(*args, **kwargs)
         if self.__class__ != AbstractBloxrouteVersionManagerTest:
             # pylint: disable=no-value-for-parameter
+            # pyre-ignore[16]
             self.run = unittest.TestCase.run.__get__(self, self.__class__)
         else:
             self.run = lambda self, *args, **kwargs: None

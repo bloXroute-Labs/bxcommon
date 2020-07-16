@@ -19,7 +19,7 @@ class AbstractVersionManager:
     MIN_SUPPORTED_PROTOCOL_VERSION = 1
     VERSION_MESSAGE_MAIN_LENGTH = VersionMessage.BASE_LENGTH
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.protocol_to_factory_mapping = {}
         self.protocol_to_converter_factory_mapping = {}
         self.version_message_command = ""

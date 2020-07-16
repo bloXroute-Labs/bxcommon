@@ -6,7 +6,7 @@ from bxutils.ssl.extensions.extensions_object_ids import ExtensionsObjectIds
 
 class NodePrivilegesExtension(UnrecognizedExtension):
 
-    def __init__(self, node_privileges: str):
+    def __init__(self, node_privileges: str) -> None:
         super().__init__(ExtensionsObjectIds.NODE_PRIVILEGES, node_privileges.encode("utf-8"))
         self._node_privileges = node_privileges
 

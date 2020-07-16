@@ -11,7 +11,7 @@ logger = logging.get_logger(__name__)
 
 
 class EncryptionCacheItem:
-    def __init__(self, key, ciphertext, payload):
+    def __init__(self, key, ciphertext, payload) -> None:
         self.key = key
         self.ciphertext = ciphertext
         self.payload = payload
@@ -32,7 +32,7 @@ class EncryptedCache:
     Storage for in-progress received or sent encrypted blocks.
     """
 
-    def __init__(self, expiration_time_s, alarm_queue):
+    def __init__(self, expiration_time_s, alarm_queue) -> None:
         self._cache = {}
         self._expiration_queue = ExpirationQueue(expiration_time_s)
         self._expiration_time_s = expiration_time_s

@@ -22,7 +22,7 @@ class JsonRpcRequest:
         self.params = params
         self.json_rpc_version = rpc_constants.JSON_RPC_VERSION
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"JsonRpcRequest<{self.to_json()}>"
 
     def __eq__(self, o: object) -> bool:

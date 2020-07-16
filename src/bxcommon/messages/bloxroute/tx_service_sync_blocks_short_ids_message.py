@@ -45,7 +45,7 @@ class TxServiceSyncBlocksShortIdsMessage(AbstractBloxrouteMessage):
             self.buf
         )
 
-    def log_level(self) -> int:
+    def log_level(self) -> LogLevel:
         return LogLevel.DEBUG
 
     def network_num(self) -> int:

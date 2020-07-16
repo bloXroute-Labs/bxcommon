@@ -10,7 +10,7 @@ from bxcommon.storage.encrypted_cache import EncryptedCache
 from bxcommon.utils.object_hash import Sha256Hash
 
 
-def message_hash_to_hash_key(msg_hash):
+def message_hash_to_hash_key(msg_hash) -> bytes:
     if isinstance(msg_hash, Sha256Hash):
         return bytes(msg_hash.binary)
 
@@ -20,12 +20,12 @@ def message_hash_to_hash_key(msg_hash):
     return bytes(msg_hash)
 
 
-def message_blob_to_ciphertext(msg_blob):
+def message_blob_to_ciphertext(msg_blob) -> bytes:
     return msg_blob.tobytes()
 
 
 class BlockEncryptedCache(EncryptedCache):
-    def __init__(self, alarm_queue):
+    def __init__(self, alarm_queue) -> None:
         super(BlockEncryptedCache, self).__init__(constants.BLOCK_CACHE_TIMEOUT_S, alarm_queue)
 
     def decrypt_ciphertext(self, hash_key, ciphertext):

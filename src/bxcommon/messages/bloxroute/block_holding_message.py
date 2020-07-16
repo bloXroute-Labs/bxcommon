@@ -16,7 +16,7 @@ class BlockHoldingMessage(AbstractBroadcastMessage):
         self._block_id = None
         super().__init__(block_hash, network_num, source_id, buf)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"BlockHoldingMessage<block_hash: {self.block_hash()}>"
 
     def block_hash(self) -> Sha256Hash:

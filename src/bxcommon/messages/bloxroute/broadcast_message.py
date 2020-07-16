@@ -48,7 +48,7 @@ class BroadcastMessage(AbstractBroadcastMessage):
             #  `Optional[bytearray]`.
             self.buf[off:off + len(blob)] = blob
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"BroadcastMessage<"
             f"network_num: {self.network_num()}, "
@@ -60,7 +60,7 @@ class BroadcastMessage(AbstractBroadcastMessage):
             f">"
         )
 
-    def log_level(self):
+    def log_level(self) -> LogLevel:
         return LogLevel.DEBUG
 
     def broadcast_type(self) -> BroadcastMessageType:
@@ -113,7 +113,7 @@ class BroadcastMessage(AbstractBroadcastMessage):
         return self._blob
 
     @classmethod
-    def peek_network_num(cls, input_buffer: InputBuffer):
+    def peek_network_num(cls, input_buffer: InputBuffer) -> int:
         off = AbstractBloxrouteMessage.HEADER_LENGTH + crypto.SHA256_HASH_LEN
 
         if input_buffer.length < off + constants.NETWORK_NUM_LEN:

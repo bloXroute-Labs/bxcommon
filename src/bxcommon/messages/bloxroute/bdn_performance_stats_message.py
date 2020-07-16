@@ -68,7 +68,7 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
         payload_length = len(buf) - AbstractBloxrouteMessage.HEADER_LENGTH
         super().__init__(self.MESSAGE_TYPE, payload_length, self.buf)
 
-    def log_level(self):
+    def log_level(self) -> LogLevel:
         return LogLevel.DEBUG
 
     def interval_start_time(self) -> datetime:
@@ -134,7 +134,7 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
         self._new_tx_received_from_bdn, = struct.unpack_from("<I", self.buf, off)
         off += constants.UL_INT_SIZE_IN_BYTES
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "BdnPerformanceStatsMessage<blocks_from_blockchain_node: {}, blocks_from_bdn: {}, " \
                "tx_from_blockchain_node: {}, tx_from_bdn: {}>". \
             format(self.new_blocks_from_blockchain_node(), self.new_blocks_from_bdn(),

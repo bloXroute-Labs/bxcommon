@@ -23,7 +23,7 @@ class AbstractMessageFactory:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.base_message_type = self.get_base_message_type()
         self.message_type_mapping: Dict[bytes, Type[AbstractMessage]] = {}
 

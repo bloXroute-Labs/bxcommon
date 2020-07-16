@@ -23,7 +23,7 @@ class BroadcastOptions:
 class BroadcastService(Generic[MT, CT], ABC):
     connection_pool: ConnectionPool
 
-    def __init__(self, connection_pool: ConnectionPool):
+    def __init__(self, connection_pool: ConnectionPool) -> None:
         self.connection_pool = connection_pool
 
     def broadcast(self, message: MT, options: BroadcastOptions) -> List[CT]:

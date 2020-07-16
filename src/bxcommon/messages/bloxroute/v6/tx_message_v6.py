@@ -59,7 +59,7 @@ class TxMessageV6(AbstractBroadcastMessage):
         # pyre-fixme[7]: Expected `memoryview` but got `Optional[memoryview]`.
         return self._tx_val
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return ("TxMessage<tx_hash: {}, short_id: {}, network_num: {}, compact: {}, source_id: {}>"
                 .format(self.tx_hash(), self.short_id(), self.network_num(), self.tx_val() == self.EMPTY_TX_VAL,
                         self.source_id_as_str()))

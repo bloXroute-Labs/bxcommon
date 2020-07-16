@@ -28,7 +28,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def _get_handler_file(folder_path: str):
+def _get_handler_file(folder_path: str) -> FileHandler:
     assert folder_path is not None, "log folder path is missing"
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)

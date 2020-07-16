@@ -15,7 +15,7 @@ class AbstractMessage(ABC):
 
     @classmethod
     @abstractmethod
-    def validate_payload(cls, buf, unpacked_args):
+    def validate_payload(cls, buf, unpacked_args) -> None:
         """
         Validates unpacked content.
         """
@@ -27,7 +27,7 @@ class AbstractMessage(ABC):
         Initialize message class with arguments. Returns cls_type instance.
         """
 
-    def log_level(self):
+    def log_level(self) -> LogLevel:
         return LogLevel.TRACE
 
     @abstractmethod

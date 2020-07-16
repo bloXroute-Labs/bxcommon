@@ -6,7 +6,7 @@ from bxcommon.utils.blockchain_utils.btc.btc_common_constants import BTC_SHA_HAS
 
 
 class BtcObjectHash(Sha256Hash):
-    def __init__(self, buf=None, offset=0, length=0, binary=None):
+    def __init__(self, buf=None, offset=0, length=0, binary=None) -> None:
 
         from_binary = binary is not None and len(binary) == BTC_SHA_HASH_LEN
         from_buf = length == BTC_SHA_HASH_LEN and len(buf) >= offset + length

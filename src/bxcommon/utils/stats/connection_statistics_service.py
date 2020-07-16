@@ -4,7 +4,7 @@ from bxutils.logging.log_record_type import LogRecordType
 
 
 class _ConnectionStatisticsService(StatisticsEventService):
-    def __init__(self):
+    def __init__(self) -> None:
         super(_ConnectionStatisticsService, self).__init__()
         self.name = "ConnectionState"
         self.logger = logging.get_logger(LogRecordType.ConnectionState, __name__)

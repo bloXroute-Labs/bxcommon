@@ -32,7 +32,7 @@ ERROR_MESSAGE_MAPPINGS = {
 
 
 class RpcError(Exception):
-    def __init__(self, code: RpcErrorCode, request_id: Optional[str], data: Optional[Any]):
+    def __init__(self, code: RpcErrorCode, request_id: Optional[str], data: Optional[Any]) -> None:
         super().__init__()
         self.code = code
         self.message = ERROR_MESSAGE_MAPPINGS[code]
@@ -61,45 +61,45 @@ class RpcError(Exception):
 
 
 class RpcParseError(RpcError):
-    def __init__(self, request_id: Optional[str] = None, data: Optional[Any] = None):
+    def __init__(self, request_id: Optional[str] = None, data: Optional[Any] = None) -> None:
         super().__init__(RpcErrorCode.PARSE_ERROR, request_id, data)
 
 
 class RpcInvalidRequest(RpcError):
-    def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
+    def __init__(self, request_id: Optional[str], data: Optional[Any] = None) -> None:
         super().__init__(RpcErrorCode.INVALID_REQUEST, request_id, data)
 
 
 class RpcMethodNotFound(RpcError):
-    def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
+    def __init__(self, request_id: Optional[str], data: Optional[Any] = None) -> None:
         super().__init__(RpcErrorCode.METHOD_NOT_FOUND, request_id, data)
 
 
 class RpcInvalidParams(RpcError):
-    def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
+    def __init__(self, request_id: Optional[str], data: Optional[Any] = None) -> None:
         super().__init__(RpcErrorCode.INVALID_PARAMS, request_id, data)
 
 
 class RpcInternalError(RpcError):
-    def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
+    def __init__(self, request_id: Optional[str], data: Optional[Any] = None) -> None:
         super().__init__(RpcErrorCode.INTERNAL_ERROR, request_id, data)
 
 
 class RpcBlocked(RpcError):
-    def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
+    def __init__(self, request_id: Optional[str], data: Optional[Any] = None) -> None:
         super().__init__(RpcErrorCode.BLOCKED, request_id, data)
 
 
 class RpcTimedOut(RpcError):
-    def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
+    def __init__(self, request_id: Optional[str], data: Optional[Any] = None) -> None:
         super().__init__(RpcErrorCode.TIMED_OUT, request_id, data)
 
 
 class RpcAccountIdError(RpcError):
-    def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
+    def __init__(self, request_id: Optional[str], data: Optional[Any] = None) -> None:
         super().__init__(RpcErrorCode.ACCOUNT_ID_ERROR, request_id, data)
 
 
 class RpcUnknownError(RpcError):
-    def __init__(self, request_id: Optional[str], data: Optional[Any] = None):
+    def __init__(self, request_id: Optional[str], data: Optional[Any] = None) -> None:
         super().__init__(RpcErrorCode.UNKNOWN, request_id, data)
