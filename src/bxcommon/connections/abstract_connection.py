@@ -82,6 +82,7 @@ class AbstractConnection(Generic[Node]):
         self.peer_desc = repr(self.endpoint)
 
         self.can_send_pings = False
+        self.pong_timeout_enabled = False
 
         self.hello_messages = []
         self.header_size = 0
@@ -455,6 +456,10 @@ class AbstractConnection(Generic[Node]):
         """
         if self.can_send_pings and self.is_alive():
             self.enqueue_msg(self.ping_message)
+
+            if self.pong_timeout_enabled:
+                self.schedule_pong_timeout()
+
             return self.ping_interval_s
         return constants.CANCEL_ALARMS
 
@@ -495,7 +500,7 @@ class AbstractConnection(Generic[Node]):
         self.enqueue_msg(self.pong_message)
 
     def msg_pong(self, _msg):
-        pass
+        self.cancel_pong_timeout()
 
     def mark_for_close(self, should_retry: Optional[bool] = None):
         """

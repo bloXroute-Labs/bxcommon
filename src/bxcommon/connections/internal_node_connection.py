@@ -24,13 +24,13 @@ from bxcommon.models.node_type import NodeType
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.services import tx_sync_service_helpers
+from bxcommon.services.transaction_service import TransactionCacheKeyType
 from bxcommon.utils import nonce_generator, performance_utils
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.measurement_type import MeasurementType
-from bxcommon.services.transaction_service import TransactionCacheKeyType
 from bxutils import log_messages
 from bxutils import logging
 from bxutils.logging import LogRecordType
@@ -185,6 +185,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
     # pylint: disable=arguments-differ
     def msg_pong(self, msg: PongMessage):
+        super(InternalNodeConnection, self).msg_pong(msg)
+
         nonce = msg.nonce()
         if nonce in self.ping_message_timestamps.contents:
             request_msg_timestamp = self.ping_message_timestamps.contents[nonce]
@@ -195,8 +197,6 @@ class InternalNodeConnection(AbstractConnection[Node]):
             hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
         elif nonce is not None:
             self.log_debug("Pong message had no matching ping request. Nonce: {}", nonce)
-
-        self.cancel_pong_timeout()
 
     def msg_tx_service_sync_txs(self, msg: TxServiceSyncTxsMessage):
         """
