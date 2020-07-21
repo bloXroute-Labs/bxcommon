@@ -1,7 +1,7 @@
 from typing import Union, Tuple
 
 from bxcommon.utils import crypto
-from bxcommon.utils.blockchain_utils.btc.btc_common_util import btc_varint_to_int
+from bxcommon.utils.blockchain_utils.btc.btc_common_utils import btc_varint_to_int
 from bxcommon.utils.blockchain_utils.ont import ont_common_constants
 from bxcommon.utils.blockchain_utils.ont.ont_object_hash import OntObjectHash
 

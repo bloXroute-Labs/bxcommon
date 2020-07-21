@@ -308,7 +308,7 @@ def get_common_opts(
             blockchain_network(
                 "Ethereum",
                 "Mainnet",
-                2,
+                5,
                 5,
                 5,
                 final_tx_confirmations_count,
