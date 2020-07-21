@@ -5,13 +5,13 @@ from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.messages.bloxroute.v9.bdn_performance_stats_message_v9 import BdnPerformanceStatsMessageV9
+from bxcommon.messages.bloxroute.v10.bdn_performance_stats_message_v10 import BdnPerformanceStatsMessageV10
 from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 
 
-class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
+class _BdnPerformanceStatsMessageConverterV10(AbstractMessageConverter):
     _MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING = {
-        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV9
+        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV10
     }
 
     _MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING = {
@@ -23,11 +23,14 @@ class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
     )
 
     _BREAKPOINT = (
-        _BASE_LENGTH + 2 * constants.DOUBLE_SIZE_IN_BYTES + 2 * constants.UL_SHORT_SIZE_IN_BYTES
+        _BASE_LENGTH +
+        2 * constants.DOUBLE_SIZE_IN_BYTES +
+        2 * constants.UL_SHORT_SIZE_IN_BYTES +
+        2 * constants.UL_INT_SIZE_IN_BYTES
     )
 
     _OLD_MESSAGE_LEN = (
-        BdnPerformanceStatsMessageV9.MSG_SIZE
+        BdnPerformanceStatsMessageV10.MSG_SIZE
     )
 
     _NEW_MESSAGE_LEN = (
@@ -35,7 +38,7 @@ class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
     )
 
     _LENGTH_DIFFERENCE = (
-        2 * (constants.UL_INT_SIZE_IN_BYTES - constants.UL_SHORT_SIZE_IN_BYTES) + constants.UL_SHORT_SIZE_IN_BYTES
+        constants.UL_SHORT_SIZE_IN_BYTES
     )
 
     def convert_to_older_version(
@@ -45,7 +48,7 @@ class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
 
         if msg_type not in self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING:
             raise ValueError(
-                f"Tried to convert unexpected new message type to v9: {msg_type}"
+                f"Tried to convert unexpected new message type to v10: {msg_type}"
             )
 
         old_version_msg_class = self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING[
@@ -55,19 +58,7 @@ class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
 
         old_version_msg_bytes = bytearray(self._OLD_MESSAGE_LEN)
         old_version_msg_bytes[:self._BREAKPOINT] = msg.rawbytes()[:self._BREAKPOINT]
-
-        tx_received_from_blockchain_node, = struct.unpack_from("<I", msg.rawbytes(), self._BREAKPOINT)
-        tx_received_from_blockchain_node = min(tx_received_from_blockchain_node, constants.UNSIGNED_SHORT_MAX_VALUE)
-        struct.pack_into("<H", old_version_msg_bytes, self._BREAKPOINT, tx_received_from_blockchain_node)
-
-        tx_received_from_bdn, = struct.unpack_from("<I", msg.rawbytes(),
-                                                   self._BREAKPOINT + constants.UL_INT_SIZE_IN_BYTES)
-        tx_received_from_bdn = min(tx_received_from_bdn, constants.UNSIGNED_SHORT_MAX_VALUE)
-        struct.pack_into("<H", old_version_msg_bytes,
-                         self._BREAKPOINT + constants.UL_SHORT_SIZE_IN_BYTES, tx_received_from_bdn)
-
-        old_version_msg_bytes[self._BREAKPOINT + 2 * constants.UL_SHORT_SIZE_IN_BYTES:] = \
-            msg.rawbytes()[self._BREAKPOINT + 2 * constants.UL_INT_SIZE_IN_BYTES + constants.UL_SHORT_SIZE_IN_BYTES:]
+        old_version_msg_bytes[self._BREAKPOINT:] = msg.rawbytes()[self._BREAKPOINT + constants.UL_SHORT_SIZE_IN_BYTES:]
 
         return AbstractBloxrouteMessage.initialize_class(
             old_version_msg_class,
@@ -82,7 +73,7 @@ class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
 
         if msg_type not in self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING:
             raise ValueError(
-                f"Tried to convert unexpected old message type from v9: {msg_type}"
+                f"Tried to convert unexpected old message type from v10: {msg_type}"
             )
 
         new_msg_class = self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING[msg_type]
@@ -91,23 +82,10 @@ class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
         new_msg_bytes = bytearray(self._NEW_MESSAGE_LEN)
         new_msg_bytes[:self._BREAKPOINT] = msg.rawbytes()[:self._BREAKPOINT]
 
-        tx_received_from_blockchain_node, = struct.unpack_from("<H", msg.rawbytes(), self._BREAKPOINT)
-        struct.pack_into("<I", new_msg_bytes, self._BREAKPOINT, tx_received_from_blockchain_node)
-
-        tx_received_from_bdn, = struct.unpack_from("<H", msg.rawbytes(),
-                                                   self._BREAKPOINT + constants.UL_SHORT_SIZE_IN_BYTES)
-        struct.pack_into("<I", new_msg_bytes, self._BREAKPOINT + constants.UL_INT_SIZE_IN_BYTES, tx_received_from_bdn)
-
         default_memory_utilization_mb = 0
-        struct.pack_into(
-            "<H",
-            new_msg_bytes,
-            self._BREAKPOINT + constants.UL_INT_SIZE_IN_BYTES + constants.UL_SHORT_SIZE_IN_BYTES,
-            default_memory_utilization_mb
-        )
+        struct.pack_into("<H", new_msg_bytes, self._BREAKPOINT, default_memory_utilization_mb)
 
-        new_msg_bytes[self._BREAKPOINT + 2 * constants.UL_INT_SIZE_IN_BYTES + constants.UL_SHORT_SIZE_IN_BYTES:] = \
-            msg.rawbytes()[self._BREAKPOINT + 2 * constants.UL_SHORT_SIZE_IN_BYTES:]
+        new_msg_bytes[self._BREAKPOINT + constants.UL_SHORT_SIZE_IN_BYTES:] = msg.rawbytes()[self._BREAKPOINT:]
 
         return AbstractBloxrouteMessage.initialize_class(
             new_msg_class,
@@ -142,4 +120,4 @@ class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
         return self._LENGTH_DIFFERENCE
 
 
-bdn_performance_stats_message_converter_v9 = _BdnPerformanceStatsMessageConverterV9()
+bdn_performance_stats_message_converter_v10 = _BdnPerformanceStatsMessageConverterV10()
