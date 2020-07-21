@@ -635,10 +635,11 @@ class AbstractConnection(Generic[Node]):
         self.format_connection_desc = "{} - {}".format(self.peer_desc, _short_connection_type)
 
     def _pong_msg_timeout(self):
-        self.log_info("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
-                      "Closing connection.")
-        self.mark_for_close()
-        self.pong_timeout_alarm_id = None
+        if self.is_alive():
+            self.log_info("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
+                          "Closing connection.")
+            self.mark_for_close()
+            self.pong_timeout_alarm_id = None
 
     def _report_bad_message(self):
         """
