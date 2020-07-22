@@ -46,7 +46,6 @@ class SetNodeModel(AbstractInitTask):
             node_model = sdn_http_service.fetch_node_attributes(opts.node_id)
 
         if not node_model:
-
             node_model = register_node(opts, node_ssl_service)
 
         if node_model.cert is not None:
@@ -197,13 +196,13 @@ def _run_node(
         ssl_service_factory=ssl_service_factory,
     )
 
+    cli.set_blockchain_networks_info(opts)
+    cli.parse_blockchain_opts(opts, node_type)
+
     assert all(
         task(opts, node_ssl_service)
         for task in sorted(node_init_tasks, key=lambda x: x.order)
     )
-
-    cli.set_blockchain_networks_info(opts)
-    cli.parse_blockchain_opts(opts, node_type)
 
     if not hasattr(opts, "outbound_peers"):
         opts.__dict__["outbound_peers"] = []
@@ -237,9 +236,7 @@ def _init_ssl_service(
     if node_ssl_service.has_valid_certificate(SSLCertificateType.PRIVATE):
         ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
     else:
-        ssl_context = node_ssl_service.create_ssl_context(
-            SSLCertificateType.REGISTRATION_ONLY
-        )
+        ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.REGISTRATION_ONLY)
 
     sdn_http_service.reset_pool(ssl_context)
     return node_ssl_service
