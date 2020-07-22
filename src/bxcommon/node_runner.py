@@ -38,6 +38,12 @@ asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())  # pyre-ignore
 asyncio.set_event_loop(uvloop.new_event_loop())
 
 
+class SetNetworkInfo(AbstractInitTask):
+    def action(self, opts: OptsType, node_ssl_service) -> None:
+        cli.set_blockchain_networks_info(opts)
+        cli.parse_blockchain_opts(opts, opts.node_type)
+
+
 class SetNodeModel(AbstractInitTask):
     def action(self, opts: OptsType, node_ssl_service) -> None:
         node_model = None
@@ -125,7 +131,10 @@ def run_node(
                 task_pool_proxy.get_pool_size(),
             )
 
-        node_init_tasks.append(SetNodeModel(*node_init_tasks))
+        node_init_tasks.append(
+            SetNodeModel(SetNetworkInfo(*node_init_tasks))
+        )
+
         _run_node(
             opts,
             get_node_class,
