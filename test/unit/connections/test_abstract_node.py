@@ -7,7 +7,6 @@ from bxcommon.test_utils.helpers import async_test
 from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
-from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.services.broadcast_service import BroadcastService
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode

@@ -92,7 +92,7 @@ class OutputBuffer(SpecialMemoryProperties):
         return self.index == 0
 
     def enqueue_msgbytes(self, msg_bytes):
-        if not isinstance(msg_bytes, bytearray) and not isinstance(msg_bytes, memoryview):
+        if not isinstance(msg_bytes, (bytearray, memoryview)):
             raise ValueError("Msg_bytes must be a bytearray. The type given was a {}".format(type(msg_bytes)))
 
         length = len(msg_bytes)
@@ -123,7 +123,7 @@ class OutputBuffer(SpecialMemoryProperties):
         self.length += len(msg_bytes)
 
     def prepend_msgbytes(self, msg_bytes):
-        if not isinstance(msg_bytes, bytearray) and not isinstance(msg_bytes, memoryview):
+        if not isinstance(msg_bytes, (bytearray, memoryview)):
             raise ValueError("Msg_bytes must be a bytearray.")
 
         if self.index == 0:

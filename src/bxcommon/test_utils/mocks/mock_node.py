@@ -69,9 +69,10 @@ class MockNode(AbstractNode):
         pass
 
     def broadcast_transaction(
-            self,
-            message,
-            broadcasting_connection,
-            prepend_to_queue: bool = False
+        self,
+        message,
+        broadcasting_connection,
+        tx_status,
+        prepend_to_queue: bool = False
     ) -> None:
         pass

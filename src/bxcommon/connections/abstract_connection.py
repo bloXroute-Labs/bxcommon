@@ -128,10 +128,12 @@ class AbstractConnection(Generic[Node]):
         logger.log(level, message, *args, **kwargs)
 
     def log_trace(self, message, *args, **kwargs):
-        self._log_message(LogLevel.TRACE, message, *args, **kwargs)
+        if logger.isEnabledFor(LogLevel.TRACE):
+            self._log_message(LogLevel.TRACE, message, *args, **kwargs)
 
     def log_debug(self, message, *args, **kwargs):
-        self._log_message(LogLevel.DEBUG, message, *args, **kwargs)
+        if logger.isEnabledFor(LogLevel.DEBUG):
+            self._log_message(LogLevel.DEBUG, message, *args, **kwargs)
 
     def log_info(self, message, *args, **kwargs):
         self._log_message(LogLevel.INFO, message, *args, **kwargs)

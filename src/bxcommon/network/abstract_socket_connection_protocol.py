@@ -107,8 +107,13 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         total_bytes_sent = 0
         total_bytes_attempted_to_send = 0
 
+        conn = self._node.connection_pool.get_by_fileno(self.file_no)
+
+        if not conn:
+            return
+
         while self.is_sendable():
-            data = self._node.get_bytes_to_send(self.file_no)
+            data = conn.get_bytes_to_send()
             if not data:
                 break
 
@@ -121,7 +126,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
                 self._initial_bytes = transport_buffer_size
 
             transport.write(data)
-            self._node.on_bytes_sent(self.file_no, len(data))
+            conn.advance_sent_bytes(len(data))
             total_bytes_attempted_to_send += len(data)
 
             bytes_sent = total_transport_buffer_size - transport.get_write_buffer_size()
@@ -133,7 +138,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             bytes_sent -= initial_bytes
             self._initial_bytes = remaining_initial_bytes
 
-            self._node.on_bytes_written_to_socket(self.file_no, bytes_sent)
+            conn.advance_bytes_written_to_socket(bytes_sent)
 
         if total_bytes_sent:
             logger.trace("[{}] - sent {} bytes", self, total_bytes_sent)

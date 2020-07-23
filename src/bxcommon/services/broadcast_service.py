@@ -43,6 +43,7 @@ class BroadcastService(Generic[MT, CT], ABC):
 
     def get_connections_for_broadcast(self, message: MT, options: BroadcastOptions) -> List[CT]:
         connections = []
+        # pyre-fixme[6]: Expected `List[ConnectionType]` for 1st param but got `Iterable[ConnectionType]`.
         for connection in self.connection_pool.get_by_connection_types(options.connection_types):
             if (
                 self.should_broadcast_to_connection(message, connection) and
