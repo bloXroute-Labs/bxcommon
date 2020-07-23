@@ -1,15 +1,15 @@
 from bxutils.log_message_categories import *
 from bxutils.logging_messages_utils import LogMessage
 
-EMPTY_BLOCKCHAIN_NETWORK_LIST= LogMessage(
+EMPTY_BLOCKCHAIN_NETWORK_LIST = LogMessage(
     "C-000000",
     REQUEST_RESPONSE_CATEGORY,
     "Empty list for blockchain networks from SDN, trying to obtain info from cache"
 )
-READ_CACHE_FILE_ERROR = LogMessage(
+READ_CACHE_FILE_WARNING = LogMessage(
     "C-000001",
     GENERAL_CATEGORY,
-    "Failed when tried to read from cache file: could not find the specified file"
+    "Unable to find cache file: {}. Not using cache. You can disable caching by setting --enable-node-cache False."
 )
 PROTOCOL_VERSION_NOT_IN_FACTORY_MAPPING = LogMessage(
     "C-000002",
