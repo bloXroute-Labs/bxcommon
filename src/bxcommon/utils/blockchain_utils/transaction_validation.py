@@ -1,8 +1,8 @@
 from typing import Union, Dict, Callable
 
+from bxcommon.utils.blockchain_utils.eth import transaction_validation_utils
 from bxcommon.models.blockchain_protocol import BlockchainProtocol
 from bxcommon.models.tx_validation_status import TxValidationStatus
-from bxcommon.utils.blockchain_utils.eth import eth_common_utils
 
 protocol_transaction_validation: Dict[BlockchainProtocol, Callable[
     [Union[bytes, bytearray, memoryview]],
@@ -29,7 +29,7 @@ def eth_validate_transaction(
 ) -> TxValidationStatus:
     if isinstance(tx_bytes, bytes):
         tx_bytes = bytearray(tx_bytes)
-    return eth_common_utils.validate_transaction(tx_bytes)
+    return transaction_validation_utils.validate_transaction(tx_bytes)
 
 
 def ont_validate_transaction(

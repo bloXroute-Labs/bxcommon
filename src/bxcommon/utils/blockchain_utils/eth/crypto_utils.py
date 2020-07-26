@@ -23,21 +23,21 @@ def sign(msg, private_key):
         raise ValueError("Private key is expected of len {0} but was {1}"
                          .format(eth_common_constants.PRIVATE_KEY_LEN, len(private_key)))
 
-    pk = PrivateKey(private_key)
-    return pk.sign_recoverable(msg, hasher=None)
+    new_private_key = PrivateKey(private_key)
+    return new_private_key.sign_recoverable(msg, hasher=None)
 
 
-def get_sha3_calculator(input):
+def get_sha3_calculator(input_bytes):
     """
     Returns object that can be used to calculate sha3 hash
-    :param input: input bytes
+    :param input_bytes: input bytes
     :return: object that can calculate sha3 256 hash
     """
 
-    if input is None:
+    if input_bytes is None:
         raise ValueError("Input is required")
 
-    return keccak.new(digest_bits=eth_common_constants.SHA3_LEN_BITS, update_after_digest=True, data=input)
+    return keccak.new(digest_bits=eth_common_constants.SHA3_LEN_BITS, update_after_digest=True, data=input_bytes)
 
 
 def recover_public_key(message, signature, hasher=None):
@@ -53,8 +53,8 @@ def recover_public_key(message, signature, hasher=None):
         raise ValueError("Expected signature len of {0} but was {1}"
                          .format(eth_common_constants.SIGNATURE_LEN, len(signature)))
 
-    pk = PublicKey.from_signature_and_message(signature, message, hasher=hasher)
-    return pk.format(compressed=False)[1:]
+    public_key = PublicKey.from_signature_and_message(signature, message, hasher=hasher)
+    return public_key.format(compressed=False)[1:]
 
 
 def verify_signature(pubkey, signature, message):
@@ -77,34 +77,34 @@ def verify_signature(pubkey, signature, message):
     if not message:
         raise ValueError("Message is required")
 
-    pk = PublicKey.from_signature_and_message(signature, message, hasher=None)
-    return pk.format(compressed=False) == b"\04" + pubkey
+    public_key = PublicKey.from_signature_and_message(signature, message, hasher=None)
+    return public_key.format(compressed=False) == b"\04" + pubkey
 
 
-def encode_signature(v, r, s) -> bytes:
+def encode_signature(tx_v, tx_r, tx_s) -> bytes:
     """
     Calculates byte representation of ECC signature from parameters
-    :param v:
-    :param r:
-    :param s:
+    :param tx_v:
+    :param tx_r:
+    :param tx_s:
     :return: bytes of ECC signature
     """
-    if not isinstance(v, int):
+    if not isinstance(tx_v, int):
         raise ValueError("v is expected to be int")
 
-    if v > eth_common_constants.EIP155_CHAIN_ID_OFFSET:
-        if v % 2 == 0:
-            v = 28
+    if tx_v > eth_common_constants.EIP155_CHAIN_ID_OFFSET:
+        if tx_v % 2 == 0:
+            tx_v = 28
         else:
-            v = 27
+            tx_v = 27
 
-    if v not in (27, 28):
+    if tx_v not in (27, 28):
         raise ValueError("v is expected to be int or long in range (27, 28)")
 
     # pyre-fixme[16]: Module `bitcoin` has no attribute `encode`.
     # pyre-fixme[16]: Module `bitcoin` has no attribute `encode`.
-    vb, rb, sb = rlp_utils.ascii_chr(v - 27), bitcoin.encode(r, 256), bitcoin.encode(s, 256)
-    return _left_0_pad_32(rb) + _left_0_pad_32(sb) + vb
+    v_bytes, r_bytes, s_bytes = rlp_utils.ascii_chr(tx_v - 27), bitcoin.encode(tx_r, 256), bitcoin.encode(tx_s, 256)
+    return _left_0_pad_32(r_bytes) + _left_0_pad_32(s_bytes) + v_bytes
 
 
 def decode_signature(sig):
@@ -117,7 +117,7 @@ def decode_signature(sig):
     if not sig:
         raise ValueError("Signature is required")
 
-    return eth_common_utils.safe_ord(sig[64]) + 27, bitcoin.decode(sig[0:32], 256), bitcoin.decode(sig[32:64], 256)
+    return rlp_utils.safe_ord(sig[64]) + 27, bitcoin.decode(sig[0:32], 256), bitcoin.decode(sig[32:64], 256)
 
 
 def make_private_key(seed):
@@ -182,7 +182,7 @@ def ecies_kdf(key_material, key_len):
     if key_len <= 0:
         raise ValueError("Key len is expected to be positive but was {0}".format(key_len))
 
-    s1 = b""
+    empty_bytes = b""
     key = b""
     hash_blocksize = eth_common_constants.BLOCK_HASH_LEN
     reps = ((key_len + 7) * 8) / (hash_blocksize * 8)
@@ -192,33 +192,36 @@ def ecies_kdf(key_material, key_len):
         ctx = hashlib.sha256()
         ctx.update(struct.pack(">I", counter))
         ctx.update(key_material)
-        ctx.update(s1)
+        ctx.update(empty_bytes)
         key += ctx.digest()
     return key[:key_len]
 
 
-def string_xor(s1, s2):
+def string_xor(string_1, string_2):
     """
     Calculates xor of two strings
-    :param s1: string 1
-    :param s2: string 2
+    :param string_1: string 1
+    :param string_2: string 2
     :return: xor of two strings
     """
 
-    if len(s1) != len(s2):
+    if len(string_1) != len(string_2):
         raise ValueError("String must have the same length")
 
-    return b"".join(rlp_utils.ascii_chr(eth_common_utils.safe_ord(a) ^ eth_common_utils.safe_ord(b)) for a, b in zip(s1, s2))
+    return b"".join(
+        rlp_utils.ascii_chr(rlp_utils.safe_ord(a) ^ rlp_utils.safe_ord(b)) for a, b in zip(string_1, string_2)
+    )
 
 
-def get_padded_len_16(x):
+def get_padded_len_16(input_bytes):
     """
     Length of bytes if padded to 16
-    :param x: bytes
+    :param input_bytes: bytes
     :return: padded length
     """
 
-    return x if x % eth_common_constants.MSG_PADDING == 0 else x + eth_common_constants.MSG_PADDING - (x % eth_common_constants.MSG_PADDING)
+    return input_bytes if input_bytes % eth_common_constants.MSG_PADDING == 0 \
+        else input_bytes + eth_common_constants.MSG_PADDING - (input_bytes % eth_common_constants.MSG_PADDING)
 
 
 def right_0_pad_16(data):
@@ -233,14 +236,14 @@ def right_0_pad_16(data):
     return data
 
 
-def _left_0_pad_32(x):
+def _left_0_pad_32(input_bytes):
     """
     Pads bytes with 0 on the left to length of 32
-    :param x: bytes
+    :param input_bytes: bytes
     :return: padded bytes
     """
 
-    return b"\x00" * (32 - len(x)) + x
+    return b"\x00" * (32 - len(input_bytes)) + input_bytes
 
 
 def public_key_to_address(public_key_bytes: bytes) -> bytes:

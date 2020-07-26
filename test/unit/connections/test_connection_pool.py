@@ -1,6 +1,7 @@
 import timeit
 import uuid
 from enum import auto
+from unittest import skip
 
 from bxcommon.models.serializable_flag import SerializableFlag
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -214,6 +215,7 @@ class ConnectionPoolTest(AbstractTestCase):
         self.conn_pool1.delete(self.conn2)
         self.assertEqual(2, len(self.conn_pool1))
 
+    @skip("Run this test only for local debugging")
     def test_get_by_connection_types_performance(self):
         log_config.set_level(
             ["bxcommon.connections.abstract_node", "bxcommon.services.transaction_service"],

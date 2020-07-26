@@ -3,13 +3,11 @@ from math import ceil
 from typing import List, Optional
 
 from bxcommon.exceptions import ParseError
-from bxcommon.utils.blockchain_utils.eth import eth_common_utils
 
-"""
-Utility functions to work with RLP (Recursive Length Prefix) encoding.
-
-https://github.com/ethereum/wiki/wiki/RLP
-"""
+# -------
+#   Utility functions to work with RLP (Recursive Length Prefix) encoding.
+#   https://github.com/ethereum/wiki/wiki/RLP
+# -------
 
 
 def encode_int(value):
@@ -25,7 +23,7 @@ def encode_int(value):
     else:
         s = int_to_big_endian(value)
 
-    if len(s) == 1 and eth_common_utils.safe_ord(s[0]) < 128:
+    if len(s) == 1 and safe_ord(s[0]) < 128:
         return s
 
     return get_length_prefix_str(len(s)) + s
@@ -50,31 +48,31 @@ def consume_length_prefix(rlp, start):
     if start is None:
         raise ValueError("Argument start is required")
 
-    b0 = eth_common_utils.safe_ord(rlp[start])
-    if b0 < 128:  # single byte
+    first_byte = safe_ord(rlp[start])
+    if first_byte < 128:  # single byte
         return (str, 1, start)
-    elif b0 < 128 + 56:  # short string
-        if b0 - 128 == 1 and eth_common_utils.safe_ord(rlp[start + 1]) < 128:
+    elif first_byte < 128 + 56:  # short string
+        if first_byte - 128 == 1 and safe_ord(rlp[start + 1]) < 128:
             raise ParseError("Encoded as short string although single byte was possible")
-        return (str, b0 - 128, start + 1)
-    elif b0 < 192:  # long string
-        ll = b0 - 128 - 56 + 1
+        return (str, first_byte - 128, start + 1)
+    elif first_byte < 192:  # long string
+        long_length = first_byte - 128 - 56 + 1
         if rlp[start + 1:start + 2] == b"\x00":
             raise ParseError("Length starts with zero bytes")
-        l = eth_common_utils.big_endian_to_int(rlp[start + 1:start + 1 + ll])
-        if l < 56:
+        length = big_endian_to_int(rlp[start + 1:start + 1 + long_length])
+        if length < 56:
             raise ParseError("Long string prefix used for short string")
-        return (str, l, start + 1 + ll)
-    elif b0 < 192 + 56:  # short list
-        return (list, b0 - 192, start + 1)
+        return (str, length, start + 1 + long_length)
+    elif first_byte < 192 + 56:  # short list
+        return (list, first_byte - 192, start + 1)
     else:  # long list
-        ll = b0 - 192 - 56 + 1
+        long_length = first_byte - 192 - 56 + 1
         if rlp[start + 1:start + 2] == b"\x00":
             raise ParseError("Length starts with zero bytes")
-        l = eth_common_utils.big_endian_to_int(rlp[start + 1:start + 1 + ll])
-        if l < 56:
+        length = big_endian_to_int(rlp[start + 1:start + 1 + long_length])
+        if length < 56:
             raise ParseError("Long list prefix used for short list")
-        return (list, l, start + 1 + ll)
+        return (list, length, start + 1 + long_length)
 
 
 def decode_int(rlp, start):
@@ -82,6 +80,7 @@ def decode_int(rlp, start):
     Decodes int value from RLP format
 
     :param rlp: RLP bytes
+    :param start: start offset
     :return: tuple (value, length)
     """
 
@@ -92,7 +91,7 @@ def decode_int(rlp, start):
     if len(value_bytes) == 0:
         value = 0
     else:
-        value = eth_common_utils.big_endian_to_int(value_bytes)
+        value = big_endian_to_int(value_bytes)
 
     return (value, (value_start - start) + value_len)
 
@@ -184,7 +183,9 @@ def str_to_bytes(value):
     return bytes(value, "utf-8")
 
 
-def get_list_items_bytes(list_bytes: memoryview, remove_items_length_prefix: Optional[bool] = False) -> List[memoryview]:
+def get_list_items_bytes(
+    list_bytes: memoryview, remove_items_length_prefix: Optional[bool] = False
+) -> List[memoryview]:
     """
     Parses items from the list
     :param list_bytes: RLP serialized list bytes
@@ -209,7 +210,9 @@ def get_list_items_bytes(list_bytes: memoryview, remove_items_length_prefix: Opt
     return result
 
 
-def get_first_list_field_items_bytes(object_bytes: memoryview, remove_items_length_prefix: Optional[bool] = False) -> List[memoryview]:
+def get_first_list_field_items_bytes(
+    object_bytes: memoryview, remove_items_length_prefix: Optional[bool] = False
+) -> List[memoryview]:
     """
     Parses the first field of RLP serialized object as list
     :param object_bytes: byte of RLP serialized object
@@ -227,8 +230,35 @@ def remove_length_prefix(item_bytes: memoryview) -> memoryview:
     :return: item bytes without length prefix
     """
 
-    _, list_itm_len, list_itm_start = consume_length_prefix(item_bytes, 0)
+    _, _, list_itm_start = consume_length_prefix(item_bytes, 0)
     return item_bytes[list_itm_start:]
+
+
+def safe_ord(character):
+    """
+    Ethereum RLP Utils:
+    Returns an integer representing the Unicode code point of the character or int if int argument is passed
+
+    :param character: character or integer
+    :return: integer representing the Unicode code point of the character or int if int argument is passed
+    """
+
+    if isinstance(character, int):
+        return character
+    else:
+        return ord(character)
+
+
+def big_endian_to_int(value):
+    """
+    Ethereum RLP Utils:
+    Convert big endian to int
+
+    :param value: big ending value
+    :return: int value
+    """
+
+    return int.from_bytes(value, byteorder="big")
 
 
 def _pack_left(lnum):

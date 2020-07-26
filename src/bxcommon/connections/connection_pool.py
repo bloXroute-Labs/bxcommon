@@ -1,7 +1,7 @@
 import functools
 from collections import defaultdict
 from itertools import chain
-from typing import Iterable
+from typing import Iterable, Iterator
 from typing import List, Dict, Optional, Tuple, ClassVar
 import time
 from more_itertools import flatten
@@ -101,7 +101,7 @@ class ConnectionPool:
             return False
         return (ip, port) in self.by_ipport
 
-    def get_by_connection_types(self, connection_types: List[ConnectionType]) -> List[AbstractConnection]:
+    def get_by_connection_types(self, connection_types: List[ConnectionType]) -> Iterator[AbstractConnection]:
         # pyre-fixme [7]: Expected `List[AbstractConnection[typing.Any]]`
         #  but got `typing.Iterator[Variable[more_itertools.recipes._T]]`.
         return flatten(self._iter_by_connection_types(connection_types))
