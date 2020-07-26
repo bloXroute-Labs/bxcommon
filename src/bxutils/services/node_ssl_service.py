@@ -138,7 +138,6 @@ class NodeSSLService:
         """
         cert_type = SSLCertificateType.PRIVATE
         has_cert = cert_type in self.certificates
-
         if has_cert and is_cert_valid(self.certificates[cert_type], expiration_threshold_days):
             private_account = extensions_factory.get_account_id(
                 self.certificates[SSLCertificateType.PRIVATE]
@@ -148,7 +147,7 @@ class NodeSSLService:
             )
             return private_account == registration_only_account
 
-        return False
+        return True
 
     def blocking_store_node_certificate(self, cert: Certificate) -> None:
         """
