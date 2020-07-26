@@ -136,16 +136,16 @@ class NodeSSLService:
         :param expiration_threshold_days: the threshold in days, in which a renewal should be requested.
         :return: True if renewal is required, otherwise False.
         """
-        cert_type = SSLCertificateType.PRIVATE
-        has_cert = cert_type in self.certificates
-        if has_cert and is_cert_valid(self.certificates[cert_type], expiration_threshold_days):
+        has_cert = SSLCertificateType.PRIVATE in self.certificates \
+            and SSLCertificateType.REGISTRATION_ONLY in self.certificates
+        if has_cert and is_cert_valid(self.certificates[SSLCertificateType.PRIVATE], expiration_threshold_days):
             private_account = extensions_factory.get_account_id(
                 self.certificates[SSLCertificateType.PRIVATE]
             )
             registration_only_account = extensions_factory.get_account_id(
                 self.certificates[SSLCertificateType.REGISTRATION_ONLY]
             )
-            return private_account == registration_only_account
+            return private_account != registration_only_account
 
         return True
 
