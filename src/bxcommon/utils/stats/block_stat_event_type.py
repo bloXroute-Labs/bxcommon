@@ -116,6 +116,7 @@ class BlockStatEventType:
         "BlockBodySentToBlockchainNode", event_logic_flags=StatEventLogicFlags.SUMMARY
     )
     BLOCK_IGNORE_SEEN_BY_BLOCKCHAIN_NODE = StatEventTypeSettings("BlockIgnoreSeenByBlockchainNode")
+    BLOCK_IGNORE_DUPLICATE_HEIGHT = StatEventTypeSettings("BlockIgnoreDuplicateHeight")
     ENC_BLOCK_KEY_SENT_FROM_GATEWAY_TO_NETWORK = StatEventTypeSettings(
         "EncBlockKeySentFromGatewayToNetwork", event_logic_flags=StatEventLogicFlags.SUMMARY
     )

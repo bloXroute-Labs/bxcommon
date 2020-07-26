@@ -24,8 +24,7 @@ class CustomLogRecord(log_record_class):
 class CustomLogger(logger_class):
 
     def debug(self, msg, *args, **kwargs):
-        if self.isEnabledFor(LogLevel.TRACE):
-            self.log(logging.DEBUG, msg, *args, **kwargs)
+        self.log(logging.DEBUG, msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
         self.log(logging.INFO, msg, *args, **kwargs)
