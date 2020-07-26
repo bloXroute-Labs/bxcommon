@@ -205,9 +205,6 @@ def _run_node(
         ssl_service_factory=ssl_service_factory,
     )
 
-    cli.set_blockchain_networks_info(opts)
-    cli.parse_blockchain_opts(opts, node_type)
-
     assert all(
         task(opts, node_ssl_service)
         for task in sorted(node_init_tasks, key=lambda x: x.order)

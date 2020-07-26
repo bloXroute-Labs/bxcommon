@@ -107,6 +107,9 @@ class NodeEventLoop:
         endpoints = self._node.server_endpoints
         server_futures = []
         for endpoint in endpoints:
+            if not endpoint.port:
+                logger.debug("Endpoint: {} ,port is required, skipping", endpoint)
+                continue
             ssl_ctx = None
             if endpoint.port in utils_constants.SSL_PORT_RANGE:
                 ssl_ctx = self._node.get_server_ssl_ctx()
