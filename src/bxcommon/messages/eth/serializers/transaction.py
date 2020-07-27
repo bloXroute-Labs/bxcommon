@@ -9,6 +9,7 @@ from bxcommon.messages.eth.serializers.unsigned_transaction import UnsignedTrans
 from bxutils import utils
 
 
+# pylint: disable=invalid-name
 # pyre-fixme[13]: Attribute `data` is never initialized.
 # pyre-fixme[13]: Attribute `gas_price` is never initialized.
 # pyre-fixme[13]: Attribute `nonce` is never initialized.
