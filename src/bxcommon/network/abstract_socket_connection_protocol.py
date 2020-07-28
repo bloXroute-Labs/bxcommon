@@ -165,7 +165,9 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
 
         transport = self.transport
         assert transport is not None, "Connection is broken!"
-        transport.close()
+        # ideally this would be `transport.close()`, but buffers don't
+        # seem to be flushing for 1+ days
+        transport.abort()
         logger.debug(
             "[{}] - marked for close, retrying: {}.", self, should_retry
         )
