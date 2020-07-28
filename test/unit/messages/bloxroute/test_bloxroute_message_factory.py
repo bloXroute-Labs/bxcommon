@@ -9,29 +9,22 @@ from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, \
     NODE_ID_SIZE_IN_BYTES, \
     BX_HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN, QUOTA_FLAG_LEN, BROADCAST_TYPE_LEN
 from bxcommon.exceptions import PayloadLenError
-from bxcommon.messages.bloxroute.abstract_broadcast_message import \
-    AbstractBroadcastMessage
+from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
-from bxcommon.messages.bloxroute.block_confirmation_message import \
-    BlockConfirmationMessage
-from bxcommon.messages.bloxroute.block_holding_message import \
-    BlockHoldingMessage
-from bxcommon.messages.bloxroute.bloxroute_message_factory import \
-    bloxroute_message_factory
-from bxcommon.messages.bloxroute.bloxroute_version_manager import \
-    bloxroute_version_manager
+from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
+from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
+from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
+from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.get_tx_contents_message import GetTxContentsMessage
 from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
-from bxcommon.messages.bloxroute.notification_message import \
-    NotificationMessage, NotificationCode
+from bxcommon.messages.bloxroute.notification_message import NotificationMessage, NotificationCode
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
-from bxcommon.messages.bloxroute.transaction_cleanup_message import \
-    TransactionCleanupMessage
+from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.tx_contents_message import TxContentsMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
@@ -132,10 +125,10 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                len(tx.contents) for tx in txs) + constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(TxsMessage(txs), TxsMessage.MESSAGE_TYPE, expected_length)
 
-        expected_length = (2 * constants.DOUBLE_SIZE_IN_BYTES) + (2 * constants.UL_SHORT_SIZE_IN_BYTES) + \
+        expected_length = (2 * constants.DOUBLE_SIZE_IN_BYTES) + (3 * constants.UL_SHORT_SIZE_IN_BYTES) + \
                           (2 * constants.UL_INT_SIZE_IN_BYTES) + constants.CONTROL_FLAGS_LEN
         self.get_message_preview_successfully(
-            BdnPerformanceStatsMessage(datetime.utcnow(), datetime.utcnow(), 100, 200, 300, 400),
+            BdnPerformanceStatsMessage(datetime.utcnow(), datetime.utcnow(), 100, 200, 300, 400, 500),
             BdnPerformanceStatsMessage.MESSAGE_TYPE,
             expected_length
         )
@@ -418,7 +411,8 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         new_blocks_received_from_blockchain_node = 100
         new_blocks_received_from_bdn = 200
         new_tx_received_from_blockchain_node = 300
-        new_tx_received_from_bdn = 65535 + 1  # unsigned short max (0xffff) + 1
+        new_tx_received_from_bdn = constants.UNSIGNED_SHORT_MAX_VALUE + 1  # unsigned short max (0xffff) + 1
+        memory_utilization_mb = 700
         end_time = datetime.utcnow()
 
         bdn_stats_msg = \
@@ -427,7 +421,8 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                                                         new_blocks_received_from_blockchain_node,
                                                                         new_blocks_received_from_bdn,
                                                                         new_tx_received_from_blockchain_node,
-                                                                        new_tx_received_from_bdn),
+                                                                        new_tx_received_from_bdn,
+                                                                        memory_utilization_mb),
                                              BdnPerformanceStatsMessage)
 
         self.assertEqual(start_time, bdn_stats_msg.interval_start_time())
@@ -436,3 +431,4 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(new_blocks_received_from_bdn, bdn_stats_msg.new_blocks_from_bdn())
         self.assertEqual(new_tx_received_from_blockchain_node, bdn_stats_msg.new_tx_from_blockchain_node())
         self.assertEqual(new_tx_received_from_bdn, bdn_stats_msg.new_tx_from_bdn())
+        self.assertEqual(memory_utilization_mb, bdn_stats_msg.memory_utilization())

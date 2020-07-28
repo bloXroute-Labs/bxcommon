@@ -22,7 +22,7 @@ class ObjectSize:
     Represents size of object with detailed breakdown by object field
     """
 
-    def __init__(self, name=None, size=0, flat_size=0, references=None, is_actual_size=True):
+    def __init__(self, name=None, size=0, flat_size=0, references=None, is_actual_size=True) -> None:
         self.name = name
         self.size = size
         self.flat_size = flat_size
@@ -185,7 +185,7 @@ class ObjectType(Enum):
     MAIN_TASK_BASE = "MainTaskBase"
     TASK_QUEUE_PROXY = "TaskQueueProxy"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.value
 
 
@@ -195,5 +195,5 @@ class SizeType(Enum):
     TRUE = "True"
     ESTIMATE = "Estimate"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.value

@@ -81,7 +81,7 @@ class TransactionServiceStats:
     transactions_removed_by_memory_limit: int = 0
     transaction_contents_size: int = 0
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> "TransactionServiceStats":
         if not isinstance(other, TransactionServiceStats):
             raise TypeError(f"Cannot subtract object of type {type(other)} from TransactionServiceStats.")
 
@@ -147,7 +147,7 @@ class TransactionService:
     ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE = 88
     ESTIMATED_TX_HASH_NOT_SEEN_IN_BLOCK_ITEM_SIZE = 312
 
-    def __init__(self, node: "AbstractNode", network_num: int):
+    def __init__(self, node: "AbstractNode", network_num: int) -> None:
         """
         Constructor
         :param node: reference to node object
@@ -214,7 +214,7 @@ class TransactionService:
         else:
             return QuotaType.FREE_DAILY_QUOTA
 
-    def set_short_id_quota_type(self, short_id: int, tx_quota_type: QuotaType):
+    def set_short_id_quota_type(self, short_id: int, tx_quota_type: QuotaType) -> None:
         if QuotaType.PAID_DAILY_QUOTA in tx_quota_type:
             self._short_id_to_tx_quota_flag[short_id] = tx_quota_type
 
@@ -315,10 +315,10 @@ class TransactionService:
 
         return TransactionSearchResult(found, missing)
 
-    def get_tx_hash_to_contents_len(self):
+    def get_tx_hash_to_contents_len(self) -> int:
         return len(self._tx_cache_key_to_contents)
 
-    def get_short_id_count(self):
+    def get_short_id_count(self) -> int:
         return len(self._short_id_to_tx_cache_key)
 
     def has_transaction_contents(self, transaction_hash: Sha256Hash) -> bool:
@@ -375,7 +375,7 @@ class TransactionService:
         """
         return cache_key in self._tx_hash_to_time_removed
 
-    def remove_sid_by_tx_hash(self, transaction_hash: Sha256Hash):
+    def remove_sid_by_tx_hash(self, transaction_hash: Sha256Hash) -> None:
         transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
         if transaction_cache_key in self._tx_cache_key_to_contents:
             logger.trace("attempted to clear sid, for transaction {} with content, ignore", transaction_hash)
@@ -387,7 +387,7 @@ class TransactionService:
                     del self._short_id_to_tx_cache_key[short_id]
                     self._tx_assignment_expire_queue.remove(short_id)
 
-    def assign_short_id(self, transaction_hash: Sha256Hash, short_id: int):
+    def assign_short_id(self, transaction_hash: Sha256Hash, short_id: int) -> None:
         """
         Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
         :param transaction_hash: transaction long hash
@@ -437,7 +437,7 @@ class TransactionService:
             self.node.alarm_queue.register_alarm(self.node.opts.sid_expire_time, self.expire_old_assignments)
             self.tx_assign_alarm_scheduled = True
 
-    def set_final_tx_confirmations_count(self, val: int):
+    def set_final_tx_confirmations_count(self, val: int) -> None:
         self._final_tx_confirmations_count = val
 
     def set_transaction_contents(
@@ -811,7 +811,7 @@ class TransactionService:
             self.tx_without_content_alarm_scheduled = False
             return 0
 
-    def track_seen_short_ids(self, block_hash: Sha256Hash, short_ids: List[int]):
+    def track_seen_short_ids(self, block_hash: Sha256Hash, short_ids: List[int]) -> None:
         """
         Track short ids that has been seen in a routed block.
         That information helps transaction service make a decision when to remove transactions from cache.
@@ -842,7 +842,7 @@ class TransactionService:
             }
         )
 
-    def track_seen_short_ids_delayed(self, block_hash: Sha256Hash, short_ids: List[int]):
+    def track_seen_short_ids_delayed(self, block_hash: Sha256Hash, short_ids: List[int]) -> None:
         """
         Schedules alarm task to clean up seen short ids after some delay
         :param block_hash: block hash
@@ -907,7 +907,7 @@ class TransactionService:
             }
         )
 
-    def log_tx_service_mem_stats(self):
+    def log_tx_service_mem_stats(self) -> None:
         """
         Logs transactions service memory statistics
         """
@@ -1045,7 +1045,7 @@ class TransactionService:
     ):
         return memory_utils.ObjectType.BASE
 
-    def get_aggregate_stats(self):
+    def get_aggregate_stats(self) -> Dict[str, Any]:
         """
         Returns dictionary with aggregated statistics of transactions service
 
@@ -1083,7 +1083,7 @@ class TransactionService:
         else:
             return ObjectSize(size=estimated_size, flat_size=0, is_actual_size=False)
 
-    def get_cache_state_json(self):
+    def get_cache_state_json(self) -> Dict[str, Any]:
         return {
             "tx_hash_to_short_ids_len": len(self._tx_cache_key_to_short_ids),
             "short_id_to_tx_hash_len": len(self._short_id_to_tx_cache_key),
@@ -1093,7 +1093,7 @@ class TransactionService:
             "network_num": self.network_num
         }
 
-    def get_cache_state_str(self):
+    def get_cache_state_str(self) -> str:
         return json_encoder.to_json(self.get_cache_state_json())
 
     def _dump_removed_short_ids(self) -> int:
@@ -1209,6 +1209,7 @@ class TransactionService:
         if isinstance(transaction_cache_key, (bytes, bytearray, memoryview)):
             return Sha256Hash(transaction_cache_key)
 
+        # pyre-fixme[6]:
         return Sha256Hash(convert.hex_to_bytes(transaction_cache_key))
 
     def _track_seen_transaction(self, transaction_cache_key):
@@ -1223,7 +1224,7 @@ class TransactionService:
     def _is_exceeding_memory_limit(self) -> bool:
         return self._total_tx_contents_size > self._tx_content_memory_limit
 
-    def _clear(self):
+    def _clear(self) -> None:
         self._tx_cache_key_to_contents.clear()
         self._tx_cache_key_to_short_ids.clear()
         self._short_id_to_tx_cache_key.clear()
@@ -1231,7 +1232,7 @@ class TransactionService:
         self._total_tx_contents_size = 0
 
     # TODO: remove this unused function
-    def _log_transaction_service_histogram(self):
+    def _log_transaction_service_histogram(self) -> None:
         """
         logs a histogram of the tracked transactions age,
         buckets are named as according to the age in hours from now
@@ -1258,7 +1259,7 @@ class TransactionService:
         )
         return constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S
 
-    def _cleanup_removed_transactions_history(self):
+    def _cleanup_removed_transactions_history(self) -> int:
         """
         Removes expired items from the queue
         :param current_time: time to use as current time for expiration

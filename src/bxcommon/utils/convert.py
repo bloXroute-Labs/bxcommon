@@ -1,6 +1,6 @@
 import binascii
 from binascii import Error
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.models.node_type import NodeType
@@ -58,32 +58,29 @@ NODE_TO_CONNECTION_TYPE: Dict[NodeType, Dict[NodeType, ConnectionType]] = {
 }
 
 
-def str_to_bool(value):
+def str_to_bool(value: str) -> bool:
     return value in ["True", "true", "1"]
 
 
-def bytes_to_hex(s):
+def bytes_to_hex(s: Union[bytes, bytearray, memoryview]) -> str:
     """
     Encodes bytes to hex
     :param s: bytes
     :return: HEX representation of bytes
     """
-
-    if not isinstance(s, (bytes, bytearray, memoryview)):
-        raise TypeError("Value must be an instance of str")
+    # pyre-ignore[6]
     return binascii.hexlify(s).decode("utf-8")
 
 
-def hex_to_bytes(s):
+def hex_to_bytes(s: Union[str, bytes, bytearray, memoryview]) -> bytes:
     """
     Decodes hex string to bytes
     :param s: hex string
     :return: bytes
     """
 
-    if not isinstance(s, (str, bytes, bytearray, memoryview)):
-        raise TypeError("Value must be an instance of str or unicode")
     try:
+        # pyre-ignore[6]
         return binascii.unhexlify(s)
     except Error as e:
         raise ValueError(f"Invalid hex string provided: {s}.") from e

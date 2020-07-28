@@ -1,5 +1,7 @@
+import timeit
 import uuid
 from enum import auto
+from unittest import skip
 
 from bxcommon.models.serializable_flag import SerializableFlag
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -10,6 +12,11 @@ from bxcommon.test_utils import helpers
 from bxcommon.test_utils.mocks.mock_connection import MockConnection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
+from bxutils import logging
+from bxutils.logging import log_config
+from bxutils.logging.log_level import LogLevel
+
+logger = logging.get_logger(__name__)
 
 
 class ConnectionPoolTest(AbstractTestCase):
@@ -65,21 +72,25 @@ class ConnectionPoolTest(AbstractTestCase):
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)
         self.conn_pool1.add(self.fileno2, self.ip2, self.port2, self.conn2)
 
-        mock_connections = self.conn_pool1.get_by_connection_type(self.conn1.CONNECTION_TYPE)
+        mock_connections = self.conn_pool1.get_by_connection_types([self.conn1.CONNECTION_TYPE])
         self.assertIn(self.conn1, mock_connections)
         self.assertNotIn(self.conn2, mock_connections)
 
         self.conn_pool1.update_connection_type(self.conn1, ConnectionType.EXTERNAL_GATEWAY)
 
-        mock_connections = self.conn_pool1.get_by_connection_type(self.conn2.CONNECTION_TYPE)
+        mock_connections = self.conn_pool1.get_by_connection_types([self.conn2.CONNECTION_TYPE])
         self.assertNotIn(self.conn1, mock_connections)
+
+        mock_connections = self.conn_pool1.get_by_connection_types([self.conn2.CONNECTION_TYPE])
         self.assertIn(self.conn2, mock_connections)
 
-        mock_connections = self.conn_pool1.get_by_connection_type(self.conn1.CONNECTION_TYPE)
+        mock_connections = self.conn_pool1.get_by_connection_types([self.conn1.CONNECTION_TYPE])
         self.assertIn(self.conn1, mock_connections)
+
+        mock_connections = self.conn_pool1.get_by_connection_types([self.conn1.CONNECTION_TYPE])
         self.assertNotIn(self.conn2, mock_connections)
 
-        mock_connections = self.conn_pool1.get_by_connection_type(ConnectionType.RELAY_TRANSACTION)
+        mock_connections = self.conn_pool1.get_by_connection_types([ConnectionType.RELAY_TRANSACTION])
         self.assertNotIn(self.conn1, mock_connections)
         self.assertNotIn(self.conn2, mock_connections)
 
@@ -102,11 +113,11 @@ class ConnectionPoolTest(AbstractTestCase):
         self.conn3.CONNECTION_TYPE = ConnectionType.RELAY_ALL
         self._add_connections()
 
-        gateway_connections = self.conn_pool1.get_by_connection_type(ConnectionType.EXTERNAL_GATEWAY)
+        gateway_connections = list(self.conn_pool1.get_by_connection_types([ConnectionType.EXTERNAL_GATEWAY]))
         self.assertEqual(1, len(gateway_connections))
         self.assertIn(self.conn1, gateway_connections)
 
-        relay_connections = self.conn_pool1.get_by_connection_type(ConnectionType.RELAY_BLOCK)
+        relay_connections = list(self.conn_pool1.get_by_connection_types([ConnectionType.RELAY_BLOCK]))
         self.assertEqual(2, len(relay_connections))
         self.assertIn(self.conn2, relay_connections)
         self.assertIn(self.conn3, relay_connections)
@@ -120,17 +131,32 @@ class ConnectionPoolTest(AbstractTestCase):
         gateway_and_relay_block_connections = self.conn_pool1.get_by_connection_types([
             ConnectionType.EXTERNAL_GATEWAY, ConnectionType.RELAY_TRANSACTION
         ])
-        self.assertEqual(2, len(gateway_and_relay_block_connections))
+        self.assertEqual(2, len(list(gateway_and_relay_block_connections)))
+
+        gateway_and_relay_block_connections = self.conn_pool1.get_by_connection_types([
+            ConnectionType.EXTERNAL_GATEWAY, ConnectionType.RELAY_TRANSACTION
+        ])
         self.assertIn(self.conn1, gateway_and_relay_block_connections)
+
+        gateway_and_relay_block_connections = self.conn_pool1.get_by_connection_types([
+            ConnectionType.EXTERNAL_GATEWAY, ConnectionType.RELAY_TRANSACTION
+        ])
         self.assertIn(self.conn3, gateway_and_relay_block_connections)
 
         relay_transaction_connections = self.conn_pool1.get_by_connection_types([
             ConnectionType.RELAY_TRANSACTION
         ])
+        self.assertEqual(1, len(list(relay_transaction_connections)))
 
-        self.assertEqual(1, len(relay_transaction_connections))
-        self.assertNotIn(self.conn1, relay_transaction_connections)
+        relay_transaction_connections = self.conn_pool1.get_by_connection_types([
+            ConnectionType.RELAY_ALL
+        ])
         self.assertIn(self.conn3, relay_transaction_connections)
+
+        relay_transaction_connections = self.conn_pool1.get_by_connection_types([
+            ConnectionType.RELAY_ALL
+        ])
+        self.assertNotIn(self.conn1, relay_transaction_connections)
 
     def test_get_by_fileno(self):
         self._add_connections()
@@ -167,12 +193,12 @@ class ConnectionPoolTest(AbstractTestCase):
         conn = MockConnection(MockSocketConnection(ip_address=LOCALHOST, port=8000), self.node1)
         conn.CONNECTION_TYPE = TestConnectionType.AB
         self.conn_pool1.add(self.fileno1, LOCALHOST, 8000, conn)
-        self.assertIn(conn, self.conn_pool1.get_by_connection_type(TestConnectionType.A))
-        self.assertIn(conn, self.conn_pool1.get_by_connection_type(TestConnectionType.B))
+        self.assertIn(conn, self.conn_pool1.get_by_connection_types([TestConnectionType.A]))
+        self.assertIn(conn, self.conn_pool1.get_by_connection_types([TestConnectionType.B]))
 
         self.conn_pool1.delete(conn)
-        self.assertNotIn(conn, self.conn_pool1.get_by_connection_type(TestConnectionType.A))
-        self.assertNotIn(conn, self.conn_pool1.get_by_connection_type(TestConnectionType.B))
+        self.assertNotIn(conn, self.conn_pool1.get_by_connection_types([TestConnectionType.A]))
+        self.assertNotIn(conn, self.conn_pool1.get_by_connection_types([TestConnectionType.B]))
 
     def test_iter(self):
         self._add_connections()
@@ -188,6 +214,52 @@ class ConnectionPoolTest(AbstractTestCase):
         self.assertEqual(3, len(self.conn_pool1))
         self.conn_pool1.delete(self.conn2)
         self.assertEqual(2, len(self.conn_pool1))
+
+    @skip("Run this test only for local debugging")
+    def test_get_by_connection_types_performance(self):
+        log_config.set_level(
+            ["bxcommon.connections.abstract_node", "bxcommon.services.transaction_service"],
+            LogLevel.INFO
+        )
+        conn_pool = ConnectionPool()
+        self.conn1.CONNECTION_TYPE = ConnectionType.EXTERNAL_GATEWAY
+        self.conn2.CONNECTION_TYPE = ConnectionType.RELAY_BLOCK
+        self.conn3.CONNECTION_TYPE = ConnectionType.RELAY_ALL
+        number_of_iteration = 100
+        for i in range(40):
+            ip = f"{i}.{i}.{i}.{i}"
+            node = MockNode(helpers.get_common_opts(i, external_ip=ip))
+            conn = MockConnection(MockSocketConnection(i, ip_address=ip, port=i), node)
+            if i % 7 == 0:
+                conn.CONNECTION_TYPE = ConnectionType.RELAY_BLOCK
+            elif i % 5 == 0:
+                conn.CONNECTION_TYPE = ConnectionType.RELAY_TRANSACTION
+            elif i % 3 == 0:
+                conn.CONNECTION_TYPE = ConnectionType.INTERNAL_GATEWAY
+            else:
+                conn.CONNECTION_TYPE = ConnectionType.EXTERNAL_GATEWAY
+            conn_pool.add(i, ip, i, conn)
+
+        timeit_get_by_connections_types_one_type = timeit.timeit(
+            lambda: conn_pool.get_by_connection_types([ConnectionType.GATEWAY]),
+            number=number_of_iteration
+        )
+        timeit_get_by_connections_types_two_types = timeit.timeit(
+            lambda: conn_pool.get_by_connection_types(
+                [ConnectionType.GATEWAY, ConnectionType.RELAY_TRANSACTION])
+            ,
+            number=number_of_iteration
+        )
+        print(
+            f"\ntimeit_get_by_connections_types_one_type # 2:  {timeit_get_by_connections_types_one_type * 1000 / number_of_iteration:.4f}ms, "
+            f"#connections: {len(list(conn_pool.get_by_connection_types([ConnectionType.GATEWAY])))}"
+            f"\ntimeit_get_by_connections_types_two_types # 2: {timeit_get_by_connections_types_two_types * 1000 / number_of_iteration:.4f}ms, "
+            f"#connections: {len(list(conn_pool.get_by_connection_types([ConnectionType.GATEWAY, ConnectionType.RELAY_TRANSACTION])))}"
+        )
+
+        print("*****")
+        for c in conn_pool.get_by_connection_types([ConnectionType.GATEWAY, ConnectionType.RELAY_TRANSACTION]):
+            print(f"connection: {c}, connection type: {c.CONNECTION_TYPE}")
 
     def _add_connections(self):
         self.conn_pool1.add(self.fileno1, self.ip1, self.port1, self.conn1)

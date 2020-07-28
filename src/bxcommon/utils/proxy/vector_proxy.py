@@ -14,7 +14,7 @@ class VectorProxy(Generic[TItemRaw, TItemEncoded]):
         self.vector = vector
         self._encoder = encoder
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.vector.__repr__()
 
     def __str__(self) -> str:
@@ -30,7 +30,7 @@ class VectorProxy(Generic[TItemRaw, TItemEncoded]):
         for item in self.vector:
             yield self._encoder.encode(item)
 
-    def __delitem__(self, idx: int):
+    def __delitem__(self, idx: int) -> None:
         del self.vector[idx]
 
     def pop(self, idx: int = -1) -> TItemEncoded:
@@ -38,5 +38,5 @@ class VectorProxy(Generic[TItemRaw, TItemEncoded]):
         self.__delitem__(idx)
         return self._encoder.encode(item)
 
-    def append(self, item: TItemEncoded):
+    def append(self, item: TItemEncoded) -> None:
         self.vector.append(self._encoder.decode(item))

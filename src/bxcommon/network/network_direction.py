@@ -5,5 +5,5 @@ class NetworkDirection(Enum):
     INBOUND = 1
     OUTBOUND = 2
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name

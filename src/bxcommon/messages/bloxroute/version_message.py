@@ -23,7 +23,7 @@ class VersionMessage(AbstractBloxrouteMessage):
     )
     VERSION_MESSAGE_LENGTH = VERSION_MESSAGE_BLOCK.size + constants.CONTROL_FLAGS_LEN
 
-    def __init__(self, msg_type, payload_len, protocol_version, network_num, buf):
+    def __init__(self, msg_type, payload_len, protocol_version, network_num, buf) -> None:
         if protocol_version is not None and network_num is not None:
             if len(buf) < self.BASE_LENGTH:
                 raise ValueError("Version message is not long enough.")

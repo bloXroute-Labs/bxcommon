@@ -43,14 +43,14 @@ class AbstractFormatter(Formatter):
         "{": lambda msg, args: str(msg).format(*args)
     }
 
-    def __init__(self, fmt=None, datefmt=None, style="{"):
+    def __init__(self, fmt=None, datefmt=None, style="{") -> None:
         super().__init__(fmt=fmt, datefmt=datefmt)
         self._formatter = self.FORMATTERS[style]
 
     NO_INSTANCE: str = "[Unassigned]"
     instance: str = NO_INSTANCE
 
-    def _handle_args(self, record):
+    def _handle_args(self, record) -> str:
         try:
             if record.args and isinstance(record.args[0], str) and record.args[0] == constants.HAS_PREFIX:
                 prefix = record.args[1]

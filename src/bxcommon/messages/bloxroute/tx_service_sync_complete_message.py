@@ -14,7 +14,7 @@ class TxServiceSyncCompleteMessage(AbstractBloxrouteMessage):
     Message is sent after complete synchronize all txs in a network
     """
 
-    def __init__(self, network_num: Optional[int] = None, buf: Optional[bytearray] = None):
+    def __init__(self, network_num: Optional[int] = None, buf: Optional[bytearray] = None) -> None:
         if buf is None:
             buf = bytearray(self.HEADER_LENGTH + UL_INT_SIZE_IN_BYTES + CONTROL_FLAGS_LEN)
 
@@ -32,7 +32,7 @@ class TxServiceSyncCompleteMessage(AbstractBloxrouteMessage):
             self.buf
         )
 
-    def log_level(self) -> int:
+    def log_level(self) -> LogLevel:
         return LogLevel.DEBUG
 
     def network_num(self) -> int:

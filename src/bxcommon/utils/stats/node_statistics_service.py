@@ -22,7 +22,7 @@ class NodeTransactionStatInterval(StatsIntervalData):
     time_spent_in_gc: float
     collection_counts: Dict[int, int]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(NodeTransactionStatInterval, self).__init__(*args, **kwargs)
         self.total_uncollectable = 0
         self.generation_zero_size = 0
@@ -36,7 +36,7 @@ class NodeTransactionStatInterval(StatsIntervalData):
 
 
 class _NodeStatisticsService(StatisticsService[NodeTransactionStatInterval, "AbstractNode"]):
-    def __init__(self, interval: int = constants.NODE_STATS_INTERVAL_S):
+    def __init__(self, interval: int = constants.NODE_STATS_INTERVAL_S) -> None:
         super().__init__(
             "NodeStatus",
             interval,

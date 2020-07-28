@@ -71,7 +71,7 @@ class TxContentsMessage(AbstractBloxrouteMessage):
             self._payload_len = None
             self._payload = None
 
-    def log_level(self):
+    def log_level(self) -> LogLevel:
         return LogLevel.DEBUG
 
     def network_num(self) -> int:
@@ -110,6 +110,6 @@ class TxContentsMessage(AbstractBloxrouteMessage):
 
         self._tx_info = TransactionInfo(tx_hash, tx, tx_sid)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"TxContentsMessage<network_num: {self.network_num()}, tx_hash: {self.get_tx_info().hash}, " \
                f"sid: {self.get_tx_info().short_id}>"

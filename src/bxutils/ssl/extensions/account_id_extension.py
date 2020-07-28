@@ -6,7 +6,7 @@ from bxutils.ssl.extensions.extensions_object_ids import ExtensionsObjectIds
 
 class AccountIdExtension(UnrecognizedExtension):
 
-    def __init__(self, account_id: str):
+    def __init__(self, account_id: str) -> None:
         super(AccountIdExtension, self).__init__(ExtensionsObjectIds.ACCOUNT_ID, account_id.encode("utf-8"))
         self._account_id = account_id
 

@@ -4,6 +4,7 @@ from bxcommon.messages.bloxroute.v9.bdn_performance_stats_message_converter_v9 \
     import bdn_performance_stats_message_converter_v9
 from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
 from bxcommon.messages.versioning.no_changes_message_converter import no_changes_message_converter
+from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 
 
 class _MessageConverterFactoryV8(AbstractMessageConverterFactory):
@@ -12,7 +13,7 @@ class _MessageConverterFactoryV8(AbstractMessageConverterFactory):
         BloxrouteMessageType.BROADCAST: broadcast_message_converter_v8,
     }
 
-    def get_message_converter(self, msg_type):
+    def get_message_converter(self, msg_type) -> AbstractMessageConverter:
         if not msg_type:
             raise ValueError("msg_type is required.")
 

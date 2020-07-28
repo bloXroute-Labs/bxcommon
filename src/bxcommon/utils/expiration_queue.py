@@ -15,7 +15,7 @@ class ExpirationQueue(Generic[T]):
     # NOTE: this cannot be annotated as an collections.OrderedDict
     queue: Dict[T, float]
 
-    def __init__(self, time_to_live_sec: int):
+    def __init__(self, time_to_live_sec: int) -> None:
 
         if time_to_live_sec < 0:
             raise ValueError("Time to live cannot be negative.")
@@ -29,14 +29,14 @@ class ExpirationQueue(Generic[T]):
     def __bool__(self) -> bool:
         return len(self) > 0
 
-    def add(self, item: T):
+    def add(self, item: T) -> None:
         """
         Adds item to the queue
         :param item: item
         """
         self.queue[item] = time.time()
 
-    def remove(self, item: T):
+    def remove(self, item: T) -> None:
         """
         Removes item from expiration queue
         :param item: item to remove

@@ -1,5 +1,8 @@
-PROTOCOL_VERSION = 10
+PROTOCOL_VERSION = 11
 
+# PROTOCOL_VERSION 11 (7/17/2020)
+# add memory utilization to BDN performance stats message
+#
 # PROTOCOL_VERSION 10 (6/8/2020)
 # change maximum transaction count in BDN performance stats message
 #

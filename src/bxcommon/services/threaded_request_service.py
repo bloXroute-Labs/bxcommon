@@ -17,7 +17,7 @@ class ThreadedRequestService:
     """
     thread_pool: ThreadPool
 
-    def __init__(self, name_prefix: str, alarm_queue: AlarmQueue, timeout: int):
+    def __init__(self, name_prefix: str, alarm_queue: AlarmQueue, timeout: int) -> None:
         """
         :param alarm_queue: taken from the node that is using the http service
         :param timeout: timeout for the alarm.

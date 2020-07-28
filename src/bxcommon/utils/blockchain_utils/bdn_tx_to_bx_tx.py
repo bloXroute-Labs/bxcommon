@@ -5,9 +5,9 @@ from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_protocol import BlockchainProtocol
 from bxcommon.models.quota_type_model import QuotaType
-from bxcommon.utils.blockchain_utils.btc import btc_common_util
-from bxcommon.utils.blockchain_utils.eth import eth_common_util
-from bxcommon.utils.blockchain_utils.ont import ont_common_util
+from bxcommon.utils.blockchain_utils.btc import btc_common_utils
+from bxcommon.utils.blockchain_utils.eth import eth_common_utils
+from bxcommon.utils.blockchain_utils.ont import ont_common_utils
 
 
 protocol_to_bdn_tx_to_bx_tx: Dict[BlockchainProtocol, Callable[
@@ -26,9 +26,9 @@ def init(blockchain_networks: List[BlockchainNetworkModel]):
 
 
 def bdn_tx_to_bx_tx(
-        raw_tx: Union[bytes, bytearray, memoryview],
-        network_num: int,
-        quota_type: Optional[QuotaType] = None
+    raw_tx: Union[bytes, bytearray, memoryview],
+    network_num: int,
+    quota_type: Optional[QuotaType] = None
 ) -> TxMessage:
     try:
         current_protocol = network_num_to_protocol[network_num]
@@ -39,14 +39,14 @@ def bdn_tx_to_bx_tx(
 
 
 def btc_bdn_tx_to_bx_tx(
-        raw_tx: Union[bytes, bytearray, memoryview],
-        network_num: int,
-        quota_type: Optional[QuotaType] = None
+    raw_tx: Union[bytes, bytearray, memoryview],
+    network_num: int,
+    quota_type: Optional[QuotaType] = None
 ) -> TxMessage:
     if isinstance(raw_tx, bytes):
         raw_tx = bytearray(raw_tx)
     try:
-        tx_hash = btc_common_util.get_txid(raw_tx)
+        tx_hash = btc_common_utils.get_txid(raw_tx)
     except IndexError:
         raise ValueError(f"Invalid raw transaction provided.")
     return TxMessage(
@@ -61,7 +61,7 @@ def eth_bdn_tx_to_bx_tx(
 ) -> TxMessage:
     if isinstance(raw_tx, bytes):
         raw_tx = bytearray(raw_tx)
-    bx_tx, tx_item_length, tx_item_start = eth_common_util.raw_tx_to_bx_tx(raw_tx, 0, network_num, quota_type)
+    bx_tx, tx_item_length, tx_item_start = eth_common_utils.raw_tx_to_bx_tx(raw_tx, 0, network_num, quota_type)
     if tx_item_length + tx_item_start != len(raw_tx):
         raise ParseError(raw_tx)
     return bx_tx
@@ -75,7 +75,7 @@ def ont_bdn_tx_to_bx_tx(
     if isinstance(raw_tx, bytes):
         raw_tx = bytearray(raw_tx)
     try:
-        tx_hash, _ = ont_common_util.get_txid(raw_tx)
+        tx_hash, _ = ont_common_utils.get_txid(raw_tx)
     except IndexError:
         raise ValueError(f"Invalid raw transaction provided.")
     return TxMessage(

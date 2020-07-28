@@ -30,7 +30,7 @@ class ExpiringSet(Generic[T]):
         self._log_removal = log_removal
         self._name = name
 
-    def __contains__(self, item: T):
+    def __contains__(self, item: T) -> bool:
         return item in self.contents
 
     def __len__(self) -> int:
@@ -62,7 +62,7 @@ class ExpiringSet(Generic[T]):
 
         return items
 
-    def cleanup(self):
+    def cleanup(self) -> int:
         self._expiration_queue.remove_expired(remove_callback=self._safe_remove_item)
         return 0
 

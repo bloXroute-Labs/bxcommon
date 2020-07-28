@@ -1,8 +1,10 @@
 import functools
 from collections import defaultdict
-from typing import Iterable
+from itertools import chain
+from typing import Iterable, Iterator
 from typing import List, Dict, Optional, Tuple, ClassVar
 import time
+from more_itertools import flatten
 
 from prometheus_client import Gauge
 
@@ -39,7 +41,8 @@ class ConnectionPool:
     len_fileno: int
     count_conn_by_ip: Dict[str, int]
 
-    def __init__(self):
+    def __init__(self) -> None:
+        # pyre-fixme[8]: Attribute has type `List[Optional[AbstractConnection[typing.Any]]]` used as type `List[None]`.
         self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO
         self.by_ipport = {}
         self.by_connection_type = defaultdict(list)
@@ -98,19 +101,17 @@ class ConnectionPool:
             return False
         return (ip, port) in self.by_ipport
 
-    def get_by_connection_type(self, connection_type: ConnectionType) -> List[AbstractConnection]:
-        """
-        Returns list of connections that match the connection type.
-        """
-        return self.get_by_connection_types({connection_type})
+    def get_by_connection_types(self, connection_types: List[ConnectionType]) -> Iterator[AbstractConnection]:
+        # pyre-fixme [7]: Expected `List[AbstractConnection[typing.Any]]`
+        #  but got `typing.Iterator[Variable[more_itertools.recipes._T]]`.
+        return flatten(self._iter_by_connection_types(connection_types))
 
-    def get_by_connection_types(self, connection_types: Iterable[ConnectionType]) -> List[AbstractConnection]:
-        matching_types = [stored_type for stored_type in self.by_connection_type.keys() if
-                          any(stored_type & connection_type for connection_type in connection_types)]
-        connections: List[AbstractConnection] = []
-        for matching_type in matching_types:
-            connections += self.by_connection_type[matching_type]
-        return connections
+    def _iter_by_connection_types(self, connection_types: List[ConnectionType]) -> Iterable[AbstractConnection]:
+        for connection_type, connections in self.by_connection_type.items():
+            if any(connection_type & matching_type for matching_type in connection_types):
+                # pyre-fixme[7]: Expected `Iterable[AbstractConnection[typing.Any]]`
+                #  but got `typing.Generator[chain[AbstractConnection[typing.Any]], None, None]`.
+                yield chain(connections)
 
     def get_by_ipport(self, ip: str, port: int, node_id: Optional[str] = None) -> AbstractConnection:
         ip_port = (ip, port)
@@ -304,4 +305,4 @@ class ConnectionPool:
         )
 
     def _get_number_of_connections(self, connection_type: ConnectionType) -> int:
-        return len(self.get_by_connection_type(connection_type))
+        return len(list(self.get_by_connection_types([connection_type])))

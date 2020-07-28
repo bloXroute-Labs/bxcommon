@@ -18,7 +18,7 @@ class ExpiringDict(Generic[KT, VT]):
     _expiration_time: int
     _name: str
 
-    def __init__(self, alarm_queue: AlarmQueue, expiration_time_s: int, name: str):
+    def __init__(self, alarm_queue: AlarmQueue, expiration_time_s: int, name: str) -> None:
         self.contents = {}
         self._alarm_queue = alarm_queue
         self._expiration_queue = ExpirationQueue(expiration_time_s)

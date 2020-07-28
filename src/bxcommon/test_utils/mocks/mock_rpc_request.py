@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional
 
 class MockRpcRequest:
 
-    def __init__(self, headers: Dict[str, Any], json_body: str, text: Optional[str] = None):
+    def __init__(self, headers: Dict[str, Any], json_body: str, text: Optional[str] = None) -> None:
         self.headers = headers
         self.raw_headers = headers
         self.remote = "test"

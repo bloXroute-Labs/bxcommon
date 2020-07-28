@@ -9,9 +9,6 @@ from bxutils.logging.log_level import LogLevel
 
 
 class AbstractCleanupMessage(AbstractBroadcastMessage):
-    # pyre-fixme[15]: `MESSAGE_TYPE` overrides attribute defined in
-    #  `AbstractBloxrouteMessage` inconsistently.
-    MESSAGE_TYPE = None
     PAYLOAD_START_OFFSET = AbstractBroadcastMessage.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH - \
         constants.CONTROL_FLAGS_LEN
 
@@ -32,7 +29,7 @@ class AbstractCleanupMessage(AbstractBroadcastMessage):
         sids: Optional[List[int]] = None,
         tx_hashes: Optional[List[Sha256Hash]] = None,
         buf: Optional[bytearray] = None
-    ):
+    ) -> None:
 
         if buf is None:
             assert tx_hashes is not None and sids is not None
@@ -66,7 +63,7 @@ class AbstractCleanupMessage(AbstractBroadcastMessage):
                 self.buf[off:off + crypto.SHA256_HASH_LEN] = tx_hash
                 off += crypto.SHA256_HASH_LEN
 
-    def log_level(self):
+    def log_level(self) -> LogLevel:
         return LogLevel.DEBUG
 
     def short_ids(self) -> List[int]:
@@ -85,24 +82,26 @@ class AbstractCleanupMessage(AbstractBroadcastMessage):
         assert tx_hashes is not None
         return tx_hashes
 
-    def _parse(self):
+    def _parse(self) -> None:
         off = self.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH - constants.CONTROL_FLAGS_LEN
 
         sids = []
-        self._sids_count, = struct.unpack_from("<L", self.buf, off)
+        sids_count, = struct.unpack_from("<L", self.buf, off)
+        self._sids_count = sids_count
         off += constants.UL_INT_SIZE_IN_BYTES
 
-        for _ in range(self._sids_count):
+        for _ in range(sids_count):
             sid, = struct.unpack_from("<L", self.buf, off)
             off += constants.UL_INT_SIZE_IN_BYTES
 
             sids.append(sid)
 
         tx_hashes = []
-        self._tx_hashes_count, = struct.unpack_from("<L", self.buf, off)
+        tx_hashes_count, = struct.unpack_from("<L", self.buf, off)
+        self._tx_hashes_count = tx_hashes_count
         off += constants.UL_INT_SIZE_IN_BYTES
 
-        for tx_hash in range(self._tx_hashes_count):
+        for tx_hash in range(tx_hashes_count):
             tx_hash = Sha256Hash(self._memoryview[off:off + crypto.SHA256_HASH_LEN])
             off += crypto.SHA256_HASH_LEN
 
@@ -111,7 +110,7 @@ class AbstractCleanupMessage(AbstractBroadcastMessage):
         self._sids = sids
         self._tx_hashes = tx_hashes
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{} <message: {} :{}> <num_sids: {}> <num_tx_hashes: {}>".format(
             self.MESSAGE_TYPE.name,
             self.message_hash(),

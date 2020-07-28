@@ -20,7 +20,7 @@ class OutputBuffer(SpecialMemoryProperties):
     """
     EMPTY = memoryview(bytearray(0))  # The empty outputbuffer
 
-    def __init__(self, min_size=None, max_hold_time=None, enable_buffering=False):
+    def __init__(self, min_size=None, max_hold_time=None, enable_buffering=False) -> None:
         if min_size is None:
             min_size = constants.OUTPUT_BUFFER_MIN_SIZE
         if max_hold_time is None:
@@ -92,7 +92,7 @@ class OutputBuffer(SpecialMemoryProperties):
         return self.index == 0
 
     def enqueue_msgbytes(self, msg_bytes):
-        if not isinstance(msg_bytes, bytearray) and not isinstance(msg_bytes, memoryview):
+        if not isinstance(msg_bytes, (bytearray, memoryview)):
             raise ValueError("Msg_bytes must be a bytearray. The type given was a {}".format(type(msg_bytes)))
 
         length = len(msg_bytes)
@@ -123,7 +123,7 @@ class OutputBuffer(SpecialMemoryProperties):
         self.length += len(msg_bytes)
 
     def prepend_msgbytes(self, msg_bytes):
-        if not isinstance(msg_bytes, bytearray) and not isinstance(msg_bytes, memoryview):
+        if not isinstance(msg_bytes, (bytearray, memoryview)):
             raise ValueError("Msg_bytes must be a bytearray.")
 
         if self.index == 0:

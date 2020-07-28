@@ -28,7 +28,7 @@ class ThroughputIntervalData(StatsIntervalData):
     total_out: int
     peer_to_stats: Dict[str, PeerStats]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(ThroughputIntervalData, self).__init__(*args, **kwargs)
         self.total_in = 0
         self.total_out = 0

@@ -6,7 +6,7 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 class AckMessage(AbstractBloxrouteMessage):
     MESSAGE_TYPE = BloxrouteMessageType.ACK
 
-    def __init__(self, buf=None):
+    def __init__(self, buf=None) -> None:
         if buf is None:
             buf = bytearray(self.HEADER_LENGTH + constants.CONTROL_FLAGS_LEN)
             self.buf = buf

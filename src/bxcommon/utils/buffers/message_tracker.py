@@ -54,7 +54,7 @@ class MessageTrackerEntry:
 
         return LogLevel.DEBUG
 
-    def as_str(self):
+    def as_str(self) -> str:
         base = "Message"
 
         if self.message is None and self.label is not None:
@@ -87,7 +87,7 @@ class MessageTracker:
     is_working: bool = True
     bytes_remaining: int = 0
 
-    def __init__(self, connection: "AbstractConnection"):
+    def __init__(self, connection: "AbstractConnection") -> None:
         self.connection = connection
         self.messages = deque()
 

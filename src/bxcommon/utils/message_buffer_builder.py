@@ -13,7 +13,7 @@ class PayloadElement:
 
     optionally provide decode,encode functions to be applied
     """
-    def __init__(self, name, structure, default=None, decode=None, encode=None):
+    def __init__(self, name, structure, default=None, decode=None, encode=None) -> None:
         self.name = name
         self.structure = structure
         self.default = default
@@ -34,7 +34,7 @@ class PayloadBlock:
             version (int): block version
             * (PayloadElement/PayloadBlock)
     """
-    def __init__(self, off, name, version, *args):
+    def __init__(self, off, name, version, *args) -> None:
         elements = []
         self.name = name
         self.version = version

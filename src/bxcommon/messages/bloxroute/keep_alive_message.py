@@ -16,7 +16,7 @@ class KeepAliveMessage(AbstractBloxrouteMessage):
                                             )
     KEEP_ALIVE_MESSAGE_LENGTH = KEEP_ALIVE_MESSAGE_BLOCK.size + constants.CONTROL_FLAGS_LEN
 
-    def __init__(self, msg_type, nonce=None, buf=None):
+    def __init__(self, msg_type, nonce=None, buf=None) -> None:
         if buf is None:
             buf = bytearray(self.HEADER_LENGTH + self.KEEP_ALIVE_MESSAGE_LENGTH)
 

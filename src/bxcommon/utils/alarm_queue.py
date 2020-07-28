@@ -50,7 +50,7 @@ class AlarmId:
     alarm: Alarm
     is_active: bool
 
-    def __init__(self, fire_time: float, count: int, alarm: Alarm):
+    def __init__(self, fire_time: float, count: int, alarm: Alarm) -> None:
         self.fire_time = fire_time
         self.count = count
         self.alarm = alarm
@@ -99,7 +99,7 @@ class AlarmQueue:
                              with the same function handle are not executed repeatedly
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.alarms: List[AlarmId] = []
         self.uniq_count: int = 0
         self.approx_alarms_scheduled: Dict[Callable, List[AlarmId]] = {}

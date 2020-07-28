@@ -9,7 +9,7 @@ from bxutils import logging
 
 
 class _NetworkStatisticsService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "NetworkContent"
         self.log_level = LogLevel.STATS
         self.logger = logging.get_logger(LogRecordType.NetworkContent)

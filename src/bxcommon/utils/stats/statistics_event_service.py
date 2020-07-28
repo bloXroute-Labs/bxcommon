@@ -11,7 +11,7 @@ from bxutils.logging.log_level import LogLevel
 
 
 class StatisticsEventService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = None
         self.log_level = LogLevel.STATS
         self.logger = logging.get_logger(__name__)
@@ -19,9 +19,10 @@ class StatisticsEventService:
         self.node = None
         self.node_id = None
 
-    def set_node(self, node):
+    def set_node(self, node) -> None:
         self.node = node
-        self.node_id = self.node.opts.node_id
+        assert node.opts is not None
+        self.node_id = node.opts.node_id
 
     def log_event(self, event_settings: StatEventTypeSettings, object_id: str,
                   start_date_time: Optional[datetime.datetime], end_date_time: Optional[datetime.datetime], **kwargs):

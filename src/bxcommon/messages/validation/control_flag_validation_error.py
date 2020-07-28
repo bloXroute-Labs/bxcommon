@@ -5,7 +5,7 @@ from bxcommon.messages.validation.message_validation_error import MessageValidat
 class ControlFlagValidationError(MessageValidationError):
     is_cancelled_cut_through: bool
 
-    def __init__(self, msg: str, control_flag_byte: int):
+    def __init__(self, msg: str, control_flag_byte: int) -> None:
         super(ControlFlagValidationError, self).__init__(msg)
         if BloxrouteMessageControlFlags(control_flag_byte) is BloxrouteMessageControlFlags.NONE:
             self.is_cancelled_cut_through = True

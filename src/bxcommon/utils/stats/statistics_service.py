@@ -28,7 +28,7 @@ class StatsIntervalData:
     end_time: Optional[datetime]
     _closed: bool
 
-    def __init__(self, node: "AbstractNode", node_id: str):
+    def __init__(self, node: "AbstractNode", node_id: str) -> None:
         self.node = node
         self.node_id = node_id
         self.start_time = datetime.utcnow()
@@ -126,7 +126,7 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
     _alive: bool
     _lock: Lock
 
-    def __init__(self, name: str, *args, **kwargs):
+    def __init__(self, name: str, *args, **kwargs) -> None:
         super(ThreadedStatisticsService, self).__init__(name, *args, **kwargs)
         self._thread = None
         self._alive = True

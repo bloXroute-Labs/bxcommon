@@ -42,7 +42,7 @@ performance_troubleshooting_logger = logging.get_logger(LogRecordType.Performanc
 class InternalNodeConnection(AbstractConnection[Node]):
     __metaclass__ = ABCMeta
 
-    def __init__(self, sock: AbstractSocketConnectionProtocol, node: Node):
+    def __init__(self, sock: AbstractSocketConnectionProtocol, node: Node) -> None:
         super(InternalNodeConnection, self).__init__(sock, node)
 
         # Enable buffering only on internal connections

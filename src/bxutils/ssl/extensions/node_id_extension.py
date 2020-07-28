@@ -6,7 +6,7 @@ from bxutils.ssl.extensions.extensions_object_ids import ExtensionsObjectIds
 
 class NodeIdExtension(UnrecognizedExtension):
 
-    def __init__(self, node_id: str):
+    def __init__(self, node_id: str) -> None:
         super(NodeIdExtension, self).__init__(ExtensionsObjectIds.NODE_ID, node_id.encode("utf-8"))
         self._node_id = node_id
 

@@ -17,7 +17,7 @@ class AbstractObjectHash:
     """
     __meta__ = ABCMeta
 
-    def __init__(self, binary):
+    def __init__(self, binary) -> None:
         self.binary = bytearray(binary) if isinstance(binary, memoryview) else binary
 
         self._hash = struct.unpack("<L", self.binary[-PARTIAL_HASH_LENGTH:])[0]
@@ -42,7 +42,7 @@ class Sha256Hash(AbstractObjectHash):
     Assumes that binary does not mutate
     """
 
-    def __init__(self, binary):
+    def __init__(self, binary) -> None:
         if len(binary) != SHA256_HASH_LEN:
             raise ValueError("Binary has the wrong length.")
 
@@ -62,7 +62,7 @@ class ConcatHash(AbstractObjectHash):
     hashstart is the start of the random bytes that we take a hash with.
     """
 
-    def __init__(self, binary, hashstart):
+    def __init__(self, binary, hashstart) -> None:
         super(ConcatHash, self).__init__(binary)
 
         self._hash = struct.unpack("<L", self.binary[hashstart:hashstart + PARTIAL_HASH_LENGTH])[0]

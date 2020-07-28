@@ -6,7 +6,7 @@ class PeerStatsMessage:
     bytes: int
     count: int
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.bytes = 0
         self.count = 0
 
@@ -20,7 +20,7 @@ class PeerStats:
     peer_total_sent: int
     ping_max: float
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.address = ""
         self.peer_id = None
         self.messages_received = defaultdict(PeerStatsMessage)

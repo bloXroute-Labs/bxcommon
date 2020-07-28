@@ -9,5 +9,5 @@ class StatEventLogicFlags(Flag):
     PROPAGATION_START = 8
     PROPAGATION_END = 16
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.value)

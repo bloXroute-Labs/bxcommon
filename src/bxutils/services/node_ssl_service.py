@@ -48,7 +48,7 @@ class NodeSSLService:
     _store_local: bool
     _node_name: str
 
-    def __init__(self, node_type: NodeType, storage_info: SSLStorageInfo, store_local: bool = True):
+    def __init__(self, node_type: NodeType, storage_info: SSLStorageInfo, store_local: bool = True) -> None:
         if storage_info.certificates_info[SSLCertificateType.PRIVATE].key_file_info is None:
             raise ValueError(f"Storage info {storage_info} is missing key file storage info for a private certificate.")
         self.storage_info = storage_info
@@ -136,9 +136,18 @@ class NodeSSLService:
         :param expiration_threshold_days: the threshold in days, in which a renewal should be requested.
         :return: True if renewal is required, otherwise False.
         """
-        cert_type = SSLCertificateType.PRIVATE
-        has_cert = cert_type in self.certificates
-        return not has_cert or not is_cert_valid(self.certificates[cert_type], expiration_threshold_days)
+        has_cert = SSLCertificateType.PRIVATE in self.certificates \
+            and SSLCertificateType.REGISTRATION_ONLY in self.certificates
+        if has_cert and is_cert_valid(self.certificates[SSLCertificateType.PRIVATE], expiration_threshold_days):
+            private_account = extensions_factory.get_account_id(
+                self.certificates[SSLCertificateType.PRIVATE]
+            )
+            registration_only_account = extensions_factory.get_account_id(
+                self.certificates[SSLCertificateType.REGISTRATION_ONLY]
+            )
+            return private_account != registration_only_account
+
+        return True
 
     def blocking_store_node_certificate(self, cert: Certificate) -> None:
         """

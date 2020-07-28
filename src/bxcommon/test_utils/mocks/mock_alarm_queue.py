@@ -4,7 +4,7 @@ from bxcommon.utils.alarm_queue import AlarmQueue, AlarmId, Alarm
 
 
 class MockAlarmQueue(AlarmQueue):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.alarms = cast(
             List[Tuple[float, Callable]],

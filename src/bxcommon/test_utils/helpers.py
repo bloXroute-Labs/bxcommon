@@ -308,7 +308,7 @@ def get_common_opts(
             blockchain_network(
                 "Ethereum",
                 "Mainnet",
-                2,
+                5,
                 5,
                 5,
                 final_tx_confirmations_count,
@@ -353,7 +353,7 @@ def async_test(method):
 class AsyncMock:
     mock: MagicMock
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self.mock = MagicMock(*args, **kwargs)
 
     async def __call__(self, *args, **kwargs):
