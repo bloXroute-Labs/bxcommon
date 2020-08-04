@@ -878,10 +878,15 @@ class TransactionService:
         transaction_hash: Sha256Hash,
         short_id: int,
         transaction_contents: Union[bytearray, memoryview],
-        is_compact: bool) -> TransactionFromBdnGatewayProcessingResult:
+        is_compact: bool
+    ) -> TransactionFromBdnGatewayProcessingResult:
 
-        if (not short_id and self.has_transaction_short_id(transaction_hash) and
-            self.has_transaction_contents(transaction_hash)) or self.removed_transaction(transaction_hash):
+        # don't check removed_contents for messages from BDN
+        if (
+            not short_id
+            and self.has_transaction_short_id(transaction_hash)
+            and self.has_transaction_contents(transaction_hash)
+        ):
             return TransactionFromBdnGatewayProcessingResult(ignore_seen=True)
 
         existing_short_ids = self.get_short_ids(transaction_hash)
