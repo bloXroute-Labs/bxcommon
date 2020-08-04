@@ -28,19 +28,10 @@ class TxsMessage(AbstractBloxrouteMessage):
         """
 
         if buf is None:
-            # pyre-fixme[6]: Expected `List[TransactionInfo]` for 1st param but got
-            #  `Optional[List[TransactionInfo]]`.
+            assert txs is not None
             buf = self._txs_to_bytes(txs)
-            super(TxsMessage, self).__init__(self.MESSAGE_TYPE, len(buf) - self.HEADER_LENGTH, buf)
-        else:
-            if isinstance(buf, str):
-                raise TypeError("Buffer can't be string")
 
-            self.buf = buf
-            self._memoryview = memoryview(self.buf)
-            self._payload_len = None
-            self._payload = None
-
+        super(TxsMessage, self).__init__(self.MESSAGE_TYPE, len(buf) - self.HEADER_LENGTH, buf)
         self._txs = None
 
     def log_level(self):
