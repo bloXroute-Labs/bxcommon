@@ -1,3 +1,4 @@
+import struct
 import time
 from datetime import datetime
 from typing import Any, List, Union, Optional
@@ -5,6 +6,8 @@ from typing import Any, List, Union, Optional
 import task_pool_executor as tpe
 
 from bxcommon import constants
+from bxcommon.messages.bloxroute import transactions_info_serializer, short_ids_serializer
+from bxcommon.models.transaction_info import TransactionSearchResult
 from bxcommon.services.transaction_service import TransactionService, TransactionCacheKeyType, \
     TransactionFromBdnGatewayProcessingResult
 from bxcommon.services.transaction_service import TxRemovalReason
@@ -144,6 +147,36 @@ class ExtensionTransactionService(TransactionService):
             previous_size,
             False
         )
+
+    def get_transactions(
+        self,
+        serialized_short_ids: Optional[bytearray] = None
+    ) -> TransactionSearchResult:
+        """
+        Fetches all transaction info for a set of short ids.
+        Short ids without a transaction entry will be omitted.
+        Function allows to pass a single short id or serialized list of short ids
+        :param serialized_short_ids: instance of get transactions message
+        :return: list of found and missing short ids
+        """
+
+        assert serialized_short_ids is not None
+        input_bytes = tpe.InputBytes(serialized_short_ids)
+
+        result_bytes = self.proxy.get_transactions_by_short_ids(input_bytes)
+        assert result_bytes is not None
+        result_memory_view = memoryview(result_bytes)
+
+        found_txs_size, = struct.unpack_from("<L", result_memory_view, 0)
+
+        txs_bytes = result_memory_view[constants.UL_INT_SIZE_IN_BYTES:constants.UL_INT_SIZE_IN_BYTES + found_txs_size]
+        found_txs_info = transactions_info_serializer \
+            .deserialize_transactions_info(txs_bytes)
+
+        missing_short_ids = short_ids_serializer \
+            .deserialize_short_ids(result_memory_view[constants.UL_INT_SIZE_IN_BYTES + found_txs_size:])
+
+        return TransactionSearchResult(found_txs_info, missing_short_ids)
 
     def process_gateway_transaction_from_bdn(
         self,

@@ -107,5 +107,8 @@ class ExtensionTransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_process_gateway_transaction_from_bdn(self):
         self._test_process_gateway_transaction_from_bdn()
 
+    def test_get_transactions(self):
+        self._test_get_transactions()
+
     def _get_transaction_service(self) -> TransactionService:
         return ExtensionTransactionService(self.mock_node, 0)

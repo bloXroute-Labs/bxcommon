@@ -118,8 +118,8 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                               UL_INT_SIZE_IN_BYTES + UL_INT_SIZE_IN_BYTES * len(
                                                   get_txs) + constants.CONTROL_FLAGS_LEN)
 
-        txs = [TransactionInfo(crypto.double_sha256(b"123"), bytearray(4), 1),
-               TransactionInfo(crypto.double_sha256(b"234"), bytearray(8), 2)]
+        txs = [TransactionInfo(Sha256Hash(crypto.double_sha256(b"123")), bytearray(4), 1),
+               TransactionInfo(Sha256Hash(crypto.double_sha256(b"234")), bytearray(8), 2)]
         expected_length = (UL_INT_SIZE_IN_BYTES +
                            sum(UL_INT_SIZE_IN_BYTES + SHA256_HASH_LEN + UL_INT_SIZE_IN_BYTES +
                                len(tx.contents) for tx in txs) + constants.CONTROL_FLAGS_LEN)

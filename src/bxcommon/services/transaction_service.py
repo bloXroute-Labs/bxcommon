@@ -13,6 +13,7 @@ from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iter
 from prometheus_client import Gauge
 
 from bxcommon import constants
+from bxcommon.messages.bloxroute import short_ids_serializer
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import memory_utils, convert
@@ -290,13 +291,21 @@ class TransactionService:
 
         return None
 
-    def get_transactions(self, short_ids: List[int]) -> TransactionSearchResult:
+    def get_transactions(
+        self,
+        serialized_short_ids: Optional[bytearray] = None
+    ) -> TransactionSearchResult:
         """
         Fetches all transaction info for a set of short ids.
         Short ids without a transaction entry will be omitted.
-        :param short_ids: list of short ids
+        Function allows to pass a single short id or serialized list of short ids
+        :param serialized_short_ids: instance of get transactions message
         :return: list of found and missing short ids
         """
+
+        assert serialized_short_ids is not None
+        short_ids = short_ids_serializer.deserialize_short_ids(serialized_short_ids)
+
         found = []
         missing = []
         for short_id in short_ids:
@@ -307,10 +316,10 @@ class TransactionService:
                                                  self._tx_cache_key_to_contents[transaction_cache_key],
                                                  short_id))
                 else:
-                    missing.append(TransactionInfo(self._tx_cache_key_to_hash(transaction_cache_key), None, short_id))
+                    missing.append(short_id)
                     logger.trace("Short id {} was requested but is unknown.", short_id)
             else:
-                missing.append(TransactionInfo(None, None, short_id))
+                missing.append(short_id)
                 logger.trace("Short id {} was requested but is unknown.", short_id)
 
         return TransactionSearchResult(found, missing)
