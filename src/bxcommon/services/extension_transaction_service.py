@@ -142,10 +142,11 @@ class ExtensionTransactionService(TransactionService):
         self.set_transaction_contents_base(
             transaction_hash,
             transaction_cache_key,
-            transaction_contents,
             has_short_id,
             previous_size,
-            False
+            False,
+            None,
+            len(transaction_contents)
         )
 
     def get_transactions(
@@ -208,10 +209,11 @@ class ExtensionTransactionService(TransactionService):
             self.set_transaction_contents_base(
                 transaction_hash,
                 transaction_cache_key,
-                transaction_contents,
                 has_short_id,
                 previous_size,
-                False
+                False,
+                None,
+                len(transaction_contents)
             )
 
         if result.assigned_short_id:

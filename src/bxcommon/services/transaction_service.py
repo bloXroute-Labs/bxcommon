@@ -471,30 +471,33 @@ class TransactionService:
         self.set_transaction_contents_base(
             transaction_hash,
             transaction_cache_key,
-            transaction_contents,
             has_short_id,
             previous_size,
-            True
+            True,
+            transaction_contents,
+            None
         )
 
     def set_transaction_contents_base(
         self,
         transaction_hash: Sha256Hash,
         transaction_cache_key: TransactionCacheKeyType,
-        transaction_contents: Union[bytearray, memoryview],
         has_short_id: bool,
         previous_size: int,
-        call_set_contents: bool
-    ):
+        call_set_contents: bool,
+        transaction_contents: Optional[Union[bytearray, memoryview]] = None,
+        transaction_contents_length: Optional[int] = None
+    ) -> None:
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
 
         :param transaction_hash: transaction hash
         :param transaction_cache_key: transaction cache key
-        :param transaction_contents: transaction contents bytes
         :param has_short_id: flag indicating if cache already has short id for given transaction
         :param previous_size: previous size of transaction contents if already exists
         :param call_set_contents: flag indicating if method should make a call to set content form Python code
+        :param transaction_contents: transaction contents bytes
+        :param transaction_contents_length: if the transaction contents bytes not available, just send the length
         """
         if not has_short_id:
             self.tx_hashes_without_short_id.add(transaction_hash)
@@ -505,14 +508,18 @@ class TransactionService:
 
         self.tx_hashes_without_content.remove(transaction_hash)
 
-        if call_set_contents:
-            self._tx_cache_key_to_contents[transaction_cache_key] = transaction_contents
-
-        self._total_tx_contents_size += len(transaction_contents) - previous_size
+        if transaction_contents is not None:
+            self._total_tx_contents_size += len(transaction_contents) - previous_size
+            self.node.log_txs_network_content(self.network_num, wrap_sha256(transaction_hash), transaction_contents)
+            if call_set_contents:
+                self._tx_cache_key_to_contents[transaction_cache_key] = transaction_contents
+        elif transaction_contents_length is not None:
+            self._total_tx_contents_size += transaction_contents_length - previous_size
+        else:
+            logger.debug("both transaction contents and transaction contents length are missing.")
 
         self._memory_limit_clean_up()
 
-        self.node.log_txs_network_content(self.network_num, wrap_sha256(transaction_hash), transaction_contents)
 
     def remove_transaction_by_tx_hash(
         self,
