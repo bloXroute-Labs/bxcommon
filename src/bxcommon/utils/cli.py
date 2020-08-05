@@ -275,6 +275,9 @@ def parse_blockchain_opts(opts, node_type: NodeType):
     opts_dict["blockchain_block_hold_timeout_s"] = network_info.block_hold_timeout_s
     opts_dict["enable_network_content_logs"] = network_info.enable_network_content_logs
 
+    if opts.enable_block_compression is None:
+        opts_dict["enable_block_compression"] = network_info.enable_block_compression
+
 
 def _set_blockchain_networks_from_cache(opts):
     cache_info = node_cache.read(opts)

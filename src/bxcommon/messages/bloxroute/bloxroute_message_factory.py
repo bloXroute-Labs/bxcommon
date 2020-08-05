@@ -4,6 +4,7 @@ from typing import Optional, Type, NamedTuple
 from bxcommon import constants
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
+from bxcommon.messages.blockchain_network_message import RefreshBlockchainNetworkMessage
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
@@ -68,7 +69,8 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         BloxrouteMessageType.BLOCK_CONFIRMATION: BlockConfirmationMessage,
         BloxrouteMessageType.TRANSACTION_CLEANUP: TransactionCleanupMessage,
         BloxrouteMessageType.NOTIFICATION: NotificationMessage,
-        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessage
+        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessage,
+        BloxrouteMessageType.REFRESH_BLOCKCHAIN_NETWORK: RefreshBlockchainNetworkMessage
     }
 
     def __init__(self) -> None:
