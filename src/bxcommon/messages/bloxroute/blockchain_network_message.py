@@ -3,6 +3,7 @@ from typing import Optional
 from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxutils.logging import LogLevel
 
 
 class RefreshBlockchainNetworkMessage(AbstractBloxrouteMessage):
@@ -17,3 +18,9 @@ class RefreshBlockchainNetworkMessage(AbstractBloxrouteMessage):
             self.buf = buf
 
         super(RefreshBlockchainNetworkMessage, self).__init__(self.MESSAGE_TYPE, constants.CONTROL_FLAGS_LEN, buf)
+
+    def log_level(self):
+        return LogLevel.DEBUG
+
+    def __repr__(self):
+        return "RefreshBlockchainNetworkMessage<>"
