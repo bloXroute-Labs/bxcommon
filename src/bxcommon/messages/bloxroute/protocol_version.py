@@ -1,5 +1,8 @@
-PROTOCOL_VERSION = 11
+PROTOCOL_VERSION = 12
+RELAY_BLOCK_CAN_SEND_TXS_MESSAGE = 12
 
+# PROTOCOL_VERSION 12 (06/08/2020)
+# relay block can send txs_message to gateways
 # PROTOCOL_VERSION 11 (7/17/2020)
 # add memory utilization to BDN performance stats message
 #
