@@ -22,3 +22,4 @@ class BloxrouteMessageType:
     TRANSACTION_CLEANUP = b"txclnup"
     NOTIFICATION = b"notify"
     BDN_PERFORMANCE_STATS = b"bdnstats"
+    REFRESH_BLOCKCHAIN_NETWORK = b"blkntwrk"

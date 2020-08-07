@@ -1,6 +1,5 @@
-import struct
-
 from bxcommon import constants
+from bxcommon.messages.bloxroute import short_ids_serializer
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxutils.logging.log_level import LogLevel
@@ -45,42 +44,24 @@ class GetTxsMessage(AbstractBloxrouteMessage):
 
         return self._short_ids
 
+    def get_serialized_short_ids(self):
+        return self.rawbytes()[self.HEADER_LENGTH:-constants.CONTROL_FLAGS_LEN]
+
     def _short_ids_to_bytes(self, short_ids):
         msg_size = (
             constants.STARTING_SEQUENCE_BYTES_LEN
             + constants.BX_HDR_COMMON_OFF
-            + constants.UL_INT_SIZE_IN_BYTES
-            + (len(short_ids) * constants.UL_INT_SIZE_IN_BYTES)
+            + short_ids_serializer.get_serialized_length(len(short_ids))
             + constants.CONTROL_FLAGS_LEN
         )
 
         buf = bytearray(msg_size)
-
         off = self.HEADER_LENGTH
-
-        struct.pack_into("<L", buf, off, len(short_ids))
-        off += constants.UL_INT_SIZE_IN_BYTES
-
-        for short_id in short_ids:
-            struct.pack_into("<L", buf, off, short_id)
-            off += constants.UL_INT_SIZE_IN_BYTES
-
+        short_ids_serializer.serialize_short_ids_to_buffer(short_ids, buf, off)
         return buf
 
     def _parse(self):
-        short_ids = []
-
-        off = self.HEADER_LENGTH
-
-        short_ids_count, = struct.unpack_from("<L", self.buf, off)
-        off += constants.UL_INT_SIZE_IN_BYTES
-
-        for _ in range(short_ids_count):
-            short_id, = struct.unpack_from("<L", self.buf, off)
-            short_ids.append(short_id)
-            off += constants.UL_INT_SIZE_IN_BYTES
-
-        self._short_ids = short_ids
+        self._short_ids, _ = short_ids_serializer.deserialize_short_ids_from_buffer(self.buf, self.HEADER_LENGTH)
 
     def __repr__(self):
         return "GetTxsMessage<num_short_ids: {}>".format(len(self.get_short_ids()))

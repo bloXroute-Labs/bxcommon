@@ -1,3 +1,4 @@
+import socket
 import typing
 from asyncio import BaseTransport, Transport, BaseProtocol
 from typing import TYPE_CHECKING, Optional
@@ -60,7 +61,11 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
 
     def connection_made(self, transport: BaseTransport) -> None:
         self.transport = typing.cast(Transport, transport)
-        self.file_no = transport.get_extra_info("socket").fileno()
+
+        sock = transport.get_extra_info("socket")
+        self.file_no = sock.fileno()
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+
         if self.direction == NetworkDirection.INBOUND:
             self.endpoint = IpEndpoint(
                 *transport.get_extra_info("peername")

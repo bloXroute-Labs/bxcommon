@@ -101,6 +101,11 @@ class ConnectionPool:
             return False
         return (ip, port) in self.by_ipport
 
+    def get_connection_by_network_num(self, network_num: int) -> Iterable[AbstractConnection]:
+        for connection in self.get_by_connection_types([ConnectionType.GATEWAY]):
+            if connection.network_num == network_num:
+                yield connection
+
     def get_by_connection_types(self, connection_types: List[ConnectionType]) -> Iterator[AbstractConnection]:
         # pyre-fixme [7]: Expected `List[AbstractConnection[typing.Any]]`
         #  but got `typing.Iterator[Variable[more_itertools.recipes._T]]`.

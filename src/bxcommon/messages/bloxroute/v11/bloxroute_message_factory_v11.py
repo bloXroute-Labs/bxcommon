@@ -4,11 +4,9 @@ from typing import Optional, Type, NamedTuple
 from bxcommon import constants
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
-from bxcommon.messages.bloxroute.blockchain_network_message import RefreshBlockchainNetworkMessage
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
-from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
 from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
@@ -24,13 +22,12 @@ from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.tx_contents_message import TxContentsMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
-from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import \
-    TxServiceSyncBlocksShortIdsMessage
-from bxcommon.messages.bloxroute.tx_service_sync_complete_message import \
-    TxServiceSyncCompleteMessage
+from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
+from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
+from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -47,7 +44,7 @@ class BroadcastMessagePreview(NamedTuple):
     payload_length: Optional[int]
 
 
-class _BloxrouteMessageFactory(AbstractMessageFactory):
+class _BloxrouteMessageFactoryV11(AbstractMessageFactory):
     _MESSAGE_TYPE_MAPPING = {
         BloxrouteMessageType.HELLO: HelloMessage,
         BloxrouteMessageType.ACK: AckMessage,
@@ -69,12 +66,11 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         BloxrouteMessageType.BLOCK_CONFIRMATION: BlockConfirmationMessage,
         BloxrouteMessageType.TRANSACTION_CLEANUP: TransactionCleanupMessage,
         BloxrouteMessageType.NOTIFICATION: NotificationMessage,
-        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessage,
-        BloxrouteMessageType.REFRESH_BLOCKCHAIN_NETWORK: RefreshBlockchainNetworkMessage
+        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessage
     }
 
     def __init__(self) -> None:
-        super(_BloxrouteMessageFactory, self).__init__()
+        super(_BloxrouteMessageFactoryV11, self).__init__()
         self.message_type_mapping = self._MESSAGE_TYPE_MAPPING
 
     def get_base_message_type(self) -> Type[AbstractMessage]:
@@ -126,4 +122,4 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         return f"{self.__class__.__name__}; message_type_mapping: {self.message_type_mapping}"
 
 
-bloxroute_message_factory = _BloxrouteMessageFactory()
+bloxroute_message_factory_v11 = _BloxrouteMessageFactoryV11()

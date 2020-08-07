@@ -5,6 +5,7 @@ from mock import MagicMock, patch
 
 from bxcommon import constants
 from bxcommon.constants import NULL_TX_SID
+from bxcommon.messages.bloxroute import short_ids_serializer
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.quota_type_model import QuotaType
@@ -650,6 +651,32 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.assertEqual(0, len(self.transaction_service.tx_hashes_without_short_id))
         self.assertEqual(0, len(self.transaction_service.tx_hashes_without_content))
         self.assertEqual(len(tx_contnets) + len(tx_contnets2), self.transaction_service._total_tx_contents_size)
+
+    def _test_get_transactions(self):
+        transactions_set = self._add_transactions(50, 100)
+
+        existing_short_ids = list(map(lambda x: x[2], transactions_set))
+        missing_short_ids = []
+
+        for i in range(10):
+            missing_short_ids.append(existing_short_ids[-1] + i + 1)
+
+        all_short_ids = existing_short_ids + missing_short_ids
+        serialized_short_ids = short_ids_serializer.serialize_short_ids(all_short_ids)
+
+        search_result = self.transaction_service.get_transactions(serialized_short_ids)
+
+        self.assertEqual(len(search_result.found) + len(search_result.missing), len(all_short_ids))
+        self.assertEqual(len(search_result.found), len(transactions_set))
+        self.assertEqual(len(search_result.missing), len(missing_short_ids))
+
+        for (tx_hash, tx_contents, short_id), found_tx in zip(transactions_set, search_result.found):
+            self.assertEqual(tx_hash, found_tx.hash)
+            self.assertEqual(tx_contents, found_tx.contents)
+            self.assertEqual(short_id, found_tx.short_id)
+
+        for short_id in missing_short_ids:
+            self.assertIn(short_id, search_result.missing)
 
     def get_fake_tx(self, content_length=128):
         tx_hash = Sha256Hash(binary=helpers.generate_bytearray(crypto.SHA256_HASH_LEN))
