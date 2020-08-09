@@ -144,6 +144,12 @@ def get_argument_parser() -> argparse.ArgumentParser:
         type=convert.str_to_bool,
         default=True
     )
+    arg_parser.add_argument(
+        "--block-compression-debug",
+        help="Enable debug messages with details of the compressed blocks",
+        type=convert.str_to_bool,
+        default=True
+    )
 
     add_argument_parser_logging(arg_parser)
     add_argument_parser_common(arg_parser)

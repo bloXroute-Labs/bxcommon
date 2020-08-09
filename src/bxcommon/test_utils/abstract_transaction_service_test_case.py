@@ -675,8 +675,10 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.assertEqual(tx_contents, found_tx.contents)
             self.assertEqual(short_id, found_tx.short_id)
 
-        for short_id in missing_short_ids:
-            self.assertIn(short_id, search_result.missing)
+        for missing_tx in search_result.missing:
+            self.assertIn(missing_tx.short_id, missing_short_ids)
+            self.assertIsNone(missing_tx.contents)
+            self.assertIsNone(missing_tx.hash)
 
     def get_fake_tx(self, content_length=128):
         tx_hash = Sha256Hash(binary=helpers.generate_bytearray(crypto.SHA256_HASH_LEN))

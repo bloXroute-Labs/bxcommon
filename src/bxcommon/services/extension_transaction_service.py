@@ -6,12 +6,12 @@ from typing import Any, List, Union, Optional
 import task_pool_executor as tpe
 
 from bxcommon import constants
-from bxcommon.messages.bloxroute import transactions_info_serializer, short_ids_serializer
-from bxcommon.models.transaction_info import TransactionSearchResult
+from bxcommon.messages.bloxroute import transactions_info_serializer
+from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.services.transaction_service import TransactionService, TransactionCacheKeyType, \
     TransactionFromBdnGatewayProcessingResult
 from bxcommon.services.transaction_service import TxRemovalReason
-from bxcommon.utils import memory_utils
+from bxcommon.utils import memory_utils, crypto
 from bxcommon.utils.object_encoder import ObjectEncoder
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
@@ -174,10 +174,28 @@ class ExtensionTransactionService(TransactionService):
         found_txs_info = transactions_info_serializer \
             .deserialize_transactions_info(txs_bytes)
 
-        missing_short_ids = short_ids_serializer \
-            .deserialize_short_ids(result_memory_view[constants.UL_INT_SIZE_IN_BYTES + found_txs_size:])
+        missing_txs_info = []
+        offset = constants.UL_INT_SIZE_IN_BYTES + found_txs_size
 
-        return TransactionSearchResult(found_txs_info, missing_short_ids)
+        missing_txs_count, = struct.unpack_from("<L", result_memory_view, offset)
+        offset += constants.UL_INT_SIZE_IN_BYTES
+
+        for _ in range(missing_txs_count):
+            tx_sid, = struct.unpack_from("<L", result_memory_view, offset)
+            offset += constants.UL_INT_SIZE_IN_BYTES
+
+            has_hash, = struct.unpack_from("<B", result_memory_view, offset)
+            offset += constants.UL_TINY_SIZE_IN_BYTES
+
+            if has_hash:
+                tx_hash = Sha256Hash(result_memory_view[offset:offset + crypto.SHA256_HASH_LEN])
+                offset += crypto.SHA256_HASH_LEN
+            else:
+                tx_hash = None
+
+            missing_txs_info.append(TransactionInfo(tx_hash, None, tx_sid))
+
+        return TransactionSearchResult(found_txs_info, missing_txs_info)
 
     def process_gateway_transaction_from_bdn(
         self,

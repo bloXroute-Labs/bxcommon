@@ -11,4 +11,4 @@ class TransactionInfo(NamedTuple):
 
 class TransactionSearchResult(NamedTuple):
     found: List[TransactionInfo]
-    missing: List[int]
+    missing: List[TransactionInfo]
