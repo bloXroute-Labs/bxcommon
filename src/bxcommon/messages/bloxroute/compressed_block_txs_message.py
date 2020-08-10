@@ -40,7 +40,7 @@ class CompressedBlockTxsMessage(AbstractBloxrouteMessage):
         :param txs: tuple with 3 values (tx short id, tx hash, tx contents)
         :param buf: message bytes
         """
-        self.TXS_INFO_OFFSET = self.HEADER_LENGTH + constants.UL_INT_SIZE_IN_BYTES + crypto.SHA256_HASH_LEN
+        self.txs_info_offset = self.HEADER_LENGTH + constants.UL_INT_SIZE_IN_BYTES + crypto.SHA256_HASH_LEN
 
         if buf is None:
             assert network_num is not None
@@ -94,7 +94,7 @@ class CompressedBlockTxsMessage(AbstractBloxrouteMessage):
         return network_num
 
     def to_txs_message(self) -> TxsMessage:
-        txs_info_bytes = self.rawbytes()[self.TXS_INFO_OFFSET:]
+        txs_info_bytes = self.rawbytes()[self.txs_info_offset:]
         result_message_bytes = bytearray(TxsMessage.HEADER_LENGTH + len(txs_info_bytes))
         result_message_bytes[TxsMessage.HEADER_LENGTH:] = txs_info_bytes
         return TxsMessage(buf=result_message_bytes)
@@ -102,7 +102,7 @@ class CompressedBlockTxsMessage(AbstractBloxrouteMessage):
     def _serialize(self, network_num: int, block_hash: Sha256Hash, txs_details: List[TransactionInfo]):
 
         msg_size = (
-            self.TXS_INFO_OFFSET
+            self.txs_info_offset
             + transactions_info_serializer.get_serialized_length(txs_details)
             + constants.CONTROL_FLAGS_LEN
         )

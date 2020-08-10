@@ -101,12 +101,12 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
 
     def pause_writing(self) -> None:
         self.can_send = False
-        logger.trace("[{}] - paused writing.", self)
+        logger.debug("[{}] - paused writing.", self)
 
     def resume_writing(self) -> None:
         self.can_send = True
         self.send()
-        logger.trace("[{}] - resumed writing.", self)
+        logger.debug("[{}] - resumed writing.", self)
 
     def send(self) -> None:
         total_bytes_sent = 0
@@ -152,7 +152,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         if self.is_alive():
             assert self.transport is not None, "Connection is broken!"
             self.state |= SocketConnectionState.HALT_RECEIVE
-            logger.trace("[{}] - paused reading.", self)
+            logger.debug("[{}] - paused reading.", self)
 
     def resume_reading(self) -> None:
         if self.is_alive():
@@ -160,7 +160,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             # pylint bug
             # pylint: disable=invalid-unary-operand-type
             self.state &= ~SocketConnectionState.HALT_RECEIVE
-            logger.trace("[{}] - resumed writing.", self)
+            logger.debug("[{}] - resumed reading.", self)
 
     def mark_for_close(self, should_retry: bool = True) -> None:
         if SocketConnectionState.MARK_FOR_CLOSE in self.state:
