@@ -1405,4 +1405,3 @@ class TransactionService:
             block_hash,
             ",".join(str(tx_info) for tx_info in txs_info)
         )
-
