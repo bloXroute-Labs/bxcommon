@@ -6,12 +6,12 @@ from typing import Any, List, Union, Optional
 import task_pool_executor as tpe
 
 from bxcommon import constants
-from bxcommon.messages.bloxroute import transactions_info_serializer, short_ids_serializer
-from bxcommon.models.transaction_info import TransactionSearchResult
+from bxcommon.messages.bloxroute import transactions_info_serializer
+from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.services.transaction_service import TransactionService, TransactionCacheKeyType, \
     TransactionFromBdnGatewayProcessingResult
 from bxcommon.services.transaction_service import TxRemovalReason
-from bxcommon.utils import memory_utils
+from bxcommon.utils import memory_utils, crypto
 from bxcommon.utils.object_encoder import ObjectEncoder
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
@@ -58,6 +58,9 @@ class ExtensionTransactionService(TransactionService):
 
         self._tx_hash_to_time_removed = MapProxy(
             self.proxy.tx_hash_to_time_removed(), raw_encoder, raw_encoder
+        )
+        self._short_id_to_time_removed = MapProxy(
+            self.proxy.short_id_to_time_removed(), raw_encoder, raw_encoder
         )
 
     def track_seen_short_ids(self, block_hash, short_ids: List[int]) -> None:
@@ -174,10 +177,28 @@ class ExtensionTransactionService(TransactionService):
         found_txs_info = transactions_info_serializer \
             .deserialize_transactions_info(txs_bytes)
 
-        missing_short_ids = short_ids_serializer \
-            .deserialize_short_ids(result_memory_view[constants.UL_INT_SIZE_IN_BYTES + found_txs_size:])
+        missing_txs_info = []
+        offset = constants.UL_INT_SIZE_IN_BYTES + found_txs_size
 
-        return TransactionSearchResult(found_txs_info, missing_short_ids)
+        missing_txs_count, = struct.unpack_from("<L", result_memory_view, offset)
+        offset += constants.UL_INT_SIZE_IN_BYTES
+
+        for _ in range(missing_txs_count):
+            tx_sid, = struct.unpack_from("<L", result_memory_view, offset)
+            offset += constants.UL_INT_SIZE_IN_BYTES
+
+            has_hash, = struct.unpack_from("<B", result_memory_view, offset)
+            offset += constants.UL_TINY_SIZE_IN_BYTES
+
+            if has_hash:
+                tx_hash = Sha256Hash(result_memory_view[offset:offset + crypto.SHA256_HASH_LEN])
+                offset += crypto.SHA256_HASH_LEN
+            else:
+                tx_hash = None
+
+            missing_txs_info.append(TransactionInfo(tx_hash, None, tx_sid))
+
+        return TransactionSearchResult(found_txs_info, missing_txs_info)
 
     def process_gateway_transaction_from_bdn(
         self,
@@ -267,6 +288,22 @@ class ExtensionTransactionService(TransactionService):
         else:
             return memory_utils.ObjectType.BASE
 
+    def get_oldest_removed_tx_hash(self, tx_hashes: List[Sha256Hash]) -> float:
+        oldest_removed_tx_hash = 0
+        for tx_hash in tx_hashes:
+            if tx_hash in self._tx_hash_to_time_removed and \
+                    oldest_removed_tx_hash < self._tx_hash_to_time_removed[tx_hash]:
+                oldest_removed_tx_hash = self._tx_hash_to_time_removed[tx_hash]
+        return oldest_removed_tx_hash
+
+    def get_oldest_removed_short_id(self, short_ids: List[int]) -> float:
+        oldest_removed_short_id = 0
+        for short_id in short_ids:
+            if short_id in self._short_id_to_time_removed and \
+                    oldest_removed_short_id < self._short_id_to_time_removed[short_id]:
+                oldest_removed_short_id = self._short_id_to_time_removed[short_id]
+        return oldest_removed_short_id
+
     def _tx_hash_to_cache_key(self, transaction_hash) -> tpe.Sha256:  # pyre-ignore
         if isinstance(transaction_hash, Sha256Hash):
             return tpe.Sha256(tpe.InputBytes(transaction_hash.binary))
@@ -324,16 +361,26 @@ class ExtensionTransactionService(TransactionService):
             "number: {}.",
             self.network_num
         )
-        history_len_before = len(self._tx_hash_to_time_removed)
+        current_time = time.time()
+        tx_hash_history_len_before = len(self._tx_hash_to_time_removed)
         self._tx_hash_to_time_removed.map_obj.cleanup_removed_hashes_history(
-            time.time(), self._removed_txs_expiration_time_s, constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT
+            current_time, self._removed_txs_expiration_time_s, constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT
         )
-        history_len_after = len(self._tx_hash_to_time_removed)
+        tx_hash_history_len_after = len(self._tx_hash_to_time_removed)
+
+        short_id_history_len_before = len(self._short_id_to_time_removed)
+        self._short_id_to_time_removed.map_obj.cleanup_removed_short_ids_history(
+            current_time, self._removed_txs_expiration_time_s, constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT
+        )
+        short_id_history_len_after = len(self._short_id_to_time_removed)
         logger.trace(
-            "Finished cleanup transaction cache history. Size before: {}. "
-            "Size after: {}.",
-            history_len_before,
-            history_len_after
+            "Finished cleanup transaction cache history. "
+            "tx_hash size before: {}, size after: {}."
+            "short_id size before: {}, size after: {}.",
+            tx_hash_history_len_before,
+            tx_hash_history_len_after,
+            short_id_history_len_before,
+            short_id_history_len_after
         )
 
         return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S

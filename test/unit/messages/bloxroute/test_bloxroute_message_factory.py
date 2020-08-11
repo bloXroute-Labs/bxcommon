@@ -17,6 +17,8 @@ from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessag
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_version_manager
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
+from bxcommon.messages.bloxroute.compressed_block_txs_message import CompressedBlockTxsMessage
+from bxcommon.messages.bloxroute.get_compressed_block_txs_message import GetCompressedBlockTxsMessage
 from bxcommon.messages.bloxroute.get_tx_contents_message import GetTxContentsMessage
 from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
@@ -271,6 +273,69 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(tx_info.hash, result_tx_info.hash)
         self.assertEqual(tx_info.contents, result_tx_info.contents)
         self.assertEqual(tx_info.short_id, result_tx_info.short_id)
+
+        short_ids = [1, 2, 33, 4444, 1234]
+        block_hash = Sha256Hash(helpers.generate_bytearray(32))
+
+        get_block_txs_message: GetCompressedBlockTxsMessage = self.create_message_successfully(
+            GetCompressedBlockTxsMessage(self.NETWORK_NUM, block_hash, short_ids),
+            GetCompressedBlockTxsMessage
+        )
+        self.assertEqual(self.NETWORK_NUM, get_block_txs_message.network_num())
+        self.assertEqual(block_hash, get_block_txs_message.block_hash())
+        self.assertEqual(len(short_ids), len(get_block_txs_message))
+        self.assertEqual(short_ids, get_block_txs_message.get_short_ids())
+
+        txs_info = [
+            TransactionInfo(Sha256Hash(helpers.generate_bytearray(32)), helpers.generate_bytearray(200), 111),
+            TransactionInfo(Sha256Hash(helpers.generate_bytearray(32)), helpers.generate_bytearray(300), 222),
+            TransactionInfo(Sha256Hash(helpers.generate_bytearray(32)), helpers.generate_bytearray(400), 333)
+        ]
+
+        block_txs_message: CompressedBlockTxsMessage = self.create_message_successfully(
+            CompressedBlockTxsMessage(self.NETWORK_NUM, block_hash, txs_info),
+            CompressedBlockTxsMessage
+        )
+        self.assertEqual(self.NETWORK_NUM, block_txs_message.network_num())
+        self.assertEqual(block_hash, block_txs_message.block_hash())
+        self.assertEqual(len(txs_info), len(block_txs_message))
+
+        parsed_txs = block_txs_message.get_txs()
+
+        for index in range(len(txs_info)):
+            self.assertEqual(parsed_txs[index].short_id, txs_info[index].short_id)
+            self.assertEqual(parsed_txs[index].contents, txs_info[index].contents)
+            self.assertEqual(parsed_txs[index].hash, txs_info[index].hash)
+
+    def test_compressed_block_txs_message_to_txs_message(self):
+        block_hash = Sha256Hash(helpers.generate_bytearray(32))
+        txs_info = [
+            TransactionInfo(Sha256Hash(helpers.generate_bytearray(32)), helpers.generate_bytearray(200), 111),
+            TransactionInfo(Sha256Hash(helpers.generate_bytearray(32)), helpers.generate_bytearray(300), 222),
+            TransactionInfo(Sha256Hash(helpers.generate_bytearray(32)), helpers.generate_bytearray(400), 333)
+        ]
+
+        block_txs_message = CompressedBlockTxsMessage(self.NETWORK_NUM, block_hash, txs_info)
+        txs_message = block_txs_message.to_txs_message()
+
+        self.assertEqual(TxsMessage.MESSAGE_TYPE, txs_message.msg_type())
+
+        parsed_txs = txs_message.get_txs()
+
+        self.assertEqual(len(parsed_txs), len(parsed_txs))
+
+        for index in range(len(txs_info)):
+            self.assertEqual(parsed_txs[index].short_id, txs_info[index].short_id)
+            self.assertEqual(parsed_txs[index].contents, txs_info[index].contents)
+            self.assertEqual(parsed_txs[index].hash, txs_info[index].hash)
+
+        raw_bytes = txs_message.rawbytes()
+
+        self.assertEqual(raw_bytes[:constants.STARTING_SEQUENCE_BYTES_LEN], constants.STARTING_SEQUENCE_BYTES)
+        self.assertIsNotNone(txs_message.payload())
+        self.assertIsNotNone(txs_message.payload_len())
+        # control flag check
+        self.assertEqual(raw_bytes[-1], 1)
 
     def test_create_message_failure(self):
         message = HelloMessage(protocol_version=1, network_num=2)

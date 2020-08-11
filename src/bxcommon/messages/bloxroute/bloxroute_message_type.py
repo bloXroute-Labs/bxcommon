@@ -23,3 +23,5 @@ class BloxrouteMessageType:
     NOTIFICATION = b"notify"
     BDN_PERFORMANCE_STATS = b"bdnstats"
     REFRESH_BLOCKCHAIN_NETWORK = b"blkntwrk"
+    GET_COMPRESSED_BLOCK_TXS = b"getblocktxs"
+    COMPRESSED_BLOCK_TXS = b"blocktxs"

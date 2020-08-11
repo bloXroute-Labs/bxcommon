@@ -268,6 +268,7 @@ def get_common_opts(
         "log_fluentd_enable": False,
         "log_fluentd_host": utils_constants.FLUENTD_HOST,
         "enable_buffered_send": False,
+        "block_compression_debug": False,
         "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
             str(parallelism_degree)
         ),

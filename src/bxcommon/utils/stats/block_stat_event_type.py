@@ -81,6 +81,8 @@ class BlockStatEventType:
     ENC_BLOCK_COMPRESSED_TXS_REQUEST_PROCESSED_BY_TX_RELAY = StatEventTypeSettings(
         "EncBlockCompressedTxsRequestProcessedByTxRelay")
     ENC_BLOCK_COMPRESSED_TXS_SENT_TO_GATEWAYS = StatEventTypeSettings("EncBlockCompressedTxsSentToGateways")
+    ENC_BLOCK_COMPRESSED_TXS_RECEIVED_BY_GATEWAY = StatEventTypeSettings("EncBlockCompressedTxsReceivedByGateway")
+
     BX_BLOCK_PROPAGATION_REQUESTED_BY_PEER = StatEventTypeSettings(
         "BxBlockPropagationRequestedByPeer"
     )

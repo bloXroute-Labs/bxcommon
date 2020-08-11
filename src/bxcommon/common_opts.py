@@ -90,6 +90,7 @@ class CommonOpts:
     node_start_time: datetime
     os_version: str
     sid_expire_time: int
+    block_compression_debug: bool
 
     @classmethod
     def opts_defaults(cls, opts: Namespace) -> Namespace:

@@ -49,7 +49,7 @@ class BroadcastMessagePreview(NamedTuple):
     payload_length: Optional[int]
 
 
-class _BloxrouteMessageFactory(AbstractMessageFactory):
+class _BloxrouteMessageFactoryV12(AbstractMessageFactory):
     _MESSAGE_TYPE_MAPPING = {
         BloxrouteMessageType.HELLO: HelloMessage,
         BloxrouteMessageType.ACK: AckMessage,
@@ -78,7 +78,7 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
     }
 
     def __init__(self) -> None:
-        super(_BloxrouteMessageFactory, self).__init__()
+        super(_BloxrouteMessageFactoryV12, self).__init__()
         self.message_type_mapping = self._MESSAGE_TYPE_MAPPING
 
     def get_base_message_type(self) -> Type[AbstractMessage]:
@@ -130,4 +130,4 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         return f"{self.__class__.__name__}; message_type_mapping: {self.message_type_mapping}"
 
 
-bloxroute_message_factory = _BloxrouteMessageFactory()
+bloxroute_message_factory_v12 = _BloxrouteMessageFactoryV12()
