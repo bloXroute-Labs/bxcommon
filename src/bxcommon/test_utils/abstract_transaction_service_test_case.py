@@ -469,6 +469,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         self.mock_node.alarm_queue.fire_alarms()
 
         self.assertEqual(10, len(self.transaction_service._tx_hash_to_time_removed))
+        self.assertEqual(10, len(self.transaction_service._short_id_to_time_removed))
 
     def _test_removed_transactions_history_by_sid(self):
         transactions = self._add_transactions(30, 250)
@@ -528,6 +529,8 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
 
         self.assertEqual(len(transactions) - expected_removed_txs_count,
                          len(self.transaction_service._tx_hash_to_time_removed))
+        self.assertEqual(len(transactions) - expected_removed_txs_count,
+                         len(self.transaction_service._short_id_to_time_removed))
 
         for index, transaction in enumerate(transactions):
             if index < expected_removed_txs_count:

@@ -138,6 +138,7 @@ class TransactionService:
     _tx_cache_key_to_short_ids: Dict[TransactionCacheKeyType, Set[int]]
     _tx_assignment_expire_queue: ExpirationQueue[int]
     _tx_hash_to_time_removed: OrderedDict
+    _short_id_to_time_removed: OrderedDict
     tx_hashes_without_short_id: ExpirationQueue[Sha256Hash]
     tx_hashes_without_content: ExpirationQueue[Sha256Hash]  # but has short ID
 
@@ -178,6 +179,7 @@ class TransactionService:
         self.tx_hashes_without_short_id = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
         self.tx_hashes_without_content = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
         self._tx_hash_to_time_removed = OrderedDict()
+        self._short_id_to_time_removed = OrderedDict()
 
         self._final_tx_confirmations_count = self._get_final_tx_confirmations_count()
         self._tx_content_memory_limit = self._get_tx_contents_memory_limit()
@@ -545,6 +547,7 @@ class TransactionService:
         removed_txns = 0
 
         if transaction_cache_key in self._tx_cache_key_to_short_ids:
+            time_removed = time.time()
             short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
             if assume_no_sid and short_ids:
                 logger.trace("removal of tx {} aborted, ", transaction_hash)
@@ -561,6 +564,7 @@ class TransactionService:
                     transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
                     self.network_num, short_id, reason=TxRemovalReason.BLOCK_CLEANUP.value
                 )
+                self._short_id_to_time_removed[short_id] = time_removed
                 removed_sids += 1
                 if short_id in self._short_id_to_tx_cache_key:
                     del self._short_id_to_tx_cache_key[short_id]
@@ -569,8 +573,6 @@ class TransactionService:
                 self._tx_assignment_expire_queue.remove(short_id)
                 if self.node.opts.dump_removed_short_ids:
                     self._removed_short_ids.add(short_id)
-
-                self._tx_hash_to_time_removed[transaction_cache_key] = time.time()
         else:
             short_ids = None
 
@@ -600,6 +602,7 @@ class TransactionService:
         :param removal_reason:
         """
         if short_id in self._short_id_to_tx_cache_key:
+            time_removed = time.time()
             transaction_cache_key = self._short_id_to_tx_cache_key[short_id]
             if transaction_cache_key in self._tx_cache_key_to_short_ids:
                 short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
@@ -617,6 +620,7 @@ class TransactionService:
                 self._removed_short_ids.add(short_id)
 
             del self._short_id_to_tx_cache_key[short_id]
+            self._short_id_to_time_removed[short_id] = time_removed
             transaction_hash = self._tx_cache_key_to_hash(transaction_cache_key)
             tx_stats.add_tx_by_hash_event(
                 transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
@@ -630,6 +634,7 @@ class TransactionService:
                             transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
                             self.network_num, dup_short_id, reason=removal_reason.value
                         )
+                        self._short_id_to_time_removed[dup_short_id] = time_removed
                         if dup_short_id in self._short_id_to_tx_cache_key:
                             del self._short_id_to_tx_cache_key[dup_short_id]
                         self._tx_assignment_expire_queue.remove(dup_short_id)
@@ -639,7 +644,7 @@ class TransactionService:
                 if transaction_cache_key in self._tx_cache_key_to_contents:
                     self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
                     del self._tx_cache_key_to_contents[transaction_cache_key]
-                    self._tx_hash_to_time_removed[transaction_cache_key] = time.time()
+                    self._tx_hash_to_time_removed[transaction_cache_key] = time_removed
 
                 # Delete short ids from _tx_cache_key_to_short_ids after iterating short_ids.
                 # Otherwise extension implementation disposes short_ids list after this line
@@ -1046,6 +1051,18 @@ class TransactionService:
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
+            self._short_id_to_time_removed,
+            "_short_id_to_time_removed",
+            self.get_collection_mem_stats(self._short_id_to_time_removed,
+                                          len(self._short_id_to_time_removed) * constants.SID_LEN),
+            object_item_count=len(self._short_id_to_time_removed),
+            object_type=memory_utils.ObjectType.BASE,
+            size_type=size_type
+        )
+
+        hooks.add_obj_mem_stats(
+            class_name,
+            self.network_num,
             self.tx_hashes_without_short_id,
             "tx_hash_without_sid",
             self.get_collection_mem_stats(self.tx_hashes_without_short_id,
@@ -1137,6 +1154,26 @@ class TransactionService:
 
     def get_cache_state_str(self) -> str:
         return json_encoder.to_json(self.get_cache_state_json())
+
+    def get_removed_tx_hash_time_and_count(self, tx_hashes: List[Sha256Hash]) -> Tuple[float, int]:
+        oldest_removed_tx_hash = 0
+        removed_tx_hash_count = 0
+        for tx_hash in tx_hashes:
+            if tx_hash in self._tx_hash_to_time_removed:
+                removed_tx_hash_count += 1
+                if oldest_removed_tx_hash < self._tx_hash_to_time_removed[tx_hash]:
+                    oldest_removed_tx_hash = self._tx_hash_to_time_removed[tx_hash]
+        return oldest_removed_tx_hash, removed_tx_hash_count
+
+    def get_removed_short_id_time_and_count(self, short_ids: List[int]) -> Tuple[float, int]:
+        oldest_removed_short_id = 0
+        removed_short_id_count = 0
+        for short_id in short_ids:
+            if short_id in self._short_id_to_time_removed:
+                removed_short_id_count += 1
+                if oldest_removed_short_id < self._short_id_to_time_removed[short_id]:
+                    oldest_removed_short_id = self._short_id_to_time_removed[short_id]
+        return oldest_removed_short_id, removed_short_id_count
 
     def _dump_removed_short_ids(self) -> int:
         if self._removed_short_ids:
@@ -1316,29 +1353,39 @@ class TransactionService:
         )
 
         current_time = time.time()
-        history_len_before = len(self._tx_hash_to_time_removed)
-
+        tx_hash_history_len_before = len(self._tx_hash_to_time_removed)
         if self._tx_hash_to_time_removed:
-
             oldest_tx = next(iter(self._tx_hash_to_time_removed))
-
             while (self._tx_hash_to_time_removed and
                    ((current_time - self._tx_hash_to_time_removed[oldest_tx] > self._removed_txs_expiration_time_s) or
                     len(self._tx_hash_to_time_removed) > constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT)):
-
                 del self._tx_hash_to_time_removed[oldest_tx]
-
                 if not self._tx_hash_to_time_removed:
                     break
-
                 oldest_tx = next(iter(self._tx_hash_to_time_removed))
+        tx_hash_history_len_after = len(self._tx_hash_to_time_removed)
 
-        history_len_after = len(self._tx_hash_to_time_removed)
+        short_id_history_len_before = len(self._short_id_to_time_removed)
+        if self._short_id_to_time_removed:
+            oldest_short_id = next(iter(self._short_id_to_time_removed))
+            while (self._short_id_to_time_removed and
+                   ((current_time - self._short_id_to_time_removed[oldest_short_id] >
+                     self._removed_txs_expiration_time_s) or
+                    len(self._short_id_to_time_removed) > constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT)):
+                del self._short_id_to_time_removed[oldest_short_id]
+                if not self._short_id_to_time_removed:
+                    break
+                oldest_short_id = next(iter(self._short_id_to_time_removed))
+        short_id_history_len_after = len(self._short_id_to_time_removed)
+
         logger.trace(
-            "Finished cleanup transaction cache history. Size before: {}. "
-            "Size after: {}.",
-            history_len_before,
-            history_len_after
+            "Finished cleanup transaction cache history. "
+            "tx_hash size before: {}, size after: {}."
+            "short_id size before: {}, size after: {}.",
+            tx_hash_history_len_before,
+            tx_hash_history_len_after,
+            short_id_history_len_before,
+            short_id_history_len_after
         )
 
         return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S

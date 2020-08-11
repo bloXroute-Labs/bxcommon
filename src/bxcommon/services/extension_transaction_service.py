@@ -59,6 +59,9 @@ class ExtensionTransactionService(TransactionService):
         self._tx_hash_to_time_removed = MapProxy(
             self.proxy.tx_hash_to_time_removed(), raw_encoder, raw_encoder
         )
+        self._short_id_to_time_removed = MapProxy(
+            self.proxy.short_id_to_time_removed(), raw_encoder, raw_encoder
+        )
 
     def track_seen_short_ids(self, block_hash, short_ids: List[int]) -> None:
         start_datetime = datetime.now()
@@ -285,6 +288,22 @@ class ExtensionTransactionService(TransactionService):
         else:
             return memory_utils.ObjectType.BASE
 
+    def get_oldest_removed_tx_hash(self, tx_hashes: List[Sha256Hash]) -> float:
+        oldest_removed_tx_hash = 0
+        for tx_hash in tx_hashes:
+            if tx_hash in self._tx_hash_to_time_removed and \
+                    oldest_removed_tx_hash < self._tx_hash_to_time_removed[tx_hash]:
+                oldest_removed_tx_hash = self._tx_hash_to_time_removed[tx_hash]
+        return oldest_removed_tx_hash
+
+    def get_oldest_removed_short_id(self, short_ids: List[int]) -> float:
+        oldest_removed_short_id = 0
+        for short_id in short_ids:
+            if short_id in self._short_id_to_time_removed and \
+                    oldest_removed_short_id < self._short_id_to_time_removed[short_id]:
+                oldest_removed_short_id = self._short_id_to_time_removed[short_id]
+        return oldest_removed_short_id
+
     def _tx_hash_to_cache_key(self, transaction_hash) -> tpe.Sha256:  # pyre-ignore
         if isinstance(transaction_hash, Sha256Hash):
             return tpe.Sha256(tpe.InputBytes(transaction_hash.binary))
@@ -342,16 +361,26 @@ class ExtensionTransactionService(TransactionService):
             "number: {}.",
             self.network_num
         )
-        history_len_before = len(self._tx_hash_to_time_removed)
+        current_time = time.time()
+        tx_hash_history_len_before = len(self._tx_hash_to_time_removed)
         self._tx_hash_to_time_removed.map_obj.cleanup_removed_hashes_history(
-            time.time(), self._removed_txs_expiration_time_s, constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT
+            current_time, self._removed_txs_expiration_time_s, constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT
         )
-        history_len_after = len(self._tx_hash_to_time_removed)
+        tx_hash_history_len_after = len(self._tx_hash_to_time_removed)
+
+        short_id_history_len_before = len(self._short_id_to_time_removed)
+        self._short_id_to_time_removed.map_obj.cleanup_removed_short_ids_history(
+            current_time, self._removed_txs_expiration_time_s, constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT
+        )
+        short_id_history_len_after = len(self._short_id_to_time_removed)
         logger.trace(
-            "Finished cleanup transaction cache history. Size before: {}. "
-            "Size after: {}.",
-            history_len_before,
-            history_len_after
+            "Finished cleanup transaction cache history. "
+            "tx_hash size before: {}, size after: {}."
+            "short_id size before: {}, size after: {}.",
+            tx_hash_history_len_before,
+            tx_hash_history_len_after,
+            short_id_history_len_before,
+            short_id_history_len_after
         )
 
         return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S
