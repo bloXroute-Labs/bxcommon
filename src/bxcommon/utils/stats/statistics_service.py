@@ -175,7 +175,10 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
         Assume that record_fn is a read-only function and its okay to get somewhat stale data.
         """
         assert self.node is not None
-        alive = self.sleep_and_check_alive(self.interval)
+
+        # align all nodes to write statistics at the same time (clock half hour)
+        next_clock_half_hour = ((int(time.time() / 60 / 30) + 1) * (60 * 30)) - time.time()
+        alive = self.sleep_and_check_alive(next_clock_half_hour)
         while alive:
             start_date_time = datetime.utcnow()
             start_time = time.time()
