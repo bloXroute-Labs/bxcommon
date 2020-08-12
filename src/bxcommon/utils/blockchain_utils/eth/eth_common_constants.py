@@ -96,3 +96,9 @@ EIP155_CHAIN_ID_OFFSET = 35
 
 ETH_DEFAULT_BLOCK_SIZE = 100000
 ETH_MINIMAL_SUB_TASK_TX_COUNT = 100
+
+# skip transaction messages for 30s if they're greater than 30k in size
+# Geth packs sync messages to 100k, should check other implementations
+# these sync messages are usually useless to the BDN
+ETH_SKIP_TRANSACTIONS_LEAD_TIME_S = 30
+ETH_SKIP_TRANSACTIONS_SIZE = 30000
