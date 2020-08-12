@@ -221,6 +221,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
                 tx_content_short_ids.short_ids,
                 tx_content_short_ids.short_id_flags
             ):
+                self.node.sync_short_id_buckets[network_num].incr_short_id(short_id)
                 tx_service.assign_short_id(tx_hash, short_id)
                 if QuotaType.PAID_DAILY_QUOTA in quota_type:
                     tx_service.set_short_id_quota_type(short_id, quota_type)
@@ -577,7 +578,14 @@ class InternalNodeConnection(AbstractConnection[Node]):
             # pyre-fixme[6]: Expected `str` for 1st param but got `int`.
             sync_data[network_num] = network_stats
 
-        logger.debug({"type": "TxSyncMetrics", "data": sync_data})
+        sync_data["short_id_buckets"] = str(self.node.sync_short_id_buckets)
+
+        logger.debug(
+            {
+                "type": "TxSyncMetrics",
+                "data": sync_data
+            }
+        )
         self.node.on_fully_updated_tx_service()
 
     def mark_for_close(self, should_retry: Optional[bool] = None):
