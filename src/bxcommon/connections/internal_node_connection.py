@@ -1,6 +1,6 @@
 import time
 from abc import ABCMeta
-from typing import List, Optional, Dict, Set
+from typing import List, Optional, Dict, Set, Any
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection, Node
@@ -566,7 +566,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
             "TxSync complete. It took {:.3f} seconds to complete transaction state with BDN.",
             duration
         )
-        sync_data = {"peer_id": self.peer_id, "duration": duration}
+        sync_data: Dict[str, Any] = {"peer_id": self.peer_id, "duration": duration}
         for network_num, sync_metrics in self.node.sync_metrics.items():
             tx_service = self.node.get_tx_service(network_num)
             network_stats = dict(sync_metrics)
@@ -578,7 +578,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
             # pyre-fixme[6]: Expected `str` for 1st param but got `int`.
             sync_data[network_num] = network_stats
 
-        sync_data["short_id_buckets"] = str(self.node.sync_short_id_buckets)
+        sync_data["short_id_buckets"] = self.node.sync_short_id_buckets
 
         logger.debug(
             {
