@@ -80,6 +80,10 @@ class BlockStatEventType:
         "EncBlockCompressedTxsRequestSentToTxRelay")
     ENC_BLOCK_COMPRESSED_TXS_REQUEST_PROCESSED_BY_TX_RELAY = StatEventTypeSettings(
         "EncBlockCompressedTxsRequestProcessedByTxRelay")
+    ENC_BLOCK_COMPRESSED_TXS_REQUEST_TXS_NOT_FOUND_BY_TX_RELAY = StatEventTypeSettings(
+        "EncBlockCompressedTxsRequestTxsNotFoundByTxRelay")
+    ENC_BLOCK_COMPRESSED_TXS_SENT_TO_RELAYS = StatEventTypeSettings("EncBlockCompressedTxsSentToRelays")
+    ENC_BLOCK_COMPRESSED_TXS_RECEIVED_BY_RELAY = StatEventTypeSettings("EncBlockCompressedTxsReceivedByRelay")
     ENC_BLOCK_COMPRESSED_TXS_SENT_TO_GATEWAYS = StatEventTypeSettings("EncBlockCompressedTxsSentToGateways")
     ENC_BLOCK_COMPRESSED_TXS_RECEIVED_BY_GATEWAY = StatEventTypeSettings("EncBlockCompressedTxsReceivedByGateway")
 

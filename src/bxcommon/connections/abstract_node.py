@@ -39,6 +39,7 @@ from bxcommon.utils.stats.node_info_service import node_info_statistics
 from bxcommon.utils.stats.node_statistics_service import node_stats_service
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
+from bxcommon.utils.transaction_short_id_buckets import TransactionShortIdBuckets
 from bxutils import log_messages
 from bxutils import logging
 from bxutils.exceptions.connection_authentication_error import \
@@ -127,6 +128,7 @@ class AbstractNode:
 
         self.start_sync_time: Optional[float] = None
         self.sync_metrics: Dict[int, Counter] = defaultdict(Counter)
+        self.sync_short_id_buckets: Dict[int, TransactionShortIdBuckets] = defaultdict(TransactionShortIdBuckets)
 
         opts.has_fully_updated_tx_service = False
 
