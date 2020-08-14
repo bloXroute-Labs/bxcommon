@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_node import AbstractNode
 
+logger = logging.get_logger(__name__)
 network_troubleshooting_logger = logging.get_logger(LogRecordType.NetworkTroubleshooting, __name__)
 
 
@@ -26,8 +27,10 @@ class SocketConnectionProtocol(AbstractSocketConnectionProtocol, BufferedProtoco
 
     # pylint: disable=arguments-differ
     def get_buffer(self, _sizehint: int):
+        logger.trace("[{}] - get_buffer {}.", self, _sizehint)
         return self._receive_buf
 
     def buffer_updated(self, nbytes: int) -> None:
         if self.is_receivable():
+            logger.trace("[{}] - buffer_updated {}.", self, nbytes)
             self._node.on_bytes_received(self.file_no, self._receive_buf[:nbytes])

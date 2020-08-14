@@ -31,7 +31,6 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
     is_ssl: bool
     _node: "AbstractNode"
     _should_retry: bool
-    _initial_bytes: Optional[int]  # bytes for message tracker to ignore for handshake
     _receive_buf: bytearray = bytearray(constants.RECV_BUFSIZE)
 
     def __init__(
@@ -109,8 +108,9 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         logger.debug("[{}] - resumed writing.", self)
 
     def send(self) -> None:
+        # TODO: send should buffer together multiple pending buffers and write\
+        #  them together to the Transport.
         total_bytes_sent = 0
-        total_bytes_attempted_to_send = 0
 
         conn = self._node.connection_pool.get_by_fileno(self.file_no)
 
@@ -124,26 +124,22 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
 
             transport = self.transport
             assert transport is not None, "Connection is broken!"
-
-            transport_buffer_size = transport.get_write_buffer_size()
-            total_transport_buffer_size = transport_buffer_size + len(data)
-            if self._initial_bytes is None:
-                self._initial_bytes = transport_buffer_size
-
+            # note: transport.write() is non blocking and accepts any length of data
+            #       even if data is crossing the buffer high limit (will cause a pause)
+            bytes_to_send = len(data)
+            # pyre-fixme[16]: `Transport` has no attribute `get_write_buffer_limits`.
+            buffer_limits = transport.get_write_buffer_limits()
+            logger.trace(
+                "[{}] - about to send {} bytes, current buffer used {} with limits {}",
+                self,
+                bytes_to_send,
+                transport.get_write_buffer_size(),
+                        buffer_limits
+            )
             transport.write(data)
-            conn.advance_sent_bytes(len(data))
-            total_bytes_attempted_to_send += len(data)
-
-            bytes_sent = total_transport_buffer_size - transport.get_write_buffer_size()
-            total_bytes_sent += bytes_sent
-
-            initial_bytes = self._initial_bytes
-            assert initial_bytes is not None
-            remaining_initial_bytes = max(0, initial_bytes - bytes_sent)
-            bytes_sent -= initial_bytes
-            self._initial_bytes = remaining_initial_bytes
-
-            conn.advance_bytes_written_to_socket(bytes_sent)
+            conn.advance_sent_bytes(bytes_to_send)
+            conn.advance_bytes_written_to_socket(bytes_to_send)
+            total_bytes_sent += bytes_to_send
 
         if total_bytes_sent:
             logger.trace("[{}] - sent {} bytes", self, total_bytes_sent)
