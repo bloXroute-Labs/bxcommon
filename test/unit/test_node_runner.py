@@ -11,14 +11,12 @@ from bxcommon.models.node_type import NodeType
 from bxcommon.test_utils import helpers
 from bxcommon.utils import config
 from bxcommon.common_opts import CommonOpts
-from bxcommon.utils import cli
 
 from bxutils.logging import log_config
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
 from bxutils.services.node_ssl_service import NodeSSLService
 
-from bxcommon.utils.init_task import AbstractInitTask
 
 class NodeMock:
     NODE_TYPE = NodeType.EXTERNAL_GATEWAY
@@ -118,7 +116,6 @@ class TestNodeRunner(AbstractTestCase):
         node_runner.run_node("", self.opts, get_mock_node, NodeType.RELAY)
         self.assertEqual(self.event_loop_mock.run_count, 1)
 
-
     @mock.patch("bxcommon.utils.cli.get_argument_parser")
     @mock.patch("bxcommon.utils.cli.parse_arguments")
     @mock.patch("bxcommon.services.sdn_http_service.fetch_blockchain_networks")
@@ -127,45 +124,28 @@ class TestNodeRunner(AbstractTestCase):
     @mock.patch("bxcommon.services.sdn_http_service.register_node")
     @mock.patch("bxcommon.utils.config.log_pid")
     def test_run_node_init_tasks(
-            self,
-            log_pid_mock,
-            register_node_mock,
-            create_event_loop_mock,
-            fetch_account_model_mock,
-            fetch_blockchain_networks_mock,
-            get_argument_parser_mock,
-            parse_arguments_mock,
+        self,
+        log_pid_mock,
+        register_node_mock,
+        create_event_loop_mock,
+        fetch_account_model_mock,
+        fetch_blockchain_networks_mock,
+        get_argument_parser_mock,
+        parse_arguments_mock,
     ):
         log_pid_mock.return_value = None
         node_runner._init_ssl_service = MagicMock()
         create_event_loop_mock.return_value = self.event_loop_mock
-        register_node_mock.return_value = NodeModel(external_ip="1.1.1.1", external_port=1234, node_type=NodeType.RELAY)
+        register_node_mock.return_value = NodeModel(
+            external_ip="1.1.1.1", external_port=1234, node_type=NodeType.RELAY
+        )
         fetch_account_model_mock.return_value = None
         fetch_blockchain_networks_mock.return_value = [self.blockchain_network]
         get_argument_parser_mock.return_value = argparse.ArgumentParser()
         parse_arguments_mock.return_value = self.opts
         node_runner._init_ssl_service = MagicMock()
-        node_runner.run_node("", self.opts, get_mock_node, NodeType.RELAY,
-                             node_init_tasks=[
-                                 init_task_1,
-                                 init_task_2,
-                                 InitTask1(order=10),
-                                 InitTask1(order=30),
-                                 InitTask1(order=130)
-                             ])
+        node_runner.run_node(
+            "", self.opts, get_mock_node, NodeType.RELAY, node_init_tasks=None
+        )
         self.assertEqual(self.opts.blockchain_networks, [self.blockchain_network])
         self.assertEqual(self.event_loop_mock.run_count, 1)
-
-
-class InitTask1(AbstractInitTask):
-    def action(self, opts=None, node_ssl_service=None):
-        pass
-
-
-class InitTask2(AbstractInitTask):
-    def action(self, opts=None, node_ssl_service=None):
-        pass
-
-
-init_task_1 = InitTask1()
-init_task_2 = InitTask2(init_task_1)
