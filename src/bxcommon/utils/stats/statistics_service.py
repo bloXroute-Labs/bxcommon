@@ -22,15 +22,11 @@ if TYPE_CHECKING:
 
 
 class StatsIntervalData:
-    node: "AbstractNode"
-    node_id: str
     start_time: datetime
     end_time: Optional[datetime]
     _closed: bool
 
-    def __init__(self, node: "AbstractNode", node_id: str) -> None:
-        self.node = node
-        self.node_id = node_id
+    def __init__(self,) -> None:
         self.start_time = datetime.utcnow()
         self.end_time = None
 
@@ -54,7 +50,7 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
     name: str
     log_level: LogLevel
     logger: CustomLogger
-    interval_data: Optional[T]
+    interval_data: T
     interval: int
     reset: bool
 
@@ -72,7 +68,7 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
         self.name = name
         self.log_level = log_level
         self.logger = stat_logger
-        self.interval_data = None
+        self.interval_data = self.get_interval_data_class()()
         self.interval = interval
         self.reset = reset
 
@@ -89,22 +85,16 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
 
     def set_node(self, node: N) -> None:
         self.node = node
+        # reset the interval data
         self.create_interval_data_object()
 
     def create_interval_data_object(self) -> None:
-        assert self.node is not None
-        # pyre-fixme[6]: Expected `AbstractNode` for 1st param but got
-        #  `Optional[Variable[N (bound to AbstractNode)]]`.
-        # pyre-fixme[16]: `Optional` has no attribute `opts`.
-        self.interval_data = self.get_interval_data_class()(self.node, self.node.opts.node_id)
+        self.interval_data = self.get_interval_data_class()()
 
     def close_interval_data(self) -> None:
         assert self.node is not None
         assert self.interval_data is not None
-        # pyre-fixme[16]: `Optional` has no attribute `close`.
         self.interval_data.close()
-        # pyre-fixme[6]: Expected `T` for 1st param but got `Optional[Variable[T
-        #  (bound to StatsIntervalData)]]`.
         self.history.append(self.interval_data)
 
     def flush_info(self) -> int:
@@ -174,7 +164,8 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
         """
         Assume that record_fn is a read-only function and its okay to get somewhat stale data.
         """
-        assert self.node is not None
+        node = self.node
+        assert node is not None
 
         # align all nodes to write statistics at the same time (clock half hour)
         next_clock_half_hour = ((int(time.time() / 60 / 30) + 1) * (60 * 30)) - time.time()
@@ -198,8 +189,7 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
                         "start_date_time": start_date_time,
                         "task": self.name,
                         "duration": runtime,
-                        # pyre-fixme[16]: `Optional` has no attribute `opts`.
-                        "node_id": self.node.opts.node_id,
+                        "node_id": node.opts.node_id,
                     }
                 )
             sleep_time = self.interval - runtime

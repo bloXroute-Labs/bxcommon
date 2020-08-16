@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 class MemoryStatsIntervalData(StatsIntervalData):
     class_mem_stats: Dict[str, ClassMemStats]
 
-    def __init__(self, *args, **kwargs) -> None:
-        super(MemoryStatsIntervalData, self).__init__(*args, **kwargs)
+    def __init__(self,) -> None:
+        super(MemoryStatsIntervalData, self).__init__()
         self.class_mem_stats = defaultdict(ClassMemStats)
 
 
@@ -101,9 +101,9 @@ class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "Abs
         return payload
 
     def flush_info(self) -> int:
-        assert self.node is not None
-        # pyre-fixme[16]: Optional type has no attribute `dump_memory_usage`.
-        self.node.dump_memory_usage()
+        node = self.node
+        assert node is not None
+        node.dump_memory_usage()
         return super(MemoryStatsService, self).flush_info()
 
     def increment_mem_stats(
