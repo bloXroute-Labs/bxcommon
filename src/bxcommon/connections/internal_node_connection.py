@@ -1,11 +1,12 @@
 import time
 from abc import ABCMeta
-from typing import List, Optional, Dict, Set, Any
+from typing import List, Optional, Dict, Set, Any, cast
 
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection, Node
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
+from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.blocks_short_ids_serializer import BlockShortIds
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
@@ -56,19 +57,26 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.message_factory = bloxroute_message_factory
         self.protocol_version = self.version_manager.CURRENT_PROTOCOL_VERSION
 
-        self.ping_message = PingMessage()
         self.pong_message = PongMessage()
         self.ack_message = AckMessage()
 
         self.can_send_pings = True
+        self.pong_timeout_enabled = True
+
         self.ping_message_timestamps = ExpiringDict(
             self.node.alarm_queue,
             constants.REQUEST_EXPIRATION_TIME,
             f"{str(self)}_ping_timestamps"
         )
+
         self._sync_ping_latencies: Dict[int, Optional[float]] = {}
         self._nonce_to_network_num: Dict[int, int] = {}
         self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)
+
+    def ping_message(self) -> AbstractMessage:
+        nonce = nonce_generator.get_nonce()
+        self.ping_message_timestamps.add(nonce, time.time())
+        return PingMessage(nonce)
 
     def disable_buffering(self):
         """
@@ -146,6 +154,12 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
         return versioned_msg
 
+    def check_ping_latency_for_network(self, network_num: int) -> None:
+        ping_message = cast(PingMessage, self.ping_message())
+        self.enqueue_msg(ping_message)
+        self._nonce_to_network_num[ping_message.nonce()] = network_num
+        self._sync_ping_latencies[network_num] = None
+
     def msg_hello(self, msg):
         super(InternalNodeConnection, self).msg_hello(msg)
 
@@ -161,7 +175,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
             return
 
         self.network_num = network_num
-        self.node.alarm_queue.register_alarm(self.ping_interval_s, self.send_ping)
+
+        self.schedule_pings()
 
     def peek_broadcast_msg_network_num(self, input_buffer):
 
@@ -169,14 +184,6 @@ class InternalNodeConnection(AbstractConnection[Node]):
             return constants.DEFAULT_NETWORK_NUM
 
         return BroadcastMessage.peek_network_num(input_buffer)
-
-    def send_ping(self):
-        """
-        Send a ping (and reschedule if called from alarm queue)
-        """
-        if self._send_ping() is not None:
-            return self.ping_interval_s
-        return constants.CANCEL_ALARMS
 
     # pylint: disable=arguments-differ
     def msg_ping(self, msg: PingMessage):
@@ -191,9 +198,16 @@ class InternalNodeConnection(AbstractConnection[Node]):
         if nonce in self.ping_message_timestamps.contents:
             request_msg_timestamp = self.ping_message_timestamps.contents[nonce]
             request_response_time = time.time() - request_msg_timestamp
+
             if nonce in self._nonce_to_network_num:
                 self._sync_ping_latencies[self._nonce_to_network_num[nonce]] = request_response_time
-            self.log_debug("Pong for nonce {} had response time: {}", msg.nonce(), request_response_time)
+
+            self.log_debug(
+                "Ping/pong exchange nonce {} took {:.2f} seconds to complete.",
+                msg.nonce(),
+                request_response_time
+            )
+
             hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
         elif nonce is not None:
             self.log_debug("Pong message had no matching ping request. Nonce: {}", nonce)
@@ -302,10 +316,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
                     tx_count=len(txs_content_short_ids)
                 )
                 self.enqueue_msg(TxServiceSyncTxsMessage(network_num, txs_content_short_ids))
-                nonce = self._send_ping()
-                if nonce is not None:
-                    self._nonce_to_network_num[nonce] = network_num
-                    self._sync_ping_latencies[network_num] = None
+                self.check_ping_latency_for_network(network_num)
                 duration += time.time() - start
                 msgs_count += 1
                 total_tx_count += len(txs_content_short_ids)
@@ -397,10 +408,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
                     tx_count=len(txs_content_short_ids)
                 )
                 self.enqueue_msg(TxServiceSyncTxsMessage(network_num, txs_content_short_ids))
-                nonce = self._send_ping()
-                if nonce is not None:
-                    self._nonce_to_network_num[nonce] = network_num
-                    self._sync_ping_latencies[network_num] = None
+                self.check_ping_latency_for_network(network_num)
                 duration += time.time() - start
                 msgs_count += 1
                 total_tx_count += len(txs_content_short_ids)
@@ -503,10 +511,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
                     tx_count=txs_count
                 )
                 self.enqueue_msg(txs_msg)
-                nonce = self._send_ping()
-                if nonce is not None:
-                    self._nonce_to_network_num[nonce] = network_num
-                    self._sync_ping_latencies[network_num] = None
+                self.check_ping_latency_for_network(network_num)
                 duration += time.time() - start
                 msgs_count += 1
                 total_tx_count += txs_count
@@ -591,15 +596,3 @@ class InternalNodeConnection(AbstractConnection[Node]):
     def mark_for_close(self, should_retry: Optional[bool] = None):
         super(InternalNodeConnection, self).mark_for_close(should_retry)
         self.cancel_pong_timeout()
-
-    def _send_ping(self) -> Optional[int]:
-        if self.can_send_pings and self.is_alive():
-            nonce = nonce_generator.get_nonce()
-            msg = PingMessage(nonce=nonce)
-            self.enqueue_msg(msg)
-            self.ping_message_timestamps.add(nonce, time.time())
-
-            self.schedule_pong_timeout()
-            return nonce
-        else:
-            return None

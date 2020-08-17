@@ -55,6 +55,9 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
         return f"MockConnection<file_no: {self.file_no}, address: ({self.peer_ip}, {self.peer_port}), " \
             f"network_num: {self.network_num}>"
 
+    def ping_message(self) -> AbstractMessage:
+        pass
+
     def add_received_bytes(self, bytes_received):
         self.inputbuf.add_bytes(bytes_received)
         self.mark_for_close()

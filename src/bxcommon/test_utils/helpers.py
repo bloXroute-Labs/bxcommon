@@ -2,6 +2,7 @@ import asyncio
 import os
 import socket
 import sys
+import uuid
 from argparse import Namespace
 from contextlib import closing
 from typing import Optional, TypeVar, Type, TYPE_CHECKING, List
@@ -54,6 +55,10 @@ def generate_hash() -> bytearray:
 
 def generate_object_hash() -> Sha256Hash:
     return Sha256Hash(generate_hash())
+
+
+def generate_node_id() -> str:
+    return str(uuid.uuid4())
 
 
 Connection = TypeVar("Connection", bound="AbstractConnection")

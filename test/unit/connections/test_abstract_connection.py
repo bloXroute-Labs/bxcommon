@@ -1,5 +1,6 @@
 from mock import MagicMock
 
+from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
@@ -28,9 +29,11 @@ class AbstractConnectionTest(AbstractTestCase):
             self.hello_messages = BLOXROUTE_HELLO_MESSAGES
             self.header_size = constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF
             self.message_factory = AbstractConnectionTest.TestMessageFactory()
-            self.ping_message = PingMessage()
             self.pong_message = PongMessage()
             self.ack_message = AckMessage()
+
+        def ping_message(self) -> AbstractMessage:
+            return PingMessage()
 
     def setUp(self):
         self.connection = create_connection(self.TestAbstractConnection)
@@ -110,3 +113,25 @@ class AbstractConnectionTest(AbstractTestCase):
     def test_msg_pong(self):
         self.connection.msg_pong(PongMessage())
         self.assertTrue(self.connection.outputbuf.length == 0)
+
+    def test_ping_pong_cant_send_pings(self):
+        self.connection.enqueue_msg = MagicMock()
+        self.connection.can_send_pings = False
+
+        self.connection.schedule_pings()
+        self.assertIsNone(self.connection.ping_alarm_id)
+
+        result = self.connection.send_ping()
+        self.connection.enqueue_msg.assert_not_called()
+        self.assertEqual(constants.CANCEL_ALARMS, result)
+
+    def test_ping_pong_send_pings(self):
+        self.connection.enqueue_msg = MagicMock()
+        self.connection.can_send_pings = True
+
+        self.connection.schedule_pings()
+        self.assertIsNotNone(self.connection.ping_alarm_id)
+
+        result = self.connection.send_ping()
+        self.connection.enqueue_msg.assert_called_once_with(PingMessage())
+        self.assertEqual(self.connection.ping_interval_s, result)
