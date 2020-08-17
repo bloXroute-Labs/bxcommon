@@ -167,9 +167,10 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
         node = self.node
         assert node is not None
 
-        # align all nodes to write statistics at the same time (clock half hour)
-        next_clock_half_hour = ((int(time.time() / 60 / 30) + 1) * (60 * 30)) - time.time()
-        alive = self.sleep_and_check_alive(next_clock_half_hour)
+        # align all nodes to write statistics at the same time (clock interval)
+        next_clock_interval = ((int(time.time() / self.interval) + 1) * self.interval) - time.time()
+        alive = self.sleep_and_check_alive(next_clock_interval)
+
         while alive:
             start_date_time = datetime.utcnow()
             start_time = time.time()
@@ -180,7 +181,6 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
                 self.logger.error(
                     log_messages.FAILURE_RECORDING_STATS, self.name, e, traceback.format_exc()
                 )
-                runtime = 0
             else:
                 runtime = time.time() - start_time
                 task_duration_logger.statistics(
@@ -192,5 +192,7 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
                         "node_id": node.opts.node_id,
                     }
                 )
-            sleep_time = self.interval - runtime
-            alive = self.sleep_and_check_alive(sleep_time)
+
+            # align all nodes to write statistics at the same time (clock interval)
+            next_clock_sleep_time = ((int(time.time() / self.interval) + 1) * self.interval) - time.time()
+            alive = self.sleep_and_check_alive(next_clock_sleep_time)
