@@ -1,5 +1,6 @@
 import socket
 import typing
+import sys
 from asyncio import BaseTransport, Transport, BaseProtocol
 from typing import TYPE_CHECKING, Optional
 
@@ -208,5 +209,6 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             return transport.get_write_buffer_size()
 
     def enable_tcp_quickack(self):
-        sock = self.transport.get_extra_info("socket")
-        sock.setsockopt(socket.SOL_SOCKET, SO_QUICKACK, 1)
+        if "linux" in sys.platform:
+            sock = self.transport.get_extra_info("socket")
+            sock.setsockopt(socket.SOL_SOCKET, SO_QUICKACK, 1)
