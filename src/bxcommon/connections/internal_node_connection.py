@@ -193,7 +193,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
             request_response_time = time.time() - request_msg_timestamp
             if nonce in self._nonce_to_network_num:
                 self._sync_ping_latencies[self._nonce_to_network_num[nonce]] = request_response_time
-            self.log_trace("Pong for nonce {} had response time: {}", msg.nonce(), request_response_time)
+            self.log_debug("Pong for nonce {} had response time: {}", msg.nonce(), request_response_time)
             hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
         elif nonce is not None:
             self.log_debug("Pong message had no matching ping request. Nonce: {}", nonce)

@@ -34,3 +34,4 @@ class SocketConnectionProtocol(AbstractSocketConnectionProtocol, BufferedProtoco
         if self.is_receivable():
             logger.trace("[{}] - buffer_updated {}.", self, nbytes)
             self._node.on_bytes_received(self.file_no, self._receive_buf[:nbytes])
+        self.enable_tcp_quickack()

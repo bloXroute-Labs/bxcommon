@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 logger = logging.get_logger(__name__)
 network_troubleshooting_logger = logging.get_logger(LogRecordType.NetworkTroubleshooting, __name__)
+SO_QUICKACK = 12
 
 
 class AbstractSocketConnectionProtocol(BaseProtocol):
@@ -64,6 +65,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         sock = transport.get_extra_info("socket")
         self.file_no = sock.fileno()
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        self.enable_tcp_quickack()
 
         if self.direction == NetworkDirection.INBOUND:
             self.endpoint = IpEndpoint(
@@ -143,6 +145,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
 
         if total_bytes_sent:
             logger.trace("[{}] - sent {} bytes", self, total_bytes_sent)
+            self.enable_tcp_quickack()
 
     def pause_reading(self) -> None:
         if self.is_alive():
@@ -203,3 +206,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             return 0
         else:
             return transport.get_write_buffer_size()
+
+    def enable_tcp_quickack(self):
+        sock = self.transport.get_extra_info("socket")
+        sock.setsockopt(socket.SOL_SOCKET, SO_QUICKACK, 1)

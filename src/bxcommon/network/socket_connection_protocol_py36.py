@@ -18,3 +18,4 @@ class SocketConnectionProtocolPy36(AbstractSocketConnectionProtocol, Protocol):
     def data_received(self, data: bytes) -> None:
         if self.is_receivable():
             self._node.on_bytes_received(self.file_no, data)
+        self.enable_tcp_quickack()
