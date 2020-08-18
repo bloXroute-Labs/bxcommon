@@ -596,3 +596,13 @@ class InternalNodeConnection(AbstractConnection[Node]):
     def mark_for_close(self, should_retry: Optional[bool] = None):
         super(InternalNodeConnection, self).mark_for_close(should_retry)
         self.cancel_pong_timeout()
+
+    def is_gateway_connection(self):
+        return self.CONNECTION_TYPE in ConnectionType.GATEWAY
+
+    def is_external_gateway_connection(self):
+        # self.CONNECTION_TYPE == ConnectionType.GATEWAY is equal True only for V1 gateways
+        return self.CONNECTION_TYPE == ConnectionType.EXTERNAL_GATEWAY
+
+    def is_relay_connection(self):
+        return self.CONNECTION_TYPE in ConnectionType.RELAY_ALL
