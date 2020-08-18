@@ -45,3 +45,5 @@ class BlockchainNetworkModel:
     # Denoted in GWEI for Ethereum
     min_tx_network_fee: int = 0
     min_tx_age_seconds: float = 0.0
+
+    mempool_expected_transactions_count: int = 0
