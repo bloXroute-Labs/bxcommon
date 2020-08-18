@@ -1,7 +1,7 @@
 import time
 from abc import ABCMeta, abstractmethod
 
-from mock import MagicMock
+from mock import MagicMock, patch
 
 from bxcommon import constants
 from bxcommon.constants import NULL_TX_SID

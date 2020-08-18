@@ -741,6 +741,9 @@ class TransactionService:
     def get_tracked_seen_block_count(self) -> int:
         return len(self._short_ids_seen_in_block)
 
+    def get_short_id_assign_time(self, short_id: int) -> float:
+        return self._tx_assignment_expire_queue.queue[short_id]
+
     def expire_old_assignments(self) -> float:
         """
         Clean up expired short ids.
