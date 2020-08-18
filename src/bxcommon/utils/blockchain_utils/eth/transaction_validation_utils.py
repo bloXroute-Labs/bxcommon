@@ -40,10 +40,14 @@ def parse_transaction(tx_bytes: memoryview) -> Optional[Transaction]:
         return None
 
 
-def validate_transaction(tx_bytes: Union[bytearray, memoryview]) -> TxValidationStatus:
+def validate_transaction(
+    tx_bytes: Union[bytearray, memoryview],
+    min_tx_network_fee: int
+) -> TxValidationStatus:
     """
     check if transaction is validated - signature is correct and format is valid
     :param tx_bytes:
+    :param min_tx_network_fee: int
     :return:
     """
     if isinstance(tx_bytes, bytearray):
@@ -52,7 +56,10 @@ def validate_transaction(tx_bytes: Union[bytearray, memoryview]) -> TxValidation
     transaction = parse_transaction(tx_bytes)
     if transaction:
         if verify_eth_transaction_signature(transaction):
-            return TxValidationStatus.VALID_TX
+            if transaction.gas_price >= min_tx_network_fee:
+                return TxValidationStatus.VALID_TX
+            else:
+                return TxValidationStatus.LOW_FEE
         else:
             return TxValidationStatus.INVALID_SIGNATURE
 
