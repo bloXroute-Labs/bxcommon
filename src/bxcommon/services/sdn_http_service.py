@@ -131,6 +131,10 @@ def submit_tx_synced_event(node_id: str):
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_FULLY_SYNCED))
 
 
+def submit_tx_not_synced_event(node_id: str):
+    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_NOT_SYNCED))
+
+
 def submit_notify_online_event(node_id: str):
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.NOTIFY_ONLINE))
 

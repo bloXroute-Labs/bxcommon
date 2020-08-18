@@ -560,7 +560,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         if (
             self.node.NODE_TYPE in NodeType.GATEWAY
             # pylint: disable=unsupported-membership-test
-            and ConnectionType.RELAY_BLOCK in self.CONNECTION_TYPE
+            and ConnectionType.RELAY_BLOCK == self.CONNECTION_TYPE
         ):
             return
         network_num = msg.network_num()

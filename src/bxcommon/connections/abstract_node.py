@@ -124,7 +124,6 @@ class AbstractNode:
         # this way can verify if node lost connection to requested relay.
 
         self.last_sync_message_received_by_network: Dict[int, float] = {}
-        self.network_synced: Dict[int, bool] = defaultdict(lambda: False)
 
         self.start_sync_time: Optional[float] = None
         self.sync_metrics: Dict[int, Counter] = defaultdict(Counter)
@@ -636,7 +635,6 @@ class AbstractNode:
 
     def on_network_synced(self, network_num: int) -> None:
         self.last_sync_message_received_by_network.pop(network_num, None)
-        self.network_synced[network_num] = True
 
     def on_fully_updated_tx_service(self):
         logger.debug(
