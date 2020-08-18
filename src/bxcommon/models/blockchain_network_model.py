@@ -42,3 +42,6 @@ class BlockchainNetworkModel:
     tx_sync_sync_content: bool = constants.GATEWAY_SYNC_SYNC_CONTENT
     enable_network_content_logs: bool = False
     enable_block_compression: bool = True
+    # Denoted in GWEI for Ethereum
+    min_tx_network_fee: int = 0
+    min_tx_age_seconds: float = 0.0
