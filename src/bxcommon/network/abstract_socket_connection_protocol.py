@@ -211,4 +211,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
     def enable_tcp_quickack(self):
         if "linux" in sys.platform:
             sock = self.transport.get_extra_info("socket")
-            sock.setsockopt(socket.SOL_SOCKET, SO_QUICKACK, 1)
+            if sock is None:
+                logger.debug("Socket info is None on connection")
+            else:
+                sock.setsockopt(socket.SOL_SOCKET, SO_QUICKACK, 1)
