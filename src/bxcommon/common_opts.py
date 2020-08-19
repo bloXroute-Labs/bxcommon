@@ -91,6 +91,7 @@ class CommonOpts:
     os_version: str
     sid_expire_time: int
     block_compression_debug: bool
+    enable_tcp_quickack: bool
 
     @classmethod
     def opts_defaults(cls, opts: Namespace) -> Namespace:

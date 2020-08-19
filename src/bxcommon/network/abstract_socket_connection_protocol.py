@@ -66,7 +66,9 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         sock = transport.get_extra_info("socket")
         self.file_no = sock.fileno()
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        self.enable_tcp_quickack()
+
+        if self._node.opts.enable_tcp_quickack:
+            self.enable_tcp_quickack()
 
         if self.direction == NetworkDirection.INBOUND:
             self.endpoint = IpEndpoint(
@@ -146,7 +148,6 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
 
         if total_bytes_sent:
             logger.trace("[{}] - sent {} bytes", self, total_bytes_sent)
-            self.enable_tcp_quickack()
 
     def pause_reading(self) -> None:
         if self.is_alive():

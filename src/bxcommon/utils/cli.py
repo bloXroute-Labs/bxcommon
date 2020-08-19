@@ -150,6 +150,12 @@ def get_argument_parser() -> argparse.ArgumentParser:
         type=convert.str_to_bool,
         default=True
     )
+    arg_parser.add_argument(
+        "--enable-tcp-quickack",
+        help="Enable TCP_QUICKACK so that ACK's are not delayed",
+        type=convert.str_to_bool,
+        default=True
+    )
 
     add_argument_parser_logging(arg_parser)
     add_argument_parser_common(arg_parser)
