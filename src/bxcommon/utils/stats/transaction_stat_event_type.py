@@ -66,3 +66,6 @@ class TransactionStatEventType:
     TX_RELAY_HTTPS_SERVER_REQUEST_IGNORE_SEEN = StatEventTypeSettings(
         "TxRelayHttpsServerRequestIgnoreSeen"
     )
+    TX_VALIDATION_FAILED_GAS_PRICE = StatEventTypeSettings("TxValidationFailedGasPrice")
+    TX_VALIDATION_FAILED_STRUCTURE = StatEventTypeSettings("TxValidationFailedStructure")
+    TX_VALIDATION_FAILED_SIGNATURE = StatEventTypeSettings("TxValidationFailedSignature")
