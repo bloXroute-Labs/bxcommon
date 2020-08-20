@@ -66,12 +66,13 @@ class JSONFormatter(AbstractFormatter):
     def format(self, record):
         return json.dumps(self._format_json(record), cls=EnhancedJSONEncoder)
 
-    def _format_json(self, record: LogRecord) -> Dict[Any, Any]:
-        log_record = {"timestamp": record.__dict__.get("timestamp", datetime.utcnow()),
-                      "level": record.levelname,
-                      "name": record.name,
-                      "pid": os.getpid()
-                      }
+    def _format_json(self, record: LogRecord,) -> Dict[Any, Any]:
+        log_record = {
+            "timestamp": datetime.fromtimestamp(record.created),
+            "level": record.levelname,
+            "name": record.name,
+            "pid": os.getpid()
+        }
         log_record.update({k: v for k, v in record.__dict__.items() if k not in BUILT_IN_ATTRS})
 
         if record.args:
