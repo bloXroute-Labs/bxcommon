@@ -1039,7 +1039,7 @@ class TransactionService:
         if not logger.isEnabledFor(LogLevel.DEBUG) or not self.node.opts.block_compression_debug:
             return
 
-        assert self.network is None
+        assert self.network is not None
         protocol = self.node.opts.blockchain_networks[self.network_num].protocol
 
         # TODO implement in a better way

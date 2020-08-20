@@ -20,7 +20,8 @@ def verify_eth_transaction_signature(transaction: Transaction) -> bool:
         unsigned_msg = transaction.get_unsigned()
         public_key = crypto_utils.recover_public_key(unsigned_msg, signature, keccak_hash)
         return crypto_utils.verify_signature(public_key, signature, keccak_hash(unsigned_msg))
-    except (ValueError, rlp.exceptions.DecodingError):
+    # pylint: disable=broad-except
+    except Exception:
         return False
 
 
@@ -36,7 +37,8 @@ def parse_transaction(tx_bytes: memoryview) -> Optional[Transaction]:
 
         return Transaction(*serializers.deserialize(payload))
 
-    except (ValueError, rlp.exceptions.DecodingError):
+    # pylint: disable=broad-except
+    except Exception:
         return None
 
 

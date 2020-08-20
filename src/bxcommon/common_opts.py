@@ -63,6 +63,7 @@ class CommonOpts:
     log_level_stdout: LogLevel
     sync_tx_service: bool
     data_dir: str
+    transaction_validation: bool
 
     rpc: bool
     rpc_port: int

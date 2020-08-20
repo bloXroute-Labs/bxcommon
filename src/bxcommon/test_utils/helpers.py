@@ -228,6 +228,7 @@ def get_common_opts(
     split_relays: bool = False,
     sid_expire_time: int = 30,
     rpc: bool = False,
+    transaction_validation: bool = True,
     **kwargs,
 ) -> CommonOpts:
     if node_id is None:
@@ -282,6 +283,7 @@ def get_common_opts(
         "ca_cert_url": "https://certificates.blxrbdn.com/ca",
         "private_ssl_base_url": "https://certificates.blxrbdn.com",
         "rpc": rpc,
+        "transaction_validation": transaction_validation
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val
@@ -325,6 +327,15 @@ def get_common_opts(
                 "Ethereum",
                 "Testnet",
                 3,
+                5,
+                5,
+                final_tx_confirmations_count,
+                block_confirmations_count,
+            ),
+            33: blockchain_network(
+                "Ontology",
+                "Mainnet",
+                33,
                 5,
                 5,
                 final_tx_confirmations_count,

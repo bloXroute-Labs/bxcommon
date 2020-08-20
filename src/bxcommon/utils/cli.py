@@ -223,6 +223,12 @@ def add_argument_parser_logging(arg_parser: ArgumentParser):
         choices=list(LogLevel),
         default=LogLevel.NOTSET
     )
+    arg_parser.add_argument(
+        "--transaction-validation",
+        help="Enable transaction validation process",
+        type=convert.str_to_bool,
+        default=True
+    )
 
 
 def add_argument_parser_common(arg_parser: ArgumentParser):
