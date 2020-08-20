@@ -59,7 +59,7 @@ class TestNodeRunner(AbstractTestCase):
             "blockchain_network": self.blockchain_network.network,
             "network_num": self.blockchain_network.network_num,
             "blockchain_protocol": self.blockchain_network.protocol,
-            "blockchain_networks": [self.blockchain_network],
+            "blockchain_networks": {self.blockchain_network.network_num: self.blockchain_network},
             "log_level": LogLevel.INFO,
             "log_format": LogFormat.PLAIN,
             "log_flush_immediately": True,
@@ -139,13 +139,15 @@ class TestNodeRunner(AbstractTestCase):
         register_node_mock.return_value = NodeModel(
             external_ip="1.1.1.1", external_port=1234, node_type=NodeType.RELAY
         )
+        blockchain_networks = {self.blockchain_network.network_num: self.blockchain_network}
+
         fetch_account_model_mock.return_value = None
-        fetch_blockchain_networks_mock.return_value = [self.blockchain_network]
+        fetch_blockchain_networks_mock.return_value = blockchain_networks
         get_argument_parser_mock.return_value = argparse.ArgumentParser()
         parse_arguments_mock.return_value = self.opts
         node_runner._init_ssl_service = MagicMock()
         node_runner.run_node(
             "", self.opts, get_mock_node, NodeType.RELAY, node_init_tasks=None
         )
-        self.assertEqual(self.opts.blockchain_networks, [self.blockchain_network])
+        self.assertEqual(self.opts.blockchain_networks, blockchain_networks)
         self.assertEqual(self.event_loop_mock.run_count, 1)

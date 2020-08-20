@@ -293,8 +293,8 @@ def get_common_opts(
         "outbound_peers": outbound_peers,
         "sid_expire_time": sid_expire_time,
         "split_relays": split_relays,
-        "blockchain_networks": [
-            blockchain_network(
+        "blockchain_networks": {
+            0: blockchain_network(
                 "Bitcoin",
                 "Mainnet",
                 0,
@@ -302,8 +302,8 @@ def get_common_opts(
                 15,
                 final_tx_confirmations_count,
                 block_confirmations_count,
-            ),
-            blockchain_network(
+                ),
+            1: blockchain_network(
                 "Bitcoin",
                 "Testnet",
                 1,
@@ -311,8 +311,8 @@ def get_common_opts(
                 15,
                 final_tx_confirmations_count,
                 block_confirmations_count,
-            ),
-            blockchain_network(
+                ),
+            5: blockchain_network(
                 "Ethereum",
                 "Mainnet",
                 5,
@@ -321,7 +321,7 @@ def get_common_opts(
                 final_tx_confirmations_count,
                 block_confirmations_count,
             ),
-            blockchain_network(
+            3: blockchain_network(
                 "Ethereum",
                 "Testnet",
                 3,
@@ -330,7 +330,7 @@ def get_common_opts(
                 final_tx_confirmations_count,
                 block_confirmations_count,
             ),
-        ],
+        },
         "blockchain_network_num": blockchain_network_num,
     })
     return common_opts

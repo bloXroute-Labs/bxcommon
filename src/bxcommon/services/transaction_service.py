@@ -176,6 +176,9 @@ class TransactionService:
         self._tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
         self.tx_hashes_without_short_id = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
         self.tx_hashes_without_content = ExpirationQueue(constants.TX_CONTENT_NO_SID_EXPIRE_S)
+        self.network = None
+        if self.network_num in self.node.opts.blockchain_networks:
+            self.network = self.node.opts.blockchain_networks[self.network_num]
 
         self._final_tx_confirmations_count = self._get_final_tx_confirmations_count()
         self._tx_content_memory_limit = self._get_tx_contents_memory_limit()
@@ -1036,11 +1039,8 @@ class TransactionService:
         if not logger.isEnabledFor(LogLevel.DEBUG) or not self.node.opts.block_compression_debug:
             return
 
-        protocol = ""
-        for blockchain_network in self.node.opts.blockchain_networks:
-            if blockchain_network.network_num == self.network_num:
-                protocol = blockchain_network.protocol
-                break
+        assert self.network is None
+        protocol = self.node.opts.blockchain_networks[self.network_num].protocol
 
         # TODO implement in a better way
         if protocol.lower() == "ethereum":
@@ -1140,12 +1140,13 @@ class TransactionService:
         """
         Returns configuration value of number of block confirmations required before transaction can be removed
         """
-        for blockchain_network in self.node.opts.blockchain_networks:
-            if blockchain_network.network_num == self.network_num:
-                return blockchain_network.final_tx_confirmations_count
+        if self.network:
+            return self.network.final_tx_confirmations_count
 
-        logger.warning(log_messages.UNABLE_TO_DETERMINE_TX_FINAL_CONFIRMATIONS_COUNT,
-                       self.network_num, self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT)
+        logger.warning(
+            log_messages.UNABLE_TO_DETERMINE_TX_FINAL_CONFIRMATIONS_COUNT,
+            self.network_num, self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT
+        )
 
         return self.DEFAULT_FINAL_TX_CONFIRMATIONS_COUNT
 
@@ -1153,12 +1154,13 @@ class TransactionService:
         """
         Returns configuration value of expiration time for transaction hashes removed from cache
         """
-        for blockchain_network in self.node.opts.blockchain_networks:
-            if blockchain_network.network_num == self.network_num:
-                return blockchain_network.removed_transactions_history_expiration_s
+        if self.network:
+            return self.network.removed_transactions_history_expiration_s
 
-        logger.warning(log_messages.UNABLE_TO_DETERMINE_TX_EXPIRATION_TIME,
-                       self.network_num, constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S)
+        logger.warning(
+            log_messages.UNABLE_TO_DETERMINE_TX_EXPIRATION_TIME,
+            self.network_num, constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S
+        )
 
         return constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S
 
@@ -1170,19 +1172,20 @@ class TransactionService:
             # convert MB to bytes
             return int(self.node.opts.transaction_pool_memory_limit * 1024 * 1024)
 
-        for blockchain_network in self.node.opts.blockchain_networks:
-            if blockchain_network.network_num == self.network_num:
-                if blockchain_network.tx_contents_memory_limit_bytes is None:
-                    logger.warning(
-                        log_messages.TX_CACHE_SIZE_LIMIT_NOT_CONFIGURED,
-                        self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
-                    )
-                    return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
-                else:
-                    return blockchain_network.tx_contents_memory_limit_bytes
+        if self.network:
+            if self.network.tx_contents_memory_limit_bytes is None:
+                logger.warning(
+                    log_messages.TX_CACHE_SIZE_LIMIT_NOT_CONFIGURED,
+                    self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
+                )
+                return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
+            else:
+                return self.network.tx_contents_memory_limit_bytes
 
-        logger.warning(log_messages.UNABLE_TO_DETERMINE_TX_MEMORY_LIMIT,
-                       self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES)
+        logger.warning(
+            log_messages.UNABLE_TO_DETERMINE_TX_MEMORY_LIMIT,
+            self.network_num, constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
+        )
         return constants.DEFAULT_TX_CACHE_MEMORY_LIMIT_BYTES
 
     def _tx_hash_to_cache_key(self, transaction_hash: Union[Sha256Hash, bytes, bytearray, memoryview, str]) -> str:

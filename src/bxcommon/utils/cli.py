@@ -314,14 +314,15 @@ def _get_blockchain_network_info(opts) -> BlockchainNetworkModel:
     :param opts: argument list
     """
 
-    for blockchain_network in opts.blockchain_networks:
+    for blockchain_network in opts.blockchain_networks.values():
         if blockchain_network.protocol.lower() == opts.blockchain_protocol.lower() and \
                 blockchain_network.network.lower() == opts.blockchain_network.lower():
             return blockchain_network
 
     if opts.blockchain_networks:
         all_networks_names = "\n".join(
-            map(lambda n: "{} - {}".format(n.protocol, n.network), opts.blockchain_networks))
+            map(lambda n: "{} - {}".format(n.protocol, n.network), opts.blockchain_networks.values())
+        )
         error_msg = "Network number does not exist for blockchain protocol {} and network {}.\nValid options:\n{}" \
             .format(opts.blockchain_protocol, opts.blockchain_network, all_networks_names)
         logger.fatal(error_msg, exc_info=False)

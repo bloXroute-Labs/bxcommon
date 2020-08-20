@@ -494,11 +494,13 @@ class AbstractNode:
         return memory_statistics.flush_info()
 
     def set_node_config_opts_from_sdn(self, opts: CommonOpts) -> None:
-        blockchain_networks: List[BlockchainNetworkModel] = opts.blockchain_networks
-        for blockchain_network in blockchain_networks:
-            tx_stats.configure_network(blockchain_network.network_num,
-                                       blockchain_network.tx_percent_to_log_by_hash,
-                                       blockchain_network.tx_percent_to_log_by_sid)
+        blockchain_networks: Dict[int, BlockchainNetworkModel] = opts.blockchain_networks
+        for blockchain_network in blockchain_networks.values():
+            tx_stats.configure_network(
+                blockchain_network.network_num,
+                blockchain_network.tx_percent_to_log_by_hash,
+                blockchain_network.tx_percent_to_log_by_sid
+            )
         bdn_tx_to_bx_tx.init(blockchain_networks)
 
     def dump_memory_usage(self):

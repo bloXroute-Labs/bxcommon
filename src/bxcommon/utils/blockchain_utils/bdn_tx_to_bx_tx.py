@@ -1,4 +1,4 @@
-from typing import Union, Optional, Dict, Callable, List
+from typing import Union, Optional, Dict, Callable
 
 from bxcommon.exceptions import ParseError
 from bxcommon.messages.bloxroute.tx_message import TxMessage
@@ -17,12 +17,12 @@ protocol_to_bdn_tx_to_bx_tx: Dict[BlockchainProtocol, Callable[
 network_num_to_protocol: Dict[int, str]
 
 
-def init(blockchain_networks: List[BlockchainNetworkModel]):
+def init(blockchain_networks: Dict[int, BlockchainNetworkModel]):
     # pylint: disable=global-statement
     global network_num_to_protocol
     network_num_to_protocol = {}
-    for blockchain_network in blockchain_networks:
-        network_num_to_protocol[blockchain_network.network_num] = blockchain_network.protocol.lower()
+    for network_num, blockchain_network in blockchain_networks.items():
+        network_num_to_protocol[network_num] = blockchain_network.protocol.lower()
 
 
 def bdn_tx_to_bx_tx(

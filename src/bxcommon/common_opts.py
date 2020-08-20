@@ -71,7 +71,7 @@ class CommonOpts:
     rpc_password: str
 
     # set by node runner
-    blockchain_networks: List[BlockchainNetworkModel]
+    blockchain_networks: Dict[int, BlockchainNetworkModel]
     split_relays: bool
     blockchain_network_num: int
     outbound_peers: Set[OutboundPeerModel]
@@ -95,7 +95,7 @@ class CommonOpts:
 
     @classmethod
     def opts_defaults(cls, opts: Namespace) -> Namespace:
-        opts.blockchain_networks = []
+        opts.blockchain_networks = {}
         opts.split_relays = True
         opts.stats_calculate_actual_size = False
         opts.log_detailed_block_stats = False
