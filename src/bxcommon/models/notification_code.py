@@ -10,3 +10,5 @@ class NotificationCodeRange(IntEnum):
 
 class NotificationCode(IntEnum):
     QUOTA_FILL_STATUS = 4000
+    ASSIGNING_SHORT_IDS = 4001
+    NOT_ASSIGNING_SHORT_IDS = 4002
