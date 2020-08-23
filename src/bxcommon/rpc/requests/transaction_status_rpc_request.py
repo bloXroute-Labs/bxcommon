@@ -15,8 +15,7 @@ NETWORK_NUM_KEY = "network_num"
 
 class TransactionStatusRpcRequest(AbstractRpcRequest[Node]):
     help = {
-        "params": f"[Required - {TRANSACTION_HASH_KEY}: Transaction hash to check status of] "
-                  f"[Required on Cloud API - {NETWORK_NUM_KEY}: BDN network number to check]",
+        "params": f"[Required - {TRANSACTION_HASH_KEY}: Transaction hash to check status of] ",
         "description": "Reports status of transaction: "
                        "time received, short id assigned, etc."
     }
