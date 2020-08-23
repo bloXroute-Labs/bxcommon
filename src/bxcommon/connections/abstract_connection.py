@@ -26,7 +26,7 @@ from bxcommon.utils.alarm_queue import AlarmId
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.utils.stats import hooks
+from bxcommon.utils.stats import hooks, stats_format
 from bxutils import log_messages
 from bxutils import logging
 from bxutils.constants import HAS_PREFIX
@@ -280,8 +280,11 @@ class AbstractConnection(Generic[Node]):
         """
         # pylint: disable=too-many-return-statements, too-many-branches, too-many-statements
 
+        logger.debug("START PROCESSING from {}", self)
+
         start_time = time.time()
         messages_processed = defaultdict(int)
+        total_bytes_processed = 0
 
         while True:
             input_buffer_len_before = self.inputbuf.length
@@ -305,6 +308,7 @@ class AbstractConnection(Generic[Node]):
                     break
 
                 msg = self.pop_next_message(payload_len)
+                total_bytes_processed += len(msg.rawbytes())
 
                 # If there was some error in parsing this message, then continue the loop.
                 if msg is None:
@@ -438,6 +442,9 @@ class AbstractConnection(Generic[Node]):
                                                  start_time,
                                                  constants.MSG_HANDLERS_DURATION_WARN_THRESHOLD_S,
                                                  connection=self, count=messages_processed)
+        logger.debug("DONE PROCESSING from {}. Bytes processed: {}. Messages processed: {}. Duration: {}",
+                     self, total_bytes_processed, messages_processed, stats_format.duration(time.time() - start_time))
+
 
     def pop_next_message(self, payload_len):
         """
