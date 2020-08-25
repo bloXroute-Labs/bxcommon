@@ -213,6 +213,9 @@ class InternalNodeConnection(AbstractConnection[Node]):
         # self.CONNECTION_TYPE == ConnectionType.GATEWAY is equal True only for V1 gateways
         return self.CONNECTION_TYPE in ConnectionType.EXTERNAL_GATEWAY or self.CONNECTION_TYPE == ConnectionType.GATEWAY
 
+    def is_internal_gateway_connection(self) -> bool:
+        return self.CONNECTION_TYPE in ConnectionType.INTERNAL_GATEWAY
+
     def is_relay_connection(self):
         return self.CONNECTION_TYPE in ConnectionType.RELAY_ALL
 
