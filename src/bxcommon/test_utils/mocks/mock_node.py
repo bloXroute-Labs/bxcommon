@@ -1,3 +1,4 @@
+from asyncio import Future
 from typing import List, Optional
 
 from mock import MagicMock
@@ -50,10 +51,13 @@ class MockNode(AbstractNode):
     def get_broadcast_service(self) -> BroadcastService:
         pass
 
-    def send_request_for_relay_peers(self):
+    def sync_and_send_request_for_relay_peers(self, network_num: int):
         pass
 
     def build_connection(self, socket_connection: AbstractSocketConnectionProtocol) -> Optional[AbstractConnection]:
+        pass
+
+    def process_potential_relays_from_sdn(self, get_potential_relays_future: Future):
         pass
 
     def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:

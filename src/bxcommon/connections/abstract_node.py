@@ -2,6 +2,7 @@ import asyncio
 import os
 import time
 from abc import ABCMeta, abstractmethod
+from asyncio import Future
 from collections import defaultdict, Counter
 from ssl import SSLContext
 from typing import List, Optional, Tuple, Dict, NamedTuple, Union, Set
@@ -24,6 +25,7 @@ from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketC
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
 from bxcommon.network.socket_connection_state import SocketConnectionState
+from bxcommon.services import sdn_http_service
 from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
 from bxcommon.services.threaded_request_service import ThreadedRequestService
@@ -165,8 +167,32 @@ class AbstractNode:
     def get_broadcast_service(self) -> BroadcastService:
         pass
 
-    @abstractmethod
-    def send_request_for_relay_peers(self):
+    def sync_and_send_request_for_relay_peers(self, network_num: int) -> int:
+        """
+        Requests potential relay peers from SDN. Merges list with provided command line relays.
+
+        This function retrieves from the SDN potential_relay_peers_by_network
+        Then it try to ping for each relay (timeout of 2 seconds). The ping is done in parallel
+        Once there are ping result, it calculate the best relay and decides if need to switch relays
+
+        The above can take time, so the functions is split into several internal functions and use the thread pool
+        not to block the main thread.
+        """
+
+        self.requester.send_threaded_request(
+            sdn_http_service.fetch_potential_relay_peers_by_network,
+            self.opts.node_id,
+            network_num,
+            # pyre-fixme[6]: Expected `Optional[Callable[[Future[Any]], Any]]` for 4th parameter `done_callback`
+            #  to call `send_threaded_request` but got `BoundMethod[Callable(_process_blockchain_network_from_sdn)
+            #  [[Named(self, AbstractRelayConnection), Named(get_blockchain_network_future, Future[Any])], Any],
+            #  AbstractRelayConnection]`.
+            done_callback=self.process_potential_relays_from_sdn
+        )
+
+        return constants.CANCEL_ALARMS
+
+    def process_potential_relays_from_sdn(self, get_potential_relays_future: Future):
         pass
 
     @abstractmethod

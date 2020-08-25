@@ -50,7 +50,7 @@ class TestNode(AbstractNode):
     def get_broadcast_service(self) -> BroadcastService:
         pass
 
-    def send_request_for_relay_peers(self):
+    def sync_and_send_request_for_relay_peers(self, network_num: int):
         pass
 
     def sync_tx_services(self):
