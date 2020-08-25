@@ -501,7 +501,6 @@ class TransactionService:
 
         if transaction_contents is not None:
             self._total_tx_contents_size += len(transaction_contents) - previous_size
-            self.node.log_txs_network_content(self.network_num, wrap_sha256(transaction_hash), transaction_contents)
             if call_set_contents:
                 self._tx_cache_key_to_contents[transaction_cache_key] = transaction_contents
         elif transaction_contents_length is not None:

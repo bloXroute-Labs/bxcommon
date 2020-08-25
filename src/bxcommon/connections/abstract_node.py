@@ -34,7 +34,6 @@ from bxcommon.utils import memory_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.blockchain_utils import bdn_tx_to_bx_tx
 from bxcommon.common_opts import CommonOpts
-from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
@@ -580,11 +579,6 @@ class AbstractNode:
     def sync_tx_services(self):
         self.start_sync_time = time.time()
         self.sync_metrics = defaultdict(Counter)
-
-    def log_txs_network_content(
-        self, network_num: int, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
-    ) -> None:
-        pass
 
     @abstractmethod
     def _transaction_sync_timeout(self):

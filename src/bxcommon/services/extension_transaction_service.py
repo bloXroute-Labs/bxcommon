@@ -140,7 +140,7 @@ class ExtensionTransactionService(TransactionService):
             has_short_id,
             previous_size,
             False,
-            None,
+            transaction_contents,
             len(transaction_contents)
         )
 
