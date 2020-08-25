@@ -280,7 +280,7 @@ class AbstractConnection(Generic[Node]):
         """
         # pylint: disable=too-many-return-statements, too-many-branches, too-many-statements
 
-        logger.debug("START PROCESSING from {}", self)
+        logger.trace("START PROCESSING from {}", self)
 
         start_time = time.time()
         messages_processed = defaultdict(int)
@@ -442,7 +442,7 @@ class AbstractConnection(Generic[Node]):
                                                  start_time,
                                                  constants.MSG_HANDLERS_DURATION_WARN_THRESHOLD_S,
                                                  connection=self, count=messages_processed)
-        logger.debug("DONE PROCESSING from {}. Bytes processed: {}. Messages processed: {}. Duration: {}",
+        logger.trace("DONE PROCESSING from {}. Bytes processed: {}. Messages processed: {}. Duration: {}",
                      self, total_bytes_processed, messages_processed, stats_format.duration(time.time() - start_time))
 
 
