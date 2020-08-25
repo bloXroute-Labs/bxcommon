@@ -1,9 +1,12 @@
 from typing import List, Any, Union, Dict, Optional
 
+import humps
+
 from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.json_rpc_request import JsonRpcRequest
 from bxcommon.rpc.rpc_errors import RpcMethodNotFound
 from bxcommon.rpc.rpc_request_type import RpcRequestType
+from bxutils.encoding.json_encoder import Case
 
 
 class BxJsonRpcRequest(JsonRpcRequest):
@@ -21,12 +24,16 @@ class BxJsonRpcRequest(JsonRpcRequest):
     def __str__(self) -> str:
         return f"BxJsonRpcRequest<{self.to_json()}>"
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self, case: Case = Case.SNAKE) -> Dict[str, Any]:
+        params = self.params
+        if params is not None and case == Case.CAMEL:
+            params = humps.camelize(params)
+
         return {
             rpc_constants.JSON_RPC_VERSION_FIELD: self.json_rpc_version,
             rpc_constants.JSON_RPC_REQUEST_ID: self.id,
             rpc_constants.JSON_RPC_METHOD: self.method.name.lower(),
-            rpc_constants.JSON_RPC_PARAMS: self.params,
+            rpc_constants.JSON_RPC_PARAMS: params,
         }
 
     @classmethod

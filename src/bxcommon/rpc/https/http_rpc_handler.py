@@ -55,4 +55,4 @@ class HttpRpcHandler(Generic[Node], AbstractRpcHandler[Node, Request, Response])
         else:
             status_code = HTTPBadRequest.status_code
 
-        return web.json_response(response.to_jsons(), status=status_code)
+        return web.json_response(response.to_jsons(self.case), status=status_code)

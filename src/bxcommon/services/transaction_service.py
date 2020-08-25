@@ -421,8 +421,10 @@ class TransactionService:
         if not has_contents:
             self.tx_hashes_without_content.add(transaction_hash)
             if not self.tx_without_content_alarm_scheduled:
-                self.node.alarm_queue.register_alarm(constants.TX_CONTENT_NO_SID_EXPIRE_S,
-                                                     self.expire_sid_without_content)
+                self.node.alarm_queue.register_alarm(
+                    constants.TX_CONTENT_NO_SID_EXPIRE_S,
+                    self.expire_sid_without_content
+                )
                 self.tx_without_content_alarm_scheduled = True
 
         if call_to_assign_short_id:

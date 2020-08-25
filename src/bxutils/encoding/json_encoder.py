@@ -13,6 +13,11 @@ logger = logging.get_logger(__name__)
 SPECIAL_ITERABLE_TYPES = (type(dict().values()), type(dict().keys()),)
 
 
+class Case(Enum):
+    SNAKE = 1
+    CAMEL = 2
+
+
 def is_iterable_no_collection(o):
     return isinstance(o, SPECIAL_ITERABLE_TYPES) or \
            (isinstance(o, Iterable) and not isinstance(o, Collection))

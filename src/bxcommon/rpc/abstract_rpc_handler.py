@@ -10,6 +10,7 @@ from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
 from bxcommon.rpc.rpc_errors import RpcParseError, RpcError, RpcInternalError
 from bxcommon.rpc.rpc_request_type import RpcRequestType
 from bxutils import logging, log_messages
+from bxutils.encoding.json_encoder import Case
 
 logger = logging.get_logger(__name__)
 
@@ -26,10 +27,12 @@ Res = TypeVar("Res")
 class AbstractRpcHandler(Generic[Node, Req, Res]):
     node: Node
     request_handlers: Dict[RpcRequestType, Type[AbstractRpcRequest[Node]]]
+    case: Case
 
-    def __init__(self, node: Node) -> None:
+    def __init__(self, node: Node, case: Case = Case.SNAKE) -> None:
         self.node = node
         self.request_handlers = {}
+        self.case = case
 
     async def handle_request(self, request: Req) -> Res:
         try:

@@ -62,7 +62,7 @@ def str_to_bool(value: str) -> bool:
     return value in ["True", "true", "1"]
 
 
-def bytes_to_hex_string_format(bytes_to_convert: bytearray) -> str:
+def bytes_to_hex_string_format(bytes_to_convert: Union[bytearray, bytes]) -> str:
     return f"0x{bytes_to_hex(bytes_to_convert)}"
 
 
