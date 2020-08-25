@@ -1,3 +1,7 @@
+import dataclasses
+import functools
+
+from dataclasses import dataclass
 from collections import defaultdict
 from typing import Optional, Union, Dict, Type, Any, TYPE_CHECKING
 
@@ -23,16 +27,13 @@ bytes_received = Counter("bytes_received", "Number of bytes received from all co
 bytes_sent = Counter("bytes_sent", "Number of bytes sent on all connections")
 
 
+@dataclass
 class ThroughputIntervalData(StatsIntervalData):
-    total_in: int
-    total_out: int
-    peer_to_stats: Dict[str, PeerStats]
-
-    def __init__(self,) -> None:
-        super(ThroughputIntervalData, self).__init__()
-        self.total_in = 0
-        self.total_out = 0
-        self.peer_to_stats = defaultdict(PeerStats)
+    total_in: int = 0
+    total_out: int = 0
+    peer_to_stats: Dict[str, PeerStats] = dataclasses.field(
+        default_factory=functools.partial(defaultdict, PeerStats)
+    )
 
 
 class ThroughputStatistics(StatisticsService[ThroughputIntervalData, "AbstractNode"]):

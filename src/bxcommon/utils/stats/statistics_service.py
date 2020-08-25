@@ -1,10 +1,14 @@
 import time
 import traceback
+import dataclasses
+
+from dataclasses import dataclass
 from abc import ABCMeta, abstractmethod
 from collections import deque
 from datetime import datetime
 from threading import Thread, Lock
 from typing import Optional, TypeVar, Generic, Deque, Type, Callable, Dict, Any, TYPE_CHECKING
+
 
 from bxcommon import constants
 from bxutils import log_messages
@@ -21,16 +25,11 @@ if TYPE_CHECKING:
     from bxcommon.connections.abstract_node import AbstractNode
 
 
+@dataclass
 class StatsIntervalData:
-    start_time: datetime
-    end_time: Optional[datetime]
-    _closed: bool
-
-    def __init__(self,) -> None:
-        self.start_time = datetime.utcnow()
-        self.end_time = None
-
-        self._closed = False
+    start_time: datetime = dataclasses.field(default_factory=datetime.utcnow)
+    end_time: Optional[datetime] = None
+    _closed: bool = False
 
     def close(self):
         self.end_time = datetime.utcnow()
