@@ -12,6 +12,7 @@ from mock import MagicMock
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.models.authenticated_peer_info import AuthenticatedPeerInfo
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
@@ -73,12 +74,20 @@ def create_connection(
     port: int = 8001,
     from_me: bool = False,
     add_to_pool: bool = True,
+    authentication_info: Optional[AuthenticatedPeerInfo] = None
 ) -> Connection:
     if node_opts is None:
         node_opts = get_common_opts(8002)
 
     if node is None:
         node = MockNode(node_opts, None)
+
+    if authentication_info is None:
+        authentication_info = AuthenticatedPeerInfo(
+            connection_cls.CONNECTION_TYPE,
+            node_opts.node_id,
+            ""
+        )
 
     if isinstance(node, MockNode):
         add_to_pool = False
@@ -87,6 +96,8 @@ def create_connection(
     if not from_me:
         test_socket_connection.direction = NetworkDirection.INBOUND
     connection = connection_cls(test_socket_connection, node)
+
+    connection.on_connection_authenticated(authentication_info)
 
     if add_to_pool:
         node.connection_pool.add(file_no, ip, port, connection)
