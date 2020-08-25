@@ -88,7 +88,7 @@ class AbstractConnection(Generic[Node]):
         self.hello_messages = []
         self.header_size = 0
         self.message_factory: Optional[AbstractMessageFactory] = None
-        self.message_handlers = None
+        self.message_handlers = {}
 
         self.log_throughput = True
 

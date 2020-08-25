@@ -141,3 +141,18 @@ class Transaction(rlp.Serializable):
             int(payload["r"], 16),
             int(payload["s"], 16),
         )
+
+    @classmethod
+    def from_json_with_validation(cls, payload: Dict[str, Any]) -> "Transaction":
+        """
+        create a Transaction from a payload dict.
+        this method support a less strict payload. and support input in both the Eth format and our own.
+
+        """
+        if "gas_price" in payload:
+            payload["gasPrice"] = payload["gas_price"]
+        for item in ["nonce", "gasPrice", "gas", "value", "v", "r", "s"]:
+            value = payload[item]
+            if isinstance(value, int):
+                payload[item] = hex(value)
+        return cls.from_json(payload)

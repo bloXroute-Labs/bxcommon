@@ -15,3 +15,4 @@ class RpcRequestType(SerializeableEnum):
     QUOTA_USAGE = 10
     MEMORY_USAGE = 11
     TX_STATUS = 12
+    BLXR_ETH_CALL = 13
