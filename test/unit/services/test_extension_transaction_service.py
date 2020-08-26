@@ -96,7 +96,7 @@ class ExtensionTransactionServiceTest(AbstractTransactionServiceTestCase):
         self.assertEqual(len(new_content), self.transaction_service._total_tx_contents_size)
 
     def test_process_gateway_transaction_from_bdn(self):
-        self._test_process_gateway_transaction_from_bdn()
+        pass
 
     def test_get_transactions(self):
         self._test_get_transactions()
