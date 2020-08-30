@@ -45,6 +45,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             )
         )
         self.mock_node.opts.transaction_pool_memory_limit = self.TEST_MEMORY_LIMIT_MB
+        self.mock_node.network_num = 5
         self.transaction_service = self._get_transaction_service()
 
     def _test_sid_assignment_basic(self):

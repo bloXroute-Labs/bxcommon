@@ -325,6 +325,15 @@ def get_common_opts(
                 final_tx_confirmations_count,
                 block_confirmations_count,
                 ),
+            4: blockchain_network(
+                "BitcoinCash",
+                "Testnet",
+                4,
+                15,
+                15,
+                24,
+                block_confirmations_count,
+            ),
             5: blockchain_network(
                 "Ethereum",
                 "Mainnet",
