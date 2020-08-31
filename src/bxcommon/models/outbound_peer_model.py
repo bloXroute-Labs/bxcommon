@@ -79,6 +79,6 @@ class OutboundPeerModel:
     def from_string(cls, ip_port_str: str) -> "OutboundPeerModel":
         try:
             ip, port = ip_port_str.split(":")
-            return OutboundPeerModel(ip, int(port))
+            return OutboundPeerModel(ip, int(port), node_type=NodeType.RELAY)
         except Exception as _e:
             raise ValueError(f"{ip_port_str} is not a valid peer. Specify peer as ip:port string.")
