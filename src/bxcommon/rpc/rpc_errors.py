@@ -13,10 +13,12 @@ class RpcErrorCode(Enum):
     INTERNAL_ERROR = -32603
 
     # implementation specific codes
+    SERVER_ERROR = -32000
     BLOCKED = -32001
     TIMED_OUT = -32002
     ACCOUNT_ID_ERROR = -32003
     UNKNOWN = -32004
+
 
 ERROR_MESSAGE_MAPPINGS = {
     RpcErrorCode.PARSE_ERROR: "Parse error",
@@ -32,10 +34,19 @@ ERROR_MESSAGE_MAPPINGS = {
 
 
 class RpcError(Exception):
-    def __init__(self, code: RpcErrorCode, request_id: Optional[str], data: Optional[Any]) -> None:
+    def __init__(
+        self,
+        code: RpcErrorCode,
+        request_id: Optional[str],
+        data: Optional[Any],
+        message: Optional[str] = None,
+    ) -> None:
         super().__init__()
         self.code = code
-        self.message = ERROR_MESSAGE_MAPPINGS[code]
+        if message:
+            self.message = message
+        else:
+            self.message = ERROR_MESSAGE_MAPPINGS[code]
         self.data = data
         self.id = request_id
 
@@ -53,7 +64,12 @@ class RpcError(Exception):
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "RpcError":
-        return cls(RpcErrorCode(payload["code"]), None, payload["data"])
+        return cls(
+            RpcErrorCode(payload["code"]),
+            None,
+            payload.get("data"),
+            payload.get("message"),
+        )
 
     @classmethod
     def from_jsons(cls, payload: str) -> "RpcError":
@@ -61,7 +77,9 @@ class RpcError(Exception):
 
 
 class RpcParseError(RpcError):
-    def __init__(self, request_id: Optional[str] = None, data: Optional[Any] = None) -> None:
+    def __init__(
+        self, request_id: Optional[str] = None, data: Optional[Any] = None
+    ) -> None:
         super().__init__(RpcErrorCode.PARSE_ERROR, request_id, data)
 
 

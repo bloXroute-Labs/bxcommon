@@ -1,3 +1,7 @@
+import dataclasses
+import functools
+
+from dataclasses import dataclass
 from collections import defaultdict
 from datetime import datetime
 from typing import Dict, Type, Any, TYPE_CHECKING
@@ -16,12 +20,11 @@ if TYPE_CHECKING:
     from bxcommon.connections.abstract_node import AbstractNode
 
 
+@dataclass
 class MemoryStatsIntervalData(StatsIntervalData):
-    class_mem_stats: Dict[str, ClassMemStats]
-
-    def __init__(self, *args, **kwargs) -> None:
-        super(MemoryStatsIntervalData, self).__init__(*args, **kwargs)
-        self.class_mem_stats = defaultdict(ClassMemStats)
+    class_mem_stats: Dict[str, ClassMemStats] = dataclasses.field(
+        default_factory=functools.partial(defaultdict, ClassMemStats)
+    )
 
 
 # pyre-fixme[24]: Type parameter `AbstractNode` violates constraints on `T` in
@@ -101,9 +104,9 @@ class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "Abs
         return payload
 
     def flush_info(self) -> int:
-        assert self.node is not None
-        # pyre-fixme[16]: Optional type has no attribute `dump_memory_usage`.
-        self.node.dump_memory_usage()
+        node = self.node
+        assert node is not None
+        node.dump_memory_usage()
         return super(MemoryStatsService, self).flush_info()
 
     def increment_mem_stats(

@@ -150,6 +150,12 @@ def get_argument_parser() -> argparse.ArgumentParser:
         type=convert.str_to_bool,
         default=True
     )
+    arg_parser.add_argument(
+        "--enable-tcp-quickack",
+        help="Enable TCP_QUICKACK so that ACK's are not delayed",
+        type=convert.str_to_bool,
+        default=True
+    )
 
     add_argument_parser_logging(arg_parser)
     add_argument_parser_common(arg_parser)
@@ -216,6 +222,12 @@ def add_argument_parser_logging(arg_parser: ArgumentParser):
         type=LogLevel.__getattr__,
         choices=list(LogLevel),
         default=LogLevel.NOTSET
+    )
+    arg_parser.add_argument(
+        "--transaction-validation",
+        help="Enable transaction validation process",
+        type=convert.str_to_bool,
+        default=True
     )
 
 
@@ -308,14 +320,15 @@ def _get_blockchain_network_info(opts) -> BlockchainNetworkModel:
     :param opts: argument list
     """
 
-    for blockchain_network in opts.blockchain_networks:
+    for blockchain_network in opts.blockchain_networks.values():
         if blockchain_network.protocol.lower() == opts.blockchain_protocol.lower() and \
                 blockchain_network.network.lower() == opts.blockchain_network.lower():
             return blockchain_network
 
     if opts.blockchain_networks:
         all_networks_names = "\n".join(
-            map(lambda n: "{} - {}".format(n.protocol, n.network), opts.blockchain_networks))
+            map(lambda n: "{} - {}".format(n.protocol, n.network), opts.blockchain_networks.values())
+        )
         error_msg = "Network number does not exist for blockchain protocol {} and network {}.\nValid options:\n{}" \
             .format(opts.blockchain_protocol, opts.blockchain_network, all_networks_names)
         logger.fatal(error_msg, exc_info=False)

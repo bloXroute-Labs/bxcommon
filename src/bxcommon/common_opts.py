@@ -63,6 +63,7 @@ class CommonOpts:
     log_level_stdout: LogLevel
     sync_tx_service: bool
     data_dir: str
+    transaction_validation: bool
 
     rpc: bool
     rpc_port: int
@@ -71,7 +72,7 @@ class CommonOpts:
     rpc_password: str
 
     # set by node runner
-    blockchain_networks: List[BlockchainNetworkModel]
+    blockchain_networks: Dict[int, BlockchainNetworkModel]
     split_relays: bool
     blockchain_network_num: int
     outbound_peers: Set[OutboundPeerModel]
@@ -91,10 +92,11 @@ class CommonOpts:
     os_version: str
     sid_expire_time: int
     block_compression_debug: bool
+    enable_tcp_quickack: bool
 
     @classmethod
     def opts_defaults(cls, opts: Namespace) -> Namespace:
-        opts.blockchain_networks = []
+        opts.blockchain_networks = {}
         opts.split_relays = True
         opts.stats_calculate_actual_size = False
         opts.log_detailed_block_stats = False
@@ -107,6 +109,7 @@ class CommonOpts:
         opts.node_start_time = datetime.utcnow()
         opts.os_version = constants.OS_VERSION
         opts.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
+        opts.enable_tcp_quickack = True
         return opts
 
     @classmethod

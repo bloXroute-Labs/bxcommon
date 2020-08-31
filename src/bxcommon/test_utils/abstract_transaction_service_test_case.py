@@ -1,7 +1,7 @@
 import time
 from abc import ABCMeta, abstractmethod
 
-from mock import MagicMock, patch
+from mock import MagicMock
 
 from bxcommon import constants
 from bxcommon.constants import NULL_TX_SID
@@ -422,77 +422,6 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.assertEqual(last_timestamp + 10, timestamp)
             last_timestamp = timestamp
 
-    def _test_removed_transactions_history_by_hash(self):
-        transactions = self._add_transactions(30, 250)
-        self.transaction_service = self._get_transaction_service()
-
-        for transaction in transactions:
-            self.transaction_service.assign_short_id(transaction.hash, transaction.short_id)
-            self.transaction_service.set_transaction_contents(transaction.hash, transaction.contents)
-
-        for transaction in transactions:
-            self.assertFalse(self.transaction_service.removed_transaction(transaction.hash))
-
-        original_time = time.time()
-        time.time = MagicMock(return_value=time.time())
-        for transaction in transactions:
-            self.transaction_service.remove_transaction_by_tx_hash(transaction.hash)
-            time.time = MagicMock(return_value=time.time() + 10)
-
-        for transaction in transactions:
-            self.assertTrue(self.transaction_service.removed_transaction(transaction.hash))
-
-        self._verify_expired_removed_transactions(transactions, original_time, 10)
-
-    @patch("bxcommon.constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT", 10)
-    def _test_removed_transactions_length_limit(self):
-        transactions = self._add_transactions(30, 250)
-        self.transaction_service = self._get_transaction_service()
-
-        for transaction in transactions:
-            self.transaction_service.assign_short_id(transaction.hash, transaction.short_id)
-            self.transaction_service.set_transaction_contents(transaction.hash, transaction.contents)
-
-        for transaction in transactions:
-            self.assertFalse(self.transaction_service.removed_transaction(transaction.hash))
-
-        original_time = time.time()
-        time.time = MagicMock(return_value=time.time())
-        for transaction in transactions:
-            self.transaction_service.remove_transaction_by_tx_hash(transaction.hash)
-            time.time = MagicMock(return_value=time.time() + 10)
-
-        for transaction in transactions:
-            self.assertTrue(self.transaction_service.removed_transaction(transaction.hash))
-
-        time.time = MagicMock(return_value=original_time + constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S)
-        self.mock_node.alarm_queue.fire_alarms()
-
-        self.assertEqual(10, len(self.transaction_service._tx_hash_to_time_removed))
-        self.assertEqual(10, len(self.transaction_service._short_id_to_time_removed))
-
-    def _test_removed_transactions_history_by_sid(self):
-        transactions = self._add_transactions(30, 250)
-        self.transaction_service = self._get_transaction_service()
-
-        for transaction in transactions:
-            self.transaction_service.set_transaction_contents(transaction.hash, transaction.contents)
-            self.transaction_service.assign_short_id(transaction.hash, transaction.short_id)
-
-        for transaction in transactions:
-            self.assertFalse(self.transaction_service.removed_transaction(transaction.hash))
-
-        original_time = time.time()
-        time.time = MagicMock(return_value=time.time())
-        for transaction in transactions:
-            self.transaction_service.remove_transaction_by_short_id(transaction.short_id)
-            time.time = MagicMock(return_value=time.time() + 10)
-
-        for transaction in transactions:
-            self.assertTrue(self.transaction_service.removed_transaction(transaction.hash))
-
-        self._verify_expired_removed_transactions(transactions, original_time, 10)
-
     def _add_transactions(self, tx_count, tx_size, short_id_offset=0):
         transactions = []
 
@@ -516,27 +445,6 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.assertIsNone(self.transaction_service.get_transaction(short_id).hash)
             self.assertIsNone(self.transaction_service.get_transaction(short_id).contents)
             self.assertNotIn(short_id, self.transaction_service._tx_assignment_expire_queue.queue)
-
-    def _verify_expired_removed_transactions(self, transactions, original_time, tx_interval):
-        # alarm is expected to remove 10 first transactions from history cache
-        expected_removed_txs_count = 10
-        time.time = MagicMock(
-            return_value=original_time
-                         + constants.REMOVED_TRANSACTIONS_HISTORY_EXPIRATION_S
-                         + tx_interval * expected_removed_txs_count
-        )
-        self.mock_node.alarm_queue.fire_alarms()
-
-        self.assertEqual(len(transactions) - expected_removed_txs_count,
-                         len(self.transaction_service._tx_hash_to_time_removed))
-        self.assertEqual(len(transactions) - expected_removed_txs_count,
-                         len(self.transaction_service._short_id_to_time_removed))
-
-        for index, transaction in enumerate(transactions):
-            if index < expected_removed_txs_count:
-                self.assertFalse(self.transaction_service.removed_transaction(transaction.hash))
-            else:
-                self.assertTrue(self.transaction_service.removed_transaction(transaction.hash))
 
     def _test_add_tx_without_sid(self):
         tx_hash, tx_content = self.get_fake_tx()

@@ -4,7 +4,7 @@
 import json
 import os
 from dataclasses import dataclass
-from typing import List, Optional, TYPE_CHECKING, Union
+from typing import List, Optional, TYPE_CHECKING, Union, Dict
 from argparse import Namespace
 
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 class CacheNetworkInfo:
     source_version: str
     relay_peers: List[OutboundPeerModel]
-    blockchain_networks: List[BlockchainNetworkModel]
+    blockchain_networks: Dict[int, BlockchainNetworkModel]
     node_model: NodeModel
 
 

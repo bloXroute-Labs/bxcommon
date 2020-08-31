@@ -43,15 +43,6 @@ class TransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_iter_timestamped_transaction_hashes_from_oldest(self):
         self._test_iter_transaction_hashes_from_oldest()
 
-    def test_removed_transactions_history_by_hash(self):
-        self._test_removed_transactions_history_by_hash()
-
-    def test_removed_transactions_length_limit(self):
-        self._test_removed_transactions_length_limit()
-
-    def test_removed_transactions_history_by_sid(self):
-        self._test_removed_transactions_history_by_sid()
-
     def test_add_tx_without_sid(self):
         self._test_add_tx_without_sid()
 
@@ -62,7 +53,7 @@ class TransactionServiceTest(AbstractTransactionServiceTestCase):
         self._test_add_sid_without_content()
 
     def test_process_gateway_transaction_from_bdn(self):
-        self._test_process_gateway_transaction_from_bdn()
+        pass
 
     def test_get_transactions(self):
         self._test_get_transactions()

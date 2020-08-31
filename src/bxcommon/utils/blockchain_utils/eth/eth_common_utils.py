@@ -24,6 +24,18 @@ def raw_tx_to_bx_tx(
     return bx_tx, tx_item_length, tx_item_start
 
 
+
+def raw_tx_gas_price(tx_bytes: memoryview, tx_start_index: int) -> int:
+    _, tx_item_length, tx_item_start = rlp_utils.consume_length_prefix(tx_bytes, tx_start_index)
+    tx_bytes = tx_bytes[tx_item_start:tx_item_start + tx_item_length]
+
+    # gas_price is the second field, need to skip the first field (nonce)
+    _, nonce_item_length, nonce_item_start = rlp_utils.consume_length_prefix(tx_bytes, 0)
+
+    gas_price, _ = rlp_utils.decode_int(tx_bytes, nonce_item_start + nonce_item_length)
+    return gas_price
+
+
 def keccak_hash(string):
     """
     Ethereum Crypto Utils:

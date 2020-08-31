@@ -20,7 +20,8 @@ def verify_eth_transaction_signature(transaction: Transaction) -> bool:
         unsigned_msg = transaction.get_unsigned()
         public_key = crypto_utils.recover_public_key(unsigned_msg, signature, keccak_hash)
         return crypto_utils.verify_signature(public_key, signature, keccak_hash(unsigned_msg))
-    except (ValueError, rlp.exceptions.DecodingError):
+    # pylint: disable=broad-except
+    except Exception:
         return False
 
 
@@ -36,14 +37,19 @@ def parse_transaction(tx_bytes: memoryview) -> Optional[Transaction]:
 
         return Transaction(*serializers.deserialize(payload))
 
-    except (ValueError, rlp.exceptions.DecodingError):
+    # pylint: disable=broad-except
+    except Exception:
         return None
 
 
-def validate_transaction(tx_bytes: Union[bytearray, memoryview]) -> TxValidationStatus:
+def validate_transaction(
+    tx_bytes: Union[bytearray, memoryview],
+    min_tx_network_fee: int
+) -> TxValidationStatus:
     """
     check if transaction is validated - signature is correct and format is valid
     :param tx_bytes:
+    :param min_tx_network_fee: int
     :return:
     """
     if isinstance(tx_bytes, bytearray):
@@ -52,7 +58,10 @@ def validate_transaction(tx_bytes: Union[bytearray, memoryview]) -> TxValidation
     transaction = parse_transaction(tx_bytes)
     if transaction:
         if verify_eth_transaction_signature(transaction):
-            return TxValidationStatus.VALID_TX
+            if transaction.gas_price >= min_tx_network_fee:
+                return TxValidationStatus.VALID_TX
+            else:
+                return TxValidationStatus.LOW_FEE
         else:
             return TxValidationStatus.INVALID_SIGNATURE
 

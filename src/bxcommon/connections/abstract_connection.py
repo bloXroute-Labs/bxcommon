@@ -1,6 +1,6 @@
 import asyncio
 import time
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from asyncio import Future
 from collections import defaultdict
 from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Optional, Union
@@ -22,10 +22,11 @@ from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketC
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.utils import convert, performance_utils
 from bxcommon.utils import memory_utils
+from bxcommon.utils.alarm_queue import AlarmId
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
-from bxcommon.utils.stats import hooks
+from bxcommon.utils.stats import hooks, stats_format
 from bxutils import log_messages
 from bxutils import logging
 from bxutils.constants import HAS_PREFIX
@@ -87,13 +88,16 @@ class AbstractConnection(Generic[Node]):
         self.hello_messages = []
         self.header_size = 0
         self.message_factory: Optional[AbstractMessageFactory] = None
-        self.message_handlers = None
+        self.message_handlers = {}
 
         self.log_throughput = True
 
-        self.ping_message = None
         self.pong_message = None
         self.ack_message = None
+
+        self.ping_alarm_id: Optional[AlarmId] = None
+        self.ping_interval_s = constants.PING_INTERVAL_S
+        self.pong_timeout_alarm_id: Optional[AlarmId] = None
 
         # Default network number to network number of current node. But it can change after hello message is received
         self.network_num = node.network_num
@@ -102,11 +106,9 @@ class AbstractConnection(Generic[Node]):
 
         self._debug_message_tracker = defaultdict(int)
         self._last_debug_message_log_time = time.time()
-        self.ping_interval_s: int = constants.PING_INTERVAL_S
 
         self.peer_model: Optional[OutboundPeerModel] = None
 
-        self.pong_timeout_alarm_id = None
         self._is_authenticated = False
         self.account_id: Optional[str] = None
 
@@ -123,9 +125,14 @@ class AbstractConnection(Generic[Node]):
 
         return f"{self.CONNECTION_TYPE} ({details})"
 
-    def _log_message(self, level: LogLevel, message, *args, **kwargs):
-        args = (HAS_PREFIX, f"[{self}]",) + args
-        logger.log(level, message, *args, **kwargs)
+    @abstractmethod
+    def ping_message(self) -> AbstractMessage:
+        """
+        Define ping message characteristics for pinging on connection.
+
+        This function may have side-effects; only call this if the ping message will
+        be used.
+        """
 
     def log_trace(self, message, *args, **kwargs):
         if logger.isEnabledFor(LogLevel.TRACE):
@@ -273,8 +280,11 @@ class AbstractConnection(Generic[Node]):
         """
         # pylint: disable=too-many-return-statements, too-many-branches, too-many-statements
 
+        logger.trace("START PROCESSING from {}", self)
+
         start_time = time.time()
         messages_processed = defaultdict(int)
+        total_bytes_processed = 0
 
         while True:
             input_buffer_len_before = self.inputbuf.length
@@ -298,6 +308,7 @@ class AbstractConnection(Generic[Node]):
                     break
 
                 msg = self.pop_next_message(payload_len)
+                total_bytes_processed += len(msg.rawbytes())
 
                 # If there was some error in parsing this message, then continue the loop.
                 if msg is None:
@@ -431,6 +442,9 @@ class AbstractConnection(Generic[Node]):
                                                  start_time,
                                                  constants.MSG_HANDLERS_DURATION_WARN_THRESHOLD_S,
                                                  connection=self, count=messages_processed)
+        logger.trace("DONE PROCESSING from {}. Bytes processed: {}. Messages processed: {}. Duration: {}",
+                     self, total_bytes_processed, messages_processed, stats_format.duration(time.time() - start_time))
+
 
     def pop_next_message(self, payload_len):
         """
@@ -452,12 +466,26 @@ class AbstractConnection(Generic[Node]):
         except ValueError as e:
             raise RuntimeError("Connection: {}, Failed to advance buffer".format(self)) from e
 
-    def send_ping(self):
+    def schedule_pings(self) -> None:
+        """
+        Schedules ping on the connection. Multiple calls of this method will
+        override the existing alarm.
+        """
+        existing_alarm = self.ping_alarm_id
+        if existing_alarm:
+            self.node.alarm_queue.unregister_alarm(existing_alarm)
+
+        if self.can_send_pings:
+            self.ping_alarm_id = self.node.alarm_queue.register_alarm(
+                self.ping_interval_s, self.send_ping
+            )
+
+    def send_ping(self) -> float:
         """
         Send a ping (and reschedule if called from alarm queue)
         """
         if self.can_send_pings and self.is_alive():
-            self.enqueue_msg(self.ping_message)
+            self.enqueue_msg(self.ping_message())
 
             if self.pong_timeout_enabled:
                 self.schedule_pong_timeout()
@@ -577,12 +605,15 @@ class AbstractConnection(Generic[Node]):
         self.log_trace("Updated connection model: {}", model)
         self.peer_model = model
 
-    def schedule_pong_timeout(self):
+    def schedule_pong_timeout(self) -> None:
         if self.pong_timeout_alarm_id is None:
-            self.log_trace("Schedule pong reply timeout for ping message in {} seconds",
-                           constants.PING_PONG_REPLY_TIMEOUT_S)
+            self.log_trace(
+                "Schedule pong reply timeout for ping message in {} seconds",
+                constants.PING_PONG_REPLY_TIMEOUT_S
+            )
             self.pong_timeout_alarm_id = self.node.alarm_queue.register_alarm(
-                constants.PING_PONG_REPLY_TIMEOUT_S, self._pong_msg_timeout)
+                constants.PING_PONG_REPLY_TIMEOUT_S, self._pong_msg_timeout
+            )
 
     def cancel_pong_timeout(self):
         if self.pong_timeout_alarm_id is not None:
@@ -636,10 +667,12 @@ class AbstractConnection(Generic[Node]):
         _short_connection_type = self.CONNECTION_TYPE.name
         self.format_connection_desc = "{} - {}".format(self.peer_desc, _short_connection_type)
 
-    def _pong_msg_timeout(self):
+    def _pong_msg_timeout(self) -> None:
         if self.is_alive():
-            self.log_info("Connection appears to be broken. Peer did not reply to PING message within allocated time. "
-                          "Closing connection.")
+            self.log_info(
+                "Connection appears to be broken. Peer did not reply to PING message within allocated time. "
+                "Closing connection."
+            )
             self.mark_for_close()
             self.pong_timeout_alarm_id = None
 
@@ -667,3 +700,7 @@ class AbstractConnection(Generic[Node]):
                 self.inputbuf.peek_message(min(self.header_size + payload_len, constants.MAX_LOGGED_BYTES_LEN)))
 
         return "<not available>"
+
+    def _log_message(self, level: LogLevel, message, *args, **kwargs):
+        args = (HAS_PREFIX, f"[{self}]",) + args
+        logger.log(level, message, *args, **kwargs)

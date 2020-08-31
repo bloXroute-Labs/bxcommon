@@ -46,5 +46,5 @@ class TestSdnHttpService(unittest.TestCase):
             blockchain_networks = sdn_http_service.fetch_blockchain_networks()
 
             self.assertEqual(2, len(blockchain_networks))
-            self.assertEqual(999, blockchain_networks[0].network_num)
-            self.assertEqual(222, blockchain_networks[1].network_num)
+            self.assertEqual(999, blockchain_networks[999].network_num)
+            self.assertEqual(222, blockchain_networks[222].network_num)

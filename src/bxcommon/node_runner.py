@@ -8,23 +8,21 @@ import uvloop
 
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.exceptions import TerminationError
-from bxcommon.models.node_model import NodeModel
 from bxcommon.models.node_type import NodeType
 from bxcommon.network.node_event_loop import NodeEventLoop
 from bxcommon.services import sdn_http_service
-from bxcommon.utils import cli, model_loader, config, node_cache
+from bxcommon.utils import config
 from bxcommon.common_opts import CommonOpts
-from bxcommon.utils.init_task import AbstractInitTask
+from bxcommon import common_init_tasks
 from bxutils import log_messages
 from bxutils import logging
 from bxutils.logging import log_config, LoggerConfig, gc_logger
 from bxutils.logging.log_level import LogLevel
 from bxutils.services.node_ssl_service import NodeSSLService
-from bxutils.ssl import ssl_serializer
 from bxutils.ssl.data import ssl_data_factory
 from bxutils.ssl.ssl_certificate_type import SSLCertificateType
 
-
+InitTaskType = Callable[[CommonOpts, NodeSSLService], None]
 OptsType = CommonOpts
 logger = logging.get_logger(__name__)
 
@@ -36,36 +34,6 @@ THIRD_PARTY_LOGGERS = [
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())  # pyre-ignore
 asyncio.set_event_loop(uvloop.new_event_loop())
-
-
-class SetNetworkInfo(AbstractInitTask):
-    def action(self, opts: OptsType, node_ssl_service) -> None:
-        cli.set_blockchain_networks_info(opts)
-        cli.parse_blockchain_opts(opts, opts.node_type)
-
-
-class SetNodeModel(AbstractInitTask):
-    def action(self, opts: OptsType, node_ssl_service) -> None:
-        node_model = None
-        if opts.node_id:
-            # Test network, get pre-configured peers from the SDN.
-            node_model = sdn_http_service.fetch_node_attributes(opts.node_id)
-
-        if not node_model:
-            node_model = register_node(opts, node_ssl_service)
-
-        if node_model.cert is not None:
-            private_cert = ssl_serializer.deserialize_cert(node_model.cert)
-            node_ssl_service.blocking_store_node_certificate(private_cert)
-            ssl_context = node_ssl_service.create_ssl_context(
-                SSLCertificateType.PRIVATE
-            )
-            sdn_http_service.reset_pool(ssl_context)
-
-        # Add opts from SDN, but don't overwrite CLI args
-        for key, val in node_model.__dict__.items():
-            if opts.__dict__.get(key) is None:
-                opts.__dict__[key] = val
 
 
 def default_ssl_service_factory(
@@ -90,7 +58,7 @@ def run_node(
         [NodeType, str, str, str], NodeSSLService
     ] = default_ssl_service_factory,
     third_party_loggers: Optional[List[LoggerConfig]] = None,
-    node_init_tasks: Optional[List[AbstractInitTask]] = None,
+    node_init_tasks: Optional[List[InitTaskType]] = None,
 ) -> None:
 
     if third_party_loggers is None:
@@ -111,7 +79,7 @@ def run_node(
         stdout_log_level=opts.log_level_stdout,
     )
     if node_init_tasks is None:
-        node_init_tasks = []
+        node_init_tasks = common_init_tasks.init_tasks
 
     startup_param = sys.argv[1:]
     logger.info("Startup Parameters are: {}", " ".join(startup_param))
@@ -131,10 +99,6 @@ def run_node(
                 task_pool_proxy.get_pool_size(),
             )
 
-        node_init_tasks.append(
-            SetNodeModel(SetNetworkInfo(*node_init_tasks))
-        )
-
         _run_node(
             opts,
             get_node_class,
@@ -151,46 +115,11 @@ def run_node(
             handler.close()
 
 
-def register_node(opts: OptsType, node_ssl_service: NodeSSLService) -> NodeModel:
-    temp_node_model = model_loader.load_model(NodeModel, opts.__dict__)
-    if node_ssl_service.should_renew_node_certificate():
-        temp_node_model.csr = ssl_serializer.serialize_csr(
-            node_ssl_service.create_csr()
-        )
-
-    try:
-        node_model = sdn_http_service.register_node(temp_node_model)
-    except ValueError as e:
-        logger.fatal(e)
-        sys.exit(1)
-    except EnvironmentError as e:
-        logger.info(
-            "Unable to contact SDN to register node using {}, attempting to get information from cache",
-            opts.sdn_url,
-        )
-
-        cache_info = node_cache.read(opts)
-        if not cache_info or not cache_info.node_model:
-            logger.fatal(
-                "Unable to reach the SDN and no local cache information was found. Unable to start the gateway"
-            )
-            sys.exit(1)
-        node_model = cache_info.node_model
-
-    if node_model.should_update_source_version:
-        logger.info(
-            "UPDATE AVAILABLE! An updated software version is available, please download and install the "
-            "latest version"
-        )
-
-    return node_model
-
-
 def _run_node(
     opts: OptsType,
     get_node_class,
     node_type,
-    node_init_tasks: List[AbstractInitTask],
+    node_init_tasks: List[InitTaskType],
     ssl_service_factory: Callable[
         [NodeType, str, str, str], NodeSSLService
     ] = default_ssl_service_factory,
@@ -205,10 +134,8 @@ def _run_node(
         ssl_service_factory=ssl_service_factory,
     )
 
-    assert all(
+    for task in node_init_tasks:
         task(opts, node_ssl_service)
-        for task in sorted(node_init_tasks, key=lambda x: x.order)
-    )
 
     if not hasattr(opts, "outbound_peers"):
         opts.__dict__["outbound_peers"] = []
@@ -242,7 +169,9 @@ def _init_ssl_service(
     if node_ssl_service.has_valid_certificate(SSLCertificateType.PRIVATE):
         ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
     else:
-        ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.REGISTRATION_ONLY)
+        ssl_context = node_ssl_service.create_ssl_context(
+            SSLCertificateType.REGISTRATION_ONLY
+        )
 
     sdn_http_service.reset_pool(ssl_context)
     return node_ssl_service

@@ -2,6 +2,7 @@ import asyncio
 import os
 import time
 from abc import ABCMeta, abstractmethod
+from asyncio import Future
 from collections import defaultdict, Counter
 from ssl import SSLContext
 from typing import List, Optional, Tuple, Dict, NamedTuple, Union, Set
@@ -24,6 +25,7 @@ from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketC
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
 from bxcommon.network.socket_connection_state import SocketConnectionState
+from bxcommon.services import sdn_http_service
 from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
 from bxcommon.services.threaded_request_service import ThreadedRequestService
@@ -32,7 +34,6 @@ from bxcommon.utils import memory_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.utils.blockchain_utils import bdn_tx_to_bx_tx
 from bxcommon.common_opts import CommonOpts
-from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
@@ -124,7 +125,6 @@ class AbstractNode:
         # this way can verify if node lost connection to requested relay.
 
         self.last_sync_message_received_by_network: Dict[int, float] = {}
-        self.network_synced: Dict[int, bool] = defaultdict(lambda: False)
 
         self.start_sync_time: Optional[float] = None
         self.sync_metrics: Dict[int, Counter] = defaultdict(Counter)
@@ -166,8 +166,32 @@ class AbstractNode:
     def get_broadcast_service(self) -> BroadcastService:
         pass
 
-    @abstractmethod
-    def send_request_for_relay_peers(self):
+    def sync_and_send_request_for_relay_peers(self, network_num: int) -> int:
+        """
+        Requests potential relay peers from SDN. Merges list with provided command line relays.
+
+        This function retrieves from the SDN potential_relay_peers_by_network
+        Then it try to ping for each relay (timeout of 2 seconds). The ping is done in parallel
+        Once there are ping result, it calculate the best relay and decides if need to switch relays
+
+        The above can take time, so the functions is split into several internal functions and use the thread pool
+        not to block the main thread.
+        """
+
+        self.requester.send_threaded_request(
+            sdn_http_service.fetch_potential_relay_peers_by_network,
+            self.opts.node_id,
+            network_num,
+            # pyre-fixme[6]: Expected `Optional[Callable[[Future[Any]], Any]]` for 4th parameter `done_callback`
+            #  to call `send_threaded_request` but got `BoundMethod[Callable(_process_blockchain_network_from_sdn)
+            #  [[Named(self, AbstractRelayConnection), Named(get_blockchain_network_future, Future[Any])], Any],
+            #  AbstractRelayConnection]`.
+            done_callback=self.process_potential_relays_from_sdn
+        )
+
+        return constants.CANCEL_ALARMS
+
+    def process_potential_relays_from_sdn(self, get_potential_relays_future: Future):
         pass
 
     @abstractmethod
@@ -495,11 +519,13 @@ class AbstractNode:
         return memory_statistics.flush_info()
 
     def set_node_config_opts_from_sdn(self, opts: CommonOpts) -> None:
-        blockchain_networks: List[BlockchainNetworkModel] = opts.blockchain_networks
-        for blockchain_network in blockchain_networks:
-            tx_stats.configure_network(blockchain_network.network_num,
-                                       blockchain_network.tx_percent_to_log_by_hash,
-                                       blockchain_network.tx_percent_to_log_by_sid)
+        blockchain_networks: Dict[int, BlockchainNetworkModel] = opts.blockchain_networks
+        for blockchain_network in blockchain_networks.values():
+            tx_stats.configure_network(
+                blockchain_network.network_num,
+                blockchain_network.tx_percent_to_log_by_hash,
+                blockchain_network.tx_percent_to_log_by_sid
+            )
         bdn_tx_to_bx_tx.init(blockchain_networks)
 
     def dump_memory_usage(self):
@@ -553,11 +579,6 @@ class AbstractNode:
     def sync_tx_services(self):
         self.start_sync_time = time.time()
         self.sync_metrics = defaultdict(Counter)
-
-    def log_txs_network_content(
-        self, network_num: int, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview]
-    ) -> None:
-        pass
 
     @abstractmethod
     def _transaction_sync_timeout(self):
@@ -636,7 +657,6 @@ class AbstractNode:
 
     def on_network_synced(self, network_num: int) -> None:
         self.last_sync_message_received_by_network.pop(network_num, None)
-        self.network_synced[network_num] = True
 
     def on_fully_updated_tx_service(self):
         logger.debug(

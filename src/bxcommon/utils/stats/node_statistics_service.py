@@ -1,4 +1,8 @@
 import gc
+import dataclasses
+import functools
+
+from dataclasses import dataclass
 from collections import defaultdict
 from typing import Dict
 from typing import Type, Any, TYPE_CHECKING
@@ -14,25 +18,17 @@ if TYPE_CHECKING:
     from bxcommon.connections.abstract_node import AbstractNode
 
 
+@dataclass
 class NodeTransactionStatInterval(StatsIntervalData):
-    total_uncollectable: int
-    generation_zero_size: int
-    generation_one_size: int
-    generation_two_size: int
-    time_spent_in_gc: float
-    collection_counts: Dict[int, int]
-
-    def __init__(self, *args, **kwargs) -> None:
-        super(NodeTransactionStatInterval, self).__init__(*args, **kwargs)
-        self.total_uncollectable = 0
-        self.generation_zero_size = 0
-        self.generation_one_size = 0
-        self.generation_two_size = 0
-        self.collection_counts = defaultdict(int)
-        self.generation_zero_collections = 0
-        self.generation_one_collections = 0
-        self.generation_two_collections = 0
-        self.time_spent_in_gc = 0
+    total_uncollectable: int = 0
+    generation_zero_size: int = 0
+    generation_one_size: int = 0
+    generation_two_size: int = 0
+    time_spent_in_gc: float = 0
+    collection_counts: Dict[int, int] = dataclasses.field(default_factory=functools.partial(defaultdict, int))
+    generation_zero_collections: int = 0
+    generation_one_collections: int = 0
+    generation_two_collections: int = 0
 
 
 class _NodeStatisticsService(StatisticsService[NodeTransactionStatInterval, "AbstractNode"]):
@@ -63,10 +59,8 @@ class _NodeStatisticsService(StatisticsService[NodeTransactionStatInterval, "Abs
         }
 
     def log_gc_duration(self, generation: int, duration_s: float) -> None:
-        interval_data = self.interval_data
-        assert interval_data is not None
-        interval_data.time_spent_in_gc += duration_s
-        interval_data.collection_counts[generation] += 1
+        self.interval_data.time_spent_in_gc += duration_s
+        self.interval_data.collection_counts[generation] += 1
 
 
 node_stats_service = _NodeStatisticsService()

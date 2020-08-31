@@ -1,6 +1,8 @@
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
-from bxcommon.connections.abstract_connection import AbstractConnection
+if TYPE_CHECKING:
+    # pylint: disable=R0401
+    from bxcommon.connections.abstract_connection import AbstractConnection
 
 SUFFIXES = ["bytes", "kB", "MB", "GB"]
 
@@ -14,7 +16,7 @@ def byte_count(num_bytes: float) -> str:
     return f"{int(num_bytes)} {SUFFIXES[i]}"
 
 
-def connections(conns: List[AbstractConnection]) -> str:
+def connections(conns: List["AbstractConnection"]) -> str:
     """
     Formats list of connections to a string logged in stats
     :param conns: list of connections
@@ -24,7 +26,7 @@ def connections(conns: List[AbstractConnection]) -> str:
     return ", ".join(conn.format_connection_desc for conn in conns)
 
 
-def connection(conn: Optional[AbstractConnection]) -> str:
+def connection(conn: Optional["AbstractConnection"]) -> str:
     """
     Formats connection to a string logged in stats
     :param conn: Connection

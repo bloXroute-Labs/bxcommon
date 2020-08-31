@@ -1,10 +1,14 @@
 import time
 import traceback
+import dataclasses
+
+from dataclasses import dataclass
 from abc import ABCMeta, abstractmethod
 from collections import deque
 from datetime import datetime
 from threading import Thread, Lock
 from typing import Optional, TypeVar, Generic, Deque, Type, Callable, Dict, Any, TYPE_CHECKING
+
 
 from bxcommon import constants
 from bxutils import log_messages
@@ -21,20 +25,11 @@ if TYPE_CHECKING:
     from bxcommon.connections.abstract_node import AbstractNode
 
 
+@dataclass
 class StatsIntervalData:
-    node: "AbstractNode"
-    node_id: str
-    start_time: datetime
-    end_time: Optional[datetime]
-    _closed: bool
-
-    def __init__(self, node: "AbstractNode", node_id: str) -> None:
-        self.node = node
-        self.node_id = node_id
-        self.start_time = datetime.utcnow()
-        self.end_time = None
-
-        self._closed = False
+    start_time: datetime = dataclasses.field(default_factory=datetime.utcnow)
+    end_time: Optional[datetime] = None
+    _closed: bool = False
 
     def close(self):
         self.end_time = datetime.utcnow()
@@ -54,7 +49,7 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
     name: str
     log_level: LogLevel
     logger: CustomLogger
-    interval_data: Optional[T]
+    interval_data: T
     interval: int
     reset: bool
 
@@ -72,7 +67,7 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
         self.name = name
         self.log_level = log_level
         self.logger = stat_logger
-        self.interval_data = None
+        self.interval_data = self.get_interval_data_class()()
         self.interval = interval
         self.reset = reset
 
@@ -89,22 +84,16 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
 
     def set_node(self, node: N) -> None:
         self.node = node
+        # reset the interval data
         self.create_interval_data_object()
 
     def create_interval_data_object(self) -> None:
-        assert self.node is not None
-        # pyre-fixme[6]: Expected `AbstractNode` for 1st param but got
-        #  `Optional[Variable[N (bound to AbstractNode)]]`.
-        # pyre-fixme[16]: `Optional` has no attribute `opts`.
-        self.interval_data = self.get_interval_data_class()(self.node, self.node.opts.node_id)
+        self.interval_data = self.get_interval_data_class()()
 
     def close_interval_data(self) -> None:
         assert self.node is not None
         assert self.interval_data is not None
-        # pyre-fixme[16]: `Optional` has no attribute `close`.
         self.interval_data.close()
-        # pyre-fixme[6]: Expected `T` for 1st param but got `Optional[Variable[T
-        #  (bound to StatsIntervalData)]]`.
         self.history.append(self.interval_data)
 
     def flush_info(self) -> int:
@@ -174,11 +163,13 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
         """
         Assume that record_fn is a read-only function and its okay to get somewhat stale data.
         """
-        assert self.node is not None
+        node = self.node
+        assert node is not None
 
-        # align all nodes to write statistics at the same time (clock half hour)
-        next_clock_half_hour = ((int(time.time() / 60 / 30) + 1) * (60 * 30)) - time.time()
-        alive = self.sleep_and_check_alive(next_clock_half_hour)
+        # align all nodes to write statistics at the same time (clock interval)
+        next_clock_interval = ((int(time.time() / self.interval) + 1) * self.interval) - time.time()
+        alive = self.sleep_and_check_alive(next_clock_interval)
+
         while alive:
             start_date_time = datetime.utcnow()
             start_time = time.time()
@@ -189,7 +180,6 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
                 self.logger.error(
                     log_messages.FAILURE_RECORDING_STATS, self.name, e, traceback.format_exc()
                 )
-                runtime = 0
             else:
                 runtime = time.time() - start_time
                 task_duration_logger.statistics(
@@ -198,9 +188,10 @@ class ThreadedStatisticsService(StatisticsService[T, N], metaclass=ABCMeta):
                         "start_date_time": start_date_time,
                         "task": self.name,
                         "duration": runtime,
-                        # pyre-fixme[16]: `Optional` has no attribute `opts`.
-                        "node_id": self.node.opts.node_id,
+                        "node_id": node.opts.node_id,
                     }
                 )
-            sleep_time = self.interval - runtime
-            alive = self.sleep_and_check_alive(sleep_time)
+
+            # align all nodes to write statistics at the same time (clock interval)
+            next_clock_sleep_time = ((int(time.time() / self.interval) + 1) * self.interval) - time.time()
+            alive = self.sleep_and_check_alive(next_clock_sleep_time)

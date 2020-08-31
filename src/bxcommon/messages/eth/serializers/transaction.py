@@ -94,7 +94,7 @@ class Transaction(rlp.Serializable):
 
         input_data = convert.bytes_to_hex(self.data)
         if not input_data:
-            input_data = "0x0"
+            input_data = "0x"
         else:
             input_data = f"0x{input_data}"
 
@@ -103,19 +103,24 @@ class Transaction(rlp.Serializable):
             self.get_unsigned(), signature, eth_common_utils.keccak_hash
         )
         from_address = crypto_utils.public_key_to_address(from_key)
-        return {
-            "from": f"0x{convert.bytes_to_hex(from_address)}",
-            "gas": self.start_gas,
-            "gas_price": self.gas_price,
+        serialized_output = {
+            "from": convert.bytes_to_hex_string_format(from_address),
+            "gas": hex(self.start_gas),
+            "gas_price": hex(self.gas_price),
             "hash": f"0x{str(message_hash)}",
             "input": input_data,
-            "nonce": self.nonce,
-            "to": utils.optional_map(self.to, lambda to: f"0x{convert.bytes_to_hex(to)}"),
-            "value": self.value,
+            "nonce": hex(self.nonce),
+            "value": hex(self.value),
             "v": hex(self.v),
             "r": hex(self.r),
             "s": hex(self.s)
         }
+
+        to = self.to
+        if to is not None:
+            serialized_output["to"] = convert.bytes_to_hex_string_format(to)
+
+        return serialized_output
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "Transaction":
@@ -136,3 +141,18 @@ class Transaction(rlp.Serializable):
             int(payload["r"], 16),
             int(payload["s"], 16),
         )
+
+    @classmethod
+    def from_json_with_validation(cls, payload: Dict[str, Any]) -> "Transaction":
+        """
+        create a Transaction from a payload dict.
+        this method support a less strict payload. and support input in both the Eth format and our own.
+
+        """
+        if "gas_price" in payload:
+            payload["gasPrice"] = payload["gas_price"]
+        for item in ["nonce", "gasPrice", "gas", "value", "v", "r", "s"]:
+            value = payload[item]
+            if isinstance(value, int):
+                payload[item] = hex(value)
+        return cls.from_json(payload)

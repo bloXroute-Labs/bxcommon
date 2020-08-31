@@ -2,6 +2,7 @@ from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.protocol_version import PROTOCOL_VERSION
 from bxcommon.utils.message_buffer_builder import PayloadElement, PayloadBlock
+from bxutils.logging import LogLevel
 
 
 class KeepAliveMessage(AbstractBloxrouteMessage):
@@ -36,3 +37,6 @@ class KeepAliveMessage(AbstractBloxrouteMessage):
         if self._nonce is None:
             self.__unpack()
         return self._nonce
+
+    def log_level(self) -> LogLevel:
+        return LogLevel.DEBUG

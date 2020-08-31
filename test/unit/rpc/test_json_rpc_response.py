@@ -2,6 +2,7 @@ from bxcommon.rpc.json_rpc_request import JsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.rpc_errors import RpcInvalidParams, RpcError
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxutils.encoding.json_encoder import Case
 
 
 class JsonRpcResponseTest(AbstractTestCase):
@@ -39,3 +40,21 @@ class JsonRpcResponseTest(AbstractTestCase):
         rpc_notification = JsonRpcRequest(None, "sub", ["subid", {}])
         with self.assertRaises(ValueError):
             JsonRpcResponse.from_json(rpc_notification.to_json())
+
+    def test_serialize_to_camelCase(self):
+        result = {
+            "field_name": "foo",
+            "otherFieldName": "bar",
+            "nested_field": {
+                "nested_field_name": "baz"
+            }
+        }
+        rpc_response = JsonRpcResponse("1", result, None)
+        json_serialized = rpc_response.to_json(Case.CAMEL)
+        self.assertEqual("foo", json_serialized["result"]["fieldName"])
+        self.assertEqual("bar", json_serialized["result"]["otherFieldName"])
+        self.assertEqual("baz", json_serialized["result"]["nestedField"]["nestedFieldName"])
+
+        simple_rpc_response = JsonRpcResponse("1", "foo", None)
+        simple_json = simple_rpc_response.to_json(Case.CAMEL)
+        self.assertEqual("foo", simple_json["result"])

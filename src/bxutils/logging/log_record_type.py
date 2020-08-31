@@ -14,6 +14,7 @@ class LogRecordType(Enum):
     Throughput = "stats.throughput"
     Memory = "stats.memory"
     TransactionFeedStats = "stats.transaction.feed"
+    EthOnBlockFeedStats = "stats.ethonblock.feed"
     NodeStatus = "stats.node.status"
     NodeInfo = "stats.node.info"
     NodeEvent = "stats.node.event"

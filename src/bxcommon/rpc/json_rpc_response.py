@@ -1,10 +1,13 @@
 import json
 from typing import Any, Optional, Dict, Union
 
+import humps
+
 from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.rpc_errors import RpcError
 from bxutils.encoding import json_encoder
 from bxutils import utils
+from bxutils.encoding.json_encoder import Case
 
 
 class JsonRpcResponse:
@@ -42,22 +45,27 @@ class JsonRpcResponse:
         else:
             return False
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self, case: Case = Case.SNAKE) -> Dict[str, Any]:
         fields = {
             rpc_constants.JSON_RPC_VERSION_FIELD: self.json_rpc_version,
             rpc_constants.JSON_RPC_REQUEST_ID: self.id,
         }
         result = self.result
         if result is not None:
-            fields[rpc_constants.JSON_RPC_RESULT] = result
+            if case == Case.CAMEL and isinstance(result, dict):
+                fields[rpc_constants.JSON_RPC_RESULT] = humps.camelize(
+                    result
+                )
+            else:
+                fields[rpc_constants.JSON_RPC_RESULT] = result
 
         error = self.error
         if error is not None:
             fields[rpc_constants.JSON_RPC_ERROR] = error.to_json()
         return fields
 
-    def to_jsons(self) -> str:
-        return json_encoder.to_json(self.to_json())
+    def to_jsons(self, case: Case = Case.SNAKE) -> str:
+        return json_encoder.to_json(self.to_json(case))
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "JsonRpcResponse":

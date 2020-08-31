@@ -2,6 +2,7 @@ import asyncio
 import os
 import socket
 import sys
+import uuid
 from argparse import Namespace
 from contextlib import closing
 from typing import Optional, TypeVar, Type, TYPE_CHECKING, List
@@ -11,6 +12,7 @@ from mock import MagicMock
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.models.authenticated_peer_info import AuthenticatedPeerInfo
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
@@ -56,6 +58,10 @@ def generate_object_hash() -> Sha256Hash:
     return Sha256Hash(generate_hash())
 
 
+def generate_node_id() -> str:
+    return str(uuid.uuid4())
+
+
 Connection = TypeVar("Connection", bound="AbstractConnection")
 
 
@@ -68,12 +74,20 @@ def create_connection(
     port: int = 8001,
     from_me: bool = False,
     add_to_pool: bool = True,
+    authentication_info: Optional[AuthenticatedPeerInfo] = None
 ) -> Connection:
     if node_opts is None:
         node_opts = get_common_opts(8002)
 
     if node is None:
         node = MockNode(node_opts, None)
+
+    if authentication_info is None:
+        authentication_info = AuthenticatedPeerInfo(
+            connection_cls.CONNECTION_TYPE,
+            node_opts.node_id,
+            ""
+        )
 
     if isinstance(node, MockNode):
         add_to_pool = False
@@ -82,6 +96,8 @@ def create_connection(
     if not from_me:
         test_socket_connection.direction = NetworkDirection.INBOUND
     connection = connection_cls(test_socket_connection, node)
+
+    connection.on_connection_authenticated(authentication_info)
 
     if add_to_pool:
         node.connection_pool.add(file_no, ip, port, connection)
@@ -223,6 +239,7 @@ def get_common_opts(
     split_relays: bool = False,
     sid_expire_time: int = 30,
     rpc: bool = False,
+    transaction_validation: bool = True,
     **kwargs,
 ) -> CommonOpts:
     if node_id is None:
@@ -269,6 +286,7 @@ def get_common_opts(
         "log_fluentd_host": utils_constants.FLUENTD_HOST,
         "enable_buffered_send": False,
         "block_compression_debug": False,
+        "enable_tcp_quickack": True,
         "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
             str(parallelism_degree)
         ),
@@ -276,6 +294,7 @@ def get_common_opts(
         "ca_cert_url": "https://certificates.blxrbdn.com/ca",
         "private_ssl_base_url": "https://certificates.blxrbdn.com",
         "rpc": rpc,
+        "transaction_validation": transaction_validation
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val
@@ -287,8 +306,8 @@ def get_common_opts(
         "outbound_peers": outbound_peers,
         "sid_expire_time": sid_expire_time,
         "split_relays": split_relays,
-        "blockchain_networks": [
-            blockchain_network(
+        "blockchain_networks": {
+            0: blockchain_network(
                 "Bitcoin",
                 "Mainnet",
                 0,
@@ -296,8 +315,8 @@ def get_common_opts(
                 15,
                 final_tx_confirmations_count,
                 block_confirmations_count,
-            ),
-            blockchain_network(
+                ),
+            1: blockchain_network(
                 "Bitcoin",
                 "Testnet",
                 1,
@@ -305,8 +324,8 @@ def get_common_opts(
                 15,
                 final_tx_confirmations_count,
                 block_confirmations_count,
-            ),
-            blockchain_network(
+                ),
+            5: blockchain_network(
                 "Ethereum",
                 "Mainnet",
                 5,
@@ -315,7 +334,7 @@ def get_common_opts(
                 final_tx_confirmations_count,
                 block_confirmations_count,
             ),
-            blockchain_network(
+            3: blockchain_network(
                 "Ethereum",
                 "Testnet",
                 3,
@@ -324,7 +343,16 @@ def get_common_opts(
                 final_tx_confirmations_count,
                 block_confirmations_count,
             ),
-        ],
+            33: blockchain_network(
+                "Ontology",
+                "Mainnet",
+                33,
+                5,
+                5,
+                final_tx_confirmations_count,
+                block_confirmations_count,
+            ),
+        },
         "blockchain_network_num": blockchain_network_num,
     })
     return common_opts

@@ -13,6 +13,7 @@ class TxValidationStatus(SerializableFlag):
     VALID_TX = 1 << 0
     INVALID_FORMAT = 1 << 1
     INVALID_SIGNATURE = 1 << 2
+    LOW_FEE = 1 << 3
 
     def __str__(self) -> str:
         # pylint: disable=using-constant-test

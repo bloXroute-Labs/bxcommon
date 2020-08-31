@@ -82,17 +82,18 @@ def fetch_blockchain_network(protocol_name: str, network_name: str) -> Optional[
     return blockchain_network
 
 
-def fetch_blockchain_networks() -> List[BlockchainNetworkModel]:
+def fetch_blockchain_networks() -> Dict[int, BlockchainNetworkModel]:
     node_url = SdnRoutes.blockchain_networks
-    blockchain_networks = http_service.get_json(node_url)
+    sdn_blockchain_networks = http_service.get_json(node_url)
 
-    if not blockchain_networks:
+    if not sdn_blockchain_networks:
         logger.warning(log_messages.BDN_CONTAINS_NO_CONFIGURED_NETWORKS)
-        return []
+        return {}
 
-    blockchain_networks = [model_loader.load_model(BlockchainNetworkModel, b) for b in blockchain_networks]
-
-    return blockchain_networks
+    assert isinstance(sdn_blockchain_networks, List)
+    blockchain_network_models = [model_loader.load_model(BlockchainNetworkModel, b) for b in sdn_blockchain_networks]
+    blockchain_network_dict = {network_model.network_num: network_model for network_model in blockchain_network_models}
+    return blockchain_network_dict
 
 
 def fetch_quota_status(account_id: str) -> Optional[Dict[str, Any]]:
@@ -129,6 +130,10 @@ def submit_gateway_inbound_connection(node_id: str, peer_id: str):
 
 def submit_tx_synced_event(node_id: str):
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_FULLY_SYNCED))
+
+
+def submit_tx_not_synced_event(node_id: str):
+    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_NOT_SYNCED))
 
 
 def submit_notify_online_event(node_id: str):

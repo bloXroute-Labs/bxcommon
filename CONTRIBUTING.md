@@ -107,3 +107,5 @@ you add.
 [shanevc]: https://github.com/shanevc
 [urim]: https://github.com/Uri-Margalit-bloXroute
 [style]: https://github.com/google/styleguide/blob/gh-pages/pyguide.md
+[pyre]: https://pyre-check.org/
+[pylint]: https://www.pylint.org/

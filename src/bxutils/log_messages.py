@@ -223,3 +223,15 @@ BDN_ACCOUNT_INFORMATION_TIMEOUT = LogMessage(
     CONNECTION_PROBLEM_CATEGORY,
     "BDN does not send the account information within {} seconds."
 )
+
+NODE_RECEIVED_TX_WITH_INVALID_FORMAT = LogMessage(
+    "C-000044",
+    GENERAL_CATEGORY,
+    "{} received transaction {} from {} with an invalid format"
+)
+
+NODE_RECEIVED_TX_WITH_INVALID_SIG = LogMessage(
+    "C-000045",
+    GENERAL_WARNING,
+    "{} received transaction {} from {} with an invalid signature"
+)
