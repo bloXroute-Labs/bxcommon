@@ -120,8 +120,6 @@ def submit_peer_connection_error_event(node_id: str, peer_ip: str, peer_port: in
 def submit_peer_connection_event(
     event_type: NodeEventType, node_id: str, peer_ip: str, peer_port: int, payload: Optional[str] = None
 ) -> None:
-    peer_info = f"[{peer_ip}:{peer_port}]"
-    payload = f"{payload} {peer_info}" if payload else peer_info
     submit_node_event(
         # pyre-fixme[6]: Expected `str` for 5th param but got `Optional[str]`.
         NodeEventModel(node_id=node_id, event_type=event_type, peer_ip=peer_ip, peer_port=peer_port, payload=payload)
