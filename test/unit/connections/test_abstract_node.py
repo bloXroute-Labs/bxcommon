@@ -41,7 +41,9 @@ class TestNode(AbstractNode):
     def build_connection(self, socket_connection):
         return MockConnection(socket_connection, self)
 
-    def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:
+    def on_failed_connection_retry(
+        self, ip: str, port: int, connection_type: ConnectionType, _connection_state: ConnectionState
+    ) -> None:
         sdn_http_service.submit_peer_connection_error_event(self.opts.node_id, ip, port)
 
     def get_tx_service(self, network_num=None):

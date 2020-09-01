@@ -164,7 +164,10 @@ class NodeEventLoop:
                 err = repr(e)
 
             self._node.log_refused_connection(peer_info, err)
-            self._node.handle_connection_closed(True, peer_info)
+            connection = self._node.connection_pool.get_by_ipport(
+                peer_info.endpoint.ip_address, peer_info.endpoint.port
+            )
+            self._node.handle_connection_closed(True, peer_info, connection.state)
 
     def _iter_outbound_peers(self) -> Generator[ConnectionPeerInfo, None, None]:
         sdn_address = self._node.get_sdn_address()

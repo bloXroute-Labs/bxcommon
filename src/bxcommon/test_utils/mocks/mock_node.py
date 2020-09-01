@@ -5,6 +5,7 @@ from mock import MagicMock
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import DEFAULT_NETWORK_NUM
 from bxcommon.models.node_type import NodeType
@@ -60,7 +61,9 @@ class MockNode(AbstractNode):
     def process_potential_relays_from_sdn(self, get_potential_relays_future: Future):
         pass
 
-    def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:
+    def on_failed_connection_retry(
+        self, ip: str, port: int, connection_type: ConnectionType, connection_state: ConnectionState
+    ) -> None:
         pass
 
     def sync_tx_services(self):
