@@ -113,42 +113,46 @@ def submit_sid_space_full_event(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.SID_SPACE_FULL))
 
 
-def submit_peer_connection_error_event(node_id: str, peer_ip: str, peer_port: int):
+def submit_peer_connection_error_event(node_id: str, peer_ip: str, peer_port: int) -> None:
     submit_peer_connection_event(NodeEventType.PEER_CONN_ERR, node_id, peer_ip, peer_port)
 
 
-def submit_peer_connection_event(event_type: NodeEventType, node_id: str, peer_ip: str, peer_port: int,
-                                 payload: Optional[str] = None):
+def submit_peer_connection_event(
+    event_type: NodeEventType, node_id: str, peer_ip: str, peer_port: int, payload: Optional[str] = None
+) -> None:
+    peer_info = f"[{peer_ip}:{peer_port}]"
+    payload = f"{payload} {peer_info}" if payload else peer_info
     submit_node_event(
         # pyre-fixme[6]: Expected `str` for 5th param but got `Optional[str]`.
-        NodeEventModel(node_id=node_id, event_type=event_type, peer_ip=peer_ip, peer_port=peer_port, payload=payload))
+        NodeEventModel(node_id=node_id, event_type=event_type, peer_ip=peer_ip, peer_port=peer_port, payload=payload)
+    )
 
 
-def submit_gateway_inbound_connection(node_id: str, peer_id: str):
+def submit_gateway_inbound_connection(node_id: str, peer_id: str) -> None:
     http_service.post_json(SdnRoutes.gateway_inbound_connection.format(node_id), peer_id)
 
 
-def submit_tx_synced_event(node_id: str):
+def submit_tx_synced_event(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_FULLY_SYNCED))
 
 
-def submit_tx_not_synced_event(node_id: str):
+def submit_tx_not_synced_event(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.TX_SERVICE_NOT_SYNCED))
 
 
-def submit_notify_online_event(node_id: str):
+def submit_notify_online_event(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.NOTIFY_ONLINE))
 
 
-def submit_notify_offline_event(node_id: str):
+def submit_notify_offline_event(node_id: str) -> None:
     submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.NOTIFY_OFFLINE))
 
 
-def delete_gateway_inbound_connection(node_id: str, peer_id: str):
+def delete_gateway_inbound_connection(node_id: str, peer_id: str) -> None:
     http_service.delete_json(SdnRoutes.gateway_inbound_connection.format(node_id), peer_id)
 
 
-def submit_node_event(node_event_model: NodeEventModel):
+def submit_node_event(node_event_model: NodeEventModel) -> None:
     node_event_model.timestamp = str(time.time())
     logger.trace("Submitting event for node {0} {1}", node_event_model.node_id, json_encoder.to_json(node_event_model))
     url = SdnRoutes.node_event.format(node_event_model.node_id)
@@ -181,7 +185,7 @@ def register_node(node_model: NodeModel) -> NodeModel:
     return registered_node_model
 
 
-def reset_pool(ssl_context: SSLContext):
+def reset_pool(ssl_context: SSLContext) -> None:
     http_service.update_http_ssl_context(ssl_context)
 
 
