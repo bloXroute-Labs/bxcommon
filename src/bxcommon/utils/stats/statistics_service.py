@@ -39,6 +39,8 @@ class StatsIntervalData:
 T = TypeVar("T", bound=StatsIntervalData)
 N = TypeVar("N", bound="AbstractNode")
 
+class SkipLogInterval(Exception):
+    pass
 
 class StatisticsService(Generic[T, N], metaclass=ABCMeta):
     """
@@ -98,7 +100,10 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
 
     def flush_info(self) -> int:
         self.close_interval_data()
-        self.logger.log(self.log_level, {"data": self.get_info(), "type": self.name})
+        try:
+            self.logger.log(self.log_level, {"data": self.get_info(), "type": self.name})
+        except SkipLogInterval:
+            pass
 
         # Start a new interval data if non cumulative
         if self.reset:
