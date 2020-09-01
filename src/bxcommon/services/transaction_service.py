@@ -13,11 +13,10 @@ from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iter
 from prometheus_client import Gauge
 
 from bxcommon import constants
-from bxcommon.messages.bloxroute import short_ids_serializer, compact_block_short_ids_serializer
+from bxcommon.messages.bloxroute import short_ids_serializer
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import memory_utils, convert
-from bxcommon.utils.blockchain_utils.eth import rlp_utils, eth_common_utils
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
@@ -28,7 +27,6 @@ from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import log_messages
 from bxutils import logging, utils
 from bxutils.encoding import json_encoder
-from bxutils.logging import LogLevel
 from bxutils.logging.log_record_type import LogRecordType
 
 if TYPE_CHECKING:
@@ -996,17 +994,6 @@ class TransactionService:
             size_type=size_type
         )
 
-    def log_compressed_block_debug_info(self, block_msg_bytes: Union[memoryview, bytearray]):
-        if not logger.isEnabledFor(LogLevel.DEBUG) or not self.node.opts.block_compression_debug:
-            return
-
-        assert self.network is not None
-        protocol = self.node.opts.blockchain_networks[self.network_num].protocol
-
-        # TODO implement in a better way
-        if protocol.lower() == "ethereum":
-            self._log_compressed_block_debug_info(block_msg_bytes)
-
     def get_object_type(
         self,
         collection_obj: Any  # pylint: disable=unused-argument
@@ -1229,66 +1216,3 @@ class TransactionService:
              }
         )
         return constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S
-
-    def _log_compressed_block_debug_info(self, block_msg_bytes: Union[memoryview, bytearray]):
-        block_msg_bytes = block_msg_bytes if isinstance(block_msg_bytes, memoryview) else memoryview(block_msg_bytes)
-
-        block_offsets = compact_block_short_ids_serializer.get_bx_block_offsets(block_msg_bytes)
-        short_ids, _short_ids_bytes_len = compact_block_short_ids_serializer.deserialize_short_ids_from_buffer(
-            block_msg_bytes,
-            block_offsets.short_id_offset
-        )
-
-        block_bytes = block_msg_bytes[block_offsets.block_begin_offset: block_offsets.short_id_offset]
-
-        _, _block_itm_len, block_itm_start = rlp_utils.consume_length_prefix(block_bytes, 0)
-        block_itm_bytes = block_bytes[block_itm_start:]
-
-        _, block_hdr_len, block_hdr_start = rlp_utils.consume_length_prefix(block_itm_bytes, 0)
-        full_hdr_bytes = block_itm_bytes[0:block_hdr_start + block_hdr_len]
-
-        block_hash_bytes = eth_common_utils.keccak_hash(full_hdr_bytes)
-        block_hash = Sha256Hash(block_hash_bytes)
-
-        _, block_txs_len, block_txs_start = rlp_utils.consume_length_prefix(
-            block_itm_bytes, block_hdr_start + block_hdr_len
-        )
-        txs_bytes = block_itm_bytes[block_txs_start:block_txs_start + block_txs_len]
-
-        # parse statistics variables
-        short_tx_index = 0
-        tx_start_index = 0
-
-        tx_index_in_block = 0
-        txs_info = []
-
-        while True:
-            if tx_start_index >= len(txs_bytes):
-                break
-
-            short_id = 0
-            tx_hash = None
-            has_contents = False
-
-            _, tx_itm_len, tx_itm_start = rlp_utils.consume_length_prefix(txs_bytes, tx_start_index)
-            tx_bytes = txs_bytes[tx_itm_start:tx_itm_start + tx_itm_len]
-
-            is_full_tx_start = 0
-            is_full_tx, _, = rlp_utils.decode_int(tx_bytes, is_full_tx_start)
-
-            if not is_full_tx:
-                short_id = short_ids[short_tx_index]
-                tx_hash, tx_bytes, _ = self.get_transaction(short_id)
-                has_contents = tx_bytes is not None
-                short_tx_index += 1
-
-            txs_info.append((tx_index_in_block, not is_full_tx, short_id, tx_hash, has_contents))
-
-            tx_index_in_block += 1
-            tx_start_index = tx_itm_start + tx_itm_len
-
-        logger.debug(
-            "Block {} contents (index, is compressed, short id, hash, has contents) : {}",
-            block_hash,
-            ",".join(str(tx_info) for tx_info in txs_info)
-        )

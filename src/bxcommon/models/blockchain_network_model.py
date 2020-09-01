@@ -48,3 +48,5 @@ class BlockchainNetworkModel:
     min_tx_age_seconds: float = 0.0
 
     mempool_expected_transactions_count: int = 0
+    send_compressed_txs_after_block: bool = False
+    log_compressed_block_debug_info_on_relay: bool = True
