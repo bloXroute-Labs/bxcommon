@@ -210,9 +210,4 @@ workflows:
           filters:
             branches:
               only: develop
-      - deploy:
-          filters:
-            branches:
-              only: develop
-          requires:
-            - build
+
