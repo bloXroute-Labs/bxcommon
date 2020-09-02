@@ -76,9 +76,11 @@ class OutboundPeerModel:
         return hash(f"{self.node_id}{self.ip}{self.port}")
 
     @classmethod
-    def from_string(cls, ip_port_str: str) -> "OutboundPeerModel":
+    def from_string(cls, peer_info_str: str) -> "OutboundPeerModel":
         try:
-            ip, port = ip_port_str.split(":")
-            return OutboundPeerModel(ip, int(port), node_type=NodeType.RELAY)
+            peer_info = peer_info_str.split(":")
+            ip = peer_info[0], port = peer_info[1]
+            node_type = NodeType[peer_info[2].upper()] if len(peer_info) > 2 else NodeType.RELAY
+            return OutboundPeerModel(ip, int(port), node_type=node_type)
         except Exception as _e:
-            raise ValueError(f"{ip_port_str} is not a valid peer. Specify peer as ip:port string.")
+            raise ValueError(f"{peer_info_str} is not a valid peer. Specify peer as ip:port:type string.")
