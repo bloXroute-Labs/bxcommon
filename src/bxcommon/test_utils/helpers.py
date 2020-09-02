@@ -325,6 +325,15 @@ def get_common_opts(
                 final_tx_confirmations_count,
                 block_confirmations_count,
                 ),
+            4: blockchain_network(
+                "BitcoinCash",
+                "Testnet",
+                4,
+                15,
+                15,
+                24,
+                block_confirmations_count,
+            ),
             5: blockchain_network(
                 "Ethereum",
                 "Mainnet",
@@ -371,8 +380,9 @@ def async_test(method):
     def wrapper(*args, **kwargs):
         async def async_method(*args, **kwargs):
             await method(*args, **kwargs)
+
         future = async_method(*args, **kwargs)
-        task = asyncio.wait_for(future, timeout=ASYNC_TEST_TIMEOUT_S)
+        task = asyncio.wait([future], timeout=ASYNC_TEST_TIMEOUT_S)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(task)
 

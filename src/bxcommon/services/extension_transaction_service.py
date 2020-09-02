@@ -36,6 +36,7 @@ class ExtensionTransactionService(TransactionService):
 
         self.proxy = tpe.TransactionService(
             task_pool_proxy.get_pool_size(),
+            self.node.opts.blockchain_networks[network_num].protocol.lower(),
             node.opts.tx_mem_pool_bucket_size,
             self._get_final_tx_confirmations_count()
         )
