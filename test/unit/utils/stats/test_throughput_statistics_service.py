@@ -124,3 +124,11 @@ class ThroughputServiceTests(AbstractTestCase):
         add_measurement("localhost 0000", MeasurementType.PING, 0.2)
         self.assertEqual(throughput_statistics.interval_data.peer_to_stats["localhost 0000"].ping_max, 0.3)
         throughput_statistics.flush_info()
+
+    def test_adding_ping__inbound_event(self):
+
+        add_measurement("localhost 0000", MeasurementType.PING_INCOMING, 0.1)
+        add_measurement("localhost 0000", MeasurementType.PING_INCOMING, 0.3)
+        add_measurement("localhost 0000", MeasurementType.PING_INCOMING, 0.2)
+        self.assertEqual(throughput_statistics.interval_data.peer_to_stats["localhost 0000"].ping_incoming_max, 0.3)
+        throughput_statistics.flush_info()

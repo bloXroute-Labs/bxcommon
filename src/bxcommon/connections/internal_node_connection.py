@@ -178,6 +178,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
     # pylint: disable=arguments-differ
     def msg_ping(self, msg: PingMessage):
         nonce = msg.nonce()
+        assumed_request_time = time.time() - nonce_generator.get_timestamp_from_nonce(nonce)
+        hooks.add_measurement(self.peer_desc, MeasurementType.PING_INCOMING, assumed_request_time, self.peer_id)
         self.enqueue_msg(PongMessage(nonce=nonce))
 
     # pylint: disable=arguments-differ
@@ -198,7 +200,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
                 request_response_time
             )
 
-            hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time)
+            hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time, self.peer_id)
         elif nonce is not None:
             self.log_debug("Pong message had no matching ping request. Nonce: {}", nonce)
 
