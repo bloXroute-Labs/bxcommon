@@ -39,8 +39,6 @@ class StatsIntervalData:
 T = TypeVar("T", bound=StatsIntervalData)
 N = TypeVar("N", bound="AbstractNode")
 
-class SkipLogInterval(Exception):
-    pass
 
 class StatisticsService(Generic[T, N], metaclass=ABCMeta):
     """
@@ -78,7 +76,7 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> Optional[Dict[str, Any]]:
         """
         Constructs response object to be outputted on stat service set interval.
         :return: dictionary to be converted to JSON
@@ -100,10 +98,9 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
 
     def flush_info(self) -> int:
         self.close_interval_data()
-        try:
-            self.logger.log(self.log_level, {"data": self.get_info(), "type": self.name})
-        except SkipLogInterval:
-            pass
+        data = self.get_info()
+        if data:
+            self.logger.log(self.log_level, {"data": data, "type": self.name})
 
         # Start a new interval data if non cumulative
         if self.reset:
