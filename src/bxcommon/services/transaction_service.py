@@ -1078,7 +1078,7 @@ class TransactionService:
         if self._is_exceeding_memory_limit() and not self._tx_assignment_expire_queue:
             logger.warning(log_messages.SID_MEMORY_MANAGEMENT_FAILURE, self.get_cache_state_json())
             removed_tx_count += len(self._tx_cache_key_to_contents)
-            self._clear()
+            self.clear()
 
         self._total_tx_removed_by_memory_limit += removed_tx_count
         logger.trace("Removed {} oldest transactions from transaction service cache. Size after clean up: {}",
@@ -1182,7 +1182,7 @@ class TransactionService:
     def _is_exceeding_memory_limit(self) -> bool:
         return self._total_tx_contents_size > self._tx_content_memory_limit
 
-    def _clear(self) -> None:
+    def clear(self) -> None:
         self._tx_cache_key_to_contents.clear()
         self._tx_cache_key_to_short_ids.clear()
         self._short_id_to_tx_cache_key.clear()

@@ -281,6 +281,6 @@ class ExtensionTransactionService(TransactionService):
                                                                                     force=force,
                                                                                     removal_reason=removal_reason)
 
-    def _clear(self):
-        super(ExtensionTransactionService, self)._clear()
+    def clear(self):
+        super(ExtensionTransactionService, self).clear()
         self.proxy.clear_short_ids_seen_in_block()
