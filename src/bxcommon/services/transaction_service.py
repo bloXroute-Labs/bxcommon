@@ -744,7 +744,11 @@ class TransactionService:
         return len(self._short_ids_seen_in_block)
 
     def get_short_id_assign_time(self, short_id: int) -> float:
-        return self._tx_assignment_expire_queue.queue[short_id]
+        if short_id in self._tx_assignment_expire_queue.queue:
+            return self._tx_assignment_expire_queue.queue[short_id]
+        else:
+            logger.warning(log_messages.MISSING_ASSIGN_TIME_FOR_SHORT_ID, short_id)
+            return 0.0
 
     def expire_old_assignments(self) -> float:
         """
