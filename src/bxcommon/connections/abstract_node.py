@@ -31,7 +31,7 @@ from bxcommon.services.broadcast_service import BroadcastService, \
 from bxcommon.services.threaded_request_service import ThreadedRequestService
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import memory_utils, convert, performance_utils
-from bxcommon.utils.alarm_queue import AlarmQueue
+from bxcommon.utils.alarm_queue import AlarmQueue, AlarmId
 from bxcommon.utils.blockchain_utils import bdn_tx_to_bx_tx
 from bxcommon.common_opts import CommonOpts
 from bxcommon.utils.stats.block_statistics_service import block_stats
@@ -49,6 +49,7 @@ from bxutils.logging import LogRecordType
 from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.extensions import extensions_factory
 from bxutils.ssl.ssl_certificate_type import SSLCertificateType
+
 
 logger = logging.get_logger(__name__)
 memory_logger = logging.get_logger(LogRecordType.BxMemory, __name__)
@@ -132,10 +133,8 @@ class AbstractNode:
 
         opts.has_fully_updated_tx_service = False
 
-        self._check_sync_relay_connections_alarm_id = self.alarm_queue.register_alarm(
-            constants.LAST_MSG_FROM_RELAY_THRESHOLD_S, self._check_sync_relay_connections)
-        self._transaction_sync_timeout_alarm_id = self.alarm_queue.register_alarm(
-            constants.TX_SERVICE_CHECK_NETWORKS_SYNCED_S, self._transaction_sync_timeout)
+        self.check_sync_relay_connections_alarm_id: Optional[AlarmId] = None
+        self.transaction_sync_timeout_alarm_id: Optional[AlarmId] = None
 
         self.requester = ThreadedRequestService(
             # pyre-fixme[16]: `Optional` has no attribute `name`.
@@ -587,11 +586,11 @@ class AbstractNode:
         self.sync_metrics = defaultdict(Counter)
 
     @abstractmethod
-    def _transaction_sync_timeout(self):
+    def _transaction_sync_timeout(self) -> int:
         pass
 
     @abstractmethod
-    def _check_sync_relay_connections(self):
+    def check_sync_relay_connections(self, conn: AbstractConnection) -> int:
         pass
 
     def _get_socket_peer_info(self, sock: AbstractSocketConnectionProtocol) -> AuthenticatedPeerInfo:
@@ -664,7 +663,7 @@ class AbstractNode:
         return conn_obj
 
     def on_network_synced(self, network_num: int) -> None:
-        self.last_sync_message_received_by_network.pop(network_num, None)
+        del self.last_sync_message_received_by_network[network_num]
 
     def on_fully_updated_tx_service(self):
         logger.debug(

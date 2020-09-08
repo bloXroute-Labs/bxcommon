@@ -58,10 +58,10 @@ class TestNode(AbstractNode):
     def sync_tx_services(self):
         self.start_sync_time = time.time()
 
-    def _transaction_sync_timeout(self):
+    def _transaction_sync_timeout(self) -> int:
         pass
 
-    def _check_sync_relay_connections(self):
+    def check_sync_relay_connections(self, conn: MockConnection) -> int:
         pass
 
 

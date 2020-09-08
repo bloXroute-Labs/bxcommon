@@ -69,10 +69,10 @@ class MockNode(AbstractNode):
     def sync_tx_services(self):
         pass
 
-    def _transaction_sync_timeout(self):
+    def _transaction_sync_timeout(self) -> int:
         pass
 
-    def _check_sync_relay_connections(self):
+    def check_sync_relay_connections(self, conn: AbstractConnection) -> int:
         pass
 
     def broadcast_transaction(
