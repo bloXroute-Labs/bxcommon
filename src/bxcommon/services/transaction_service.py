@@ -1191,6 +1191,10 @@ class TransactionService:
         self._tx_cache_key_to_short_ids.clear()
         self._short_id_to_tx_cache_key.clear()
         self._short_ids_seen_in_block.clear()
+        self._short_id_to_tx_quota_flag.clear()
+        self.tx_hashes_without_content.clear()
+        self.tx_hashes_without_short_id.clear()
+        self._tx_assignment_expire_queue.clear()
         self._total_tx_contents_size = 0
 
     # TODO: remove this unused function

@@ -114,3 +114,6 @@ class ExpirationQueue(Generic[T]):
 
             if remove_callback is not None:
                 remove_callback(item, **kwargs)
+
+    def clear(self) -> None:
+        self.queue.clear()

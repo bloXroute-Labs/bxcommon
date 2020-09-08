@@ -282,5 +282,10 @@ class ExtensionTransactionService(TransactionService):
                                                                                     removal_reason=removal_reason)
 
     def clear(self):
-        super(ExtensionTransactionService, self).clear()
-        self.proxy.clear_short_ids_seen_in_block()
+        self.proxy.clear()
+
+        self._short_id_to_tx_quota_flag.clear()
+        self.tx_hashes_without_content.clear()
+        self.tx_hashes_without_short_id.clear()
+        self._tx_assignment_expire_queue.clear()
+        self._total_tx_contents_size = 0
