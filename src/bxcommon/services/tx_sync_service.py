@@ -126,7 +126,9 @@ class TxSyncService:
         total_tx_count: int = 0,
         sending_tx_msgs_start_time: float = 0,
     ) -> None:
-        del self._sync_alarms[network_num]
+        if network_num in self._sync_alarms:
+            del self._sync_alarms[network_num]
+
         if not self.conn.is_active():
             self.conn.log_info(
                 "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s. "
@@ -220,7 +222,9 @@ class TxSyncService:
         start_time: float = 0,
         snapshot_cache_keys: Optional[Set[TransactionCacheKeyType]] = None,
     ) -> None:
-        del self._sync_alarms[network_num]
+        if network_num in self._sync_alarms:
+            del self._sync_alarms[network_num]
+
         if not self.conn.is_active():
             self.conn.log_info(
                 "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s. "
@@ -331,7 +335,9 @@ class TxSyncService:
         sending_tx_msgs_start_time: float = 0,
         start_offset: int = 0,
     ) -> None:
-        del self._sync_alarms[network_num]
+        if network_num in self._sync_alarms:
+            del self._sync_alarms[network_num]
+
         if not self.conn.is_active():
             self.conn.log_info(
                 "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s. "
