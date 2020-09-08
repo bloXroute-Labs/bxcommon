@@ -342,7 +342,7 @@ def get_common_opts(
                 5,
                 5,
                 5,
-                final_tx_confirmations_count,
+                24,
                 block_confirmations_count,
             ),
             3: blockchain_network(
