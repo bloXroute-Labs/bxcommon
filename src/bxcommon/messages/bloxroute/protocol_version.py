@@ -1,6 +1,9 @@
-PROTOCOL_VERSION = 13
+PROTOCOL_VERSION = 14
 RELAY_BLOCK_CAN_SEND_TXS_MESSAGE = 12
 RELAY_BLOCK_CAN_SEND_COMPRESSED_BLOCK_TXS_MESSAGE = 13
+
+# PROTOCOL VERSION 14 (6/9/2020)
+# Pong(Ping Response contains additional timestamp)
 
 # PROTOCOL_VERSION 12 (06/08/2020)
 # relay block can send txs_message to gateways

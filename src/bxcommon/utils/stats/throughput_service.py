@@ -93,6 +93,9 @@ class ThroughputStatistics(StatisticsService[ThroughputIntervalData, "AbstractNo
             peer_stats.ping_max = max(peer_stats.ping_max, measure_value)
         elif measure_type is MeasurementType.PING_INCOMING:
             peer_stats.ping_incoming_max = max(peer_stats.ping_incoming_max, measure_value)
+        elif measure_type is MeasurementType.PING_OUTGOING:
+            peer_stats.ping_outgoing_max = max(peer_stats.ping_outgoing_max, measure_value)
+
         else:
             raise ValueError(f"Unexpected throughput measurement: {measure_type}={measure_value}")
 

@@ -24,3 +24,4 @@ class PeerStats:
     peer_total_sent: int = 0
     ping_max: float = 0
     ping_incoming_max: float = 0
+    ping_outgoing_max: float = 0

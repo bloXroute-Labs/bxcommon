@@ -16,7 +16,7 @@ from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
-from bxcommon.messages.bloxroute.pong_message import PongMessage
+from bxcommon.messages.bloxroute.v13.pong_message_v13 import PongMessageV13
 from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import \
     TxServiceSyncBlocksShortIdsMessage
@@ -45,7 +45,7 @@ class _BloxrouteMessageFactoryV6(AbstractMessageFactory):
         BloxrouteMessageType.HELLO: HelloMessage,
         BloxrouteMessageType.ACK: AckMessage,
         BloxrouteMessageType.PING: PingMessage,
-        BloxrouteMessageType.PONG: PongMessage,
+        BloxrouteMessageType.PONG: PongMessageV13,
         BloxrouteMessageType.BROADCAST: BroadcastMessage,
         BloxrouteMessageType.TRANSACTION: TxMessageV6,
         BloxrouteMessageType.GET_TRANSACTIONS: GetTxsMessage,
