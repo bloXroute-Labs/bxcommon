@@ -663,7 +663,8 @@ class AbstractNode:
         return conn_obj
 
     def on_network_synced(self, network_num: int) -> None:
-        del self.last_sync_message_received_by_network[network_num]
+        if network_num in self.last_sync_message_received_by_network:
+            del self.last_sync_message_received_by_network[network_num]
 
     def on_fully_updated_tx_service(self):
         logger.debug(
