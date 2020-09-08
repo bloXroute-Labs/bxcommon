@@ -33,6 +33,7 @@ class CommonOpts:
     non_ssl_port: int
     continent: str
     country: str
+    region: str
     hostname: str
     sdn_url: str
     log_level: LogLevel

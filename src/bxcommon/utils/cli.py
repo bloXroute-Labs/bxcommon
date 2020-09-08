@@ -34,6 +34,7 @@ def get_argument_parser() -> argparse.ArgumentParser:
     arg_parser.add_argument("--continent", help="The continent of this node", type=str,
                             choices=["NA", "SA", "EU", "AS", "AF", "OC", "AN"])
     arg_parser.add_argument("--country", help="The country of this node.", type=str)
+    arg_parser.add_argument("--region", help="The region of this node.", type=str)
     arg_parser.add_argument("--hostname", help="Hostname the node is running on", type=str,
                             default=constants.HOSTNAME)
     arg_parser.add_argument("--sdn-url", help="IP or dns of the bloxroute SDN", type=str,
