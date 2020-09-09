@@ -132,7 +132,6 @@ class SdnRoutes:
     nodes = "/nodes"
     node = "/nodes/{0}"
     account = "/account/{0}"
-    gateway_node_config = "/configs/gateway_node/{0}"
     node_potential_relays_by_network = "/nodes/{0}/{1}/potential-relays"
     node_gateways = "/nodes/{0}/gateways?streaming={1}"
     node_remote_blockchain = "/nodes/{0}/potential-remote-blockchain-peers"
@@ -142,6 +141,7 @@ class SdnRoutes:
     gateway_inbound_connection = "/nodes/{0}/gateway-inbound-connection"
     bdn_services = "/configs/bdn-services"
     quota_status = "/accounts/quota-status"
+    gateway_settings = "/nodes/{0}/gateway-settings"
 
 
 # </editor-fold>

@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Any, cast
 
 from bxcommon.constants import SdnRoutes
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
+from bxcommon.models.gateway_settings_model import GatewaySettingsModel
 from bxcommon.models.node_event_model import NodeEventModel, NodeEventType
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
@@ -80,6 +81,18 @@ def fetch_blockchain_network(protocol_name: str, network_name: str) -> Optional[
     blockchain_network = model_loader.load_model(BlockchainNetworkModel, blockchain_network)
 
     return blockchain_network
+
+
+def fetch_gateway_settings(node_id: str) -> GatewaySettingsModel:
+    node_url = SdnRoutes.gateway_settings.format(node_id)
+    gateway_settings = cast(Dict[str, Any], http_service.get_json(node_url))
+
+    if not gateway_settings:
+        gateway_settings = GatewaySettingsModel()
+    else:
+        gateway_settings = model_loader.load_model(GatewaySettingsModel, gateway_settings)
+
+    return gateway_settings
 
 
 def fetch_blockchain_networks() -> Dict[int, BlockchainNetworkModel]:
