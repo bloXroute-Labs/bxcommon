@@ -17,8 +17,8 @@ from bxcommon.messages.bloxroute import short_ids_serializer
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import memory_utils, convert
-from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.expiration_queue import ExpirationQueue
+from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
@@ -383,22 +383,31 @@ class TransactionService:
                     del self._short_id_to_tx_cache_key[short_id]
                     self._tx_assignment_expire_queue.remove(short_id)
 
-    def assign_short_id(self, transaction_hash: Sha256Hash, short_id: int) -> None:
+    def assign_short_id(
+        self,
+        transaction_hash: Sha256Hash,
+        short_id: int,
+        transaction_cache_key: Optional[TransactionCacheKeyType] = None
+    ) -> None:
         """
         Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
         :param transaction_hash: transaction long hash
         :param short_id: short id to be mapped to transaction
+        :param transaction_cache_key: transaction cache key
         """
-        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        if not transaction_cache_key:
+            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
         has_contents = transaction_cache_key in self._tx_cache_key_to_contents
         self.assign_short_id_base(transaction_hash, transaction_cache_key, short_id, has_contents, True)
 
-    def assign_short_id_base(self,
-                             transaction_hash: Sha256Hash,
-                             transaction_cache_key: TransactionCacheKeyType,
-                             short_id: int,
-                             has_contents: bool,
-                             call_to_assign_short_id: bool):
+    def assign_short_id_base(
+        self,
+        transaction_hash: Sha256Hash,
+        transaction_cache_key: Optional[TransactionCacheKeyType],
+        short_id: int,
+        has_contents: bool,
+        call_to_assign_short_id: bool
+    ) -> None:
         """
         Base method to assign short id for a transaction
 
@@ -426,6 +435,8 @@ class TransactionService:
                 self.tx_without_content_alarm_scheduled = True
 
         if call_to_assign_short_id:
+            if not transaction_cache_key:
+                transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
             self._tx_cache_key_to_short_ids[transaction_cache_key].add(short_id)
             self._short_id_to_tx_cache_key[short_id] = transaction_cache_key
         self._tx_assignment_expire_queue.add(short_id)
