@@ -8,6 +8,7 @@ from bxcommon.messages.bloxroute.key_message import KeyMessage
 from bxcommon.messages.bloxroute.notification_message import NotificationMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
+from bxcommon.messages.bloxroute.v13.pong_message_v13 import PongMessageV13
 from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
@@ -24,7 +25,7 @@ class BloxrouteVersionManagerV10Test(
         HelloMessage,
         AckMessage,
         PingMessage,
-        PongMessage,
+        PongMessageV13,
         BroadcastMessage,
         TxMessage,
         GetTxsMessage,
@@ -96,3 +97,6 @@ class BloxrouteVersionManagerV10Test(
             ],
         )
         self.assertEqual(0, converted_current_message.memory_utilization())
+
+    def old_pong_message(self, original_message: PongMessage) -> PongMessageV13:
+        return PongMessageV13(original_message.nonce())

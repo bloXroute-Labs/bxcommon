@@ -188,11 +188,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         super(InternalNodeConnection, self).msg_pong(msg)
 
         nonce = msg.nonce()
-        # TODO: remove this
-        if hasattr(msg, "timestamp"):
-            timestamp = msg.timestamp()
-        else:
-            timestamp = None
+        timestamp = msg.timestamp()
         if nonce in self.ping_message_timestamps.contents:
             request_msg_timestamp = self.ping_message_timestamps.contents[nonce]
             request_response_time = time.time() - request_msg_timestamp

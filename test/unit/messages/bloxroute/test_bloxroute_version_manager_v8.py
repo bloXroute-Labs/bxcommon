@@ -2,6 +2,7 @@ from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
+from bxcommon.messages.bloxroute.v13.pong_message_v13 import PongMessageV13
 from bxcommon.messages.bloxroute.v8.broadcast_message_v8 import BroadcastMessageV8
 from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
@@ -26,7 +27,7 @@ class BloxrouteVersionManagerV8Test(
         HelloMessage,
         AckMessage,
         PingMessage,
-        PongMessage,
+        PongMessageV13,
         BroadcastMessageV8,
         TxMessage,
         GetTxsMessage,
@@ -144,3 +145,6 @@ class BloxrouteVersionManagerV8Test(
                 "new_tx_from_bdn",
             ],
         )
+
+    def old_pong_message(self, original_message: PongMessage) -> PongMessageV13:
+        return PongMessageV13(original_message.nonce())
