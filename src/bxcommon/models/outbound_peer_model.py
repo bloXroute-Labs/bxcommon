@@ -79,7 +79,8 @@ class OutboundPeerModel:
     def from_string(cls, peer_info_str: str) -> "OutboundPeerModel":
         try:
             peer_info = peer_info_str.split(":")
-            ip = peer_info[0], port = peer_info[1]
+            ip = peer_info[0]
+            port = peer_info[1]
             node_type = NodeType[peer_info[2].upper()] if len(peer_info) > 2 else NodeType.RELAY
             return OutboundPeerModel(ip, int(port), node_type=node_type)
         except Exception as _e:
