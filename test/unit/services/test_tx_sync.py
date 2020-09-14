@@ -1,6 +1,8 @@
 from typing import List
 
 import time
+from unittest import skip
+
 from bxcommon.test_utils.message_factory_test_case import MessageFactoryTestCase
 
 import random
@@ -40,6 +42,7 @@ class SyncTxServiceTest(MessageFactoryTestCase):
                 if short_id % 7 < 2:
                     self.transaction_service._short_id_to_tx_cache_key.pop(short_id, None)
 
+    @skip("We don't sync tx service using time")
     def test_create_tx_service_msg(self):
         self._add_transactions(100000, tx_size=50)
         done = False
@@ -72,6 +75,7 @@ class SyncTxServiceTest(MessageFactoryTestCase):
         print(f"total - message creation time: {msg_build_time}")
         self.assertTrue(True)
 
+    @skip("We don't sync tx service using snapshot")
     def test_create_tx_service_msg_snapshot(self):
         self._add_transactions(100000, tx_size=50)
         total_time = 0
@@ -92,6 +96,7 @@ class SyncTxServiceTest(MessageFactoryTestCase):
             # print(len(txs_content_short_ids), duration)
         print(f"total time: {total_time}")
 
+    @skip("We don't sync tx service using snapshot")
     def test_create_tx_service_msg_snapshot_by_time(self):
         self._add_transactions(100000, tx_size=50)
         total_time = 0

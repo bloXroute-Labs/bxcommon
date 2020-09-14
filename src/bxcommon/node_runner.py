@@ -88,6 +88,10 @@ def run_node(
 
     config.log_pid(process_id_file_path)
     gc.callbacks.append(gc_logger.gc_callback)
+    # we disable GC generation cleanup.
+    # if memory goes out of control we need to find why or
+    # use gc.collect() every 30 minutes.
+    gc.disable()
 
     try:
         if opts.use_extensions:

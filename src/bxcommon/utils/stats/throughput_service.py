@@ -82,17 +82,20 @@ class ThroughputStatistics(StatisticsService[ThroughputIntervalData, "AbstractNo
         measure_value: Union[int, float],
         peer_id: Optional[str] = None,
     ) -> None:
-        assert self.interval_data is not None
-        peer_stats = self.interval_data.peer_to_stats[peer_desc]
-        peer_stats.address = peer_desc
         if peer_id is not None:
+            peer_stats = self.interval_data.peer_to_stats[peer_desc]
             peer_stats.peer_id = peer_id
+        else:
+            peer_stats = self.interval_data.peer_to_stats[peer_desc]
+        peer_stats.address = peer_desc
 
         if measure_type is MeasurementType.PING:
-            if peer_stats.ping_max is None:
-                peer_stats.ping_max = measure_value
-            else:
-                peer_stats.ping_max = max(peer_stats.ping_max, measure_value)
+            peer_stats.ping_max = max(peer_stats.ping_max, measure_value)
+        elif measure_type is MeasurementType.PING_INCOMING:
+            peer_stats.ping_incoming_max = max(peer_stats.ping_incoming_max, measure_value)
+        elif measure_type is MeasurementType.PING_OUTGOING:
+            peer_stats.ping_outgoing_max = max(peer_stats.ping_outgoing_max, measure_value)
+
         else:
             raise ValueError(f"Unexpected throughput measurement: {measure_type}={measure_value}")
 

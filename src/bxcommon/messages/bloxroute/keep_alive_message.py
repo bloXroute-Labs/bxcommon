@@ -11,15 +11,17 @@ class KeepAliveMessage(AbstractBloxrouteMessage):
 
     nonce: long, to be provided and managed by the connection
     """
-    KEEP_ALIVE_MESSAGE_BLOCK = PayloadBlock(AbstractBloxrouteMessage.HEADER_LENGTH, "ResponseMessage", PROTOCOL_VERSION,
-                                            PayloadElement(name="nonce", structure="<Q",
-                                                           decode=lambda x: x or None),
-                                            )
+    KEEP_ALIVE_MESSAGE_BLOCK = PayloadBlock(
+        AbstractBloxrouteMessage.HEADER_LENGTH, "ResponseMessage", PROTOCOL_VERSION,
+        PayloadElement(name="nonce", structure="<Q", decode=lambda x: x or None),
+    )
     KEEP_ALIVE_MESSAGE_LENGTH = KEEP_ALIVE_MESSAGE_BLOCK.size + constants.CONTROL_FLAGS_LEN
 
-    def __init__(self, msg_type, nonce=None, buf=None) -> None:
+    def __init__(self, msg_type, nonce=None, buf=None, payload_length=None) -> None:
+        if payload_length is None:
+            payload_length = self.KEEP_ALIVE_MESSAGE_LENGTH
         if buf is None:
-            buf = bytearray(self.HEADER_LENGTH + self.KEEP_ALIVE_MESSAGE_LENGTH)
+            buf = bytearray(self.HEADER_LENGTH + payload_length)
 
         buf = self.KEEP_ALIVE_MESSAGE_BLOCK.build(buf, nonce=nonce)
 
@@ -27,7 +29,7 @@ class KeepAliveMessage(AbstractBloxrouteMessage):
         self._nonce = None
         self._network_num = None
         self._memoryview = memoryview(buf)
-        super(KeepAliveMessage, self).__init__(msg_type, self.KEEP_ALIVE_MESSAGE_LENGTH, buf)
+        super(KeepAliveMessage, self).__init__(msg_type, payload_length, buf)
 
     def __unpack(self):
         contents = self.KEEP_ALIVE_MESSAGE_BLOCK.read(self._memoryview)

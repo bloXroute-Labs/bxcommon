@@ -442,8 +442,9 @@ class AbstractConnection(Generic[Node]):
                                                  start_time,
                                                  constants.MSG_HANDLERS_DURATION_WARN_THRESHOLD_S,
                                                  connection=self, count=messages_processed)
+        duration_ms = (time.time() - start_time) * 1000
         logger.trace("DONE PROCESSING from {}. Bytes processed: {}. Messages processed: {}. Duration: {}",
-                     self, total_bytes_processed, messages_processed, stats_format.duration(time.time() - start_time))
+                     self, total_bytes_processed, messages_processed, stats_format.duration(duration_ms))
 
 
     def pop_next_message(self, payload_len):

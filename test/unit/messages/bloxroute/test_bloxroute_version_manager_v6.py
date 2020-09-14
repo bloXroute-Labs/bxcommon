@@ -15,6 +15,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServi
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
+from bxcommon.messages.bloxroute.v13.pong_message_v13 import PongMessageV13
 from bxcommon.messages.bloxroute.v6.tx_message_v6 import TxMessageV6
 from bxcommon.messages.bloxroute.v6.tx_service_sync_txs_message_v6 import (
     TxServiceSyncTxsMessageV6,
@@ -140,3 +141,6 @@ class BloxrouteVersionManagerV6Test(
                 ],
                 converted.short_id_flags,
             )
+
+    def old_pong_message(self, original_message: PongMessage) -> PongMessageV13:
+        return PongMessageV13(original_message.nonce())

@@ -1,6 +1,6 @@
 import struct
 from datetime import datetime
-from typing import Any, List, Union, Optional
+from typing import Any, List, Union, Optional, cast
 
 import task_pool_executor as tpe
 
@@ -104,16 +104,25 @@ class ExtensionTransactionService(TransactionService):
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
 
-    def assign_short_id(self, transaction_hash: Sha256Hash, short_id: int):
+    def assign_short_id(
+        self,
+        transaction_hash: Sha256Hash,
+        short_id: int,
+        transaction_cache_key: Optional[TransactionCacheKeyType] = None
+    ) -> None:
         """
         Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
         :param transaction_hash: transaction long hash
         :param short_id: short id to be mapped to transaction
+        :param transaction_cache_key: transaction cache key
         """
         logger.trace("Assigning sid {} to transaction {}", short_id, transaction_hash)
-        tx_cache_key = self._tx_hash_to_cache_key(transaction_hash)
-        has_contents = self.proxy.assign_short_id(tx_cache_key, short_id)
-        self.assign_short_id_base(transaction_hash, tx_cache_key, short_id, has_contents, False)
+        if not transaction_cache_key:
+            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+
+        transaction_cache_key = cast(tpe.Sha256, transaction_cache_key)
+        has_contents = self.proxy.assign_short_id(transaction_cache_key, short_id)
+        self.assign_short_id_base(transaction_hash, transaction_cache_key, short_id, has_contents, False)
 
     def set_transaction_contents(
         self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview],
@@ -281,6 +290,11 @@ class ExtensionTransactionService(TransactionService):
                                                                                     force=force,
                                                                                     removal_reason=removal_reason)
 
-    def _clear(self):
-        super(ExtensionTransactionService, self)._clear()
-        self.proxy.clear_short_ids_seen_in_block()
+    def clear(self):
+        self.proxy.clear()
+
+        self._short_id_to_tx_quota_flag.clear()
+        self.tx_hashes_without_content.clear()
+        self.tx_hashes_without_short_id.clear()
+        self._tx_assignment_expire_queue.clear()
+        self._total_tx_contents_size = 0

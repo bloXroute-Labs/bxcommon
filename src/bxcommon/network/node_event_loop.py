@@ -10,6 +10,7 @@ from typing import Iterator, List, Coroutine, Generator, Callable, Awaitable, Op
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
@@ -164,7 +165,7 @@ class NodeEventLoop:
                 err = repr(e)
 
             self._node.log_refused_connection(peer_info, err)
-            self._node.handle_connection_closed(True, peer_info)
+            self._node.handle_connection_closed(True, peer_info, ConnectionState.ESTABLISHED)
 
     def _iter_outbound_peers(self) -> Generator[ConnectionPeerInfo, None, None]:
         sdn_address = self._node.get_sdn_address()

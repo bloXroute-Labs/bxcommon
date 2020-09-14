@@ -9,8 +9,9 @@ from bxutils import logging
 logger = logging.get_logger(__name__)
 
 
-def get_best_relays_by_ping_latency_one_per_country(relays: List[OutboundPeerModel], countries_count: int) -> List[
-    OutboundPeerModel]:
+def get_best_relays_by_ping_latency_one_per_country(
+    relays: List[OutboundPeerModel], countries_count: int
+) -> List[OutboundPeerModel]:
     """
     get best relay by pinging each relay and check its latency calculate with its inbound peers
     :param relays: list of relays
@@ -74,16 +75,19 @@ def _get_best_relay_latencies_one_per_country(
         if relay_country not in fastest_latencies_by_country:
             fastest_latencies_by_country[relay_country] = relay_latency
             best_latencies_by_country[relay_country] = relay_latency
-            ping_latency_threshold_by_country[
-                relay_country] = constants.FASTEST_PING_LATENCY_THRESHOLD_PERCENT * relay_latency.latency
+            ping_latency_threshold_by_country[relay_country] = \
+                constants.FASTEST_PING_LATENCY_THRESHOLD_PERCENT * relay_latency.latency
         elif relay_latency.latency - fastest_latencies_by_country[relay_country].latency < \
                 ping_latency_threshold_by_country[relay_country] and \
                 relays.index(relay_latency.node) < relays.index(best_latencies_by_country[relay_country].node):
             best_latencies_by_country[relay_country] = relay_latency
 
     sorted_latencies_by_country = list(
-        map(lambda dic_item: dic_item[1],
-            sorted(best_latencies_by_country.items(), key=lambda dic_item: dic_item[1].latency)))
+        map(
+                lambda dic_item: dic_item[1],
+                sorted(best_latencies_by_country.items(), key=lambda dic_item: dic_item[1].latency)
+            )
+    )
 
     if countries_count > len(sorted_latencies_by_country):
         return sorted_latencies_by_country

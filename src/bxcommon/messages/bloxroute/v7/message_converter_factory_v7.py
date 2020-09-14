@@ -1,4 +1,5 @@
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxcommon.messages.bloxroute.v13.pong_message_converter_v13 import pong_message_converter_v13
 from bxcommon.messages.bloxroute.v7.tx_message_converter_v7 import \
     tx_message_converter_v7
 from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
@@ -9,6 +10,7 @@ from bxcommon.messages.versioning.abstract_message_converter import AbstractMess
 class _MessageConverterFactoryV7(AbstractMessageConverterFactory):
     _MESSAGE_CONVERTER_MAPPING = {
         BloxrouteMessageType.TRANSACTION: tx_message_converter_v7,
+        BloxrouteMessageType.PONG: pong_message_converter_v13
     }
 
     def get_message_converter(self, msg_type) -> AbstractMessageConverter:

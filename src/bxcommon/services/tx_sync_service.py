@@ -32,6 +32,7 @@ class TxSyncService:
     def __init__(self, conn: "InternalNodeConnection") -> None:
         self.conn = conn
         self.node = conn.node
+        self._sync_alarms: Dict[int, Any] = dict()
 
     def msg_tx_service_sync_txs(self, msg: TxServiceSyncTxsMessage) -> None:
         """
@@ -76,6 +77,13 @@ class TxSyncService:
         self.node.last_sync_message_received_by_network[network_num] = time.time()
         self.conn.enqueue_msg(TxServiceSyncReqMessage(network_num))
 
+        if self.node.check_sync_relay_connections_alarm_id:
+            self.node.alarm_queue.unregister_alarm(self.node.check_sync_relay_connections_alarm_id)
+            self.node.check_sync_relay_connections_alarm_id = None
+        self.node.check_sync_relay_connections_alarm_id = self.node.alarm_queue.register_alarm(
+            constants.LAST_MSG_FROM_RELAY_THRESHOLD_S, self.node.check_sync_relay_connections, self.conn
+        )
+
     def send_tx_service_sync_complete(self, network_num: int) -> None:
         self.conn.update_tx_sync_complete(network_num)
         self.conn.enqueue_msg(TxServiceSyncCompleteMessage(network_num))
@@ -118,6 +126,9 @@ class TxSyncService:
         total_tx_count: int = 0,
         sending_tx_msgs_start_time: float = 0,
     ) -> None:
+        if network_num in self._sync_alarms:
+            del self._sync_alarms[network_num]
+
         if not self.conn.is_active():
             self.conn.log_info(
                 "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s. "
@@ -168,7 +179,7 @@ class TxSyncService:
                     next_interval = max(
                         sync_ping_latency * 0.5, constants.TX_SERVICE_SYNC_TXS_S
                     )
-                self.node.alarm_queue.register_alarm(
+                self._sync_alarms[network_num] = self.node.alarm_queue.register_alarm(
                     next_interval,
                     self.send_tx_service_sync_txs,
                     network_num,
@@ -211,6 +222,9 @@ class TxSyncService:
         start_time: float = 0,
         snapshot_cache_keys: Optional[Set[TransactionCacheKeyType]] = None,
     ) -> None:
+        if network_num in self._sync_alarms:
+            del self._sync_alarms[network_num]
+
         if not self.conn.is_active():
             self.conn.log_info(
                 "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s. "
@@ -278,7 +292,7 @@ class TxSyncService:
                     next_interval = max(
                         sync_ping_latency * 0.5, constants.TX_SERVICE_SYNC_TXS_S
                     )
-                self.node.alarm_queue.register_alarm(
+                self._sync_alarms[network_num] = self.node.alarm_queue.register_alarm(
                     next_interval,
                     self.send_tx_service_sync_txs_from_time,
                     network_num,
@@ -321,6 +335,9 @@ class TxSyncService:
         sending_tx_msgs_start_time: float = 0,
         start_offset: int = 0,
     ) -> None:
+        if network_num in self._sync_alarms:
+            del self._sync_alarms[network_num]
+
         if not self.conn.is_active():
             self.conn.log_info(
                 "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s. "
@@ -391,7 +408,7 @@ class TxSyncService:
                     next_interval = max(
                         sync_ping_latency * 0.5, constants.TX_SERVICE_SYNC_TXS_S
                     )
-                self.node.alarm_queue.register_alarm(
+                self._sync_alarms[network_num] = self.node.alarm_queue.register_alarm(
                     next_interval,
                     self.send_tx_service_sync_txs_from_buffer,
                     network_num,
@@ -431,6 +448,12 @@ class TxSyncService:
             and ConnectionType.RELAY_BLOCK == self.conn.CONNECTION_TYPE
         ):
             return
+        if self.node.check_sync_relay_connections_alarm_id:
+            self.node.alarm_queue.unregister_alarm(self.node.check_sync_relay_connections_alarm_id)
+            self.node.check_sync_relay_connections_alarm_id = None
+        if self.node.transaction_sync_timeout_alarm_id:
+            self.node.alarm_queue.unregister_alarm(self.node.transaction_sync_timeout_alarm_id)
+            self.node.transaction_sync_timeout_alarm_id = None
         network_num = msg.network_num()
         self.node.on_network_synced(network_num)
         duration = time.time() - self.node.start_sync_time

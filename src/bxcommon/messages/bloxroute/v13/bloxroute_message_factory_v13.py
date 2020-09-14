@@ -4,32 +4,39 @@ from typing import Optional, Type, NamedTuple
 from bxcommon import constants
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
+from bxcommon.messages.bloxroute.blockchain_network_message import RefreshBlockchainNetworkMessage
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
+from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
-from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
+from bxcommon.messages.bloxroute.compressed_block_txs_message import CompressedBlockTxsMessage
 from bxcommon.messages.bloxroute.disconnect_relay_peer_message import DisconnectRelayPeerMessage
+from bxcommon.messages.bloxroute.get_compressed_block_txs_message import GetCompressedBlockTxsMessage
+from bxcommon.messages.bloxroute.get_tx_contents_message import GetTxContentsMessage
 from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
+from bxcommon.messages.bloxroute.notification_message import NotificationMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.v13.pong_message_v13 import PongMessageV13
+from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
+from bxcommon.messages.bloxroute.tx_contents_message import TxContentsMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
-from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
-from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
+from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import \
+    TxServiceSyncBlocksShortIdsMessage
+from bxcommon.messages.bloxroute.tx_service_sync_complete_message import \
+    TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
-from bxcommon.messages.bloxroute.notification_message import NotificationMessage
-from bxcommon.messages.bloxroute.v8.broadcast_message_v8 import BroadcastMessageV8
-from bxcommon.messages.bloxroute.v9.bdn_performance_stats_message_v9 import BdnPerformanceStatsMessageV9
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.buffers.input_buffer import InputBuffer
-from bxcommon.utils.object_hash import Sha256Hash, ConcatHash
+from bxcommon.utils.object_hash import ConcatHash, Sha256Hash
 
 
 class BroadcastMessagePreview(NamedTuple):
@@ -42,16 +49,18 @@ class BroadcastMessagePreview(NamedTuple):
     payload_length: Optional[int]
 
 
-class _BloxrouteMessageFactoryV8(AbstractMessageFactory):
+class _BloxrouteMessageFactoryV13(AbstractMessageFactory):
     _MESSAGE_TYPE_MAPPING = {
         BloxrouteMessageType.HELLO: HelloMessage,
         BloxrouteMessageType.ACK: AckMessage,
         BloxrouteMessageType.PING: PingMessage,
         BloxrouteMessageType.PONG: PongMessageV13,
-        BloxrouteMessageType.BROADCAST: BroadcastMessageV8,
+        BloxrouteMessageType.BROADCAST: BroadcastMessage,
         BloxrouteMessageType.TRANSACTION: TxMessage,
         BloxrouteMessageType.GET_TRANSACTIONS: GetTxsMessage,
         BloxrouteMessageType.TRANSACTIONS: TxsMessage,
+        BloxrouteMessageType.GET_TX_CONTENTS: GetTxContentsMessage,
+        BloxrouteMessageType.TX_CONTENTS: TxContentsMessage,
         BloxrouteMessageType.KEY: KeyMessage,
         BloxrouteMessageType.BLOCK_HOLDING: BlockHoldingMessage,
         BloxrouteMessageType.DISCONNECT_RELAY_PEER: DisconnectRelayPeerMessage,
@@ -62,11 +71,14 @@ class _BloxrouteMessageFactoryV8(AbstractMessageFactory):
         BloxrouteMessageType.BLOCK_CONFIRMATION: BlockConfirmationMessage,
         BloxrouteMessageType.TRANSACTION_CLEANUP: TransactionCleanupMessage,
         BloxrouteMessageType.NOTIFICATION: NotificationMessage,
-        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV9
+        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessage,
+        BloxrouteMessageType.REFRESH_BLOCKCHAIN_NETWORK: RefreshBlockchainNetworkMessage,
+        BloxrouteMessageType.GET_COMPRESSED_BLOCK_TXS: GetCompressedBlockTxsMessage,
+        BloxrouteMessageType.COMPRESSED_BLOCK_TXS: CompressedBlockTxsMessage
     }
 
     def __init__(self) -> None:
-        super(_BloxrouteMessageFactoryV8, self).__init__()
+        super(_BloxrouteMessageFactoryV13, self).__init__()
         self.message_type_mapping = self._MESSAGE_TYPE_MAPPING
 
     def get_base_message_type(self) -> Type[AbstractMessage]:
@@ -102,18 +114,20 @@ class _BloxrouteMessageFactoryV8(AbstractMessageFactory):
 
             source_id = uuid_pack.from_bytes(
                 struct.unpack_from("<16s", broadcast_header[offset:offset + constants.NODE_ID_SIZE_IN_BYTES])[0])
+            offset += constants.NODE_ID_SIZE_IN_BYTES
 
-            broadcast_type_bytearray = bytearray(constants.BROADCAST_TYPE_LEN)
-            struct.pack_into("<4s", broadcast_type_bytearray, 0,
-                             BroadcastMessageType.BLOCK.value.encode(constants.DEFAULT_TEXT_ENCODING))
-            broadcast_type_bytearray = bytes(broadcast_type_bytearray)
+            broadcast_type_bytearray = broadcast_header[offset:offset + constants.BROADCAST_TYPE_LEN]
+            broadcast_type_in_str = struct.unpack_from(
+                "<4s", broadcast_type_bytearray
+            )[0].decode(constants.DEFAULT_TEXT_ENCODING)
+            broadcast_type = BroadcastMessageType(broadcast_type_in_str)
             message_id = ConcatHash(bytearray(block_hash_with_network_num) + broadcast_type_bytearray, 0)
 
-            return BroadcastMessagePreview(is_full_header, Sha256Hash(block_hash), BroadcastMessageType.BLOCK,
-                                           message_id, network_num, source_id, payload_length)
+            return BroadcastMessagePreview(is_full_header, Sha256Hash(block_hash), broadcast_type, message_id,
+                                           network_num, source_id, payload_length)
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return f"{self.__class__.__name__}; message_type_mapping: {self.message_type_mapping}"
 
 
-bloxroute_message_factory_v8 = _BloxrouteMessageFactoryV8()
+bloxroute_message_factory_v13 = _BloxrouteMessageFactoryV13()

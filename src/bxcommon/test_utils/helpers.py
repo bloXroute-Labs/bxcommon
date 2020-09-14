@@ -235,6 +235,7 @@ def get_common_opts(
     rpc_port: int = 28332,
     continent: str = "NA",
     country: str = "United States",
+    region: str = "us-east-1",
     parallelism_degree: int = 1,
     split_relays: bool = False,
     sid_expire_time: int = 30,
@@ -273,6 +274,7 @@ def get_common_opts(
         "rpc_password": "",
         "continent": continent,
         "country": country,
+        "region": region,
         "hostname": "bxlocal",
         "sdn_url": f"{constants.LOCALHOST}:8080",
         "log_level": LogLevel.DEBUG,
@@ -340,7 +342,7 @@ def get_common_opts(
                 5,
                 5,
                 5,
-                final_tx_confirmations_count,
+                24,
                 block_confirmations_count,
             ),
             3: blockchain_network(
@@ -382,7 +384,7 @@ def async_test(method):
             await method(*args, **kwargs)
 
         future = async_method(*args, **kwargs)
-        task = asyncio.wait([future], timeout=ASYNC_TEST_TIMEOUT_S)
+        task = asyncio.wait_for(future, timeout=ASYNC_TEST_TIMEOUT_S)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(task)
 

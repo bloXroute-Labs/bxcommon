@@ -1,9 +1,12 @@
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxcommon.messages.bloxroute.v13.pong_message_converter_v13 import pong_message_converter_v13
 from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
 from bxcommon.messages.versioning.no_changes_message_converter import no_changes_message_converter
 
 
 class _MessageConverterFactoryV12(AbstractMessageConverterFactory):
     _MESSAGE_CONVERTER_MAPPING = {
+        BloxrouteMessageType.PONG: pong_message_converter_v13
     }
 
     def get_message_converter(self, msg_type):

@@ -16,3 +16,4 @@ class RpcRequestType(SerializeableEnum):
     MEMORY_USAGE = 11
     TX_STATUS = 12
     BLXR_ETH_CALL = 13
+    TX_SERVICE = 14

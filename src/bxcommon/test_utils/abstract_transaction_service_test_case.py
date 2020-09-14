@@ -54,15 +54,20 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         transaction_contents = list(map(crypto.double_sha256, transaction_hashes))
 
         for i, short_id in enumerate(short_ids):
-            self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
             self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
+        self.assertEqual(len(short_ids), len(self.transaction_service.tx_hashes_without_short_id))
+
+        for i, short_id in enumerate(short_ids):
+            self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
+        self.assertEqual(0, len(self.transaction_service.tx_hashes_without_short_id))
 
         for i, transaction_hash in enumerate(transaction_hashes):
             self.assertEqual(short_ids[i], self.transaction_service.get_short_id(transaction_hash))
 
         for i, short_id in enumerate(short_ids):
             transaction_hash, transaction_content, assigned_short_id = self.transaction_service.get_transaction(
-                short_id)
+                short_id
+            )
             self.assertEqual(transaction_hashes[i], transaction_hash.binary)
             self.assertEqual(transaction_contents[i], transaction_content)
             self.assertEqual(short_id, assigned_short_id)
@@ -261,8 +266,8 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
 
         # assign multiple shorts ids to one of the transactions
         first_cached_key = self.transaction_service._tx_hash_to_cache_key(transaction_hashes[0])
-        self.transaction_service.assign_short_id(first_cached_key, 10)
-        self.transaction_service.assign_short_id(first_cached_key, 11)
+        self.transaction_service.assign_short_id(transaction_hashes[0], 10, first_cached_key)
+        self.transaction_service.assign_short_id(transaction_hashes[0], 11, first_cached_key)
 
         # 1st block with short ids arrives
         block_hash = bytearray(helpers.generate_bytearray(32))

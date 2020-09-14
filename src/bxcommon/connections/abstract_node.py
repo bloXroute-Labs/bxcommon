@@ -31,7 +31,7 @@ from bxcommon.services.broadcast_service import BroadcastService, \
 from bxcommon.services.threaded_request_service import ThreadedRequestService
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.utils import memory_utils, convert, performance_utils
-from bxcommon.utils.alarm_queue import AlarmQueue
+from bxcommon.utils.alarm_queue import AlarmQueue, AlarmId
 from bxcommon.utils.blockchain_utils import bdn_tx_to_bx_tx
 from bxcommon.common_opts import CommonOpts
 from bxcommon.utils.stats.block_statistics_service import block_stats
@@ -49,6 +49,7 @@ from bxutils.logging import LogRecordType
 from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.extensions import extensions_factory
 from bxutils.ssl.ssl_certificate_type import SSLCertificateType
+
 
 logger = logging.get_logger(__name__)
 memory_logger = logging.get_logger(LogRecordType.BxMemory, __name__)
@@ -132,10 +133,8 @@ class AbstractNode:
 
         opts.has_fully_updated_tx_service = False
 
-        self._check_sync_relay_connections_alarm_id = self.alarm_queue.register_alarm(
-            constants.LAST_MSG_FROM_RELAY_THRESHOLD_S, self._check_sync_relay_connections)
-        self._transaction_sync_timeout_alarm_id = self.alarm_queue.register_alarm(
-            constants.TX_SERVICE_CHECK_NETWORKS_SYNCED_S, self._transaction_sync_timeout)
+        self.check_sync_relay_connections_alarm_id: Optional[AlarmId] = None
+        self.transaction_sync_timeout_alarm_id: Optional[AlarmId] = None
 
         self.requester = ThreadedRequestService(
             # pyre-fixme[16]: `Optional` has no attribute `name`.
@@ -199,7 +198,9 @@ class AbstractNode:
         pass
 
     @abstractmethod
-    def on_failed_connection_retry(self, ip: str, port: int, connection_type: ConnectionType) -> None:
+    def on_failed_connection_retry(
+        self, ip: str, port: int, connection_type: ConnectionType, connection_state: ConnectionState
+    ) -> None:
         pass
 
     def connection_exists(
@@ -557,16 +558,20 @@ class AbstractNode:
     async def init(self) -> None:
         self.requester.start()
 
-    def handle_connection_closed(self, should_retry: bool, peer_info: ConnectionPeerInfo) -> None:
+    def handle_connection_closed(
+        self, should_retry: bool, peer_info: ConnectionPeerInfo, connection_state: ConnectionState
+    ) -> None:
         self.pending_connection_attempts.discard(peer_info)
         peer_ip, peer_port = peer_info.endpoint
         connection_type = peer_info.connection_type
         if should_retry and self.continue_retrying_connection(peer_ip, peer_port, connection_type):
-            self.alarm_queue.register_alarm(self._get_next_retry_timeout(peer_ip, peer_port),
-                                            self._retry_init_client_socket,
-                                            peer_ip, peer_port, connection_type)
+            self.alarm_queue.register_alarm(
+                self._get_next_retry_timeout(peer_ip, peer_port),
+                self._retry_init_client_socket,
+                peer_ip, peer_port, connection_type
+            )
         else:
-            self.on_failed_connection_retry(peer_ip, peer_port, connection_type)
+            self.on_failed_connection_retry(peer_ip, peer_port, connection_type, connection_state)
 
     def get_server_ssl_ctx(self) -> SSLContext:
         return self.node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
@@ -581,11 +586,11 @@ class AbstractNode:
         self.sync_metrics = defaultdict(Counter)
 
     @abstractmethod
-    def _transaction_sync_timeout(self):
+    def _transaction_sync_timeout(self) -> int:
         pass
 
     @abstractmethod
-    def _check_sync_relay_connections(self):
+    def check_sync_relay_connections(self, conn: AbstractConnection) -> int:
         pass
 
     def _get_socket_peer_info(self, sock: AbstractSocketConnectionProtocol) -> AuthenticatedPeerInfo:
@@ -633,7 +638,9 @@ class AbstractNode:
         logger.debug("Breaking connection to {}. Attempting retry: {}", conn, should_retry)
         conn.dispose()
         self.connection_pool.delete(conn)
-        self.handle_connection_closed(should_retry, ConnectionPeerInfo(conn.endpoint, conn.CONNECTION_TYPE))
+        self.handle_connection_closed(
+            should_retry, ConnectionPeerInfo(conn.endpoint, conn.CONNECTION_TYPE), conn.state
+        )
 
     def _initialize_connection(
         self, socket_connection: AbstractSocketConnectionProtocol
@@ -656,7 +663,8 @@ class AbstractNode:
         return conn_obj
 
     def on_network_synced(self, network_num: int) -> None:
-        self.last_sync_message_received_by_network.pop(network_num, None)
+        if network_num in self.last_sync_message_received_by_network:
+            del self.last_sync_message_received_by_network[network_num]
 
     def on_fully_updated_tx_service(self):
         logger.debug(

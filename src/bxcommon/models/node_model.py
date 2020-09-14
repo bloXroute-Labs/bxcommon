@@ -78,6 +78,7 @@ class NodeModel:
     split_relays: bool = None
     # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     country: str = None
+    region: Optional[str] = None
 
     # idx enforces the one-way connection order of relays.
     # They connect to only other relays with an idx less than their own.

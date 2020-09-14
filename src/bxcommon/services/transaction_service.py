@@ -13,13 +13,12 @@ from typing import List, Tuple, Generator, Optional, Union, Dict, Set, Any, Iter
 from prometheus_client import Gauge
 
 from bxcommon import constants
-from bxcommon.messages.bloxroute import short_ids_serializer, compact_block_short_ids_serializer
+from bxcommon.messages.bloxroute import short_ids_serializer
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import memory_utils, convert
-from bxcommon.utils.blockchain_utils.eth import rlp_utils, eth_common_utils
-from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.expiration_queue import ExpirationQueue
+from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
@@ -28,7 +27,6 @@ from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxutils import log_messages
 from bxutils import logging, utils
 from bxutils.encoding import json_encoder
-from bxutils.logging import LogLevel
 from bxutils.logging.log_record_type import LogRecordType
 
 if TYPE_CHECKING:
@@ -385,22 +383,31 @@ class TransactionService:
                     del self._short_id_to_tx_cache_key[short_id]
                     self._tx_assignment_expire_queue.remove(short_id)
 
-    def assign_short_id(self, transaction_hash: Sha256Hash, short_id: int) -> None:
+    def assign_short_id(
+        self,
+        transaction_hash: Sha256Hash,
+        short_id: int,
+        transaction_cache_key: Optional[TransactionCacheKeyType] = None
+    ) -> None:
         """
         Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
         :param transaction_hash: transaction long hash
         :param short_id: short id to be mapped to transaction
+        :param transaction_cache_key: transaction cache key
         """
-        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        if not transaction_cache_key:
+            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
         has_contents = transaction_cache_key in self._tx_cache_key_to_contents
         self.assign_short_id_base(transaction_hash, transaction_cache_key, short_id, has_contents, True)
 
-    def assign_short_id_base(self,
-                             transaction_hash: Sha256Hash,
-                             transaction_cache_key: TransactionCacheKeyType,
-                             short_id: int,
-                             has_contents: bool,
-                             call_to_assign_short_id: bool):
+    def assign_short_id_base(
+        self,
+        transaction_hash: Sha256Hash,
+        transaction_cache_key: Optional[TransactionCacheKeyType],
+        short_id: int,
+        has_contents: bool,
+        call_to_assign_short_id: bool
+    ) -> None:
         """
         Base method to assign short id for a transaction
 
@@ -428,6 +435,8 @@ class TransactionService:
                 self.tx_without_content_alarm_scheduled = True
 
         if call_to_assign_short_id:
+            if not transaction_cache_key:
+                transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
             self._tx_cache_key_to_short_ids[transaction_cache_key].add(short_id)
             self._short_id_to_tx_cache_key[short_id] = transaction_cache_key
         self._tx_assignment_expire_queue.add(short_id)
@@ -746,7 +755,11 @@ class TransactionService:
         return len(self._short_ids_seen_in_block)
 
     def get_short_id_assign_time(self, short_id: int) -> float:
-        return self._tx_assignment_expire_queue.queue[short_id]
+        if short_id in self._tx_assignment_expire_queue.queue:
+            return self._tx_assignment_expire_queue.queue[short_id]
+        else:
+            logger.warning(log_messages.MISSING_ASSIGN_TIME_FOR_SHORT_ID, short_id)
+            return 0.0
 
     def expire_old_assignments(self) -> float:
         """
@@ -996,17 +1009,6 @@ class TransactionService:
             size_type=size_type
         )
 
-    def log_compressed_block_debug_info(self, block_msg_bytes: Union[memoryview, bytearray]):
-        if not logger.isEnabledFor(LogLevel.DEBUG) or not self.node.opts.block_compression_debug:
-            return
-
-        assert self.network is not None
-        protocol = self.node.opts.blockchain_networks[self.network_num].protocol
-
-        # TODO implement in a better way
-        if protocol.lower() == "ethereum":
-            self._log_compressed_block_debug_info(block_msg_bytes)
-
     def get_object_type(
         self,
         collection_obj: Any  # pylint: disable=unused-argument
@@ -1091,7 +1093,7 @@ class TransactionService:
         if self._is_exceeding_memory_limit() and not self._tx_assignment_expire_queue:
             logger.warning(log_messages.SID_MEMORY_MANAGEMENT_FAILURE, self.get_cache_state_json())
             removed_tx_count += len(self._tx_cache_key_to_contents)
-            self._clear()
+            self.clear()
 
         self._total_tx_removed_by_memory_limit += removed_tx_count
         logger.trace("Removed {} oldest transactions from transaction service cache. Size after clean up: {}",
@@ -1195,11 +1197,15 @@ class TransactionService:
     def _is_exceeding_memory_limit(self) -> bool:
         return self._total_tx_contents_size > self._tx_content_memory_limit
 
-    def _clear(self) -> None:
+    def clear(self) -> None:
         self._tx_cache_key_to_contents.clear()
         self._tx_cache_key_to_short_ids.clear()
         self._short_id_to_tx_cache_key.clear()
         self._short_ids_seen_in_block.clear()
+        self._short_id_to_tx_quota_flag.clear()
+        self.tx_hashes_without_content.clear()
+        self.tx_hashes_without_short_id.clear()
+        self._tx_assignment_expire_queue.clear()
         self._total_tx_contents_size = 0
 
     # TODO: remove this unused function
@@ -1229,66 +1235,3 @@ class TransactionService:
              }
         )
         return constants.TRANSACTION_SERVICE_LOG_TRANSACTIONS_INTERVAL_S
-
-    def _log_compressed_block_debug_info(self, block_msg_bytes: Union[memoryview, bytearray]):
-        block_msg_bytes = block_msg_bytes if isinstance(block_msg_bytes, memoryview) else memoryview(block_msg_bytes)
-
-        block_offsets = compact_block_short_ids_serializer.get_bx_block_offsets(block_msg_bytes)
-        short_ids, _short_ids_bytes_len = compact_block_short_ids_serializer.deserialize_short_ids_from_buffer(
-            block_msg_bytes,
-            block_offsets.short_id_offset
-        )
-
-        block_bytes = block_msg_bytes[block_offsets.block_begin_offset: block_offsets.short_id_offset]
-
-        _, _block_itm_len, block_itm_start = rlp_utils.consume_length_prefix(block_bytes, 0)
-        block_itm_bytes = block_bytes[block_itm_start:]
-
-        _, block_hdr_len, block_hdr_start = rlp_utils.consume_length_prefix(block_itm_bytes, 0)
-        full_hdr_bytes = block_itm_bytes[0:block_hdr_start + block_hdr_len]
-
-        block_hash_bytes = eth_common_utils.keccak_hash(full_hdr_bytes)
-        block_hash = Sha256Hash(block_hash_bytes)
-
-        _, block_txs_len, block_txs_start = rlp_utils.consume_length_prefix(
-            block_itm_bytes, block_hdr_start + block_hdr_len
-        )
-        txs_bytes = block_itm_bytes[block_txs_start:block_txs_start + block_txs_len]
-
-        # parse statistics variables
-        short_tx_index = 0
-        tx_start_index = 0
-
-        tx_index_in_block = 0
-        txs_info = []
-
-        while True:
-            if tx_start_index >= len(txs_bytes):
-                break
-
-            short_id = 0
-            tx_hash = None
-            has_contents = False
-
-            _, tx_itm_len, tx_itm_start = rlp_utils.consume_length_prefix(txs_bytes, tx_start_index)
-            tx_bytes = txs_bytes[tx_itm_start:tx_itm_start + tx_itm_len]
-
-            is_full_tx_start = 0
-            is_full_tx, _, = rlp_utils.decode_int(tx_bytes, is_full_tx_start)
-
-            if not is_full_tx:
-                short_id = short_ids[short_tx_index]
-                tx_hash, tx_bytes, _ = self.get_transaction(short_id)
-                has_contents = tx_bytes is not None
-                short_tx_index += 1
-
-            txs_info.append((tx_index_in_block, not is_full_tx, short_id, tx_hash, has_contents))
-
-            tx_index_in_block += 1
-            tx_start_index = tx_itm_start + tx_itm_len
-
-        logger.debug(
-            "Block {} contents (index, is compressed, short id, hash, has contents) : {}",
-            block_hash,
-            ",".join(str(tx_info) for tx_info in txs_info)
-        )

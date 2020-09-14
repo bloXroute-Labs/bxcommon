@@ -235,3 +235,8 @@ NODE_RECEIVED_TX_WITH_INVALID_SIG = LogMessage(
     GENERAL_WARNING,
     "{} received transaction {} from {} with an invalid signature"
 )
+MISSING_ASSIGN_TIME_FOR_SHORT_ID = LogMessage(
+    "C-000046",
+    GENERAL_CATEGORY,
+    "Missing assignment time for short id {}."
+)

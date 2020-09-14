@@ -90,7 +90,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                               NODE_ID_SIZE_IN_BYTES - UL_INT_SIZE_IN_BYTES)
         self.get_message_preview_successfully(AckMessage(), AckMessage.MESSAGE_TYPE, constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(PingMessage(), PingMessage.MESSAGE_TYPE, 9)
-        self.get_message_preview_successfully(PongMessage(), PongMessage.MESSAGE_TYPE, 9)
+        self.get_message_preview_successfully(PongMessage(), PongMessage.MESSAGE_TYPE, 17)
 
         blob = bytearray(1 for _ in range(4))
         self.get_message_preview_successfully(BroadcastMessage(self.HASH, 1, self.NODE_ID, self.BROADCAST_TYPE, True,
