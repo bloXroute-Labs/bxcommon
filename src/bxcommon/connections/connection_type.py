@@ -22,3 +22,16 @@ class ConnectionType(SerializableFlag):
 
     def __format__(self, format_spec):
         return self.name
+
+    def format_short(self):
+        cls = self.__class__
+        if self in cls.RELAY_ALL:
+            return "R"
+        if self in cls.BLOCKCHAIN_NODE:
+            return "B"
+        if self in cls.REMOTE_BLOCKCHAIN_NODE:
+            return "RemoteB"
+        if self in cls.GATEWAY:
+            return "G"
+
+        return self.name
