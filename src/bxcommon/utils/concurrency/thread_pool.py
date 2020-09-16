@@ -2,7 +2,6 @@ import functools
 import threading
 from collections import deque
 from concurrent.futures import Future
-from concurrent import futures
 from threading import Thread, Condition, RLock
 from typing import List, Callable, Any, NamedTuple, Deque, Optional
 
@@ -26,7 +25,8 @@ def handle_work_item(work_item: Optional[WorkItem]) -> None:
         else:
             try:
                 work_item.future.set_result(result)
-            except futures.Error as e:
+            # pylint: disable=broad-except
+            except Exception as e:
                 logger.exception(
                     "{} - unhandled error: {}, failed to set task result {}",
                     threading.current_thread().name,
