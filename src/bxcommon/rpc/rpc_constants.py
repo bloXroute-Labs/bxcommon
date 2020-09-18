@@ -1,3 +1,5 @@
+from enum import Enum
+
 CONTENT_TYPE_HEADER_KEY = "Content-Type"
 PLAIN_HEADER_TYPE = "text/plain"
 JSON_HEADER_TYPE = "application/json"
@@ -34,3 +36,15 @@ JSON_RPC_ERROR = "error"
 NEW_TRANSACTION_FEED_NAME = "newTxs"
 ETH_ON_BLOCK_FEED_NAME = "ethOnBlock"
 ETH_PENDING_TRANSACTION_FEED_NAME = "pendingTxs"
+
+
+class ContentType(Enum):
+    PLAIN = PLAIN_HEADER_TYPE
+    JSON = JSON_HEADER_TYPE
+
+    @classmethod
+    def from_string(cls, s: str) -> "ContentType":
+        for val in cls:
+            if val.value == s:
+                return val
+        raise ValueError(f"{s} is not a valid {cls}.")

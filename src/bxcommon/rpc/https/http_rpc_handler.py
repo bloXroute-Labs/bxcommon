@@ -9,6 +9,7 @@ from bxcommon.rpc.abstract_rpc_handler import AbstractRpcHandler
 from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
+from bxcommon.rpc.rpc_constants import ContentType
 from bxcommon.rpc.rpc_errors import RpcParseError
 from bxutils import logging
 
@@ -23,20 +24,25 @@ Node = TypeVar("Node", bound="AbstractNode")
 
 
 class HttpRpcHandler(Generic[Node], AbstractRpcHandler[Node, Request, Response]):
-    async def handle_request(self, request: Request) -> Response:
+    def __init__(self, node: Node):
+        super().__init__(node)
+        self.content_type = ContentType.PLAIN
+
+    def parse_content_type(self, request: Request):
         try:
             # pyre-fixme[16]: Callable `aiohttp.web_request.BaseRequest.headers` has no attribute `__getitem__`
             content_type = request.headers[rpc_constants.CONTENT_TYPE_HEADER_KEY]
         except KeyError:
-            raise HTTPBadRequest(
-                text=f"Request must have a {rpc_constants.CONTENT_TYPE_HEADER_KEY} header!"
-            )
-        if content_type != rpc_constants.PLAIN_HEADER_TYPE:
-            raise HTTPBadRequest(
-                text=f"{rpc_constants.CONTENT_TYPE_HEADER_KEY} must be "
-                     f"{rpc_constants.PLAIN_HEADER_TYPE}, not {content_type}!"
-            )
-        return await super().handle_request(request)
+            pass
+        else:
+            try:
+                content_type_enum = ContentType.from_string(content_type)
+                self.content_type = content_type_enum
+            except ValueError:
+                raise HTTPBadRequest(
+                    text=f"Unrecognized content type: {content_type}. "
+                         f"Accepted values: {ContentType.PLAIN.value}, {ContentType.JSON.value}"
+                )
 
     async def parse_request(self, request: Request) -> Dict[str, Any]:
         payload = await request.json()
@@ -55,4 +61,11 @@ class HttpRpcHandler(Generic[Node], AbstractRpcHandler[Node, Request, Response])
         else:
             status_code = HTTPBadRequest.status_code
 
-        return web.json_response(response.to_jsons(self.case), status=status_code)
+        if self.content_type == ContentType.PLAIN:
+            return web.json_response(
+                response.to_jsons(self.case),
+                status=status_code,
+                content_type=ContentType.PLAIN.value
+            )
+        else:
+            return web.json_response(text=response.to_jsons(self.case), status=status_code)
