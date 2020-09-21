@@ -1,5 +1,6 @@
 import dataclasses
 import functools
+import gc
 
 from dataclasses import dataclass
 from collections import defaultdict
@@ -107,6 +108,9 @@ class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "Abs
         node = self.node
         assert node is not None
         node.dump_memory_usage()
+        # temporary - force gc every 30 minutes.
+        # should be removed once we find and eliminate circular references.
+        gc.collect()
         return super(MemoryStatsService, self).flush_info()
 
     def increment_mem_stats(
