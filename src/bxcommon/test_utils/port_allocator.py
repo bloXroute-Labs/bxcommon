@@ -2,7 +2,7 @@ import socket
 from contextlib import closing
 from typing import Optional
 
-from bxcommon.network.port_range import PortRange
+from bxcommon.utils.port_range import PortRange
 
 
 def check_port(port: int) -> bool:

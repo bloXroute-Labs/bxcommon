@@ -25,6 +25,8 @@ from bxutils.logging.log_record_type import LogRecordType
 logger = logging.get_logger(__name__)
 logger_memory_cleanup = logging.get_logger(LogRecordType.BlockCleanup, __name__)
 
+UNKNOWN_TRANSACTION_HASH: Sha256Hash = Sha256Hash(bytearray(b"\xff" * crypto.SHA256_HASH_LEN))
+
 
 class ExtensionTransactionService(TransactionService):
 
@@ -97,7 +99,7 @@ class ExtensionTransactionService(TransactionService):
         self._total_tx_contents_size -= removed_content_size
         for short_id in short_ids:
             tx_stats.add_tx_by_hash_event(
-                constants.UNKNOWN_TRANSACTION_HASH, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
+                UNKNOWN_TRANSACTION_HASH, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
                 self.network_num, short_id, reason=TxRemovalReason.EXTENSION_BLOCK_CLEANUP.value
             )
             self._tx_assignment_expire_queue.remove(short_id)
@@ -280,7 +282,7 @@ class ExtensionTransactionService(TransactionService):
         if remove_related_short_ids:
             self._tx_assignment_expire_queue.remove(short_id)
             tx_stats.add_tx_by_hash_event(
-                constants.UNKNOWN_TRANSACTION_HASH, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
+                UNKNOWN_TRANSACTION_HASH, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
                 self.network_num, short_id, reason=removal_reason.value
             )
             if self.node.opts.dump_removed_short_ids:

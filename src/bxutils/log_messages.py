@@ -240,3 +240,30 @@ MISSING_ASSIGN_TIME_FOR_SHORT_ID = LogMessage(
     GENERAL_CATEGORY,
     "Missing assignment time for short id {}."
 )
+WS_COULD_NOT_CONNECT = LogMessage(
+    "C-000047",
+    CONNECTION_PROBLEM_CATEGORY,
+    "Could not connect to websockets server at {}. Connection timed out.",
+)
+ETH_RPC_ERROR = LogMessage(
+    "C-000048",
+    PROCESSING_FAILED_CATEGORY,
+    "RPC Error response: {}. details: {}.",
+)
+ETH_RPC_PROCESSING_ERROR = LogMessage(
+    "C-000049",
+    PROCESSING_FAILED_CATEGORY,
+    "Encountered exception when processing message: {}. Error: {}. Continuing processing.",
+)
+ETH_WS_SUBSCRIBER_CONNECTION_BROKEN = LogMessage(
+    "C-000050",
+    RPC_ERROR,
+    "Ethereum websockets connection was broken. Attempting reconnection..."
+)
+ETH_RPC_COULD_NOT_RECONNECT = LogMessage(
+    "C-000051",
+    CONNECTION_PROBLEM_CATEGORY,
+    "Could not reconnect to Ethereum websockets feed. Disabling Ethereum transaction "
+    "verification for now, but will attempt reconnection upon when the next subscriber "
+    "reconnects."
+)

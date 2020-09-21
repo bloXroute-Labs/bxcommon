@@ -2,9 +2,6 @@ import os
 import platform
 import socket
 
-from bxcommon.utils import crypto
-from bxcommon.utils.object_hash import Sha256Hash
-
 PLATFORM_LINUX = "linux"
 PLATFORM_MAC = "darwin"
 DEFAULT_TEXT_ENCODING = "utf-8"
@@ -37,13 +34,17 @@ OUTPUT_BUFFER_BATCH_MAX_HOLD_TIME = 0.05
 
 FULL_QUOTA_PERCENTAGE = 100
 
+WS_PROVIDER_MAX_QUEUE_SIZE = 1000
+WS_MIN_RECONNECT_TIMEOUT_S = 1
+WS_RECONNECT_TIMEOUTS = [1, 2, 3, 5, 8, 13]
+WS_MAX_CONNECTION_TIMEOUT_S = 2
+
 # The unsigned integer transaction SID representing null.
 # If changing, also change in bxapi/constants.py
 NULL_TX_SID = 0
 NULL_TX_SIDS = {NULL_TX_SID}
 NULL_TX_TIMESTAMP = 0
 TX_SID_INTERVAL = 10000000
-UNKNOWN_TRANSACTION_HASH: Sha256Hash = Sha256Hash(bytearray(b"\xff" * crypto.SHA256_HASH_LEN))
 # </editor-fold>
 
 # <editor-fold desc="Connection Management">
