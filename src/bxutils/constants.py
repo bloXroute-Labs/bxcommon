@@ -1,6 +1,6 @@
 from datetime import datetime, date, timedelta
 
-from bxcommon.network.port_range import PortRange
+from bxcommon.utils.port_range import PortRange
 from bxutils.logging.fluentd_overflow_handler_type import OverflowHandlerType
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel

@@ -40,7 +40,6 @@ def keccak_hash(string):
     """
     Ethereum Crypto Utils:
     Calculates SHA3 hash of the string
-
     :param string: string to calculate hash from
     :return: SHA3 hash
     """
