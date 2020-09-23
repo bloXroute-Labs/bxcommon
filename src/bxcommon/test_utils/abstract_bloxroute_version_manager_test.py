@@ -218,7 +218,18 @@ class AbstractBloxrouteVersionManagerTest(
         )
 
     def bdn_performance_stats_message(self) -> BdnPerformanceStatsMessage:
-        return BdnPerformanceStatsMessage(datetime.utcnow(), datetime.utcnow(), 100, 200, 300, 400, 500)
+        return BdnPerformanceStatsMessage(
+            datetime.utcnow(),
+            datetime.utcnow(),
+            100,
+            200,
+            300,
+            400,
+            500,
+            10,
+            10,
+            20
+        )
 
     # </editor-fold>
 
@@ -764,7 +775,7 @@ class AbstractBloxrouteVersionManagerTest(
         self, converted_old_message: AbstractMessage, original_old_message: AbstractMessage,
     ):
         """
-        This method is run on every message comparision, when comparing
+        This method is run on every message comparison, when comparing
         the current version converted to the older version.
 
         Override this if a change is made that affects every message.

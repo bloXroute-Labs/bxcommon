@@ -128,9 +128,11 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.get_message_preview_successfully(TxsMessage(txs), TxsMessage.MESSAGE_TYPE, expected_length)
 
         expected_length = (2 * constants.DOUBLE_SIZE_IN_BYTES) + (3 * constants.UL_SHORT_SIZE_IN_BYTES) + \
-                          (2 * constants.UL_INT_SIZE_IN_BYTES) + constants.CONTROL_FLAGS_LEN
+                          (5 * constants.UL_INT_SIZE_IN_BYTES) + constants.CONTROL_FLAGS_LEN
         self.get_message_preview_successfully(
-            BdnPerformanceStatsMessage(datetime.utcnow(), datetime.utcnow(), 100, 200, 300, 400, 500),
+            BdnPerformanceStatsMessage(
+                datetime.utcnow(), datetime.utcnow(), 100, 200, 300, 400, 500, 600, 700, 800
+            ),
             BdnPerformanceStatsMessage.MESSAGE_TYPE,
             expected_length
         )
@@ -478,17 +480,26 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         new_tx_received_from_blockchain_node = 300
         new_tx_received_from_bdn = constants.UNSIGNED_SHORT_MAX_VALUE + 1  # unsigned short max (0xffff) + 1
         memory_utilization_mb = 700
+        new_blocks_seen = 800
+        new_block_messages = 900
+        new_block_announcements = 1000
         end_time = datetime.utcnow()
 
-        bdn_stats_msg = \
-            self.create_message_successfully(BdnPerformanceStatsMessage(start_time,
-                                                                        end_time,
-                                                                        new_blocks_received_from_blockchain_node,
-                                                                        new_blocks_received_from_bdn,
-                                                                        new_tx_received_from_blockchain_node,
-                                                                        new_tx_received_from_bdn,
-                                                                        memory_utilization_mb),
-                                             BdnPerformanceStatsMessage)
+        bdn_stats_msg = self.create_message_successfully(
+            BdnPerformanceStatsMessage(
+                start_time,
+                end_time,
+                new_blocks_received_from_blockchain_node,
+                new_blocks_received_from_bdn,
+                new_tx_received_from_blockchain_node,
+                new_tx_received_from_bdn,
+                memory_utilization_mb,
+                new_blocks_seen,
+                new_block_messages,
+                new_block_announcements
+            ),
+
+            BdnPerformanceStatsMessage)
 
         self.assertEqual(start_time, bdn_stats_msg.interval_start_time())
         self.assertEqual(end_time, bdn_stats_msg.interval_end_time())
@@ -497,3 +508,6 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(new_tx_received_from_blockchain_node, bdn_stats_msg.new_tx_from_blockchain_node())
         self.assertEqual(new_tx_received_from_bdn, bdn_stats_msg.new_tx_from_bdn())
         self.assertEqual(memory_utilization_mb, bdn_stats_msg.memory_utilization())
+        self.assertEqual(new_blocks_seen, bdn_stats_msg.new_blocks_seen())
+        self.assertEqual(new_block_messages, bdn_stats_msg.new_block_messages_from_blockchain_node())
+        self.assertEqual(new_block_announcements, bdn_stats_msg.new_block_announcements_from_blockchain_node())
