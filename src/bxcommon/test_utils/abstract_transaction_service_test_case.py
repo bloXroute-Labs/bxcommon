@@ -7,6 +7,8 @@ from bxcommon import constants
 from bxcommon.constants import NULL_TX_SID
 from bxcommon.messages.bloxroute import short_ids_serializer
 from bxcommon.messages.bloxroute.tx_message import TxMessage
+from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
+from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.models.node_type import NodeType
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionInfo
@@ -596,6 +598,72 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.assertIn(missing_tx.short_id, missing_short_ids)
             self.assertIsNone(missing_tx.contents)
             self.assertIsNone(missing_tx.hash)
+
+    def _test_clear(self):
+        self._add_transactions(50, 100)
+
+        self.assertEqual(50, len(self.transaction_service._tx_cache_key_to_contents))
+        self.transaction_service.clear()
+        self.assertEqual(0, len(self.transaction_service._tx_cache_key_to_contents))
+
+    def _test_process_tx_sync_message(self):
+        content_short_ids = []
+        tx_hashes = []
+        short_ids = []
+        contents = []
+
+        tx_count = 30
+
+        for i in range(tx_count):
+            tx_hash = Sha256Hash(binary=helpers.generate_bytearray(crypto.SHA256_HASH_LEN))
+
+            tx_content = helpers.generate_bytearray(100 + i)
+
+            short_id1 = i * 2 + 1
+            short_id2 = short_id1 + 1
+
+            tx_short_id = TxContentShortIds(
+                tx_hash,
+                tx_content,
+                [short_id1, short_id2],
+                [QuotaType.FREE_DAILY_QUOTA, QuotaType.PAID_DAILY_QUOTA]
+            )
+
+            tx_hashes.append(tx_hash)
+
+            short_ids.append(short_id1)
+            short_ids.append(short_id2)
+
+            contents.append(tx_content)
+            content_short_ids.append(tx_short_id)
+
+        txs_sync_message = TxServiceSyncTxsMessage(1, txs_content_short_ids=content_short_ids)
+
+        result_items = self.transaction_service.process_tx_sync_message(txs_sync_message)
+
+        self.assertEqual(len(result_items), len(tx_hashes))
+
+        for item, tx_short_id in zip(result_items, txs_sync_message.txs_content_short_ids()):
+            self.assertEqual(item.hash, tx_short_id.tx_hash)
+            self.assertEqual(item.content_length, len(tx_short_id.tx_content))
+            self.assertEqual(2, len(item.short_ids))
+            self.assertEqual(item.short_ids[0], tx_short_id.short_ids[0])
+            self.assertEqual(item.short_ids[1], tx_short_id.short_ids[1])
+            self.assertEqual(len(item.quota_types), len(tx_short_id.short_id_flags))
+            self.assertEqual(item.quota_types[0], tx_short_id.short_id_flags[0])
+            self.assertEqual(item.quota_types[1], tx_short_id.short_id_flags[1])
+
+            tx_content = self.transaction_service.get_transaction_by_hash(item.hash)
+            self.assertEqual(len(tx_content), item.content_length)
+
+            saved_short_ids = self.transaction_service.get_short_ids(item.hash)
+            self.assertEqual(len(saved_short_ids), len(item.short_ids))
+
+            for sid in item.short_ids:
+                self.assertIn(sid, saved_short_ids)
+                self.assertTrue(self.transaction_service.has_short_id(sid))
+                assign_time = self.transaction_service.get_short_id_assign_time(sid)
+                self.assertTrue(assign_time > 0)
 
     def get_fake_tx(self, content_length=128):
         tx_hash = Sha256Hash(binary=helpers.generate_bytearray(crypto.SHA256_HASH_LEN))

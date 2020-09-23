@@ -38,26 +38,24 @@ class TxSyncService:
         """
         Transaction service sync message receive txs data
         """
+
         network_num = msg.network_num()
         self.node.last_sync_message_received_by_network[network_num] = time.time()
         tx_service = self.node.get_tx_service(network_num)
-        txs_content_short_ids = msg.txs_content_short_ids()
+
+        result_items = tx_service.process_tx_sync_message(msg)
         sync_metrics = self.node.sync_metrics[network_num]
         sync_metrics["msgs"] += 1
-        for tx_content_short_ids in txs_content_short_ids:
+        for item in result_items:
             sync_metrics["tx_count"] += 1
-            tx_hash = tx_content_short_ids.tx_hash
 
-            tx_content = tx_content_short_ids.tx_content
-            if tx_content:
+            if item.content_length > 0:
                 sync_metrics["tx_content_count"] += 1
-                tx_service.set_transaction_contents(tx_hash, tx_content)
 
             for short_id, quota_type in zip(
-                tx_content_short_ids.short_ids, tx_content_short_ids.short_id_flags
+                item.short_ids, item.quota_types
             ):
                 self.node.sync_short_id_buckets[network_num].incr_short_id(short_id)
-                tx_service.assign_short_id(tx_hash, short_id)
                 if QuotaType.PAID_DAILY_QUOTA in quota_type:
                     tx_service.set_short_id_quota_type(short_id, quota_type)
 

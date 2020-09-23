@@ -14,11 +14,12 @@ from prometheus_client import Gauge
 
 from bxcommon import constants
 from bxcommon.messages.bloxroute import short_ids_serializer
+from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import memory_utils, convert
-from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.crypto import SHA256_HASH_LEN
+from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
@@ -100,6 +101,13 @@ class TransactionFromBdnGatewayProcessingResult(typing.NamedTuple):
     assigned_short_id: bool = False
     existing_contents: bool = False
     set_content: bool = False
+
+
+class TxSyncMsgProcessingItem(typing.NamedTuple):
+    hash: Sha256Hash = None
+    content_length: int = 0
+    short_ids: List[int] = []
+    quota_types: List[QuotaType] = []
 
 
 # pylint: disable=too-many-public-methods
@@ -873,6 +881,31 @@ class TransactionService:
             block_hash,
             short_ids
         )
+
+    def process_tx_sync_message(self, msg: TxServiceSyncTxsMessage) -> List[TxSyncMsgProcessingItem]:
+        result_items = []
+        txs_content_short_ids = msg.txs_content_short_ids()
+        for tx_content_short_ids in txs_content_short_ids:
+            tx_hash = tx_content_short_ids.tx_hash
+            tx_content = tx_content_short_ids.tx_content
+            tx_content_len = 0
+
+            if tx_content:
+                tx_content_len = len(tx_content)
+                self.set_transaction_contents(tx_hash, tx_content)
+
+            for short_id, _ in zip(
+                tx_content_short_ids.short_ids, tx_content_short_ids.short_id_flags
+            ):
+                self.assign_short_id(tx_hash, short_id)
+
+            result_item = TxSyncMsgProcessingItem(tx_hash,
+                                                  tx_content_len,
+                                                  tx_content_short_ids.short_ids,
+                                                  tx_content_short_ids.short_id_flags)
+            result_items.append(result_item)
+
+        return result_items
 
     def log_block_transaction_cleanup_stats(self, block_hash: Sha256Hash, tx_count: int, tx_before_cleanup: int,
                                             tx_after_cleanup: int, short_id_count_before_cleanup: int,
