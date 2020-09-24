@@ -104,7 +104,7 @@ class TransactionFromBdnGatewayProcessingResult(typing.NamedTuple):
 
 
 class TxSyncMsgProcessingItem(typing.NamedTuple):
-    hash: Sha256Hash = None
+    hash: Optional[Sha256Hash] = None
     content_length: int = 0
     short_ids: List[int] = []
     quota_types: List[QuotaType] = []
