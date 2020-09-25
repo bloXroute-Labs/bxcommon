@@ -150,6 +150,7 @@ class AlarmQueue:
         :param slop: range during which only once instance of this function may be fire
         :param fn: function to be fired
         :param args: function arguments
+        :param alarm_name: name of alarm for logging
         """
         try:
             hash(fn)
@@ -214,6 +215,8 @@ class AlarmQueue:
                     # pylint: disable=broad-except
                     except Exception as e:
                         logger.exception("Alarm {} could not fire and failed with exception: {}", alarm, e)
+                        if alarm.fn in self.approx_alarms_scheduled:
+                            self._pop_and_cleanup_approx_alarm(alarm_id)
                     else:
                         performance_utils.log_operation_duration(
                             alarm_troubleshooting_logger,
@@ -229,14 +232,7 @@ class AlarmQueue:
                             heappush(self.alarms, alarm_id)
                         # Delete alarm from approx_alarms_scheduled if applicable
                         elif alarm.fn in self.approx_alarms_scheduled:
-                            alarm_heap = self.approx_alarms_scheduled[alarm.fn]
-
-                            # alarm that was just fired must be the first one in the list
-                            assert alarm_heap[0].count == alarm_id.count
-                            heappop(alarm_heap)
-
-                            if not alarm_heap:
-                                del self.approx_alarms_scheduled[alarm.fn]
+                            self._pop_and_cleanup_approx_alarm(alarm_id)
 
         performance_utils.log_operation_duration(
             alarm_troubleshooting_logger,
@@ -270,3 +266,13 @@ class AlarmQueue:
 
             time_to_alarm = self.alarms[0].fire_time - time.time()
             return time_to_alarm
+
+    def _pop_and_cleanup_approx_alarm(self, alarm_id: AlarmId) -> None:
+        alarm_heap = self.approx_alarms_scheduled[alarm_id.alarm.fn]
+
+        # alarm that was just fired must be the first one in the list
+        assert alarm_heap[0].count == alarm_id.count
+        heappop(alarm_heap)
+
+        if not alarm_heap:
+            del self.approx_alarms_scheduled[alarm_id.alarm.fn]
