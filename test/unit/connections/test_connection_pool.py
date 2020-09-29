@@ -163,6 +163,7 @@ class ConnectionPoolTest(AbstractTestCase):
         self.assertEqual(self.conn1, self.conn_pool1.get_by_fileno(self.fileno1))
         self.assertEqual(self.conn2, self.conn_pool1.get_by_fileno(self.fileno2))
         self.conn_pool1.add(6000, "0.0.0.0", 4000, self.conn3)
+        self.assertIsNone(self.conn_pool1.get_by_fileno(self.conn_pool1.len_fileno))
         self.assertIsNone(self.conn_pool1.get_by_fileno(7000))
         self.assertIsNone(self.conn_pool1.get_by_fileno(2))
 
