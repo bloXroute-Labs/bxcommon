@@ -143,7 +143,8 @@ class AbstractHttpRpcServer(Generic[Node]):
                     "payload_structures": await self._handler.help(),
                 }
             }
-            return web.json_response(response_dict, dumps=json_encoder.to_json)
+            json_response = JsonRpcResponse.from_json(response_dict)
+            return web.json_response(json_response.to_jsons(), dumps=json_encoder.to_json)
 
     async def _start(self) -> None:
         self._started = True
