@@ -1,13 +1,14 @@
 import asyncio
 import gc
 import sys
+import os
 
 from typing import Iterable, Optional, Type, Callable, List
 
 import uvloop
 
 from bxcommon.connections.abstract_node import AbstractNode
-from bxcommon.exceptions import TerminationError
+from bxcommon.exceptions import TerminationError, HighMemoryError
 from bxcommon.models.node_type import NodeType
 from bxcommon.network.node_event_loop import NodeEventLoop
 from bxcommon.services import sdn_http_service
@@ -92,7 +93,6 @@ def run_node(
     # if memory goes out of control we need to find why or
     # use gc.collect() every 30 minutes.
     gc.disable()
-
     try:
         if opts.use_extensions:
             from bxcommon.utils.proxy import task_pool_proxy
@@ -112,8 +112,18 @@ def run_node(
         )
     except TerminationError:
         logger.fatal("Node terminated")
+    except HighMemoryError:
+        logger.info("Restarting node due to high memory")
+        _close_handles()
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
     except Exception as e:  # pylint: disable=broad-except
         logger.fatal("Unhandled exception {} raised, terminating!", e)
+
+    _close_handles()
+
+
+def _close_handles() -> None:
     for handler in logger.handlers:
         if hasattr(handler, "close"):
             handler.close()

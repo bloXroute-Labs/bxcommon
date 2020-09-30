@@ -18,10 +18,10 @@ class ConnectionType(SerializableFlag):
     GATEWAY = INTERNAL_GATEWAY | EXTERNAL_GATEWAY
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     def __format__(self, format_spec):
-        return self.name
+        return str(self.name)
 
     def format_short(self):
         cls = self.__class__

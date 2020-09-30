@@ -186,7 +186,7 @@ class ObjectType(Enum):
     TASK_QUEUE_PROXY = "TaskQueueProxy"
 
     def __str__(self) -> str:
-        return self.value
+        return str(self.value)
 
 
 class SizeType(Enum):
@@ -196,4 +196,4 @@ class SizeType(Enum):
     ESTIMATE = "Estimate"
 
     def __str__(self) -> str:
-        return self.value
+        return str(self.value)

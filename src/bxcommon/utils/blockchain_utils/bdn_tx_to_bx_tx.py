@@ -48,7 +48,7 @@ def btc_bdn_tx_to_bx_tx(
     try:
         tx_hash = btc_common_utils.get_txid(raw_tx)
     except IndexError:
-        raise ValueError(f"Invalid raw transaction provided.")
+        raise ValueError("Invalid raw transaction provided.")
     return TxMessage(
         message_hash=tx_hash, network_num=network_num, tx_val=raw_tx, quota_type=quota_type
     )
@@ -77,7 +77,7 @@ def ont_bdn_tx_to_bx_tx(
     try:
         tx_hash, _ = ont_common_utils.get_txid(raw_tx)
     except IndexError:
-        raise ValueError(f"Invalid raw transaction provided.")
+        raise ValueError("Invalid raw transaction provided.")
     return TxMessage(
         message_hash=tx_hash, network_num=network_num, tx_val=raw_tx, quota_type=quota_type
     )

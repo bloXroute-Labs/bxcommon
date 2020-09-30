@@ -296,7 +296,7 @@ def get_common_opts(
         "ca_cert_url": "https://certificates.blxrbdn.com/ca",
         "private_ssl_base_url": "https://certificates.blxrbdn.com",
         "rpc": rpc,
-        "transaction_validation": transaction_validation
+        "transaction_validation": transaction_validation,
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val

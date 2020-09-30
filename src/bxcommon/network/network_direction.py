@@ -6,4 +6,4 @@ class NetworkDirection(Enum):
     OUTBOUND = 2
 
     def __str__(self) -> str:
-        return self.name
+        return str(self.name)
