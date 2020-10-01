@@ -86,10 +86,14 @@ class EthBlockValidator(AbstractBlockValidator):
         block_difficulty = block_parameters.difficulty
         block_hash = block_parameters.block_hash
 
-        max_difficulty_change = int(last_confirmed_block_difficulty / 100 * eth_common_constants.MAX_DIFFICULTY_CHANGE_PERCENT)
+        max_difficulty_change = int(
+            last_confirmed_block_difficulty / 100 * eth_common_constants.MAX_DIFFICULTY_CHANGE_PERCENT
+        )
         valid = last_confirmed_block_difficulty - block_difficulty < max_difficulty_change
         if not valid:
             logger.debug(
-                "Block {} is invalid. Block difficulty {} is significantly lower than last confirmed block {}.",
-                block_hash, block_difficulty, last_confirmed_block_difficulty, max_difficulty_change)
+                "Block {} is invalid. Block difficulty {} is significantly lower than "
+                "the difficulty of last confirmed block {}, with max difficulty change {}.",
+                block_hash, block_difficulty, last_confirmed_block_difficulty, max_difficulty_change
+            )
         return valid
