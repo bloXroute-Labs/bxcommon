@@ -72,6 +72,9 @@ class NotificationMessage(AbstractBloxrouteMessage):
             args_list[1] = str(EntityType(int(args_list[1])))
             return NotificationFormatting[self._notification_code].format(*args_list)
 
+        elif self._notification_code == NotificationCode.ACCOUNT_EXPIRED_NOTIFICATION:
+            return NotificationFormatting[self._notification_code]
+
         elif self._notification_code in NotificationFormatting:
             assert raw is not None
             return NotificationFormatting[self._notification_code].format(

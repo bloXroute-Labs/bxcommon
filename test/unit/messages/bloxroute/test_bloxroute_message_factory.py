@@ -457,7 +457,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(constants.NULL_TX_SID, rebuilt_tx_message.short_id())
         self.assertEqual(constants.NULL_TX_TIMESTAMP, rebuilt_tx_message.timestamp())
 
-    def test_notification_message(self):
+    def test_quota_notification_message(self):
         notification_code = NotificationCode.QUOTA_FILL_STATUS
         args_list = ["10", str(EntityType.TRANSACTION.value), "100"]
         raw_message = ",".join(args_list)
@@ -471,6 +471,21 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(
             notification_message.formatted_message(),
             "10% of daily transaction quota with limit of 100 transactions per day is depleted."
+        )
+
+    def test_expiration_notification_message(self):
+        notification_code = NotificationCode.ACCOUNT_EXPIRED_NOTIFICATION
+
+        notification_message = self.create_message_successfully(
+            NotificationMessage(notification_code),
+            NotificationMessage
+        )
+
+        self.assertEqual(notification_code, notification_message.notification_code())
+        self.assertEqual(
+            notification_message.formatted_message(),
+            "The account associated with this gateway has expired. "
+            "Please visit https://portal.bloxroute.com to renew your subscription."
         )
 
     def test_bdn_performance_stats_message(self):
