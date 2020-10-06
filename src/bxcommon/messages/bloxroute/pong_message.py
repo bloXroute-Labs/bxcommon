@@ -41,7 +41,6 @@ class PongMessage(KeepAliveMessage):
     def timestamp(self) -> Optional[int]:
         if self._timestamp is None:
             self.__unpack()
-        assert self._timestamp is not None
         return self._timestamp
 
     def __repr__(self) -> str:
