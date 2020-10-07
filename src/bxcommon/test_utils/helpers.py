@@ -99,8 +99,11 @@ def create_connection(
 
     connection.on_connection_authenticated(authentication_info)
 
+    connection.peer_model = OutboundPeerModel(ip, port, node_opts.node_id)
+
     if add_to_pool:
         node.connection_pool.add(file_no, ip, port, connection)
+
     return connection
 
 
