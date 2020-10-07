@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Union, Optional
 
-from bxcommon.messages.eth.validation.abstract_block_validator import AbstractBlockValidator
+from bxcommon.messages.eth.validation.abstract_block_validator import AbstractBlockValidator, \
+    BlockValidationResult
 from bxcommon.utils.blockchain_utils.eth import eth_common_utils, rlp_utils, eth_common_constants
 from bxcommon.utils.object_hash import Sha256Hash
 from bxutils import logging
@@ -19,33 +20,39 @@ class BlockParameters:
 
 
 class EthBlockValidator(AbstractBlockValidator):
-
-    def validate_block_header(self, block_header_bytes: Union[bytearray, memoryview],
-                              last_confirmed_block_number: Optional[int],
-                              last_confirmed_block_difficulty: Optional[int]) -> bool:
-
+    def validate_block_header(
+        self,
+        block_header_bytes: Union[bytearray, memoryview],
+        last_confirmed_block_number: Optional[int],
+        last_confirmed_block_difficulty: Optional[int]
+    ) -> BlockValidationResult:
         if last_confirmed_block_difficulty is None or last_confirmed_block_number is None:
             logger.debug("Skipping block validation because do not have information about last confirmed block")
-            return True
+            return BlockValidationResult(True, None, None)
+        block_parameters = self._parse_block_parameters(block_header_bytes)
 
-        block_parameters = self._parse_block_parameters(
-            block_header_bytes
-        )
-
-        valid = self._validate_block_number(block_parameters, last_confirmed_block_number) and \
-                self._validate_block_difficulty(block_parameters, last_confirmed_block_difficulty)
+        valid_block_number = self._validate_block_number(block_parameters, last_confirmed_block_number)
+        valid_difficulty = self._validate_block_difficulty(block_parameters, last_confirmed_block_difficulty)
+        valid = valid_block_number and valid_difficulty
 
         if valid:
             logger.debug("Successfully validate block {}", block_parameters.block_hash)
+            reason = None
         else:
             logger.info("Validation failed for block {}. Skipping the block.", block_parameters.block_hash)
+            reasons = []
+            if not valid_block_number:
+                reasons.append("invalid number")
+            if not valid_difficulty:
+                reasons.append("invalid difficulty")
+            reason = f"Reason(s) for failure: {', '.join(reasons)}"
 
-        return valid
+        return BlockValidationResult(valid, block_parameters.block_hash, reason)
 
     def _parse_block_parameters(self, full_block_header_bytes: Union[bytearray, memoryview]) -> BlockParameters:
         _, block_header_len, block_header_start = rlp_utils.consume_length_prefix(full_block_header_bytes, 0)
         block_header_bytes = full_block_header_bytes[block_header_start:block_header_start + block_header_len]
-        block_hash = self._get_block_hash(block_header_bytes)
+        block_hash = self._get_block_hash(full_block_header_bytes)
         offset = eth_common_constants.FIXED_LENGTH_FIELD_OFFSET
         difficulty, difficulty_length = rlp_utils.decode_int(block_header_bytes, offset)
         offset += difficulty_length
@@ -76,13 +83,16 @@ class EthBlockValidator(AbstractBlockValidator):
 
         valid = block_number - last_confirmed_block_number <= eth_common_constants.MAX_FUTURE_BLOCK_NUMBER
         if not valid:
-            logger.debug("Block {} is invalid. Block number {} is way ahead of the last confirmed block {}.",
-                         block_hash, block_number, last_confirmed_block_number)
+            logger.debug(
+                "Block {} is invalid. Block number {} is way ahead of the last confirmed block {}.",
+                block_hash, block_number, last_confirmed_block_number
+            )
 
         return valid
 
-    def _validate_block_difficulty(self, block_parameters: BlockParameters,
-                                   last_confirmed_block_difficulty: int) -> bool:
+    def _validate_block_difficulty(
+        self, block_parameters: BlockParameters, last_confirmed_block_difficulty: int
+    ) -> bool:
         block_difficulty = block_parameters.difficulty
         block_hash = block_parameters.block_hash
 

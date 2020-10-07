@@ -9,6 +9,9 @@ class BlockStatEventType:
     BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE_IGNORE_SEEN = StatEventTypeSettings(
         "BlockReceivedFromBlockchainNodeIgnoreSeen"
     )
+    BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE_FAILED_VALIDATION = StatEventTypeSettings(
+        "BlockReceivedFromBlockchainNodeFailedValidation"
+    )
     COMPACT_BLOCK_RECEIVED_FROM_BLOCKCHAIN_NODE = StatEventTypeSettings(
         "CompactBlockReceivedFromBlockchainNode", priority=True
     )
@@ -110,6 +113,9 @@ class BlockStatEventType:
     BLOCK_DECOMPRESSED_WITH_UNKNOWN_TXS = StatEventTypeSettings(
         "BlockDecompressedWithUnknownTxs",
         event_logic_flags=StatEventLogicFlags.BLOCK_INFO | StatEventLogicFlags.MATCH,
+    )
+    BLOCK_DECOMPRESSED_FAILED_VALIDATION = StatEventTypeSettings(
+        "BlockDecompressedFailedValidation"
     )
     BLOCK_CONVERSION_FAILED = StatEventTypeSettings("BlockConversionFailed")
     BLOCK_RECOVERY_STARTED = StatEventTypeSettings("BlockRecoveryStarted")
