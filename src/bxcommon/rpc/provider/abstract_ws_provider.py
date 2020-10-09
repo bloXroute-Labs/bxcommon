@@ -264,11 +264,6 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         assert ws is not None
         await ws.wait_closed()
 
-        if ws.transfer_data_exc:
-            logger.error(
-                log_messages.RPC_TRANSPORT_EXCEPTION, ws.transfer_data_exc
-            )
-
         self.connected_event.clear()
 
         listener = self.listener_task

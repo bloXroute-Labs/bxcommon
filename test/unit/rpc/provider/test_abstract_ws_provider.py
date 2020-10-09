@@ -17,7 +17,6 @@ class TestWebSocket(websockets.WebSocketClientProtocol):
         self.alive_event = asyncio.Event()
         self.send_messages = []
         self.recv_messages: 'asyncio.Queue[websockets.Data]' = asyncio.Queue()
-        self.transfer_data_exc = None
 
     async def wait_closed(self) -> None:
         await self.alive_event.wait()

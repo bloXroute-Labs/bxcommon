@@ -5,6 +5,7 @@ from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest, Node
 from bxcommon.rpc.rpc_errors import RpcInvalidParams
+from bxcommon.utils import convert
 from bxcommon.utils.object_hash import Sha256Hash
 
 
@@ -39,13 +40,16 @@ class TransactionStatusRpcRequest(AbstractRpcRequest[Node]):
                 "Transaction hash was missing from RPC params."
             )
 
-        transaction_hash_str = params[TRANSACTION_HASH_KEY]
+        transaction_hash = params[TRANSACTION_HASH_KEY]
+        if transaction_hash.startswith("0x"):
+            transaction_hash = transaction_hash[2:]
+
         try:
-            transaction_hash = Sha256Hash.from_string(transaction_hash_str)
+            transaction_hash = Sha256Hash(convert.hex_to_bytes(transaction_hash))
         except Exception as _e:
             raise RpcInvalidParams(
                 self.request_id,
-                f"Invalid transaction hash: {transaction_hash_str}"
+                f"Invalid transaction hash: {transaction_hash}"
             )
         else:
             self.transaction_hash = transaction_hash

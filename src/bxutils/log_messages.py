@@ -273,8 +273,3 @@ MSG_PROXY_REQUESTER_QUEUE_EMPTY_ON_RESPONSE = LogMessage(
     "Message proxy requester queue empty upon receiving response from remote blockchain "
     "node. Unable to forward response to blockchain node."
 )
-RPC_TRANSPORT_EXCEPTION = LogMessage(
-    "C-000053",
-    CONNECTION_PROBLEM_CATEGORY,
-    "Websocket disconnected due to transport layer exception: {}",
-)

@@ -54,19 +54,6 @@ class Sha256Hash(AbstractObjectHash):
     def __str__(self):
         return convert.bytes_to_hex(self.binary)
 
-    def to_string(self, prefix: bool = False) -> str:
-        if prefix:
-            return f"0x{str(self)}"
-        else:
-            return str(self)
-
-    @classmethod
-    def from_string(cls, s: str) -> "Sha256Hash":
-        if s.startswith("0x"):
-            s = s[2:]
-
-        return cls(convert.hex_to_bytes(s))
-
 
 class ConcatHash(AbstractObjectHash):
     """

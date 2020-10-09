@@ -24,6 +24,7 @@ def raw_tx_to_bx_tx(
     return bx_tx, tx_item_length, tx_item_start
 
 
+
 def raw_tx_gas_price(tx_bytes: memoryview, tx_start_index: int) -> int:
     _, tx_item_length, tx_item_start = rlp_utils.consume_length_prefix(tx_bytes, tx_start_index)
     tx_bytes = tx_bytes[tx_item_start:tx_item_start + tx_item_length]

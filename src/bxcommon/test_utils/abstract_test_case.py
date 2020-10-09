@@ -117,15 +117,3 @@ class AbstractTestCase(unittest.TestCase):
 
         node_ssl_service.blocking_load()
         return node_ssl_service
-
-    def assert_almost_equal(
-        self,
-        expected_value: float,
-        actual_value: float,
-        allowed_error: float = 0.001
-    ):
-        self.assertTrue(
-            abs(expected_value - actual_value) <= allowed_error,
-            msg=f"Expected {expected_value}, but "
-                f"{actual_value} was more than {allowed_error} away."
-        )

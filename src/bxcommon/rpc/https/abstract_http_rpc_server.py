@@ -46,38 +46,6 @@ async def request_middleware(
     return response
 
 
-def format_http_error(
-    client_error: HTTPClientError, content_type: ContentType
-) -> HTTPClientError:
-    err_msg = client_error.text
-    code = client_error.status_code
-    response_json = {
-        "result": None,
-        "error": err_msg,
-        "code": code,
-        "message": err_msg,
-    }
-    client_error.content_type = content_type.value
-    client_error.text = json_encoder.to_json(response_json)
-    return client_error
-
-
-def format_rpc_error(
-    rpc_error: RpcError, status_code: int, content_type: ContentType
-) -> Response:
-    if content_type == ContentType.PLAIN:
-        return web.json_response(
-            JsonRpcResponse(rpc_error.id, error=rpc_error).to_jsons(),
-            status=status_code,
-            content_type=ContentType.PLAIN.value
-        )
-    else:
-        return web.json_response(
-            text=JsonRpcResponse(rpc_error.id, error=rpc_error).to_jsons(),
-            status=status_code,
-        )
-
-
 class AbstractHttpRpcServer(Generic[Node]):
     RUN_SLEEP_INTERVAL_S: int = 5
 
@@ -150,19 +118,19 @@ class AbstractHttpRpcServer(Generic[Node]):
             self.authenticate_request(request)
             return await self._handler.handle_request(request)
         except HTTPClientError as e:
-            return format_http_error(e, self._handler.content_type)
+            return self._format_http_error(e)
         except RpcAccountIdError as e:
-            return format_rpc_error(e, HTTPUnauthorized.status_code, self._handler.content_type)
+            return self._format_rpc_error(e, HTTPUnauthorized.status_code)
         except (RpcParseError, RpcMethodNotFound, RpcInvalidParams) as e:
-            return format_rpc_error(e, HTTPBadRequest.status_code, self._handler.content_type)
+            return self._format_rpc_error(e, HTTPBadRequest.status_code)
         except RpcError as e:
-            return format_rpc_error(e, HTTPInternalServerError.status_code, self._handler.content_type)
+            return self._format_rpc_error(e, HTTPInternalServerError.status_code)
 
     async def handle_get_request(self, request: Request) -> Response:
         try:
             self.authenticate_request(request)
         except HTTPUnauthorized as e:
-            return format_http_error(e, self._handler.content_type)
+            return self._format_http_error(e)
         else:
             response_dict = {
                 "result": {
@@ -187,3 +155,30 @@ class AbstractHttpRpcServer(Generic[Node]):
         site = TCPSite(self._runner, opts.rpc_host, opts.rpc_port)
         self._site = site
         await site.start()
+
+    def _format_http_error(self, client_error: HTTPClientError) -> HTTPClientError:
+        err_msg = client_error.text
+        code = client_error.status_code
+        response_json = {
+            "result": None,
+            "error": err_msg,
+            "code": code,
+            "message": err_msg,
+        }
+
+        client_error.content_type = self._handler.content_type.value
+        client_error.text = json_encoder.to_json(response_json)
+        return client_error
+
+    def _format_rpc_error(self, rpc_error: RpcError, status_code: int) -> Response:
+        if self._handler.content_type == ContentType.PLAIN:
+            return web.json_response(
+                JsonRpcResponse(rpc_error.id, error=rpc_error).to_jsons(),
+                status=status_code,
+                content_type=ContentType.PLAIN.value
+            )
+        else:
+            return web.json_response(
+                text=JsonRpcResponse(rpc_error.id, error=rpc_error).to_jsons(),
+                status=status_code,
+            )
