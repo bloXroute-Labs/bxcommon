@@ -81,3 +81,7 @@ def safe_divide(value1: float, value2: float) -> float:
         return 0
 
     return value1 / value2
+
+
+def bind_range(min_value: float, max_value: float, value: float) -> float:
+    return min(max_value, max(min_value, value))
