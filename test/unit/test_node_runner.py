@@ -1,4 +1,5 @@
 import argparse
+
 from argparse import Namespace
 from typing import Optional
 from unittest import mock
@@ -27,6 +28,14 @@ class NodeMock:
 
 
 class EventLoopMock:
+
+    def __init__(self):
+        self.run_count = 0
+
+    async def run(self):
+        self.run_count += 1
+
+class EventLoopRestartMock:
 
     def __init__(self):
         self.run_count = 0
@@ -104,6 +113,7 @@ class TestNodeRunner(AbstractTestCase):
             parse_arguments_mock,
     ):
         log_pid_mock.return_value = None
+
         node_runner._init_ssl_service = MagicMock()
         create_event_loop_mock.return_value = self.event_loop_mock
         register_node_mock.return_value = NodeModel(external_ip="1.1.1.1", external_port=1234, node_type=NodeType.RELAY)

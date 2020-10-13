@@ -35,7 +35,9 @@ class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
     )
 
     _LENGTH_DIFFERENCE = (
-        2 * (constants.UL_INT_SIZE_IN_BYTES - constants.UL_SHORT_SIZE_IN_BYTES) + constants.UL_SHORT_SIZE_IN_BYTES
+        2 * (constants.UL_INT_SIZE_IN_BYTES - constants.UL_SHORT_SIZE_IN_BYTES)
+        + constants.UL_SHORT_SIZE_IN_BYTES
+        + 3 * constants.UL_INT_SIZE_IN_BYTES
     )
 
     def convert_to_older_version(
@@ -91,23 +93,34 @@ class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
         new_msg_bytes = bytearray(self._NEW_MESSAGE_LEN)
         new_msg_bytes[:self._BREAKPOINT] = msg.rawbytes()[:self._BREAKPOINT]
 
-        tx_received_from_blockchain_node, = struct.unpack_from("<H", msg.rawbytes(), self._BREAKPOINT)
-        struct.pack_into("<I", new_msg_bytes, self._BREAKPOINT, tx_received_from_blockchain_node)
+        default_new_stats = 0
+        offset = self._BREAKPOINT
 
-        tx_received_from_bdn, = struct.unpack_from("<H", msg.rawbytes(),
-                                                   self._BREAKPOINT + constants.UL_SHORT_SIZE_IN_BYTES)
-        struct.pack_into("<I", new_msg_bytes, self._BREAKPOINT + constants.UL_INT_SIZE_IN_BYTES, tx_received_from_bdn)
-
-        default_memory_utilization_mb = 0
-        struct.pack_into(
-            "<H",
-            new_msg_bytes,
-            self._BREAKPOINT + constants.UL_INT_SIZE_IN_BYTES + constants.UL_SHORT_SIZE_IN_BYTES,
-            default_memory_utilization_mb
+        tx_received_from_blockchain_node, = struct.unpack_from(
+            "<H", msg.rawbytes(), self._BREAKPOINT)
+        tx_received_from_bdn, = struct.unpack_from(
+            "<H", msg.rawbytes(), self._BREAKPOINT + constants.UL_SHORT_SIZE_IN_BYTES
         )
 
-        new_msg_bytes[self._BREAKPOINT + 2 * constants.UL_INT_SIZE_IN_BYTES + constants.UL_SHORT_SIZE_IN_BYTES:] = \
-            msg.rawbytes()[self._BREAKPOINT + 2 * constants.UL_SHORT_SIZE_IN_BYTES:]
+        # tx stats
+        struct.pack_into("<I", new_msg_bytes, offset, tx_received_from_blockchain_node)
+        offset += constants.UL_INT_SIZE_IN_BYTES
+        struct.pack_into("<I", new_msg_bytes, offset, tx_received_from_bdn)
+        offset += constants.UL_INT_SIZE_IN_BYTES
+
+        # memory
+        struct.pack_into("<H", new_msg_bytes, offset, default_new_stats)
+        offset += constants.UL_SHORT_SIZE_IN_BYTES
+
+        # new block stats
+        struct.pack_into("<I", new_msg_bytes, offset, default_new_stats)
+        offset += constants.UL_INT_SIZE_IN_BYTES
+        struct.pack_into("<I", new_msg_bytes, offset, default_new_stats)
+        offset += constants.UL_INT_SIZE_IN_BYTES
+        struct.pack_into("<I", new_msg_bytes, offset, default_new_stats)
+        offset += constants.UL_INT_SIZE_IN_BYTES
+
+        new_msg_bytes[offset:] = msg.rawbytes()[self._BREAKPOINT + 2 * constants.UL_SHORT_SIZE_IN_BYTES:]
 
         return AbstractBloxrouteMessage.initialize_class(
             new_msg_class,

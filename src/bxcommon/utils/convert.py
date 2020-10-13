@@ -58,8 +58,11 @@ NODE_TO_CONNECTION_TYPE: Dict[NodeType, Dict[NodeType, ConnectionType]] = {
 }
 
 
-def str_to_bool(value: str) -> bool:
-    return value in ["True", "true", "1"]
+def str_to_bool(value: str, default: bool = False) -> bool:
+    if default:
+        return value not in ["False", "false", "0"]
+    else:
+        return value in ["True", "true", "1"]
 
 
 def bytes_to_hex_string_format(bytes_to_convert: Union[bytearray, bytes]) -> str:

@@ -23,7 +23,7 @@ def connections(conns: List["AbstractConnection"]) -> str:
     :return: formatted string
     """
 
-    return ", ".join(conn.format_connection_desc for conn in conns)
+    return ", ".join(conn.format_connection_desc for conn in conns if conn is not None)
 
 
 def connection(conn: Optional["AbstractConnection"]) -> str:

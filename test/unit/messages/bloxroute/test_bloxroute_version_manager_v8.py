@@ -109,9 +109,9 @@ class BloxrouteVersionManagerV8Test(
         )
 
     def compare_bdn_performance_stats_current_to_old(
-            self,
-            converted_old_message: BdnPerformanceStatsMessageV9,
-            original_old_message: BdnPerformanceStatsMessageV9,
+        self,
+        converted_old_message: BdnPerformanceStatsMessageV9,
+        original_old_message: BdnPerformanceStatsMessageV9,
     ):
 
         self.assert_attributes_equal(

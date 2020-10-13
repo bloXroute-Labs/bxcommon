@@ -1,3 +1,5 @@
+from enum import Enum
+
 CONTENT_TYPE_HEADER_KEY = "Content-Type"
 PLAIN_HEADER_TYPE = "text/plain"
 JSON_HEADER_TYPE = "application/json"
@@ -12,6 +14,7 @@ BLOCKCHAIN_NETWORK_NUM_PARAMS_KEY = "blockchain_network_num"
 ACCOUNT_ID_PARAMS_KEY = "account_id"
 ACCOUNT_CACHE_KEY_PARAMS_KEY = "account_cache_key"
 TX_SERVICE_FILE_NAME_PARAMS_KEY = "file_name"
+ADD_BLOCKCHAIN_PEER_PARAMS_KEY = "peer"
 AUTHORIZATION_HEADER_KEY = "Authorization"
 RPC_SERVER_INIT_TIMEOUT_S = 10
 RPC_SERVER_STOP_TIMEOUT_S = 10
@@ -34,3 +37,15 @@ JSON_RPC_ERROR = "error"
 NEW_TRANSACTION_FEED_NAME = "newTxs"
 ETH_ON_BLOCK_FEED_NAME = "ethOnBlock"
 ETH_PENDING_TRANSACTION_FEED_NAME = "pendingTxs"
+
+
+class ContentType(Enum):
+    PLAIN = PLAIN_HEADER_TYPE
+    JSON = JSON_HEADER_TYPE
+
+    @classmethod
+    def from_string(cls, s: str) -> "ContentType":
+        for val in cls:
+            if val.value == s:
+                return val
+        raise ValueError(f"{s} is not a valid {cls}.")

@@ -6,8 +6,10 @@ import task_pool_executor as tpe
 
 from bxcommon import constants
 from bxcommon.messages.bloxroute import transactions_info_serializer
+from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
+from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
-from bxcommon.services.transaction_service import TransactionService, TransactionCacheKeyType
+from bxcommon.services.transaction_service import TransactionService, TransactionCacheKeyType, TxSyncMsgProcessingItem
 from bxcommon.services.transaction_service import TxRemovalReason
 from bxcommon.utils import memory_utils, crypto
 from bxcommon.utils.object_encoder import ObjectEncoder
@@ -203,6 +205,67 @@ class ExtensionTransactionService(TransactionService):
 
         return TransactionSearchResult(found_txs_info, missing_txs_info)
 
+    def process_tx_sync_message(self, msg: TxServiceSyncTxsMessage) -> List[TxSyncMsgProcessingItem]:
+        input_bytes = tpe.InputBytes(msg.rawbytes())
+        result_bytes = self.proxy.process_tx_sync_message(input_bytes)
+
+        assert result_bytes is not None
+        result_memory_view = memoryview(result_bytes)
+
+        result_items = []
+        offset = 0
+
+        txs_count, = struct.unpack_from("<L", result_memory_view, offset)
+        offset += constants.UL_INT_SIZE_IN_BYTES
+
+        for _ in range(txs_count):
+            transaction_hash = Sha256Hash(result_memory_view[offset:offset + crypto.SHA256_HASH_LEN])
+            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+            offset += crypto.SHA256_HASH_LEN
+
+            content_len, = struct.unpack_from("<L", result_memory_view, offset)
+            offset += constants.UL_INT_SIZE_IN_BYTES
+
+            short_id_count, = struct.unpack_from("<L", result_memory_view, offset)
+            offset += constants.UL_INT_SIZE_IN_BYTES
+
+            if content_len > 0:
+                self.set_transaction_contents_base(
+                    transaction_hash,
+                    transaction_cache_key,
+                    short_id_count > 0,
+                    0,
+                    False,
+                    None,
+                    content_len
+                )
+
+            short_ids = []
+
+            for _ in range(short_id_count):
+                short_id, = struct.unpack_from("<L", result_memory_view, offset)
+                offset += constants.UL_INT_SIZE_IN_BYTES
+
+                self.assign_short_id_base(
+                    transaction_hash,
+                    transaction_cache_key,
+                    short_id,
+                    content_len > 0,
+                    False
+                )
+
+                short_ids.append(short_id)
+
+            quota_types = []
+
+            for _ in range(short_id_count):
+                quota_type, = struct.unpack_from("<B", result_memory_view, offset)
+                offset += constants.QUOTA_FLAG_LEN
+                quota_types.append(QuotaType(quota_type))
+
+            result_items.append(TxSyncMsgProcessingItem(transaction_hash, content_len, short_ids, quota_types))
+
+        return result_items
 
     def log_tx_service_mem_stats(self):
         super(ExtensionTransactionService, self).log_tx_service_mem_stats()

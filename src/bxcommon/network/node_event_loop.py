@@ -12,6 +12,7 @@ from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
+from bxcommon.exceptions import HighMemoryError
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
@@ -51,8 +52,9 @@ class NodeEventLoop:
     async def run(self) -> None:
         try:
             await self._run()
-        # pylint: disable=broad-except
-        except Exception as e:
+        except HighMemoryError as e:
+            raise e
+        except Exception as e: # pylint: disable=broad-except
             logger.exception("Unhandled error raised: {}.", e)
 
     async def close(self) -> None:
@@ -90,6 +92,8 @@ class NodeEventLoop:
             await self.close()
             for server in node_servers:
                 server.close()
+        if self._node.should_restart_on_high_memory:
+            raise HighMemoryError()
 
     async def _process_new_connections_requests(self) -> None:
         peers_info = self._node.dequeue_connection_requests()

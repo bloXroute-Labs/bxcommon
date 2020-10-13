@@ -59,3 +59,17 @@ class AlarmQueueTest(AbstractTestCase):
         time_to_next_alarm = self.alarm_queue.fire_ready_alarms()
         self.assertEqual(1, len(self.alarm_queue.alarms))
         self.assertLess(0, time_to_next_alarm)
+
+    def test_approx_alarm_cleans_up_even_with_exceptions(self):
+        def raise_exception(should_raise: bool):
+            if should_raise:
+                raise Exception()
+            else:
+                pass
+
+        self.alarm_queue.register_approx_alarm(0, 1, raise_exception, True)
+        self.alarm_queue.register_approx_alarm(2, 1, raise_exception, False)
+        self.alarm_queue.fire_alarms()
+
+        time.time = MagicMock(return_value=time.time() + 2)
+        self.alarm_queue.fire_alarms()

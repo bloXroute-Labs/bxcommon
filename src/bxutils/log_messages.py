@@ -267,3 +267,9 @@ ETH_RPC_COULD_NOT_RECONNECT = LogMessage(
     "verification for now, but will attempt reconnection upon when the next subscriber "
     "reconnects."
 )
+MSG_PROXY_REQUESTER_QUEUE_EMPTY_ON_RESPONSE = LogMessage(
+    "C-000052",
+    GENERAL_CATEGORY,
+    "Message proxy requester queue empty upon receiving response from remote blockchain "
+    "node. Unable to forward response to blockchain node."
+)

@@ -13,9 +13,14 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
     Bloxroute message sent from gateway to relay that contains statistics on BDN performance.
     """
 
-    MSG_SIZE = AbstractBloxrouteMessage.HEADER_LENGTH + (2 * constants.DOUBLE_SIZE_IN_BYTES) + \
-               (3 * constants.UL_SHORT_SIZE_IN_BYTES) + (2 * constants.UL_INT_SIZE_IN_BYTES) \
-               + constants.CONTROL_FLAGS_LEN
+    MSG_SIZE = (
+        AbstractBloxrouteMessage.HEADER_LENGTH
+        + (2 * constants.DOUBLE_SIZE_IN_BYTES)
+        + (3 * constants.UL_SHORT_SIZE_IN_BYTES)
+        + (2 * constants.UL_INT_SIZE_IN_BYTES)
+        + (3 * constants.UL_INT_SIZE_IN_BYTES)
+        + constants.CONTROL_FLAGS_LEN
+    )
     MESSAGE_TYPE = BloxrouteMessageType.BDN_PERFORMANCE_STATS
 
     _interval_start_time: Optional[float] = None
@@ -25,6 +30,9 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
     _new_tx_received_from_blockchain_node: Optional[int] = None
     _new_tx_received_from_bdn: Optional[int] = None
     _memory_utilization_mb: Optional[int] = None
+    _new_blocks_seen: Optional[int] = None
+    _new_block_messages_from_blockchain_node: Optional[int] = None
+    _new_block_announcements_from_blockchain_node: Optional[int] = None
 
     def __init__(
         self,
@@ -35,6 +43,9 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
         new_tx_received_from_blockchain_node: Optional[int] = None,
         new_tx_received_from_bdn: Optional[int] = None,
         memory_utilization_mb: Optional[int] = None,
+        new_blocks_seen: Optional[int] = None,
+        new_block_messages_from_blockchain_node: Optional[int] = None,
+        new_block_announcements_from_blockchain_node: Optional[int] = None,
         buf: Optional[bytearray] = None
     ):
         if buf is None:
@@ -45,6 +56,9 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
             assert new_tx_received_from_blockchain_node is not None
             assert new_tx_received_from_bdn is not None
             assert memory_utilization_mb is not None
+            assert new_blocks_seen is not None
+            assert new_block_messages_from_blockchain_node is not None
+            assert new_block_announcements_from_blockchain_node is not None
 
             buf = bytearray(self.MSG_SIZE)
 
@@ -70,6 +84,15 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
             memory_utilization_mb = min(memory_utilization_mb, constants.UNSIGNED_SHORT_MAX_VALUE)
             struct.pack_into("<H", buf, off, memory_utilization_mb)
             off += constants.UL_SHORT_SIZE_IN_BYTES
+
+            struct.pack_into("<I", buf, off, new_blocks_seen)
+            off += constants.UL_INT_SIZE_IN_BYTES
+
+            struct.pack_into("<I", buf, off, new_block_messages_from_blockchain_node)
+            off += constants.UL_INT_SIZE_IN_BYTES
+
+            struct.pack_into("<I", buf, off, new_block_announcements_from_blockchain_node)
+            off += constants.UL_INT_SIZE_IN_BYTES
 
         self.buf = buf
         payload_length = len(buf) - AbstractBloxrouteMessage.HEADER_LENGTH
@@ -134,25 +157,66 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
         assert memory_utilization_mb is not None
         return memory_utilization_mb
 
-    def _unpack(self):
+    def new_blocks_seen(self) -> int:
+        if self._new_blocks_seen is None:
+            self._unpack()
+
+        new_blocks_seen = self._new_blocks_seen
+        assert new_blocks_seen is not None
+        return new_blocks_seen
+
+    def new_block_messages_from_blockchain_node(self) -> int:
+        if self._new_block_messages_from_blockchain_node is None:
+            self._unpack()
+
+        new_block_messages_from_blockchain_node = self._new_block_messages_from_blockchain_node
+        assert new_block_messages_from_blockchain_node is not None
+        return new_block_messages_from_blockchain_node
+
+    def new_block_announcements_from_blockchain_node(self) -> int:
+        if self._new_block_announcements_from_blockchain_node is None:
+            self._unpack()
+
+        new_block_announcements_from_blockchain_node = self._new_block_announcements_from_blockchain_node
+        assert new_block_announcements_from_blockchain_node is not None
+        return new_block_announcements_from_blockchain_node
+
+    def _unpack(self) -> None:
+        buf = self.buf
+        assert buf is not None
+
         off = AbstractBloxrouteMessage.HEADER_LENGTH
-        self._interval_start_time, = struct.unpack_from("<d", self.buf, off)
+        self._interval_start_time, = struct.unpack_from("<d", buf, off)
         off += constants.DOUBLE_SIZE_IN_BYTES
-        self._interval_end_time, = struct.unpack_from("<d", self.buf, off)
+        self._interval_end_time, = struct.unpack_from("<d", buf, off)
         off += constants.DOUBLE_SIZE_IN_BYTES
-        self._new_blocks_received_from_blockchain_node, = struct.unpack_from("<H", self.buf, off)
+        self._new_blocks_received_from_blockchain_node, = struct.unpack_from("<H", buf, off)
         off += constants.UL_SHORT_SIZE_IN_BYTES
-        self._new_blocks_received_from_bdn, = struct.unpack_from("<H", self.buf, off)
+        self._new_blocks_received_from_bdn, = struct.unpack_from("<H", buf, off)
         off += constants.UL_SHORT_SIZE_IN_BYTES
-        self._new_tx_received_from_blockchain_node, = struct.unpack_from("<I", self.buf, off)
+        self._new_tx_received_from_blockchain_node, = struct.unpack_from("<I", buf, off)
         off += constants.UL_INT_SIZE_IN_BYTES
-        self._new_tx_received_from_bdn, = struct.unpack_from("<I", self.buf, off)
+        self._new_tx_received_from_bdn, = struct.unpack_from("<I", buf, off)
         off += constants.UL_INT_SIZE_IN_BYTES
-        self._memory_utilization_mb, = struct.unpack_from("<H", self.buf, off)
+        self._memory_utilization_mb, = struct.unpack_from("<H", buf, off)
         off += constants.UL_SHORT_SIZE_IN_BYTES
+        self._new_blocks_seen, = struct.unpack_from("<I", buf, off)
+        off += constants.UL_INT_SIZE_IN_BYTES
+        self._new_block_messages_from_blockchain_node, = struct.unpack_from("<I", buf, off)
+        off += constants.UL_INT_SIZE_IN_BYTES
+        self._new_block_announcements_from_blockchain_node, = struct.unpack_from("<I", buf, off)
+        off += constants.UL_INT_SIZE_IN_BYTES
 
     def __repr__(self) -> str:
-        return "BdnPerformanceStatsMessage<blocks_from_blockchain_node: {}, blocks_from_bdn: {}, " \
-               "tx_from_blockchain_node: {}, tx_from_bdn: {}, memory_utilization: {}>". \
-            format(self.new_blocks_from_blockchain_node(), self.new_blocks_from_bdn(),
-                   self.new_tx_from_blockchain_node(), self.new_tx_from_bdn(), self.memory_utilization())
+        return (
+            f"BdnPerformanceStatsMessage<"
+            f"blocks_from_blockchain_node: {self.new_blocks_from_blockchain_node()}, "
+            f"blocks_from_bdn: {self.new_blocks_from_bdn()}, "
+            f"tx_from_blockchain_node: {self.new_tx_from_blockchain_node()}, "
+            f"tx_from_bdn: {self.new_tx_from_bdn()}, "
+            f"memory_utilization: {self.memory_utilization()}, "
+            f"new_blocks_seen: {self.new_blocks_seen()}, "
+            f"new_block_messages: {self.new_block_messages_from_blockchain_node()}, "
+            f"new_block_announcements: {self.new_block_announcements_from_blockchain_node()}"
+            f">"
+        )

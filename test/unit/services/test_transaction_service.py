@@ -58,5 +58,11 @@ class TransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_get_transactions(self):
         self._test_get_transactions()
 
+    def test_clear(self):
+        self._test_clear()
+
+    def test_process_tx_sync_message(self):
+        self._test_process_tx_sync_message()
+
     def _get_transaction_service(self) -> TransactionService:
         return TransactionService(self.mock_node, 0)

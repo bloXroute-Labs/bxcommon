@@ -99,8 +99,11 @@ def create_connection(
 
     connection.on_connection_authenticated(authentication_info)
 
+    connection.peer_model = OutboundPeerModel(ip, port, node_opts.node_id)
+
     if add_to_pool:
         node.connection_pool.add(file_no, ip, port, connection)
+
     return connection
 
 
@@ -296,7 +299,7 @@ def get_common_opts(
         "ca_cert_url": "https://certificates.blxrbdn.com/ca",
         "private_ssl_base_url": "https://certificates.blxrbdn.com",
         "rpc": rpc,
-        "transaction_validation": transaction_validation
+        "transaction_validation": transaction_validation,
     }
     for key, val in kwargs.items():
         opts.__dict__[key] = val
@@ -371,6 +374,7 @@ def get_common_opts(
 
 # if an async test takes longer than 1s, assume it has failed
 ASYNC_TEST_TIMEOUT_S: Optional[int] = 1
+LONG_ASYNC_TEST_TIMEOUT_S: Optional[int] = 3
 
 # do not trigger this if debugger is running
 get_trace = getattr(sys, "gettrace", None)
@@ -378,17 +382,26 @@ if get_trace is not None and get_trace():
     ASYNC_TEST_TIMEOUT_S = None
 
 
-def async_test(method):
-    def wrapper(*args, **kwargs):
-        async def async_method(*args, **kwargs):
-            await method(*args, **kwargs)
+def async_test(*args):
+    timeout = ASYNC_TEST_TIMEOUT_S
 
-        future = async_method(*args, **kwargs)
-        task = asyncio.wait_for(future, timeout=ASYNC_TEST_TIMEOUT_S)
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(task)
+    def _async_test(method):
+        def wrapper(*args, **kwargs):
+            async def async_method(*args, **kwargs):
+                await method(*args, **kwargs)
 
-    return wrapper
+            future = async_method(*args, **kwargs)
+            task = asyncio.wait_for(future, timeout=timeout)
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(task)
+        return wrapper
+
+    if len(args) == 1 and callable(args[0]):
+        return _async_test(args[0])
+    else:
+        assert len(args) == 1
+        timeout = args[0]
+        return _async_test
 
 
 class AsyncMock:

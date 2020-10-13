@@ -51,7 +51,7 @@ class InternalNodeConnectionTest(AbstractTestCase):
         self.connection.send_ping()
         self.assertIsNotNone(self.connection.pong_timeout_alarm_id)
 
-        self.connection.msg_pong(PongMessage(1))
+        self.connection.msg_pong(PongMessage(1, 2))
         self.assertIsNone(self.connection.pong_timeout_alarm_id)
 
         time.time = MagicMock(return_value=time.time() + constants.PING_PONG_REPLY_TIMEOUT_S)

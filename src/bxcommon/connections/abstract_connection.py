@@ -653,20 +653,9 @@ class AbstractConnection(Generic[Node]):
         return output_buffer_backlog + socket_buffer_backlog
 
     def format_connection(self) -> None:
-        if self.CONNECTION_TYPE in ConnectionType.RELAY_ALL:
-            _short_connection_type = "R"
-
-        if self.CONNECTION_TYPE in ConnectionType.BLOCKCHAIN_NODE:
-            _short_connection_type = "B"
-
-        if self.CONNECTION_TYPE in ConnectionType.REMOTE_BLOCKCHAIN_NODE:
-            _short_connection_type = "RemoteB"
-
-        if self.CONNECTION_TYPE in ConnectionType.GATEWAY or self.network_num != constants.ALL_NETWORK_NUM:
-            _short_connection_type = "G"
-
-        _short_connection_type = self.CONNECTION_TYPE.name
-        self.format_connection_desc = "{} - {}".format(self.peer_desc, _short_connection_type)
+        self.format_connection_desc = "{} - {}".format(
+            self.peer_desc, self.CONNECTION_TYPE.format_short()
+        )
 
     def _pong_msg_timeout(self) -> None:
         if self.is_alive():

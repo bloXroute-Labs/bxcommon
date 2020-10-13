@@ -11,6 +11,7 @@ class MockAlarmQueue(AlarmQueue):
             self.alarms
         )
 
+    # pylint: disable=arguments-differ
     def register_alarm(
         self, fire_delay: float, fn: Callable, *args, _alarm_name: Optional[str] = None, **kwargs
     ) -> AlarmId:

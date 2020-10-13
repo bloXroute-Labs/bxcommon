@@ -77,8 +77,9 @@ def set_node_model(opts: CommonOpts, node_ssl_service) -> None:
         sdn_http_service.reset_pool(ssl_context)
 
     # Add opts from SDN, but don't overwrite CLI args
+    default_values_to_update = [None, -1]
     for key, val in node_model.__dict__.items():
-        if opts.__dict__.get(key) is None:
+        if opts.__dict__.get(key) in default_values_to_update:
             opts.__dict__[key] = val
 
 

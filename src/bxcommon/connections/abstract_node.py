@@ -93,6 +93,7 @@ class AbstractNode:
             self.connection_pool = ConnectionPool()
 
         self.should_force_exit = False
+        self.should_restart_on_high_memory = False
 
         self.num_retries_by_ip: Dict[Tuple[str, int], int] = defaultdict(int)
 

@@ -14,6 +14,7 @@ from bxcommon.rpc.https.http_rpc_handler import HttpRpcHandler
 from bxcommon.rpc.https.request_formatter import RequestFormatter
 from bxcommon.rpc.https.response_formatter import ResponseFormatter
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
+from bxcommon.rpc.rpc_constants import ContentType
 
 from bxcommon.rpc.rpc_errors import RpcError, RpcParseError, RpcMethodNotFound, \
     RpcInvalidParams, RpcAccountIdError
@@ -113,6 +114,7 @@ class AbstractHttpRpcServer(Generic[Node]):
 
     async def handle_request(self, request: Request) -> Response:
         try:
+            self._handler.parse_content_type(request)
             self.authenticate_request(request)
             return await self._handler.handle_request(request)
         except HTTPClientError as e:
@@ -135,13 +137,14 @@ class AbstractHttpRpcServer(Generic[Node]):
                     "required_request_type": "POST",
                     "required_headers": [
                         {
-                            rpc_constants.CONTENT_TYPE_HEADER_KEY: rpc_constants.PLAIN_HEADER_TYPE
+                            rpc_constants.CONTENT_TYPE_HEADER_KEY: ContentType.PLAIN.value
                         }
                     ],
                     "payload_structures": await self._handler.help(),
                 }
             }
-            return web.json_response(json_encoder.to_json(response_dict))
+            json_response = JsonRpcResponse.from_json(response_dict)
+            return web.json_response(json_response.to_jsons(), dumps=json_encoder.to_json)
 
     async def _start(self) -> None:
         self._started = True
@@ -162,11 +165,20 @@ class AbstractHttpRpcServer(Generic[Node]):
             "code": code,
             "message": err_msg,
         }
+
+        client_error.content_type = self._handler.content_type.value
         client_error.text = json_encoder.to_json(response_json)
         return client_error
 
     def _format_rpc_error(self, rpc_error: RpcError, status_code: int) -> Response:
-        return web.json_response(
-            JsonRpcResponse(rpc_error.id, error=rpc_error).to_jsons(),
-            status=status_code
-        )
+        if self._handler.content_type == ContentType.PLAIN:
+            return web.json_response(
+                JsonRpcResponse(rpc_error.id, error=rpc_error).to_jsons(),
+                status=status_code,
+                content_type=ContentType.PLAIN.value
+            )
+        else:
+            return web.json_response(
+                text=JsonRpcResponse(rpc_error.id, error=rpc_error).to_jsons(),
+                status=status_code,
+            )

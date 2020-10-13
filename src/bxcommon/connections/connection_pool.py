@@ -129,7 +129,7 @@ class ConnectionPool:
         raise KeyError(f"Could not find a connection with ip port: {ip_port} or node id: {node_id}")
 
     def get_by_fileno(self, fileno: int) -> Optional[AbstractConnection]:
-        if fileno > self.len_fileno:
+        if fileno >= self.len_fileno:
             return None
         return self.by_fileno[fileno]
 

@@ -1,7 +1,8 @@
 import json
-from typing import Any
+from typing import Any, Dict
 
 from aiohttp import ClientSession, ClientResponse
+from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request
 
 from bxcommon import constants
@@ -10,6 +11,7 @@ from bxcommon.rpc.https.abstract_http_rpc_server import AbstractHttpRpcServer
 from bxcommon.rpc.https.http_rpc_handler import HttpRpcHandler
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
+from bxcommon.rpc.rpc_constants import ContentType
 from bxcommon.rpc.rpc_errors import RpcInvalidParams, RpcErrorCode
 from bxcommon.rpc.rpc_request_type import RpcRequestType
 from bxcommon.test_utils import helpers
@@ -19,7 +21,6 @@ from bxcommon.test_utils.mocks.mock_node import MockNode
 
 
 class RpcRequest(AbstractRpcRequest):
-
     def validate_params(self) -> None:
         params = self.params
         if not isinstance(params, dict):
@@ -80,8 +81,26 @@ class AbstractHttpRpcServerTest(AbstractTestCase):
                 "foo": "bar"
             }
         }
+        self.assertEqual(expected_result, await self.plaintext_decode(result))
+
+    @async_test
+    async def test_server_process_handler_application_json(self):
+        json_data = {
+            "method": RpcRequestType.PING.name.lower(),
+            "id": 1,
+            "params": {}
+        }
+        result = await self.post(json_data, rpc_constants.JSON_HEADER_TYPE)
+        self.assertEqual(200, result.status)
+        expected_result = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+                "foo": "bar"
+            }
+        }
         result = await result.json()
-        self.assertEqual(expected_result, json.loads(result))
+        self.assertEqual(expected_result, result)
 
     @async_test
     async def test_server_malformed_json(self):
@@ -96,8 +115,23 @@ class AbstractHttpRpcServerTest(AbstractTestCase):
                 "message": "Parse error"
             }
         }
+        self.assertEqual(expected_result, await self.plaintext_decode(result))
+
+    @async_test
+    async def test_server_malformed_json_application_json(self):
+        result = await self.post("{'foo':", rpc_constants.JSON_HEADER_TYPE)
+        self.assertEqual(400, result.status)
+        expected_result = {
+            "jsonrpc": "2.0",
+            "id": None,
+            "error": {
+                "code": RpcErrorCode.PARSE_ERROR.value,
+                'data': 'Unable to parse the request: <Request POST / >',
+                "message": "Parse error"
+            }
+        }
         result = await result.json()
-        self.assertEqual(expected_result, json.loads(result))
+        self.assertEqual(expected_result, result)
 
     @async_test
     async def test_server_method_not_found(self):
@@ -116,7 +150,7 @@ class AbstractHttpRpcServerTest(AbstractTestCase):
                 "message": "Invalid method"
             }
         }
-        result = json.loads(await result.json())
+        result = await self.plaintext_decode(result)
         self.assertEqual(expected_result["jsonrpc"], result["jsonrpc"])
         self.assertEqual(expected_result["id"], result["id"])
         self.assertEqual(expected_result["error"]["code"], result["error"]["code"])
@@ -138,7 +172,7 @@ class AbstractHttpRpcServerTest(AbstractTestCase):
                 "message": "Invalid method"
             }
         }
-        result = json.loads(await result.json())
+        result = await self.plaintext_decode(result)
         self.assertEqual(expected_result["jsonrpc"], result["jsonrpc"])
         self.assertEqual(expected_result["id"], result["id"])
         self.assertEqual(expected_result["error"]["code"], result["error"]["code"])
@@ -161,7 +195,7 @@ class AbstractHttpRpcServerTest(AbstractTestCase):
                 "message": "Invalid params"
             }
         }
-        result = json.loads(await result.json())
+        result = await self.plaintext_decode(result)
         self.assertEqual(expected_result["jsonrpc"], result["jsonrpc"])
         self.assertEqual(expected_result["id"], result["id"])
         self.assertEqual(expected_result["error"]["code"], result["error"]["code"])
@@ -186,25 +220,53 @@ class AbstractHttpRpcServerTest(AbstractTestCase):
                 "data": "Please contact bloXroute support."
             }
         }
-        result = json.loads(await result.json())
+        result = await self.plaintext_decode(result)
         self.assertEqual(expected_result["jsonrpc"], result["jsonrpc"])
         self.assertEqual(expected_result["id"], result["id"])
         self.assertEqual(expected_result["error"]["code"], result["error"]["code"])
         self.assertEqual(expected_result["error"]["message"], result["error"]["message"])
         self.assertEqual(expected_result["error"]["data"], result["error"]["data"])
 
-    async def post(self, data: Any) -> ClientResponse:
+    @async_test
+    async def test_http_auth_error_application_json(self):
+        def raise_bad_request(*_args):
+            raise HTTPBadRequest(text="boom!")
+
+        self.rpc_server.authenticate_request = raise_bad_request
+        json_data = {
+            "method": RpcRequestType.PING.name.lower(),
+            "id": 1,
+            "params": {}
+        }
+        result = await self.post(json_data, rpc_constants.JSON_HEADER_TYPE)
+        self.assertEqual(400, result.status)
+        expected_result = {
+            "error": "boom!",
+            "code": 400,
+            "message": "boom!",
+            "result": None
+        }
+        result = await result.json()
+        self.assertEqual(expected_result, result)
+
+    async def post(
+        self, data: Any, content_type: str = rpc_constants.PLAIN_HEADER_TYPE
+    ) -> ClientResponse:
         async with ClientSession() as session:
             async with session.post(
                 self.rpc_url,
                 data=json.dumps(data),
                 headers={
-                    rpc_constants.CONTENT_TYPE_HEADER_KEY: rpc_constants.PLAIN_HEADER_TYPE,
+                    rpc_constants.CONTENT_TYPE_HEADER_KEY: content_type
                 }
             ) as response:
-                # parse json body
-                await response.json()
+                # load result before returning
+                await response.text()
                 return response
+
+    async def plaintext_decode(self, response: ClientResponse) -> Dict[str, Any]:
+        response._content_type = ContentType.JSON.value
+        return json.loads(json.loads(await response.text()))
 
     @async_test
     async def tearDown(self) -> None:

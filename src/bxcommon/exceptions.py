@@ -40,6 +40,10 @@ class ChecksumError(ParseError):
         self.raw_data = raw_data
 
 
+class HighMemoryError(Exception):
+    pass
+
+
 class TerminationError(Exception):
     pass
 

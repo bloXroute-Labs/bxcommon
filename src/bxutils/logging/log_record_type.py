@@ -28,6 +28,7 @@ class LogRecordType(Enum):
     TransactionAudit = "stats.transaction.audit"
     TransactionAuditSummary = "stats.transaction.audit.summary"
     TransactionStatus = "transaction.status"
+    TransactionTracing = "network_content.tx.tracing"
     BlockAudit = "stats.block.audit"
     BlockAuditSummary = "stats.block.audit.summary"
     AuditUpdates = "stats.audit.updates"
