@@ -27,7 +27,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServi
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
-from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
+from bxcommon.messages.bloxroute.v14.bdn_performance_stats_message_v14 import BdnPerformanceStatsMessageV14
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -66,7 +66,7 @@ class _BloxrouteMessageFactoryV11(AbstractMessageFactory):
         BloxrouteMessageType.BLOCK_CONFIRMATION: BlockConfirmationMessage,
         BloxrouteMessageType.TRANSACTION_CLEANUP: TransactionCleanupMessage,
         BloxrouteMessageType.NOTIFICATION: NotificationMessage,
-        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessage
+        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV14
     }
 
     def __init__(self) -> None:

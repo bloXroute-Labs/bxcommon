@@ -16,6 +16,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServi
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
+from bxcommon.messages.bloxroute.v14.bdn_performance_stats_message_v14 import BdnPerformanceStatsMessageV14
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
@@ -37,7 +38,7 @@ class BloxrouteVersionManagerV13Test(
         BlockConfirmationMessage,
         TransactionCleanupMessage,
         NotificationMessage,
-        BdnPerformanceStatsMessage,
+        BdnPerformanceStatsMessageV14,
     ]
 ):
 
@@ -46,3 +47,61 @@ class BloxrouteVersionManagerV13Test(
 
     def old_pong_message(self, original_message: PongMessage) -> PongMessageV13:
         return PongMessageV13(original_message.nonce())
+
+    # The three functions below (old_bdn_performance_stats_message, compare_bdn_performance_stats_current_to_old,
+    # and compare_bdn_performance_stats_old_to_current) are the same as the functions in
+    # test/unit/messages/bloxroute/test_bloxroute_version_manager_v14.py
+    def old_bdn_performance_stats_message(
+        self, original_message: BdnPerformanceStatsMessage
+    ) -> BdnPerformanceStatsMessageV14:
+        return BdnPerformanceStatsMessageV14(
+            original_message.interval_start_time(),
+            original_message.interval_end_time(),
+            original_message.new_blocks_from_blockchain_node(),
+            original_message.new_blocks_from_bdn(),
+            original_message.new_tx_from_blockchain_node(),
+            original_message.new_tx_from_bdn(),
+            original_message.memory_utilization()
+        )
+
+    def compare_bdn_performance_stats_current_to_old(
+        self,
+        converted_old_message: BdnPerformanceStatsMessageV14,
+        original_old_message: BdnPerformanceStatsMessageV14,
+    ):
+        self.assert_attributes_equal(
+            original_old_message,
+            converted_old_message,
+            [
+                "interval_start_time",
+                "interval_end_time",
+                "new_blocks_from_blockchain_node",
+                "new_blocks_from_bdn",
+                "new_tx_from_blockchain_node",
+                "new_tx_from_bdn",
+                "memory_utilization"
+            ]
+        )
+
+    def compare_bdn_performance_stats_old_to_current(
+        self,
+        converted_current_message: BdnPerformanceStatsMessage,
+        original_current_message: BdnPerformanceStatsMessage,
+    ):
+
+        self.assert_attributes_equal(
+            converted_current_message,
+            original_current_message,
+            [
+                "interval_start_time",
+                "interval_end_time",
+                "new_blocks_from_blockchain_node",
+                "new_blocks_from_bdn",
+                "new_tx_from_blockchain_node",
+                "new_tx_from_bdn",
+                "memory_utilization"
+            ],
+        )
+        self.assertEqual(0, converted_current_message.new_blocks_seen())
+        self.assertEqual(0, converted_current_message.new_block_messages_from_blockchain_node())
+        self.assertEqual(0, converted_current_message.new_block_announcements_from_blockchain_node())
