@@ -21,6 +21,9 @@ class TransactionStatEventType:
     TX_RECEIVED_BY_RELAY_FROM_PEER_FULL_QUOTA_IGNORED = StatEventTypeSettings(
         "TxReceivedByRelayFromPeerFullQuotaIgnored"
     )
+    TX_RECEIVED_BY_RELAY_FROM_PEER_DELAYED = StatEventTypeSettings(
+        "TxReceivedByRelayFromPeerDelayed"
+    )
     TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_EXPIRED = StatEventTypeSettings("TxReceivedByRelayFromPeerIgnoreExpired")
     TX_SHORT_ID_ASSIGNED_BY_RELAY = StatEventTypeSettings("TxShortIdAssignedByRelay")
     TX_SHORT_ID_STORED_BY_GATEWAY = StatEventTypeSettings("TxShortIdStoredByGateway")
