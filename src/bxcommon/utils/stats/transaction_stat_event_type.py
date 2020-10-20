@@ -72,3 +72,4 @@ class TransactionStatEventType:
     TX_VALIDATION_FAILED_GAS_PRICE = StatEventTypeSettings("TxValidationFailedGasPrice")
     TX_VALIDATION_FAILED_STRUCTURE = StatEventTypeSettings("TxValidationFailedStructure")
     TX_VALIDATION_FAILED_SIGNATURE = StatEventTypeSettings("TxValidationFailedSignature")
+    TX_FROM_BDN_IGNORE_LOW_GAS_PRICE = StatEventTypeSettings("TxFromBdnIgnoreLowGasPrice")
