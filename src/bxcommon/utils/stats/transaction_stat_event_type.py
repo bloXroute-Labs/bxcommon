@@ -27,7 +27,6 @@ class TransactionStatEventType:
     TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_EXPIRED = StatEventTypeSettings("TxReceivedByRelayFromPeerIgnoreExpired")
     TX_SHORT_ID_ASSIGNED_BY_RELAY = StatEventTypeSettings("TxShortIdAssignedByRelay")
     TX_SHORT_ID_STORED_BY_GATEWAY = StatEventTypeSettings("TxShortIdStoredByGateway")
-    TX_SHORT_ID_EMPTY_IN_MSG_FROM_RELAY = StatEventTypeSettings("TxShortIdEmptyInMsgFromRelay")
     TX_SENT_FROM_RELAY_TO_PEERS = StatEventTypeSettings(
         "TxSentFromRelayToPeers",
         event_logic_flags=StatEventLogicFlags.SUMMARY,
