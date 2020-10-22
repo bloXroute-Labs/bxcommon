@@ -52,6 +52,8 @@ class AbstractConnection(Generic[Node]):
     CONNECTION_TYPE: ClassVar[ConnectionType] = ConnectionType.NONE
     node: Node
     message_tracker: Optional[MessageTracker]
+    format_connection_desc: str
+    connection_repr: str
 
     def __init__(self, socket_connection: AbstractSocketConnectionProtocol, node: Node) -> None:
         self.socket_connection = socket_connection
@@ -656,6 +658,7 @@ class AbstractConnection(Generic[Node]):
         self.format_connection_desc = "{} - {}".format(
             self.peer_desc, self.CONNECTION_TYPE.format_short()
         )
+        self.connection_repr = repr(self)
 
     def _pong_msg_timeout(self) -> None:
         if self.is_alive():
@@ -692,5 +695,6 @@ class AbstractConnection(Generic[Node]):
         return "<not available>"
 
     def _log_message(self, level: LogLevel, message, *args, **kwargs):
-        args = (HAS_PREFIX, f"[{self}]",) + args
-        logger.log(level, message, *args, **kwargs)
+        logger.log(
+            level, message, HAS_PREFIX, self.connection_repr, *args, **kwargs
+        )
