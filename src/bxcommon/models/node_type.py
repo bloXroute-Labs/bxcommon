@@ -18,6 +18,7 @@ class NodeType(SerializableFlag):
     API = enum.auto()
     API_SOCKET = enum.auto()
     BLOXROUTE_CLOUD_API = enum.auto()
+    JOBS = enum.auto()
 
     def get_subtypes(self) -> Iterable["NodeType"]:
         for subtype in self.__class__:
