@@ -45,6 +45,15 @@ class ExtensionTransactionServiceTest(AbstractTransactionServiceTestCase):
     def test_iter_timestamped_transaction_hashes_from_oldest(self):
         self._test_iter_transaction_hashes_from_oldest()
 
+    def test_removed_transactions_history_by_hash(self):
+        self._test_removed_transactions_history_by_hash()
+
+    def test_removed_transactions_history_by_sid(self):
+        self._test_removed_transactions_history_by_sid()
+
+    def test_removed_transactions_length_limit(self):
+        self._test_removed_transactions_length_limit()
+
     def test_add_tx_without_sid(self):
         self._test_add_tx_without_sid()
 

@@ -1,4 +1,5 @@
 import struct
+import time
 from datetime import datetime
 from typing import Any, List, Union, Optional, cast
 
@@ -58,6 +59,13 @@ class ExtensionTransactionService(TransactionService):
             self.proxy.tx_hash_to_contents(), raw_encoder, content_encoder
         )
         self._tx_not_seen_in_blocks = self.proxy.tx_not_seen_in_blocks()
+
+        self._tx_hash_to_time_removed = MapProxy(
+            self.proxy.tx_hash_to_time_removed(), raw_encoder, raw_encoder
+        )
+        self._short_id_to_time_removed = MapProxy(
+            self.proxy.short_id_to_time_removed(), raw_encoder, raw_encoder
+        )
 
     def track_seen_short_ids(self, block_hash, short_ids: List[int]) -> None:
         start_datetime = datetime.now()
@@ -285,8 +293,9 @@ class ExtensionTransactionService(TransactionService):
             size_type=size_type
         )
 
-    def get_collection_mem_stats(self, collection_obj: Any,
-                                 estimated_size: int = 0) -> memory_utils.ObjectSize:
+    def get_collection_mem_stats(
+        self, collection_obj: Any, estimated_size: int = 0
+    ) -> memory_utils.ObjectSize:
         if self.get_object_type(collection_obj) == memory_utils.ObjectType.DEFAULT_MAP_PROXY:
             collection_size = collection_obj.map_obj.get_bytes_length()
             if collection_obj is self._tx_cache_key_to_short_ids:
@@ -295,8 +304,7 @@ class ExtensionTransactionService(TransactionService):
             return memory_utils.ObjectSize(size=collection_size, flat_size=0, is_actual_size=True)
         else:
             return super(ExtensionTransactionService, self).get_collection_mem_stats(
-                collection_obj,
-                estimated_size
+                collection_obj, estimated_size
             )
 
     def get_object_type(self, collection_obj: Any):
@@ -307,6 +315,22 @@ class ExtensionTransactionService(TransactionService):
             return memory_utils.ObjectType.MAP_PROXY
         else:
             return memory_utils.ObjectType.BASE
+
+    def get_oldest_removed_tx_hash(self, tx_hashes: List[Sha256Hash]) -> float:
+        oldest_removed_tx_hash = 0
+        for tx_hash in tx_hashes:
+            if tx_hash in self._tx_hash_to_time_removed and \
+                    oldest_removed_tx_hash < self._tx_hash_to_time_removed[tx_hash]:
+                oldest_removed_tx_hash = self._tx_hash_to_time_removed[tx_hash]
+        return oldest_removed_tx_hash
+
+    def get_oldest_removed_short_id(self, short_ids: List[int]) -> float:
+        oldest_removed_short_id = 0
+        for short_id in short_ids:
+            if short_id in self._short_id_to_time_removed and \
+                    oldest_removed_short_id < self._short_id_to_time_removed[short_id]:
+                oldest_removed_short_id = self._short_id_to_time_removed[short_id]
+        return oldest_removed_short_id
 
     def _tx_hash_to_cache_key(self, transaction_hash) -> tpe.Sha256:  # pyre-ignore
         if isinstance(transaction_hash, Sha256Hash):
@@ -351,9 +375,13 @@ class ExtensionTransactionService(TransactionService):
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
         else:
-            super(ExtensionTransactionService, self).remove_transaction_by_short_id(short_id,
-                                                                                    force=force,
-                                                                                    removal_reason=removal_reason)
+            super(
+                ExtensionTransactionService, self
+            ).remove_transaction_by_short_id(
+                short_id,
+                force=force,
+                removal_reason=removal_reason
+            )
 
     def clear(self):
         self.proxy.clear()
@@ -363,3 +391,33 @@ class ExtensionTransactionService(TransactionService):
         self.tx_hashes_without_short_id.clear()
         self._tx_assignment_expire_queue.clear()
         self._total_tx_contents_size = 0
+
+    def _cleanup_removed_transactions_history(self):
+        logger.trace(
+            "Starting to cleanup transaction cache history for network "
+            "number: {}.",
+            self.network_num
+        )
+        current_time = time.time()
+        tx_hash_history_len_before = len(self._tx_hash_to_time_removed)
+        self._tx_hash_to_time_removed.map_obj.cleanup_removed_hashes_history(
+            current_time, self._removed_txs_expiration_time_s, constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT
+        )
+        tx_hash_history_len_after = len(self._tx_hash_to_time_removed)
+
+        short_id_history_len_before = len(self._short_id_to_time_removed)
+        self._short_id_to_time_removed.map_obj.cleanup_removed_short_ids_history(
+            current_time, self._removed_txs_expiration_time_s, constants.REMOVED_TRANSACTIONS_HISTORY_LENGTH_LIMIT
+        )
+        short_id_history_len_after = len(self._short_id_to_time_removed)
+        logger.trace(
+            "Finished cleanup transaction cache history. "
+            "tx_hash size before: {}, size after: {}."
+            "short_id size before: {}, size after: {}.",
+            tx_hash_history_len_before,
+            tx_hash_history_len_after,
+            short_id_history_len_before,
+            short_id_history_len_after
+        )
+
+        return constants.REMOVED_TRANSACTIONS_HISTORY_CLEANUP_INTERVAL_S
