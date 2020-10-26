@@ -21,10 +21,12 @@ class TransactionStatEventType:
     TX_RECEIVED_BY_RELAY_FROM_PEER_FULL_QUOTA_IGNORED = StatEventTypeSettings(
         "TxReceivedByRelayFromPeerFullQuotaIgnored"
     )
+    TX_RECEIVED_BY_RELAY_FROM_PEER_DELAYED = StatEventTypeSettings(
+        "TxReceivedByRelayFromPeerDelayed"
+    )
     TX_RECEIVED_BY_RELAY_FROM_PEER_IGNORE_EXPIRED = StatEventTypeSettings("TxReceivedByRelayFromPeerIgnoreExpired")
     TX_SHORT_ID_ASSIGNED_BY_RELAY = StatEventTypeSettings("TxShortIdAssignedByRelay")
     TX_SHORT_ID_STORED_BY_GATEWAY = StatEventTypeSettings("TxShortIdStoredByGateway")
-    TX_SHORT_ID_EMPTY_IN_MSG_FROM_RELAY = StatEventTypeSettings("TxShortIdEmptyInMsgFromRelay")
     TX_SENT_FROM_RELAY_TO_PEERS = StatEventTypeSettings(
         "TxSentFromRelayToPeers",
         event_logic_flags=StatEventLogicFlags.SUMMARY,
@@ -69,3 +71,4 @@ class TransactionStatEventType:
     TX_VALIDATION_FAILED_GAS_PRICE = StatEventTypeSettings("TxValidationFailedGasPrice")
     TX_VALIDATION_FAILED_STRUCTURE = StatEventTypeSettings("TxValidationFailedStructure")
     TX_VALIDATION_FAILED_SIGNATURE = StatEventTypeSettings("TxValidationFailedSignature")
+    TX_FROM_BDN_IGNORE_LOW_GAS_PRICE = StatEventTypeSettings("TxFromBdnIgnoreLowGasPrice")

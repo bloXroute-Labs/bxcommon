@@ -41,9 +41,12 @@ class CustomLogger(logger_class):
     def critical(self, msg, *args, **kwargs):
         self.log(logging.ERROR, msg, *args, **kwargs)
 
-    # pylint: disable=useless-super-delegation
     def log(self, level, msg, *args, **kwargs):
-        super(CustomLogger, self).log(level, msg, *args, **kwargs)
+        """
+        Copied from logger class with a skipped type check.
+        """
+        if self.isEnabledFor(level):
+            self._log(level, msg, args, **kwargs)
 
     def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
         if isinstance(msg, LogMessage):

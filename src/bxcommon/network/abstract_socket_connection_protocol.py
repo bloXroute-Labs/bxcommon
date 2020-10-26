@@ -149,6 +149,29 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         if total_bytes_sent:
             logger.trace("[{}] - sent {} bytes", self, total_bytes_sent)
 
+    def send_bytes(self, bytes_to_send: typing.Union[memoryview, bytearray]):
+        conn = self._node.connection_pool.get_by_fileno(self.file_no)
+
+        if not conn:
+            return
+
+        transport = self.transport
+        assert transport is not None, "Connection is broken!"
+
+        # pyre-fixme[16]: `Transport` has no attribute `get_write_buffer_limits`.
+        buffer_limits = transport.get_write_buffer_limits()
+        logger.trace(
+            "[{}] - about to send {} bytes, current buffer used {} with limits {}",
+            self,
+            bytes_to_send,
+            transport.get_write_buffer_size(),
+            buffer_limits
+        )
+        transport.write(bytes_to_send)
+        conn.advance_bytes_written_to_socket(bytes_to_send)
+
+        logger.trace("[{}] - sent {} bytes", self, len(bytes_to_send))
+
     def pause_reading(self) -> None:
         if self.is_alive():
             assert self.transport is not None, "Connection is broken!"
