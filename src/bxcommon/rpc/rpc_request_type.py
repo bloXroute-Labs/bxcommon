@@ -18,3 +18,4 @@ class RpcRequestType(SerializeableEnum):
     BLXR_ETH_CALL = 13
     TX_SERVICE = 14
     ADD_BLOCKCHAIN_PEER = 15
+    REMOVE_BLOCKCHAIN_PEER = 16

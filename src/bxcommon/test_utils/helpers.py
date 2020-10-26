@@ -11,6 +11,7 @@ from mock import MagicMock
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.messages.abstract_block_message import AbstractBlockMessage
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.models.authenticated_peer_info import AuthenticatedPeerInfo
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
@@ -412,3 +413,56 @@ class AsyncMock:
 
     async def __call__(self, *args, **kwargs):
         return self.mock(*args, **kwargs)
+
+
+class TestBlockMessage(AbstractBlockMessage):
+    def __init__(self, previous_block: Sha256Hash, block_hash: Sha256Hash):
+        self.previous_block = previous_block
+        self._block_hash = block_hash
+        self._rawbytes = memoryview(
+            self.previous_block.binary + self._block_hash.binary
+        )
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, TestBlockMessage)
+            and other._block_hash == self._block_hash
+        )
+
+    @classmethod
+    def unpack(cls, buf):
+        pass
+
+    @classmethod
+    def validate_payload(cls, buf, unpacked_args):
+        pass
+
+    @classmethod
+    def initialize_class(cls, cls_type, buf, unpacked_args):
+        pass
+
+    def rawbytes(self) -> memoryview:
+        return self._rawbytes
+
+    def block_hash(self) -> Sha256Hash:
+        return self._block_hash
+
+    def prev_block_hash(self) -> Sha256Hash:
+        pass
+
+    def timestamp(self) -> int:
+        pass
+
+    def txns(self):
+        pass
+
+
+def create_block_message(
+    block_hash: Optional[Sha256Hash] = None,
+    previous_block_hash: Optional[Sha256Hash] = None,
+) -> AbstractBlockMessage:
+    if block_hash is None:
+        block_hash = Sha256Hash(generate_hash())
+    if previous_block_hash is None:
+        previous_block_hash = Sha256Hash(generate_hash())
+    return TestBlockMessage(previous_block_hash, block_hash)
