@@ -8,6 +8,7 @@ from typing import List, Optional, TYPE_CHECKING, Union, Dict
 from argparse import Namespace
 
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
+from bxcommon.models.blockchain_peer_info import BlockchainPeerInfo
 from bxcommon.models.node_model import NodeModel
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.utils import model_loader, config
@@ -27,10 +28,15 @@ class CacheNetworkInfo:
     source_version: str
     relay_peers: List[OutboundPeerModel]
     blockchain_networks: Dict[int, BlockchainNetworkModel]
+    blockchain_peers: List[BlockchainPeerInfo]
     node_model: NodeModel
 
 
-def update(opts: "CommonOpts", potential_relay_peers: List[OutboundPeerModel]) -> None:
+def update_cache_file(
+    opts: "CommonOpts",
+    potential_relay_peers: Optional[List[OutboundPeerModel]] = None,
+    blockchain_peers: Optional[List[BlockchainPeerInfo]] = None
+) -> None:
     data = read(opts)
     node_model = model_loader.load_model(NodeModel, opts.__dict__)
     if data is None:
@@ -38,12 +44,16 @@ def update(opts: "CommonOpts", potential_relay_peers: List[OutboundPeerModel]) -
             source_version=opts.source_version,
             relay_peers=potential_relay_peers,
             blockchain_networks=opts.blockchain_networks,
+            blockchain_peers=blockchain_peers,
             node_model=node_model
         )
     else:
-        data.relay_peers = potential_relay_peers
         data.blockchain_networks = opts.blockchain_networks
         data.node_model = node_model
+        if potential_relay_peers is not None:
+            data.relay_peers = potential_relay_peers
+        if blockchain_peers is not None:
+            data.blockchain_peers = blockchain_peers
 
     try:
         cookie_file_path = config.get_data_file(opts.cookie_file_path)
@@ -69,7 +79,8 @@ def read(opts: Union["CommonOpts", Namespace]) -> Optional[CacheNetworkInfo]:
             if os.path.exists(cookie_file_path):
                 with open(cookie_file_path, "r") as cookie_file:
                     cache_file_info = model_loader.load_model(CacheNetworkInfo, json.load(cookie_file))
-                    assert cache_file_info.source_version == opts.source_version
+                    if cache_file_info.source_version != opts.source_version:
+                        os.remove(cookie_file_path)
             else:
                 logger.warning(log_messages.READ_CACHE_FILE_WARNING, cookie_file_path)
         # pylint: disable=broad-except
