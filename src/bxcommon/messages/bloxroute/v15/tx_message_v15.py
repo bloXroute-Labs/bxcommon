@@ -9,15 +9,14 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import (
     BloxrouteMessageType,
 )
 from bxcommon.models.quota_type_model import QuotaType
-from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.utils.object_hash import Sha256Hash
 
 
-class TxMessage(AbstractBroadcastMessage):
+class TxMessageV15(AbstractBroadcastMessage):
     PAYLOAD_LENGTH = (
         AbstractBroadcastMessage.PAYLOAD_LENGTH
         + constants.SID_LEN
-        + constants.TRANSACTION_FLAG_LEN
+        + constants.QUOTA_FLAG_LEN
         + constants.UL_INT_SIZE_IN_BYTES
     )
     MESSAGE_TYPE = BloxrouteMessageType.TRANSACTION
@@ -30,13 +29,13 @@ class TxMessage(AbstractBroadcastMessage):
         source_id: str = "",
         short_id: int = constants.NULL_TX_SID,
         tx_val: Union[bytearray, bytes, memoryview, None] = None,
-        transaction_flag: Optional[TransactionFlag] = None,
+        quota_type: Optional[QuotaType] = None,
         timestamp: Union[int, float] = constants.NULL_TX_TIMESTAMP,
         buf: Optional[Union[bytearray, memoryview]] = None,
     ):
         self._short_id = None
         self._tx_val: Optional[memoryview] = None
-        self._transaction_flag = None
+        self._tx_quota_type = None
         self._timestamp = None
 
         # override payload length for variable length message
@@ -45,7 +44,7 @@ class TxMessage(AbstractBroadcastMessage):
             self.PAYLOAD_LENGTH = (
                 AbstractBroadcastMessage.PAYLOAD_LENGTH
                 + constants.SID_LEN
-                + constants.TRANSACTION_FLAG_LEN
+                + constants.QUOTA_FLAG_LEN
                 + constants.UL_INT_SIZE_IN_BYTES
                 + len(tx_val)
             )
@@ -62,10 +61,10 @@ class TxMessage(AbstractBroadcastMessage):
             struct.pack_into("<L", self.buf, off, short_id)
             off += constants.SID_LEN
 
-            if transaction_flag is None:
-                transaction_flag = TransactionFlag.NO_FLAGS
-            struct.pack_into("<H", self.buf, off, transaction_flag.value)
-            off += constants.TRANSACTION_FLAG_LEN
+            if quota_type is None:
+                quota_type = QuotaType.FREE_DAILY_QUOTA
+            struct.pack_into("<B", self.buf, off, quota_type.value)
+            off += constants.QUOTA_FLAG_LEN
 
             struct.pack_into("<L", self.buf, off, int(timestamp))
             off += constants.UL_INT_SIZE_IN_BYTES
@@ -81,7 +80,7 @@ class TxMessage(AbstractBroadcastMessage):
             f"network_num: {self.network_num()}, "
             f"compact: {self.is_compact()}, "
             f"source_id: {self.source_id_as_str()}, "
-            f"transaction_flag: {self.transaction_flag()}, "
+            f"quota_type: {self.quota_type()}, "
             f"timestamp: {self.timestamp()}"
             f">"
         )
@@ -103,8 +102,8 @@ class TxMessage(AbstractBroadcastMessage):
     def has_short_id(self) -> bool:
         return self.short_id() != constants.NULL_TX_SID
 
-    def transaction_flag(self) -> TransactionFlag:
-        if self._transaction_flag is None:
+    def quota_type(self) -> QuotaType:
+        if self._tx_quota_type is None:
             off = (
                 self.HEADER_LENGTH
                 + AbstractBroadcastMessage.PAYLOAD_LENGTH
@@ -112,10 +111,11 @@ class TxMessage(AbstractBroadcastMessage):
                 - constants.CONTROL_FLAGS_LEN
             )
 
-            (transaction_flag, ) = struct.unpack_from("<H", self.buf, off)
-            self._transaction_flag = TransactionFlag(transaction_flag)
-        assert self._transaction_flag is not None
-        return TransactionFlag(self._transaction_flag)
+            (tx_quota_type_flag,) = struct.unpack_from("<B", self.buf, off)
+            self._tx_quota_type = QuotaType(tx_quota_type_flag)
+        assert self._tx_quota_type is not None
+        # pyre-fixme[7]: Expected `QuotaType` but got `None`.
+        return self._tx_quota_type
 
     def timestamp(self) -> int:
         if self._timestamp is None:
@@ -123,7 +123,7 @@ class TxMessage(AbstractBroadcastMessage):
                 self.HEADER_LENGTH
                 + AbstractBroadcastMessage.PAYLOAD_LENGTH
                 + constants.SID_LEN
-                + constants.TRANSACTION_FLAG_LEN
+                + constants.QUOTA_FLAG_LEN
                 - constants.CONTROL_FLAGS_LEN
             )
             (self._timestamp,) = struct.unpack_from("<L", self.buf, off)
@@ -139,7 +139,7 @@ class TxMessage(AbstractBroadcastMessage):
                     self.HEADER_LENGTH
                     + AbstractBroadcastMessage.PAYLOAD_LENGTH
                     + constants.SID_LEN
-                    + constants.TRANSACTION_FLAG_LEN
+                    + constants.QUOTA_FLAG_LEN
                     + constants.UL_INT_SIZE_IN_BYTES
                     - constants.CONTROL_FLAGS_LEN
                 )
@@ -149,9 +149,9 @@ class TxMessage(AbstractBroadcastMessage):
                     - constants.CONTROL_FLAGS_LEN
                 ]
 
-        tx_val = self._tx_val
-        assert tx_val is not None
-        return tx_val
+        assert self._tx_val is not None
+        # pyre-fixme[7]: Expected `memoryview` but got `Optional[memoryview]`.
+        return self._tx_val
 
     def is_compact(self) -> bool:
         return self.tx_val() == self.EMPTY_TX_VAL
@@ -163,7 +163,7 @@ class TxMessage(AbstractBroadcastMessage):
             self.HEADER_LENGTH
             + AbstractBroadcastMessage.PAYLOAD_LENGTH
             + constants.SID_LEN
-            + constants.TRANSACTION_FLAG_LEN
+            + constants.QUOTA_FLAG_LEN
             - constants.CONTROL_FLAGS_LEN
         )
         struct.pack_into("<L", self.buf, off, timestamp)
@@ -182,7 +182,7 @@ class TxMessage(AbstractBroadcastMessage):
             self.HEADER_LENGTH
             + AbstractBroadcastMessage.PAYLOAD_LENGTH
             + constants.SID_LEN
-            + constants.TRANSACTION_FLAG_LEN
+            + constants.QUOTA_FLAG_LEN
             - constants.CONTROL_FLAGS_LEN
         )
         struct.pack_into("<L", self.buf, off, constants.NULL_TX_TIMESTAMP)
@@ -195,6 +195,3 @@ class TxMessage(AbstractBroadcastMessage):
         """
         self.clear_short_id()
         self.clear_timestamp()
-
-    def quota_type(self) -> QuotaType:
-        return self.transaction_flag().get_quota_type()

@@ -1,10 +1,13 @@
-PROTOCOL_VERSION = 15
+PROTOCOL_VERSION = 16
 
 BDN_PERFORMANCE_NEW_BLOCK = 15
 
 RELAY_BLOCK_CAN_SEND_TXS_MESSAGE = 12
 RELAY_BLOCK_CAN_SEND_COMPRESSED_BLOCK_TXS_MESSAGE = 13
 
+# PROTOCOL_VERSION 16 (10/15/2020)
+# add transaction flag to TxMessage
+#
 # PROTOCOL_VERSION 15 (9/22/2020)
 # add new_block_messages and new_block_announcements to BDN performance messages
 #

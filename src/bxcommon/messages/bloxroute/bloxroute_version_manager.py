@@ -2,10 +2,6 @@ from bxcommon import constants
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.protocol_version import PROTOCOL_VERSION
-from bxcommon.messages.bloxroute.v14.bloxroute_message_factory_v14 import \
-    bloxroute_message_factory_v14
-from bxcommon.messages.bloxroute.v14.message_converter_factory_v14 import \
-    message_converter_factory_v14
 from bxcommon.messages.bloxroute.v6.bloxroute_message_factory_v6 import bloxroute_message_factory_v6
 from bxcommon.messages.bloxroute.v6.message_converter_factory_v6 import message_converter_factory_v6
 from bxcommon.messages.bloxroute.v7.bloxroute_message_factory_v7 import bloxroute_message_factory_v7
@@ -22,6 +18,10 @@ from bxcommon.messages.bloxroute.v12.bloxroute_message_factory_v12 import bloxro
 from bxcommon.messages.bloxroute.v12.message_converter_factory_v12 import message_converter_factory_v12
 from bxcommon.messages.bloxroute.v13.bloxroute_message_factory_v13 import bloxroute_message_factory_v13
 from bxcommon.messages.bloxroute.v13.message_converter_factory_v13 import message_converter_factory_v13
+from bxcommon.messages.bloxroute.v14.bloxroute_message_factory_v14 import bloxroute_message_factory_v14
+from bxcommon.messages.bloxroute.v14.message_converter_factory_v14 import message_converter_factory_v14
+from bxcommon.messages.bloxroute.v15.bloxroute_message_factory_v15 import bloxroute_message_factory_v15
+from bxcommon.messages.bloxroute.v15.message_converter_factory_v15 import message_converter_factory_v15
 from bxcommon.messages.versioning.abstract_version_manager import AbstractVersionManager
 
 
@@ -39,6 +39,7 @@ class _BloxrouteVersionManager(AbstractVersionManager):
         12: message_converter_factory_v12,
         13: message_converter_factory_v13,
         14: message_converter_factory_v14,
+        15: message_converter_factory_v15,
 
     }
     _PROTOCOL_TO_FACTORY_MAPPING = {
@@ -51,7 +52,8 @@ class _BloxrouteVersionManager(AbstractVersionManager):
         12: bloxroute_message_factory_v12,
         13: bloxroute_message_factory_v13,
         14: bloxroute_message_factory_v14,
-        15: bloxroute_message_factory
+        15: bloxroute_message_factory_v15,
+        16: bloxroute_message_factory
     }
 
     def __init__(self) -> None:

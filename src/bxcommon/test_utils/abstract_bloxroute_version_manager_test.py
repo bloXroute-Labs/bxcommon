@@ -30,7 +30,7 @@ from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.models.notification_code import NotificationCode
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -144,7 +144,7 @@ class AbstractBloxrouteVersionManagerTest(
             self.NODE_ID,
             50,
             helpers.generate_bytearray(250),
-            QuotaType.PAID_DAILY_QUOTA,
+            TransactionFlag.PAID_TX,
             time.time(),
         )
 
@@ -187,7 +187,7 @@ class AbstractBloxrouteVersionManagerTest(
                     helpers.generate_object_hash(),
                     helpers.generate_bytearray(250),
                     [2, 3],
-                    [QuotaType.FREE_DAILY_QUOTA, QuotaType.PAID_DAILY_QUOTA],
+                    [TransactionFlag.NO_FLAGS, TransactionFlag.PAID_TX],
                 )
             ],
         )

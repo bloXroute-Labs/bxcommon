@@ -3,7 +3,7 @@ from typing import Union, Tuple, Optional
 from Crypto.Hash import keccak
 
 from bxcommon.messages.bloxroute.tx_message import TxMessage
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.utils.blockchain_utils.eth import eth_common_constants, rlp_utils
 from bxcommon.utils.object_hash import Sha256Hash
 
@@ -12,7 +12,7 @@ def raw_tx_to_bx_tx(
     tx_bytes: Union[bytearray, memoryview],
     tx_start_index: int,
     network_num: int,
-    quota_type: Optional[QuotaType] = None
+    transaction_flag: Optional[TransactionFlag] = None
 ) -> Tuple[TxMessage, int, int]:
     if isinstance(tx_bytes, bytearray):
         tx_bytes = memoryview(tx_bytes)
@@ -20,7 +20,12 @@ def raw_tx_to_bx_tx(
     tx_bytes = tx_bytes[tx_start_index:tx_item_start + tx_item_length]
     tx_hash_bytes = keccak_hash(tx_bytes)
     msg_hash = Sha256Hash(tx_hash_bytes)
-    bx_tx = TxMessage(message_hash=msg_hash, network_num=network_num, tx_val=tx_bytes, quota_type=quota_type)
+    bx_tx = TxMessage(
+        message_hash=msg_hash,
+        network_num=network_num,
+        tx_val=tx_bytes,
+        transaction_flag=transaction_flag
+    )
     return bx_tx, tx_item_length, tx_item_start
 
 

@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Generic
 
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 
 from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
@@ -44,12 +44,12 @@ class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node]):
 
         transaction_str: str = params[rpc_constants.TRANSACTION_PARAMS_KEY]
         network_num = self.get_network_num()
-        quota_type = QuotaType.PAID_DAILY_QUOTA
-        return await self.process_transaction(network_num, account_id, quota_type, transaction_str)
+        transaction_flag = TransactionFlag.PAID_TX
+        return await self.process_transaction(network_num, account_id, transaction_flag, transaction_str)
 
     @abstractmethod
     async def process_transaction(
-        self, network_num: int, account_id: str, quota_type: QuotaType, transaction_str: str
+        self, network_num: int, account_id: str, transaction_flag: TransactionFlag, transaction_str: str
     ) -> JsonRpcResponse:
         pass
 

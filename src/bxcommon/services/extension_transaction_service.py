@@ -8,7 +8,7 @@ import task_pool_executor as tpe
 from bxcommon import constants
 from bxcommon.messages.bloxroute import transactions_info_serializer
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.services.transaction_service import TransactionService, TransactionCacheKeyType, TxSyncMsgProcessingItem
 from bxcommon.services.transaction_service import TxRemovalReason
@@ -101,8 +101,9 @@ class ExtensionTransactionService(TransactionService):
         self.proxy.on_block_cleaned_up(wrapped_block_hash)
 
     def get_tx_service_sync_buffer(self, sync_tx_content: bool) -> memoryview:
-        byte_array_obj = self.proxy.get_tx_sync_buffer(self._total_tx_contents_size,
-                                                       sync_tx_content)
+        byte_array_obj = self.proxy.get_tx_sync_buffer(
+            self._total_tx_contents_size, sync_tx_content
+        )
         return memoryview(byte_array_obj)
 
     def update_removed_transactions(self, removed_content_size: int, short_ids: List[int]) -> None:
@@ -264,14 +265,14 @@ class ExtensionTransactionService(TransactionService):
 
                 short_ids.append(short_id)
 
-            quota_types = []
+            transaction_flags = []
 
             for _ in range(short_id_count):
-                quota_type, = struct.unpack_from("<B", result_memory_view, offset)
-                offset += constants.QUOTA_FLAG_LEN
-                quota_types.append(QuotaType(quota_type))
+                transaction_flag, = struct.unpack_from("<H", result_memory_view, offset)
+                offset += constants.TRANSACTION_FLAG_LEN
+                transaction_flags.append(TransactionFlag(transaction_flag))
 
-            result_items.append(TxSyncMsgProcessingItem(transaction_hash, content_len, short_ids, quota_types))
+            result_items.append(TxSyncMsgProcessingItem(transaction_hash, content_len, short_ids, transaction_flags))
 
         return result_items
 
@@ -386,7 +387,7 @@ class ExtensionTransactionService(TransactionService):
     def clear(self):
         self.proxy.clear()
 
-        self._short_id_to_tx_quota_flag.clear()
+        self._short_id_to_tx_flag.clear()
         self.tx_hashes_without_content.clear()
         self.tx_hashes_without_short_id.clear()
         self._tx_assignment_expire_queue.clear()

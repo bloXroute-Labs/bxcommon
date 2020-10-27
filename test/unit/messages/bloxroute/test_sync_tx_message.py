@@ -6,11 +6,8 @@ from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.test_utils import helpers
-from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
-from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
-from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.services import tx_sync_service_helpers
 
 

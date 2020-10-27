@@ -10,7 +10,7 @@ from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.models.node_type import NodeType
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils import helpers
@@ -170,7 +170,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         for i, short_id in enumerate(short_ids):
             self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
             self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
-            self.transaction_service.set_short_id_quota_type(short_id, QuotaType.PAID_DAILY_QUOTA)
+            self.transaction_service.set_short_id_transaction_type(short_id, TransactionFlag.PAID_TX)
 
         time_zero = time.time()
 
@@ -392,7 +392,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
         for i, short_id in enumerate(short_ids):
             self.transaction_service.set_transaction_contents(transaction_hashes[i], transaction_contents[i])
             self.transaction_service.assign_short_id(transaction_hashes[i], short_id)
-            self.transaction_service.set_short_id_quota_type(short_ids[i], QuotaType.PAID_DAILY_QUOTA)
+            self.transaction_service.set_short_id_transaction_type(short_ids[i], TransactionFlag.PAID_TX)
 
         self._verify_txs_in_tx_service(expected_short_ids=[1, 2, 3, 4], not_expected_short_ids=[])
 
@@ -718,7 +718,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
                 tx_hash,
                 tx_content,
                 [short_id1, short_id2],
-                [QuotaType.FREE_DAILY_QUOTA, QuotaType.PAID_DAILY_QUOTA]
+                [TransactionFlag.NO_FLAGS, TransactionFlag.PAID_TX]
             )
 
             tx_hashes.append(tx_hash)
@@ -741,9 +741,9 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
             self.assertEqual(2, len(item.short_ids))
             self.assertEqual(item.short_ids[0], tx_short_id.short_ids[0])
             self.assertEqual(item.short_ids[1], tx_short_id.short_ids[1])
-            self.assertEqual(len(item.quota_types), len(tx_short_id.short_id_flags))
-            self.assertEqual(item.quota_types[0], tx_short_id.short_id_flags[0])
-            self.assertEqual(item.quota_types[1], tx_short_id.short_id_flags[1])
+            self.assertEqual(len(item.transaction_flag_types), len(tx_short_id.short_id_flags))
+            self.assertEqual(item.transaction_flag_types[0], tx_short_id.short_id_flags[0])
+            self.assertEqual(item.transaction_flag_types[1], tx_short_id.short_id_flags[1])
 
             tx_content = self.transaction_service.get_transaction_by_hash(item.hash)
             self.assertEqual(len(tx_content), item.content_length)

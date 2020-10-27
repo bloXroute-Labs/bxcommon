@@ -16,19 +16,18 @@ from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServi
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
-from bxcommon.messages.bloxroute.v13.pong_message_v13 import PongMessageV13
-from bxcommon.messages.bloxroute.v7.tx_message_v7 import TxMessageV7
+from bxcommon.messages.bloxroute.v15.tx_message_v15 import TxMessageV15
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
-class BloxrouteVersionManagerV7Test(
+class BloxrouteVersionManagerV15Test(
     AbstractBloxrouteVersionManagerTest[
         HelloMessage,
         AckMessage,
         PingMessage,
-        PongMessageV13,
+        PongMessage,
         BroadcastMessage,
-        TxMessageV7,
+        TxMessageV15,
         GetTxsMessage,
         TxsMessage,
         KeyMessage,
@@ -42,11 +41,12 @@ class BloxrouteVersionManagerV7Test(
         BdnPerformanceStatsMessage,
     ]
 ):
-    def version_to_test(self) -> int:
-        return 7
 
-    def old_tx_message(self, original_message: TxMessage) -> TxMessageV7:
-        return TxMessageV7(
+    def version_to_test(self) -> int:
+        return 15
+
+    def old_tx_message(self, original_message: TxMessage) -> TxMessageV15:
+        return TxMessageV15(
             original_message.message_hash(),
             original_message.network_num(),
             original_message.source_id(),
@@ -57,8 +57,8 @@ class BloxrouteVersionManagerV7Test(
 
     def compare_tx_current_to_old(
         self,
-        converted_old_message: TxMessageV7,
-        original_old_message: TxMessageV7,
+        converted_old_message: TxMessageV15,
+        original_old_message: TxMessageV15,
     ):
         self.assert_attributes_equal(
             original_old_message,
@@ -69,7 +69,7 @@ class BloxrouteVersionManagerV7Test(
                 "source_id",
                 "network_num",
                 "quota_type",
-            ],
+            ]
         )
 
     def compare_tx_old_to_current(
@@ -88,9 +88,9 @@ class BloxrouteVersionManagerV7Test(
                 "tx_val",
                 "source_id",
                 "network_num",
-                "quota_type",
             ],
         )
-
-    def old_pong_message(self, original_message: PongMessage) -> PongMessageV13:
-        return PongMessageV13(original_message.nonce())
+        self.assertEqual(
+            original_current_message.transaction_flag(),
+            converted_current_message.transaction_flag()
+        )

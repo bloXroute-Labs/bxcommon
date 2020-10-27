@@ -5,9 +5,8 @@ from typing import TypeVar, Type
 from datetime import datetime
 
 from bxcommon import constants
-from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, \
-    NODE_ID_SIZE_IN_BYTES, \
-    BX_HDR_COMMON_OFF, BLOCK_ENCRYPTED_FLAG_LEN, QUOTA_FLAG_LEN, BROADCAST_TYPE_LEN
+from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, NODE_ID_SIZE_IN_BYTES, BX_HDR_COMMON_OFF, \
+    BLOCK_ENCRYPTED_FLAG_LEN, TRANSACTION_FLAG_LEN, BROADCAST_TYPE_LEN
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
@@ -33,7 +32,7 @@ from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.version_message import VersionMessage
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.models.entity_type_model import EntityType
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.helpers import create_input_buffer_with_bytes
@@ -102,7 +101,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.get_message_preview_successfully(TxMessage(self.HASH, 1, self.NODE_ID, 12, blob),
                                               TxMessage.MESSAGE_TYPE,
                                               SHA256_HASH_LEN + NETWORK_NUM_LEN + UL_INT_SIZE_IN_BYTES +
-                                              QUOTA_FLAG_LEN + constants.NODE_ID_SIZE_IN_BYTES + len(blob) +
+                                              TRANSACTION_FLAG_LEN + constants.NODE_ID_SIZE_IN_BYTES + len(blob) +
                                               constants.UL_INT_SIZE_IN_BYTES +
                                               constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(KeyMessage(self.HASH, 1, self.NODE_ID,
@@ -411,7 +410,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
             source_id=self.NODE_ID,
             short_id=sid,
             tx_val=tx_val,
-            quota_type=QuotaType.PAID_DAILY_QUOTA,
+            transaction_flag=TransactionFlag.PAID_TX,
             timestamp=timestamp
         )
 
@@ -423,7 +422,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(sid, tx_message.short_id())
         self.assertEqual(test_network_num, tx_message.network_num())
         self.assertEqual(tx_val, tx_message.tx_val())
-        self.assertEqual(QuotaType.PAID_DAILY_QUOTA, tx_message.quota_type())
+        self.assertEqual(TransactionFlag.PAID_TX, tx_message.transaction_flag())
         self.assertEqual(int(timestamp), tx_message.timestamp())
 
         new_timestamp = time.time() - 2
@@ -445,7 +444,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
             source_id=self.NODE_ID,
             short_id=2,
             tx_val=contents,
-            quota_type=QuotaType.PAID_DAILY_QUOTA,
+            transaction_flag=TransactionFlag.PAID_TX,
             timestamp=timestamp
         )
         tx_message.clear_protected_fields()

@@ -3,6 +3,7 @@ from typing import List
 import time
 from unittest import skip
 
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.test_utils.message_factory_test_case import MessageFactoryTestCase
 
 import random
@@ -11,11 +12,7 @@ from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.test_utils import helpers
-from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
-from bxcommon.messages.bloxroute import txs_serializer
 from bxcommon.services.transaction_service import TransactionService
-from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
-from bxcommon.models.quota_type_model import QuotaType
 from bxcommon.services import tx_sync_service_helpers
 
 
@@ -38,7 +35,7 @@ class SyncTxServiceTest(MessageFactoryTestCase):
             for _ in range(random.randrange(1, 10)):
                 short_id += 1
                 self.transaction_service.assign_short_id(tx_hash, short_id)
-                self.transaction_service.set_short_id_quota_type(short_id, QuotaType.PAID_DAILY_QUOTA)
+                self.transaction_service.set_short_id_transaction_type(short_id, TransactionFlag.PAID_TX)
                 if short_id % 7 < 2:
                     self.transaction_service._short_id_to_tx_cache_key.pop(short_id, None)
 

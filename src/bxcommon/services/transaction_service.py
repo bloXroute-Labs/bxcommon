@@ -15,7 +15,7 @@ from prometheus_client import Gauge
 from bxcommon import constants
 from bxcommon.messages.bloxroute import short_ids_serializer
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
 from bxcommon.utils import memory_utils, convert
 from bxcommon.utils.crypto import SHA256_HASH_LEN
@@ -107,7 +107,7 @@ class TxSyncMsgProcessingItem(typing.NamedTuple):
     hash: Optional[Sha256Hash] = None
     content_length: int = 0
     short_ids: List[int] = []
-    quota_types: List[QuotaType] = []
+    transaction_flag_types: List[TransactionFlag] = []
 
 
 # pylint: disable=too-many-public-methods
@@ -129,7 +129,7 @@ class TransactionService:
     network_num: network number that current transaction service serves
     _tx_cache_key_to_short_ids: mapping of transaction long hashes to (potentially multiple) short ids
     _short_id_to_tx_cache_key: mapping of short id to transaction long hashes
-    _short_id_to_tx_quota_flag: mapping of short id to transaction quota type
+    _short_id_to_tx_flag: mapping of short id to transaction flag type
     _tx_cache_key_to_contents: mapping of transaction long hashes to transaction contents
     _tx_assignment_expire_queue: expiration time of short ids
     """
@@ -139,7 +139,7 @@ class TransactionService:
     tx_content_without_sid_alarm_scheduled: bool
     network_num: int
     _short_id_to_tx_cache_key: Dict[int, TransactionCacheKeyType]
-    _short_id_to_tx_quota_flag: Dict[int, QuotaType]
+    _short_id_to_tx_flag: Dict[int, TransactionFlag]
     _tx_cache_key_to_contents: Dict[TransactionCacheKeyType, Union[bytearray, memoryview]]
     _tx_cache_key_to_short_ids: Dict[TransactionCacheKeyType, Set[int]]
     _tx_assignment_expire_queue: ExpirationQueue[int]
@@ -178,7 +178,7 @@ class TransactionService:
         self.tx_without_content_alarm_scheduled = False
 
         self._tx_cache_key_to_short_ids = defaultdict(set)
-        self._short_id_to_tx_quota_flag = {}
+        self._short_id_to_tx_flag = {}
         self._short_id_to_tx_cache_key = {}
         self._tx_cache_key_to_contents = {}
         self._tx_assignment_expire_queue = ExpirationQueue(node.opts.sid_expire_time)
@@ -223,15 +223,15 @@ class TransactionService:
             functools.partial(utils.identity, self._total_tx_contents_size)
         )
 
-    def get_short_id_quota_type(self, short_id: int) -> QuotaType:
-        if short_id in self._short_id_to_tx_quota_flag:
-            return self._short_id_to_tx_quota_flag[short_id]
+    def get_short_id_transaction_type(self, short_id: int) -> TransactionFlag:
+        if short_id in self._short_id_to_tx_flag:
+            return self._short_id_to_tx_flag[short_id]
         else:
-            return QuotaType.FREE_DAILY_QUOTA
+            return TransactionFlag.NO_FLAGS
 
-    def set_short_id_quota_type(self, short_id: int, tx_quota_type: QuotaType) -> None:
-        if QuotaType.PAID_DAILY_QUOTA in tx_quota_type:
-            self._short_id_to_tx_quota_flag[short_id] = tx_quota_type
+    def set_short_id_transaction_type(self, short_id: int, tx_flag: TransactionFlag) -> None:
+        if TransactionFlag.PAID_TX & tx_flag:
+            self._short_id_to_tx_flag[short_id] = tx_flag
 
     def get_short_id(self, transaction_hash: Sha256Hash) -> int:
         """
@@ -561,7 +561,7 @@ class TransactionService:
         """
         Clean up mapping. Removes transaction contents and mapping.
         :param transaction_hash: tx hash to clean up
-        :param force: when false, cleanup will ignore tx / sids marked with quota flag
+        :param force: when false, cleanup will ignore tx / sids marked with tx flag
         :param assume_no_sid: cleanup request will be ignored if the tx has short ids
         """
         transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
@@ -574,9 +574,12 @@ class TransactionService:
             if assume_no_sid and short_ids:
                 logger.trace("removal of tx {} aborted, ", transaction_hash)
                 return None
-            short_id_flags = [self._short_id_to_tx_quota_flag.get(sid, QuotaType.FREE_DAILY_QUOTA) for sid in short_ids]
+            short_id_flags = [
+                self._short_id_to_tx_flag.get(sid, TransactionFlag.NO_FLAGS)
+                for sid in short_ids
+            ]
             tx_flag = reduce(lambda x, y: x | y, short_id_flags)
-            if QuotaType.PAID_DAILY_QUOTA in tx_flag and not force:
+            if TransactionFlag.PAID_TX in tx_flag and not force:
                 return None
             else:
                 short_ids = self._tx_cache_key_to_short_ids.pop(transaction_cache_key)
@@ -590,8 +593,8 @@ class TransactionService:
                 removed_sids += 1
                 if short_id in self._short_id_to_tx_cache_key:
                     del self._short_id_to_tx_cache_key[short_id]
-                    if short_id in self._short_id_to_tx_quota_flag:
-                        del self._short_id_to_tx_quota_flag[short_id]
+                    if short_id in self._short_id_to_tx_flag:
+                        del self._short_id_to_tx_flag[short_id]
                 self._tx_assignment_expire_queue.remove(short_id)
                 if self.node.opts.dump_removed_short_ids:
                     self._removed_short_ids.add(short_id)
@@ -620,7 +623,7 @@ class TransactionService:
         Clean up short id mapping. Removes transaction contents and mapping if only one short id mapping.
         :param short_id: short id to clean up
         :param remove_related_short_ids: remove all other short id for the same tx
-        :param force: when false, cleanup will ignore tx / sids marked with quota flag
+        :param force: when false, cleanup will ignore tx / sids marked with tx flag
         :param removal_reason:
         """
         if short_id in self._short_id_to_tx_cache_key:
@@ -629,11 +632,11 @@ class TransactionService:
             if transaction_cache_key in self._tx_cache_key_to_short_ids:
                 short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
                 short_id_flags = [
-                    self._short_id_to_tx_quota_flag.get(sid, QuotaType.FREE_DAILY_QUOTA)
+                    self._short_id_to_tx_flag.get(sid, TransactionFlag.NO_FLAGS)
                     for sid in short_ids
                 ]
                 tx_flag = reduce(lambda x, y: x | y, short_id_flags)
-                if QuotaType.PAID_DAILY_QUOTA in tx_flag and not force:
+                if TransactionFlag.PAID_TX in tx_flag and not force:
                     return
             else:
                 short_ids = [short_id]
@@ -1311,7 +1314,7 @@ class TransactionService:
         self._tx_cache_key_to_short_ids.clear()
         self._short_id_to_tx_cache_key.clear()
         self._short_ids_seen_in_block.clear()
-        self._short_id_to_tx_quota_flag.clear()
+        self._short_id_to_tx_flag.clear()
         self.tx_hashes_without_content.clear()
         self.tx_hashes_without_short_id.clear()
         self._tx_assignment_expire_queue.clear()

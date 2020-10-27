@@ -38,7 +38,7 @@ class _TxMessageConverterV7(AbstractMessageConverter):
     _RIGHT_BREAKPOINT = (
         _BASE_LENGTH
         + constants.SID_LEN
-        + constants.QUOTA_FLAG_LEN
+        + constants.TRANSACTION_FLAG_LEN
         + constants.UL_INT_SIZE_IN_BYTES
     )
 
@@ -57,7 +57,9 @@ class _TxMessageConverterV7(AbstractMessageConverter):
             msg_type
         ]
         old_version_payload_len = (
-            msg.payload_len() - constants.UL_INT_SIZE_IN_BYTES
+            msg.payload_len()
+            - constants.QUOTA_FLAG_LEN
+            - constants.UL_INT_SIZE_IN_BYTES
         )
 
         old_version_msg_bytes = bytearray(
@@ -89,7 +91,11 @@ class _TxMessageConverterV7(AbstractMessageConverter):
             )
 
         new_msg_class = self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING[msg_type]
-        new_payload_len = msg.payload_len() + constants.UL_INT_SIZE_IN_BYTES
+        new_payload_len = (
+            msg.payload_len() +
+            constants.QUOTA_FLAG_LEN +
+            constants.UL_INT_SIZE_IN_BYTES
+        )
 
         new_msg_bytes = bytearray(
             AbstractBloxrouteMessage.HEADER_LENGTH + new_payload_len
@@ -98,6 +104,7 @@ class _TxMessageConverterV7(AbstractMessageConverter):
             : self._LEFT_BREAKPOINT
         ]
 
+        struct.pack_into("<B", new_msg_bytes, self._LEFT_BREAKPOINT, 0)
         struct.pack_into("<L", new_msg_bytes, self._LEFT_BREAKPOINT, 0)
         new_msg_bytes[self._RIGHT_BREAKPOINT :] = msg.rawbytes()[
             self._LEFT_BREAKPOINT :

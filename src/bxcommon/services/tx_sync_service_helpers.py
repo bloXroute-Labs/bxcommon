@@ -30,7 +30,7 @@ def create_txs_service_msg(
         else:
             tx_content = bytearray(0)
         # TODO: evaluate short id quota type flag value
-        short_id_flags = [transaction_service.get_short_id_quota_type(short_id) for short_id in short_ids]
+        short_id_flags = [transaction_service.get_short_id_transaction_type(short_id) for short_id in short_ids]
         tx_content_short_ids: TxContentShortIds = TxContentShortIds(
             tx_hash,
             tx_content,
@@ -73,7 +73,9 @@ def create_txs_service_msg_from_time(
                         tx_content = transaction_service._tx_cache_key_to_contents[cache_key]
                     else:
                         tx_content = bytearray(0)
-                    short_id_flags = [transaction_service.get_short_id_quota_type(short_id) for short_id in short_ids]
+                    short_id_flags = [
+                        transaction_service.get_short_id_transaction_type(short_id) for short_id in short_ids
+                    ]
                     tx_content_short_ids: TxContentShortIds = TxContentShortIds(
                         tx_hash,
                         tx_content,
@@ -97,7 +99,8 @@ def create_txs_service_msg_from_time(
 def create_txs_service_msg_from_buffer(
     transaction_service: TransactionService,
     txs_buffer: memoryview,
-    start_offset: int) -> Tuple[TxServiceSyncTxsMessage, int, int, bool]:
+    start_offset: int
+) -> Tuple[TxServiceSyncTxsMessage, int, int, bool]:
     max_task_complete_time = time.time() + constants.GATEWAY_SYNC_BUILD_MESSAGE_THRESHOLD_S
     current_pos = start_offset
     complete_buffer = False
@@ -127,7 +130,8 @@ def create_txs_service_msg_from_buffer(
             )
             short_ids, = struct.unpack_from("<H", txs_buffer, short_ids_offset)
             current_pos = short_ids_offset + constants.UL_SHORT_SIZE_IN_BYTES + (
-                constants.UL_INT_SIZE_IN_BYTES * short_ids) + short_ids
+                (constants.UL_INT_SIZE_IN_BYTES + constants.TRANSACTION_FLAG_LEN) * short_ids
+            )
             tx_count += 1
             if current_pos >= len(txs_buffer):
                 complete_buffer = True

@@ -21,7 +21,7 @@ from bxcommon.messages.bloxroute.v6.tx_service_sync_txs_message_v6 import (
     TxServiceSyncTxsMessageV6,
     TxContentShortIdsV6,
 )
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
@@ -90,7 +90,7 @@ class BloxrouteVersionManagerV6Test(
         original_current_message: TxMessage,
     ):
         self.assertEqual(
-            QuotaType.FREE_DAILY_QUOTA, converted_current_message.quota_type()
+            TransactionFlag.NO_FLAGS, converted_current_message.transaction_flag()
         )
         self.assert_attributes_equal(
             original_current_message,
@@ -136,7 +136,7 @@ class BloxrouteVersionManagerV6Test(
             self.assertEqual(original.short_ids, converted.short_ids)
             self.assertEqual(
                 [
-                    QuotaType.FREE_DAILY_QUOTA
+                    TransactionFlag.NO_FLAGS
                     for _ in range(len(converted.short_id_flags))
                 ],
                 converted.short_id_flags,
