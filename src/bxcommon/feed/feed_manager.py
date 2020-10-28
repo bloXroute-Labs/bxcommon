@@ -1,8 +1,9 @@
-from typing import Dict, Optional, List, Any, Union, Set, TYPE_CHECKING
+from typing import Dict, Optional, List, Any, Set, TYPE_CHECKING
+
+from bxutils import logging
 
 from bxcommon.feed.feed import Feed
 from bxcommon.feed.subscriber import Subscriber
-from bxutils import logging
 
 if TYPE_CHECKING:
     from bxcommon.connections.abstract_node import AbstractNode
@@ -37,6 +38,7 @@ class FeedManager:
             logger.debug(
                 "Creating new subscriber ({}) to {}", subscriber.subscription_id, name
             )
+            # pyre-fixme[16]: `AbstractNode` has no attribute `reevaluate_transaction_streamer_connection`
             self._node.reevaluate_transaction_streamer_connection()
             return subscriber
         else:
@@ -52,6 +54,7 @@ class FeedManager:
                 subscriber.subscription_id,
                 name,
             )
+        # pyre-fixme[16]: `AbstractNode` has no attribute `reevaluate_transaction_streamer_connection`
         self._node.reevaluate_transaction_streamer_connection()
         return subscriber
 

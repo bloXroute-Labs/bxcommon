@@ -38,6 +38,7 @@ class Feed(Generic[T, S], metaclass=ABCMeta):
 
         try:
             serialized_message = self.serialize(raw_message)
+        # pylint: disable=broad-except
         except Exception:
             logger.error(log_messages.COULD_NOT_SERIALIZE_FEED_ENTRY, exc_info=True)
             return
@@ -68,15 +69,18 @@ class Feed(Generic[T, S], metaclass=ABCMeta):
         Any potential CPU expensive operations should be moved here, to optimize
         serialization time.
         """
+        # pylint: disable=unnecessary-pass
         pass
 
     def subscriber_count(self) -> int:
         return len(self.subscribers)
 
+    # pylint: disable=unused-argument
     def should_publish_message_to_subscriber(
         self, subscriber: Subscriber[T], raw_message: S, serialized_message: T
     ) -> bool:
         return True
 
+    # pylint: disable=unused-argument
     def reformat_filters(self, filters: Dict[str, Any]) -> Dict[str, Any]:
         return {}

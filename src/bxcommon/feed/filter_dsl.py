@@ -55,7 +55,7 @@ def reformat(
     # You've recursed to a primitive, stop!
     if filters is None or not isinstance(filters, dict):
         return filters
-    logger_filters.debug(f"Validating and reformatting filters :{filters}")
+    logger_filters.debug("Validating and reformatting filters :{}", filters)
     operator = list(filters.keys())[0]
     values = filters[operator]
     # Easy syntax for unary operators, like {"var": "x"} instead of strict
