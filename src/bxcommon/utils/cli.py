@@ -1,7 +1,8 @@
 import argparse
+import os
 import sys
 from argparse import ArgumentParser
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from bxcommon import constants
 from bxcommon.constants import ALL_NETWORK_NUM
@@ -163,14 +164,28 @@ def get_argument_parser() -> argparse.ArgumentParser:
     return arg_parser
 
 
-def add_argument_parser_logging(arg_parser: ArgumentParser):
+def add_argument_parser_logging(
+    arg_parser: ArgumentParser,
+    default_log_level: Union[LogLevel, str] = utils_constants.DEFAULT_LOG_LEVEL
+):
+    default_log_level = os.environ.get("LOG_LEVEL", default_log_level)
+    default_log_format = os.environ.get("LOG_FORMAT", utils_constants.DEFAULT_LOG_FORMAT)
+    default_log_fluentd_enable = os.environ.get("LOG_FLUENTD_ENABLE", False)
+    default_log_fluentd_host = os.environ.get("LOG_FLUENTD_HOST", utils_constants.FLUENTD_HOST)
+    default_fluentd_logger_max_queue_size = os.environ.get(
+        "FLUENTD_LOGGER_MAX_QUEUE_SIZE", utils_constants.FLUENTD_LOGGER_MAX_QUEUE_SIZE
+    )
+    default_log_level_overrides = os.environ.get("LOG_LEVEL_OVERRIDES", {})
+    default_log_level_fluentd = os.environ.get("LOG_LEVEL_FLUENTD", LogLevel.NOTSET)
+    default_log_level_stdout = os.environ.get("LOG_LEVEL_STDOUT", LogLevel.NOTSET)
+
     arg_parser.add_argument(
         "--log-level",
         help="set log level",
         # pyre-fixme[16]: `LogLevel` has no attribute `__getattr__`.
         type=LogLevel.__getattr__,
         choices=list(LogLevel),
-        default=utils_constants.DEFAULT_LOG_LEVEL
+        default=default_log_level
     )
     arg_parser.add_argument(
         "--log-format",
@@ -178,25 +193,25 @@ def add_argument_parser_logging(arg_parser: ArgumentParser):
         # pyre-fixme[16]: `LogFormat` has no attribute `__getattr__`.
         type=LogFormat.__getattr__,
         choices=list(LogFormat),
-        default=utils_constants.DEFAULT_LOG_FORMAT
+        default=default_log_format
     )
     arg_parser.add_argument(
         "--log-fluentd-enable",
         help="enable logging directly to fluentd",
         type=convert.str_to_bool,
-        default=False
+        default=default_log_fluentd_enable
     )
     arg_parser.add_argument(
         "--log-fluentd-host",
         help="fluentd instance address provide, hostname:port",
         type=str,
-        default=utils_constants.FLUENTD_HOST
+        default=default_log_fluentd_host
     )
     arg_parser.add_argument(
         "--log-fluentd-queue-size",
         help="fluentd queue size",
         type=int,
-        default=utils_constants.FLUENTD_LOGGER_MAX_QUEUE_SIZE
+        default=default_fluentd_logger_max_queue_size
     )
     arg_parser.add_argument(
         "--log-flush-immediately",
@@ -207,7 +222,7 @@ def add_argument_parser_logging(arg_parser: ArgumentParser):
     arg_parser.add_argument(
         "--log-level-overrides",
         help="override log level for namespace stats=INFO,bxcommon.connections=WARNING",
-        default={},
+        default=default_log_level_overrides,
         type=log_config.str_to_log_options
     )
     arg_parser.add_argument(
@@ -215,14 +230,14 @@ def add_argument_parser_logging(arg_parser: ArgumentParser):
         help="The fluentd handler log level",
         type=LogLevel.__getattr__,
         choices=list(LogLevel),
-        default=LogLevel.NOTSET
+        default=default_log_level_fluentd
     )
     arg_parser.add_argument(
         "--log-level-stdout",
         help="The stdout handler log level",
         type=LogLevel.__getattr__,
         choices=list(LogLevel),
-        default=LogLevel.NOTSET
+        default=default_log_level_stdout
     )
     arg_parser.add_argument(
         "--transaction-validation",
