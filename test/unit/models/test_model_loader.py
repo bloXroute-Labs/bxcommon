@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Dict, Optional, ForwardRef
+from unittest import skip
 
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils import model_loader, convert
@@ -120,6 +121,7 @@ class ModelLoaderTest(AbstractTestCase):
         result_2 = model_loader.load_model(ModelWithCustomAttribute, model_dict_2)
         self.assertEqual("qux", result_2.attribute.foo)
 
+    @skip
     def test_loading_hex_model(self):
         model_dict = {
             "hash": "0xdee4fc78545f68f2db6a538c887f8982bd37360b2986678c46f2ecf53e8b28d0",
