@@ -15,8 +15,11 @@ from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import
 from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
+from bxcommon.messages.bloxroute.v15.tx_service_sync_txs_message_v15 import TxServiceSyncTxsMessageV15
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v15.tx_message_v15 import TxMessageV15
+from bxcommon.messages.bloxroute.v15.txs_serializer_v15 import TxContentShortIdsV15
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
@@ -33,7 +36,7 @@ class BloxrouteVersionManagerV15Test(
         KeyMessage,
         TxServiceSyncReqMessage,
         TxServiceSyncBlocksShortIdsMessage,
-        TxServiceSyncTxsMessage,
+        TxServiceSyncTxsMessageV15,
         TxServiceSyncCompleteMessage,
         BlockConfirmationMessage,
         TransactionCleanupMessage,
@@ -53,6 +56,22 @@ class BloxrouteVersionManagerV15Test(
             original_message.short_id(),
             original_message.tx_val(),
             original_message.transaction_flag().get_quota_type(),
+        )
+
+    def old_txtxs_message(
+        self, original_message: TxServiceSyncTxsMessage
+    ) -> TxServiceSyncTxsMessageV15:
+        return TxServiceSyncTxsMessageV15(
+            original_message.network_num(),
+            [
+                TxContentShortIdsV15(
+                    tx_content_short_ids.tx_hash,
+                    tx_content_short_ids.tx_content,
+                    tx_content_short_ids.short_ids,
+                    [short_id_flag.get_quota_type() for short_id_flag in tx_content_short_ids.short_id_flags]
+                )
+                for tx_content_short_ids in original_message.txs_content_short_ids()
+            ],
         )
 
     def compare_tx_current_to_old(
@@ -94,3 +113,44 @@ class BloxrouteVersionManagerV15Test(
             original_current_message.transaction_flag(),
             converted_current_message.transaction_flag()
         )
+
+    def compare_txtxs_current_to_old(
+        self,
+        converted_old_message: TxServiceSyncTxsMessageV15,
+        original_old_message: TxServiceSyncTxsMessageV15,
+    ):
+        self.assert_attributes_equal(
+            original_old_message,
+            converted_old_message,
+            ["network_num", "txs_content_short_ids"],
+        )
+
+    def compare_txtxs_old_to_current(
+        self,
+        converted_current_message: TxServiceSyncTxsMessage,
+        original_current_message: TxServiceSyncTxsMessage,
+    ):
+        self.assert_attributes_equal(
+            original_current_message, converted_current_message, ["network_num"]
+        )
+        original_txs_content_short_ids = (
+            original_current_message.txs_content_short_ids()
+        )
+        converted_txs_content_short_ids = (
+            converted_current_message.txs_content_short_ids()
+        )
+        self.assertEqual(
+            len(original_txs_content_short_ids),
+            len(converted_txs_content_short_ids),
+        )
+        for i in range(len(original_txs_content_short_ids)):
+            original = original_txs_content_short_ids[i]
+            converted = converted_txs_content_short_ids[i]
+
+            self.assertEqual(original.tx_hash, converted.tx_hash)
+            self.assertEqual(original.tx_content, converted.tx_content)
+            self.assertEqual(original.short_ids, converted.short_ids)
+            self.assertEqual(
+                [TransactionFlag(short_id_flag.value) for short_id_flag in converted.short_id_flags],
+                converted.short_id_flags,
+            )

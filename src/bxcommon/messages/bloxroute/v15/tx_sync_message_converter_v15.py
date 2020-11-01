@@ -3,10 +3,11 @@ from typing import cast
 from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
+from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.messages.bloxroute.v15.tx_service_sync_txs_message_v15 import TxServiceSyncTxsMessageV15, \
     TxContentShortIdsV15
 from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 
 
 class _TxSyncMessageConverterV15(AbstractMessageConverter):
@@ -22,12 +23,13 @@ class _TxSyncMessageConverterV15(AbstractMessageConverter):
         msg_type = msg.MESSAGE_TYPE
         if msg_type not in self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING:
             raise ValueError(f"Tried to convert unexpected new message type to v15: {msg_type}")
-        msg = cast(TxServiceSyncTxsMessageV15, msg)
+        msg = cast(TxServiceSyncTxsMessage, msg)
 
         txs_content_short_ids = msg.txs_content_short_ids()
         txs_content_short_ids_v15 = [
             TxContentShortIdsV15(
-                item.tx_hash, item.tx_content, item.short_ids, item.short_id_flags
+                item.tx_hash, item.tx_content, item.short_ids,
+                [short_id_flag.get_quota_type() for short_id_flag in item.short_id_flags]
             ) for item in txs_content_short_ids
         ]
         network_num = msg.network_num()
@@ -43,17 +45,17 @@ class _TxSyncMessageConverterV15(AbstractMessageConverter):
 
         txs_content_short_ids_v15 = msg.txs_content_short_ids()
         txs_content_short_ids = [
-            TxContentShortIdsV15(
+            TxContentShortIds(
                 item.tx_hash,
                 item.tx_content,
                 item.short_ids,
-                [QuotaType.FREE_DAILY_QUOTA for _ in item.short_ids]
+                [TransactionFlag(short_id_flag.value) for short_id_flag in item.short_id_flags]
                 )
             for item in txs_content_short_ids_v15
         ]
         network_num = msg.network_num()
 
-        return TxServiceSyncTxsMessageV15(network_num, txs_content_short_ids)
+        return TxServiceSyncTxsMessage(network_num, txs_content_short_ids)
 
     def convert_first_bytes_to_older_version(self, first_msg_bytes: memoryview) -> memoryview:
         raise NotImplementedError
