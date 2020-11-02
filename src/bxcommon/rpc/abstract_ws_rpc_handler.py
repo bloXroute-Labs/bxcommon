@@ -1,5 +1,4 @@
 import json
-from abc import abstractmethod
 import asyncio
 from asyncio import Future
 from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Any
@@ -8,6 +7,8 @@ from bxcommon.rpc.abstract_rpc_handler import AbstractRpcHandler
 from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
+from bxcommon.rpc.requests.subscribe_rpc_request import SubscribeRpcRequest
+from bxcommon.rpc.requests.unsubscribe_rpc_request import UnsubscribeRpcRequest
 from bxcommon.rpc.rpc_errors import RpcParseError, RpcError, RpcInternalError
 from bxcommon.rpc.rpc_request_type import RpcRequestType
 
@@ -141,14 +142,16 @@ class AbstractWsRpcHandler(AbstractRpcHandler["AbstractNode", str, str]):
             return feed_name
         return None
 
-    @abstractmethod
     def _subscribe_request_factory(
         self, request: BxJsonRpcRequest, node: "AbstractNode"
     ) -> AbstractRpcRequest:
-        raise NotImplementedError
+        return SubscribeRpcRequest(
+            request, node, self.feed_manager, self._on_new_subscriber
+        )
 
-    @abstractmethod
     def _unsubscribe_request_factory(
         self, request: BxJsonRpcRequest, node: "AbstractNode"
     ) -> AbstractRpcRequest:
-        raise NotImplementedError
+        return UnsubscribeRpcRequest(
+            request, node, self.feed_manager, self._on_unsubscribe
+        )
