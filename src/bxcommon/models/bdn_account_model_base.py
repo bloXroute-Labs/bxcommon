@@ -8,6 +8,10 @@ from bxcommon.models.bdn_service_model_config_base import (
     BdnFeedServiceModelConfigBase,
 )
 from bxcommon import constants
+from bxutils import logging
+
+logger = logging.get_logger(__name__)
+OPTIONAL_ACCOUNT_SERVICES = {"tx_free"}
 
 
 @dataclass
