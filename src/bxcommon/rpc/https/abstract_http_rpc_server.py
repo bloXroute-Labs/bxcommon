@@ -1,5 +1,8 @@
 import asyncio
 import base64
+import os
+import ssl
+from ssl import Purpose
 from abc import abstractmethod
 from asyncio import Future
 from typing import Callable, Awaitable, Optional, TYPE_CHECKING, TypeVar, Generic
@@ -184,6 +187,19 @@ class AbstractHttpRpcServer(Generic[Node]):
         opts = self.node.opts
 
         # TODO: add ssl certificate
-        site = TCPSite(self._runner, opts.rpc_host, opts.rpc_port)
+        ssl_context = None
+        if opts.rpc_use_ssl:
+            ssl_context = ssl.create_default_context(
+                Purpose.CLIENT_AUTH,
+                cafile=os.path.join(opts.rpc_ssl_base_url, "ca_bundle.pem")
+            )
+            ssl_context.load_cert_chain(
+                certfile=os.path.join(opts.rpc_ssl_base_url, "cert.pem"),
+                keyfile=os.path.join(opts.rpc_ssl_base_url, "key.pem")
+            )
+            ssl_context.check_hostname = False
+        logger.info("Starting listening on RPC {}:{} SSL:{}",
+                    opts.rpc_host, opts.rpc_port, opts.rpc_use_ssl)
+        site = TCPSite(self._runner, opts.rpc_host, opts.rpc_port, ssl_context=ssl_context)
         self._site = site
         await site.start()

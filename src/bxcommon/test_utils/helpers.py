@@ -243,12 +243,14 @@ def get_common_opts(
     sid_expire_time: int = 30,
     rpc: bool = False,
     transaction_validation: bool = True,
+    rpc_use_ssl: bool = False,
     **kwargs,
 ) -> CommonOpts:
     if node_id is None:
         node_id = f"Node at {port}"
     if outbound_peers is None:
         outbound_peers = []
+
     arg_parser = argparse.ArgumentParser(add_help=False)
     cli.add_argument_parser_logging(arg_parser, default_log_level=LogLevel.DEBUG)
     opts = arg_parser.parse_args([])
@@ -277,6 +279,8 @@ def get_common_opts(
             "rpc_host": constants.LOCALHOST,
             "rpc_user": "",
             "rpc_password": "",
+            "rpc_use_ssl": rpc_use_ssl,
+            "rpc_ssl_base_url": "",
             "continent": continent,
             "country": country,
             "region": region,
@@ -295,6 +299,7 @@ def get_common_opts(
             "transaction_validation": transaction_validation,
         }
     )
+
     for key, val in kwargs.items():
         opts.__dict__[key] = val
     common_opts = CommonOpts.from_opts(opts)

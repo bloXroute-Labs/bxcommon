@@ -71,6 +71,8 @@ class CommonOpts:
     rpc_host: str
     rpc_user: str
     rpc_password: str
+    rpc_use_ssl: bool
+    rpc_ssl_base_url: str
 
     # set by node runner
     blockchain_networks: Dict[int, BlockchainNetworkModel]
