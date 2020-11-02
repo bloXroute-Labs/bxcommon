@@ -15,17 +15,17 @@ from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServi
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
-from bxcommon.messages.bloxroute.v13.pong_message_v13 import PongMessageV13
-from bxcommon.messages.bloxroute.v9.bdn_performance_stats_message_v9 import BdnPerformanceStatsMessageV9
+from bxcommon.messages.bloxroute.v16.bdn_performance_stats_message_v16 import \
+    BdnPerformanceStatsMessageV16
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
-class BloxrouteVersionManagerV9Test(
+class BloxrouteVersionManagerV16Test(
     AbstractBloxrouteVersionManagerTest[
         HelloMessage,
         AckMessage,
         PingMessage,
-        PongMessageV13,
+        PongMessage,
         BroadcastMessage,
         TxMessage,
         GetTxsMessage,
@@ -38,24 +38,28 @@ class BloxrouteVersionManagerV9Test(
         BlockConfirmationMessage,
         TransactionCleanupMessage,
         NotificationMessage,
-        BdnPerformanceStatsMessageV9,
+        BdnPerformanceStatsMessageV16
     ]
 ):
 
     def version_to_test(self) -> int:
-        return 9
+        return 16
 
     def old_bdn_performance_stats_message(
         self, original_message: BdnPerformanceStatsMessage
-    ) -> BdnPerformanceStatsMessageV9:
+    ) -> BdnPerformanceStatsMessageV16:
         _, single_node_stats = next(iter(original_message.node_stats().items()))
-        return BdnPerformanceStatsMessageV9(
+        return BdnPerformanceStatsMessageV16(
             original_message.interval_start_time(),
             original_message.interval_end_time(),
             single_node_stats.new_blocks_received_from_blockchain_node,
             single_node_stats.new_blocks_received_from_bdn,
             single_node_stats.new_tx_received_from_blockchain_node,
             single_node_stats.new_tx_received_from_bdn,
+            original_message.memory_utilization(),
+            single_node_stats.new_blocks_seen,
+            single_node_stats.new_block_messages_from_blockchain_node,
+            single_node_stats.new_block_announcements_from_blockchain_node
         )
 
     def compare_bdn_performance_stats_old_to_current(
@@ -69,6 +73,7 @@ class BloxrouteVersionManagerV9Test(
             [
                 "interval_start_time",
                 "interval_end_time",
+                "memory_utilization"
             ],
         )
         converted_node_stats = converted_current_message.node_stats()
@@ -91,10 +96,15 @@ class BloxrouteVersionManagerV9Test(
             converted_single_node_stats.new_tx_received_from_bdn,
             original_single_node_stats.new_tx_received_from_bdn
         )
-        self.assertEqual(0, converted_single_node_stats.new_blocks_seen)
-        self.assertEqual(0, converted_single_node_stats.new_block_messages_from_blockchain_node)
-        self.assertEqual(0, converted_single_node_stats.new_block_announcements_from_blockchain_node)
-        self.assertEqual(0, converted_current_message.memory_utilization())
-
-    def old_pong_message(self, original_message: PongMessage) -> PongMessageV13:
-        return PongMessageV13(original_message.nonce())
+        self.assertEqual(
+            converted_single_node_stats.new_blocks_seen,
+            original_single_node_stats.new_blocks_seen
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_block_messages_from_blockchain_node,
+            original_single_node_stats.new_block_messages_from_blockchain_node
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_block_announcements_from_blockchain_node,
+            original_single_node_stats.new_block_announcements_from_blockchain_node
+        )

@@ -5,7 +5,7 @@ import socket
 import sys
 import uuid
 from contextlib import closing
-from typing import Optional, TypeVar, Type, TYPE_CHECKING, List
+from typing import Optional, TypeVar, Type, TYPE_CHECKING, List, Dict
 
 from mock import MagicMock
 
@@ -13,11 +13,13 @@ from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.messages.abstract_block_message import AbstractBlockMessage
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsData
 from bxcommon.models.authenticated_peer_info import AuthenticatedPeerInfo
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
@@ -464,3 +466,26 @@ def create_block_message(
     if previous_block_hash is None:
         previous_block_hash = Sha256Hash(generate_hash())
     return TestBlockMessage(previous_block_hash, block_hash)
+
+
+def add_stats_to_node_stats(
+    node_stats: Dict[IpEndpoint, BdnPerformanceStatsData],
+    ip: str,
+    port: int,
+    new_blocks_from_node: int,
+    new_blocks_from_bdn: int,
+    new_tx_from_node: int,
+    new_tx_from_bdn: int,
+    new_blocks_seen: int,
+    new_block_messages_from_node: int,
+    new_block_announcements_from_node: int
+) -> None:
+    new_node_stats = BdnPerformanceStatsData()
+    new_node_stats.new_blocks_received_from_blockchain_node = new_blocks_from_node
+    new_node_stats.new_blocks_received_from_bdn = new_blocks_from_bdn
+    new_node_stats.new_blocks_seen = new_blocks_seen
+    new_node_stats.new_block_messages_from_blockchain_node = new_block_messages_from_node
+    new_node_stats.new_block_announcements_from_blockchain_node = new_block_announcements_from_node
+    new_node_stats.new_tx_received_from_blockchain_node = new_tx_from_node
+    new_node_stats.new_tx_received_from_bdn = new_tx_from_bdn
+    node_stats[IpEndpoint(ip, port)] = new_node_stats

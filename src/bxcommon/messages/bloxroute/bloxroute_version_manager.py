@@ -22,6 +22,8 @@ from bxcommon.messages.bloxroute.v14.bloxroute_message_factory_v14 import bloxro
 from bxcommon.messages.bloxroute.v14.message_converter_factory_v14 import message_converter_factory_v14
 from bxcommon.messages.bloxroute.v15.bloxroute_message_factory_v15 import bloxroute_message_factory_v15
 from bxcommon.messages.bloxroute.v15.message_converter_factory_v15 import message_converter_factory_v15
+from bxcommon.messages.bloxroute.v16.bloxroute_message_factory_v16 import bloxroute_message_factory_v16
+from bxcommon.messages.bloxroute.v16.message_converter_factory_v16 import message_converter_factory_v16
 from bxcommon.messages.versioning.abstract_version_manager import AbstractVersionManager
 
 
@@ -40,7 +42,7 @@ class _BloxrouteVersionManager(AbstractVersionManager):
         13: message_converter_factory_v13,
         14: message_converter_factory_v14,
         15: message_converter_factory_v15,
-
+        16: message_converter_factory_v16
     }
     _PROTOCOL_TO_FACTORY_MAPPING = {
         6: bloxroute_message_factory_v6,
@@ -53,7 +55,8 @@ class _BloxrouteVersionManager(AbstractVersionManager):
         13: bloxroute_message_factory_v13,
         14: bloxroute_message_factory_v14,
         15: bloxroute_message_factory_v15,
-        16: bloxroute_message_factory
+        16: bloxroute_message_factory_v16,
+        17: bloxroute_message_factory
     }
 
     def __init__(self) -> None:

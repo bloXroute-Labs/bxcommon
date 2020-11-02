@@ -10,7 +10,8 @@ from bxcommon.constants import UL_INT_SIZE_IN_BYTES, NETWORK_NUM_LEN, NODE_ID_SI
 from bxcommon.exceptions import PayloadLenError
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
-from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
+from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage, \
+    BdnPerformanceStatsData
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
 from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
@@ -34,6 +35,7 @@ from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.models.entity_type_model import EntityType
 from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.models.transaction_info import TransactionInfo
+from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.helpers import create_input_buffer_with_bytes
 from bxcommon.test_utils.message_factory_test_case import MessageFactoryTestCase
@@ -126,11 +128,53 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                len(tx.contents) for tx in txs) + constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(TxsMessage(txs), TxsMessage.MESSAGE_TYPE, expected_length)
 
-        expected_length = (2 * constants.DOUBLE_SIZE_IN_BYTES) + (3 * constants.UL_SHORT_SIZE_IN_BYTES) + \
-                          (5 * constants.UL_INT_SIZE_IN_BYTES) + constants.CONTROL_FLAGS_LEN
+        expected_length = (2 * constants.DOUBLE_SIZE_IN_BYTES) + (5 * constants.UL_SHORT_SIZE_IN_BYTES) + \
+                          (5 * constants.UL_INT_SIZE_IN_BYTES) + constants.IP_ADDR_SIZE_IN_BYTES + \
+                          constants.CONTROL_FLAGS_LEN
+        node_stats = {}
+        helpers.add_stats_to_node_stats(
+            node_stats,
+            "127.0.0.1", 8001,
+            200, 300, 400, 500, 600, 700, 800
+        )
         self.get_message_preview_successfully(
             BdnPerformanceStatsMessage(
-                datetime.utcnow(), datetime.utcnow(), 100, 200, 300, 400, 500, 600, 700, 800
+                datetime.utcnow(), datetime.utcnow(), 100, node_stats
+            ),
+            BdnPerformanceStatsMessage.MESSAGE_TYPE,
+            expected_length
+        )
+
+        # multi node bdn stats message
+        expected_length = (constants.CONTROL_FLAGS_LEN +
+                           (2 * constants.DOUBLE_SIZE_IN_BYTES) +       # start/end time
+                           constants.UL_SHORT_SIZE_IN_BYTES +           # memory
+                           constants.UL_SHORT_SIZE_IN_BYTES +           # num blockchain peers
+                           (3 *                                         # num blockchain peers
+                            (constants.IP_ADDR_SIZE_IN_BYTES +          # ip
+                            constants.UL_SHORT_SIZE_IN_BYTES +          # port
+                            (2 * constants.UL_SHORT_SIZE_IN_BYTES) +    # original block stats
+                            (5 * constants.UL_INT_SIZE_IN_BYTES))))     # rest of stats
+
+        node_stats = {}
+        helpers.add_stats_to_node_stats(
+            node_stats,
+            "127.0.0.1", 8001,
+            200, 300, 400, 500, 600, 700, 800
+        )
+        helpers.add_stats_to_node_stats(
+            node_stats,
+            "127.0.0.2", 8002,
+            200, 300, 400, 500, 600, 700, 800
+        )
+        helpers.add_stats_to_node_stats(
+            node_stats,
+            "127.0.0.3", 8003,
+            200, 300, 400, 500, 600, 700, 800
+        )
+        self.get_message_preview_successfully(
+            BdnPerformanceStatsMessage(
+                datetime.utcnow(), datetime.utcnow(), 100, node_stats
             ),
             BdnPerformanceStatsMessage.MESSAGE_TYPE,
             expected_length
@@ -487,41 +531,140 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
             "Please visit https://portal.bloxroute.com to renew your subscription."
         )
 
-    def test_bdn_performance_stats_message(self):
+    def test_bdn_performance_stats_message_one_node(self):
         start_time = datetime.utcnow()
-        new_blocks_received_from_blockchain_node = 100
-        new_blocks_received_from_bdn = 200
-        new_tx_received_from_blockchain_node = 300
-        new_tx_received_from_bdn = constants.UNSIGNED_SHORT_MAX_VALUE + 1  # unsigned short max (0xffff) + 1
         memory_utilization_mb = 700
-        new_blocks_seen = 800
-        new_block_messages = 900
-        new_block_announcements = 1000
+        node_1_bdn_stats = BdnPerformanceStatsData()
+        node_1_bdn_stats.new_blocks_received_from_blockchain_node = 100
+        node_1_bdn_stats.new_blocks_received_from_bdn = 200
+        node_1_bdn_stats.new_tx_received_from_blockchain_node = 300
+        node_1_bdn_stats.new_tx_received_from_bdn = constants.UNSIGNED_SHORT_MAX_VALUE + 1  # unsigned short max (0xffff) + 1
+        node_1_bdn_stats.new_blocks_seen = 800
+        node_1_bdn_stats.new_block_messages_from_blockchain_node = 900
+        node_1_bdn_stats.new_block_announcements_from_blockchain_node = 1000
         end_time = datetime.utcnow()
+
+        node_stats = {}
+        node_1_ip = "127.0.0.1"
+        node_1_port = 8001
+        node_stats[IpEndpoint(node_1_ip, node_1_port)] = node_1_bdn_stats
 
         bdn_stats_msg = self.create_message_successfully(
             BdnPerformanceStatsMessage(
                 start_time,
                 end_time,
-                new_blocks_received_from_blockchain_node,
-                new_blocks_received_from_bdn,
-                new_tx_received_from_blockchain_node,
-                new_tx_received_from_bdn,
                 memory_utilization_mb,
-                new_blocks_seen,
-                new_block_messages,
-                new_block_announcements
+                node_stats
             ),
-
             BdnPerformanceStatsMessage)
 
+        ip_endpoint, stats = bdn_stats_msg.node_stats().popitem()
         self.assertEqual(start_time, bdn_stats_msg.interval_start_time())
         self.assertEqual(end_time, bdn_stats_msg.interval_end_time())
-        self.assertEqual(new_blocks_received_from_blockchain_node, bdn_stats_msg.new_blocks_from_blockchain_node())
-        self.assertEqual(new_blocks_received_from_bdn, bdn_stats_msg.new_blocks_from_bdn())
-        self.assertEqual(new_tx_received_from_blockchain_node, bdn_stats_msg.new_tx_from_blockchain_node())
-        self.assertEqual(new_tx_received_from_bdn, bdn_stats_msg.new_tx_from_bdn())
+        self.assertEqual(
+            node_1_bdn_stats.new_blocks_received_from_blockchain_node,
+            stats.new_blocks_received_from_blockchain_node
+        )
+        self.assertEqual(node_1_bdn_stats.new_blocks_received_from_bdn, stats.new_blocks_received_from_bdn)
+        self.assertEqual(
+            node_1_bdn_stats.new_tx_received_from_blockchain_node,
+            stats.new_tx_received_from_blockchain_node
+        )
+        self.assertEqual(node_1_bdn_stats.new_tx_received_from_bdn, stats.new_tx_received_from_bdn)
         self.assertEqual(memory_utilization_mb, bdn_stats_msg.memory_utilization())
-        self.assertEqual(new_blocks_seen, bdn_stats_msg.new_blocks_seen())
-        self.assertEqual(new_block_messages, bdn_stats_msg.new_block_messages_from_blockchain_node())
-        self.assertEqual(new_block_announcements, bdn_stats_msg.new_block_announcements_from_blockchain_node())
+        self.assertEqual(node_1_bdn_stats.new_blocks_seen, stats.new_blocks_seen)
+        self.assertEqual(
+            node_1_bdn_stats.new_block_messages_from_blockchain_node,
+            stats.new_block_messages_from_blockchain_node
+        )
+        self.assertEqual(
+            node_1_bdn_stats.new_block_announcements_from_blockchain_node,
+            stats.new_block_announcements_from_blockchain_node
+        )
+        self.assertEqual(node_1_ip, ip_endpoint.ip_address)
+        self.assertEqual(node_1_port, ip_endpoint.port)
+
+    def test_bdn_performance_stats_message_multi_node(self):
+        node_stats = {}
+
+        start_time = datetime.utcnow()
+        memory_utilization_mb = 800
+        node_1_bdn_stats = BdnPerformanceStatsData()
+        node_1_bdn_stats.new_blocks_received_from_blockchain_node = 200
+        node_1_bdn_stats.new_blocks_received_from_bdn = 300
+        node_1_bdn_stats.new_tx_received_from_blockchain_node = 400
+        node_1_bdn_stats.new_tx_received_from_bdn = constants.UNSIGNED_SHORT_MAX_VALUE + 1  # unsigned short max (0xffff) + 1
+        node_1_bdn_stats.new_blocks_seen = 700
+        node_1_bdn_stats.new_block_messages_from_blockchain_node = 200
+        node_1_bdn_stats.new_block_announcements_from_blockchain_node = 900
+        end_time = datetime.utcnow()
+        node_1_ip = "127.0.0.1"
+        node_1_port = 8001
+
+        node_2_bdn_stats = BdnPerformanceStatsData()
+        node_2_bdn_stats.new_blocks_received_from_blockchain_node = 100
+        node_2_bdn_stats.new_blocks_received_from_bdn = 200
+        node_2_bdn_stats.new_tx_received_from_blockchain_node = 300
+        node_2_bdn_stats.new_tx_received_from_bdn = constants.UNSIGNED_SHORT_MAX_VALUE + 1  # unsigned short max (0xffff) + 1
+        node_2_bdn_stats.new_blocks_seen = 800
+        node_2_bdn_stats.new_block_messages_from_blockchain_node = 900
+        node_2_bdn_stats.new_block_announcements_from_blockchain_node = 1000
+        node_2_ip = "127.0.0.2"
+        node_2_port = 8002
+
+        node_stats[IpEndpoint(node_1_ip, node_1_port)] = node_1_bdn_stats
+        node_stats[IpEndpoint(node_2_ip, node_2_port)] = node_2_bdn_stats
+
+        bdn_stats_msg = self.create_message_successfully(
+            BdnPerformanceStatsMessage(
+                start_time,
+                end_time,
+                memory_utilization_mb,
+                node_stats
+            ),
+            BdnPerformanceStatsMessage)
+
+        stats = bdn_stats_msg.node_stats()[IpEndpoint(node_1_ip, node_1_port)]
+        self.assertEqual(start_time, bdn_stats_msg.interval_start_time())
+        self.assertEqual(end_time, bdn_stats_msg.interval_end_time())
+        self.assertEqual(memory_utilization_mb, bdn_stats_msg.memory_utilization())
+        self.assertEqual(
+            node_1_bdn_stats.new_blocks_received_from_blockchain_node,
+            stats.new_blocks_received_from_blockchain_node
+        )
+        self.assertEqual(node_1_bdn_stats.new_blocks_received_from_bdn, stats.new_blocks_received_from_bdn)
+        self.assertEqual(
+            node_1_bdn_stats.new_tx_received_from_blockchain_node,
+            stats.new_tx_received_from_blockchain_node
+        )
+        self.assertEqual(node_1_bdn_stats.new_tx_received_from_bdn, stats.new_tx_received_from_bdn)
+        self.assertEqual(node_1_bdn_stats.new_blocks_seen, stats.new_blocks_seen)
+        self.assertEqual(
+            node_1_bdn_stats.new_block_messages_from_blockchain_node,
+            stats.new_block_messages_from_blockchain_node
+        )
+        self.assertEqual(
+            node_1_bdn_stats.new_block_announcements_from_blockchain_node,
+            stats.new_block_announcements_from_blockchain_node
+        )
+
+        stats = bdn_stats_msg.node_stats()[IpEndpoint(node_2_ip, node_2_port)]
+        self.assertEqual(
+            node_2_bdn_stats.new_blocks_received_from_blockchain_node,
+            stats.new_blocks_received_from_blockchain_node
+        )
+        self.assertEqual(node_2_bdn_stats.new_blocks_received_from_bdn, stats.new_blocks_received_from_bdn)
+        self.assertEqual(
+            node_2_bdn_stats.new_tx_received_from_blockchain_node,
+            stats.new_tx_received_from_blockchain_node
+        )
+        self.assertEqual(node_2_bdn_stats.new_tx_received_from_bdn, stats.new_tx_received_from_bdn)
+        self.assertEqual(node_2_bdn_stats.new_blocks_seen, stats.new_blocks_seen)
+        self.assertEqual(
+            node_2_bdn_stats.new_block_messages_from_blockchain_node,
+            stats.new_block_messages_from_blockchain_node
+        )
+        self.assertEqual(
+            node_2_bdn_stats.new_block_announcements_from_blockchain_node,
+            stats.new_block_announcements_from_blockchain_node
+        )

@@ -5,15 +5,15 @@ from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.messages.bloxroute.v14.bdn_performance_stats_message_v14 import \
-    BdnPerformanceStatsMessageV14
+from bxcommon.messages.bloxroute.v16.bdn_performance_stats_message_v16 import \
+    BdnPerformanceStatsMessageV16
 from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 from bxcommon.utils.stats import message_utils
 
 
-class _BdnPerformanceStatsMessageConverterV14(AbstractMessageConverter):
+class _BdnPerformanceStatsMessageConverterV16(AbstractMessageConverter):
     _MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING = {
-        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV14
+        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV16
     }
 
     _MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING = {
@@ -43,10 +43,15 @@ class _BdnPerformanceStatsMessageConverterV14(AbstractMessageConverter):
     )
     _MEMORY_UTILIZATION_LENGTH = _MEMORY_UTILIZATION_BREAKPOINT - _FIRST_STATS_SETS_BREAKPOINT
 
-    _OLD_MESSAGE_LEN = BdnPerformanceStatsMessageV14.MSG_SIZE
+    _SECOND_STATS_SET_BREAKPOINT = (
+        _MEMORY_UTILIZATION_BREAKPOINT +
+        (3 * constants.UL_INT_SIZE_IN_BYTES)
+    )
+    _SECOND_STATS_SET_LENGTH = _SECOND_STATS_SET_BREAKPOINT - _MEMORY_UTILIZATION_BREAKPOINT
+
+    _OLD_MESSAGE_LEN = BdnPerformanceStatsMessageV16.MSG_SIZE
     _NEW_MESSAGE_LEN = (
-        BdnPerformanceStatsMessageV14.MSG_SIZE +
-        (3 * constants.UL_INT_SIZE_IN_BYTES) +
+        BdnPerformanceStatsMessageV16.MSG_SIZE +
         constants.IP_ADDR_SIZE_IN_BYTES +
         (2 * constants.UL_SHORT_SIZE_IN_BYTES)
     )
@@ -59,7 +64,7 @@ class _BdnPerformanceStatsMessageConverterV14(AbstractMessageConverter):
 
         if msg_type not in self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING:
             raise ValueError(
-                f"Tried to convert unexpected old message type from v15: {msg_type}"
+                f"Tried to convert unexpected old message type from v16: {msg_type}"
             )
 
         new_msg_class = self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING[msg_type]
@@ -89,15 +94,13 @@ class _BdnPerformanceStatsMessageConverterV14(AbstractMessageConverter):
             ]
         off += self._FIRST_STATS_SETS_LENGTH
 
-        default_new_stats = 0
-        struct.pack_into("<I", new_msg_bytes, off, default_new_stats)
-        off += constants.UL_INT_SIZE_IN_BYTES
-        struct.pack_into("<I", new_msg_bytes, off, default_new_stats)
-        off += constants.UL_INT_SIZE_IN_BYTES
-        struct.pack_into("<I", new_msg_bytes, off, default_new_stats)
-        off += constants.UL_INT_SIZE_IN_BYTES
+        new_msg_bytes[off:off + self._SECOND_STATS_SET_LENGTH] = \
+            msg.rawbytes()[
+                self._MEMORY_UTILIZATION_BREAKPOINT:self._MEMORY_UTILIZATION_BREAKPOINT + self._SECOND_STATS_SET_LENGTH
+            ]
+        off += self._SECOND_STATS_SET_LENGTH
 
-        new_msg_bytes[off:] = msg.rawbytes()[self._FIRST_STATS_SETS_BREAKPOINT:]
+        new_msg_bytes[off:] = msg.rawbytes()[self._SECOND_STATS_SET_BREAKPOINT:]
 
         return AbstractBloxrouteMessage.initialize_class(
             new_msg_class,
@@ -139,4 +142,4 @@ class _BdnPerformanceStatsMessageConverterV14(AbstractMessageConverter):
         return self._LENGTH_DIFFERENCE
 
 
-bdn_performance_stats_message_converter_v14 = _BdnPerformanceStatsMessageConverterV14()
+bdn_performance_stats_message_converter_v16 = _BdnPerformanceStatsMessageConverterV16()

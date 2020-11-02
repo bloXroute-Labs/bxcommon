@@ -218,17 +218,17 @@ class AbstractBloxrouteVersionManagerTest(
         )
 
     def bdn_performance_stats_message(self) -> BdnPerformanceStatsMessage:
+        node_stats = {}
+        helpers.add_stats_to_node_stats(
+            node_stats,
+            "127.0.0.1", 8001,
+            20, 30, 40, 50, 10, 10, 20
+        )
         return BdnPerformanceStatsMessage(
             datetime.utcnow(),
             datetime.utcnow(),
             100,
-            200,
-            300,
-            400,
-            500,
-            10,
-            10,
-            20
+            node_stats
         )
 
     # </editor-fold>
@@ -745,12 +745,9 @@ class AbstractBloxrouteVersionManagerTest(
         current_message = self.bdn_performance_stats_message()
         old_message = self.old_bdn_performance_stats_message(current_message)
 
-        current_to_old_message = self._convert_to_older_version(current_message, old_message)
         old_to_current_message = cast(
             M16, self._convert_to_current_version(old_message, current_message)
         )
-
-        self.compare_bdn_performance_stats_current_to_old(current_to_old_message, old_message)
         self.compare_bdn_performance_stats_old_to_current(old_to_current_message, current_message)
 
     # </editor-fold>
