@@ -20,7 +20,7 @@ def contents_cleanup(
             removal_reason=TxRemovalReason.BLOCK_CLEANUP
         )
     for tx_hash in block_confirmation_message.transaction_hashes():
-        transaction_service.remove_transaction_by_key(transaction_service.get_transaction_key(tx_hash), force=True)
+        transaction_service.remove_transaction_by_tx_hash(tx_hash, force=True)
     transaction_service.on_block_cleaned_up(message_hash)
     logger.statistics(
         {

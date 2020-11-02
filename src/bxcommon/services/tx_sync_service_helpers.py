@@ -23,16 +23,16 @@ def create_txs_service_msg(
     txs_content_short_ids: List[TxContentShortIds] = []
     txs_msg_len = 0
     while tx_service_snap:
-        transaction_key = transaction_service.get_transaction_key(tx_service_snap.pop())
-        short_ids = list(transaction_service.get_short_ids_by_key(transaction_key))
+        tx_hash = tx_service_snap.pop()
+        short_ids = list(transaction_service.get_short_ids(tx_hash))
         if sync_tx_content:
-            tx_content = transaction_service.get_transaction_by_key(transaction_key)
+            tx_content = transaction_service.get_transaction_by_hash(tx_hash)
         else:
             tx_content = bytearray(0)
         # TODO: evaluate short id quota type flag value
         short_id_flags = [transaction_service.get_short_id_transaction_type(short_id) for short_id in short_ids]
         tx_content_short_ids: TxContentShortIds = TxContentShortIds(
-            transaction_key.transaction_hash,
+            tx_hash,
             tx_content,
             short_ids,
             short_id_flags
@@ -65,23 +65,19 @@ def create_txs_service_msg_from_time(
         if timestamp > start_time:
             cache_key = transaction_service._short_id_to_tx_cache_key.get(short_id, None)
             if cache_key is not None:
-                transaction_key = transaction_service.get_transaction_key(None, cache_key)
                 if cache_key not in snapshot_cache_keys:
-                    snapshot_cache_keys.add(transaction_key.transaction_cache_key)
-                    short_ids = list(
-                        transaction_service._tx_cache_key_to_short_ids[transaction_key.transaction_cache_key]
-                    )
-                    if sync_tx_content and transaction_service.has_transaction_contents_by_key(transaction_key):
-                        tx_content = transaction_service._tx_cache_key_to_contents[
-                            transaction_key.transaction_cache_key
-                        ]
+                    snapshot_cache_keys.add(cache_key)
+                    tx_hash = transaction_service._tx_cache_key_to_hash(cache_key)
+                    short_ids = list(transaction_service._tx_cache_key_to_short_ids[cache_key])
+                    if sync_tx_content and transaction_service.has_transaction_contents_by_cache_key(cache_key):
+                        tx_content = transaction_service._tx_cache_key_to_contents[cache_key]
                     else:
                         tx_content = bytearray(0)
                     short_id_flags = [
                         transaction_service.get_short_id_transaction_type(short_id) for short_id in short_ids
                     ]
                     tx_content_short_ids: TxContentShortIds = TxContentShortIds(
-                        transaction_key.transaction_hash,
+                        tx_hash,
                         tx_content,
                         short_ids,
                         short_id_flags

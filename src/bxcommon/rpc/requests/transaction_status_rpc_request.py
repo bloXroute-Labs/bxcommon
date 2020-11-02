@@ -55,17 +55,16 @@ class TransactionStatusRpcRequest(AbstractRpcRequest[Node]):
         assert transaction_hash is not None
 
         transaction_service = self.node.get_tx_service(self.get_network_num())
-        transaction_key = transaction_service.get_transaction_key(transaction_hash)
 
         status = "unknown"
         short_ids = []
         assigned_time = "n/a"
-        if transaction_service.has_transaction_contents_by_key(transaction_key):
+        if transaction_service.has_transaction_contents(transaction_hash):
             status = "pending short ID"
 
-        if transaction_service.has_transaction_short_id_by_key(transaction_key):
+        if transaction_service.has_transaction_short_id(transaction_hash):
             status = "assigned short ID"
-            short_ids = transaction_service.get_short_ids_by_key(transaction_key)
+            short_ids = transaction_service.get_short_ids(transaction_hash)
             most_recent_timestamp = max([
                 transaction_service.get_short_id_assign_time(short_id)
                 for short_id in short_ids

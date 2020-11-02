@@ -17,10 +17,8 @@ from bxcommon.messages.bloxroute import short_ids_serializer
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
-from bxcommon.models.transaction_key import TransactionKey, TransactionCacheKeyType
 from bxcommon.utils import memory_utils, convert
 from bxcommon.utils.crypto import SHA256_HASH_LEN
-from bxcommon.utils.deprecated import deprecated
 from bxcommon.utils.expiration_queue import ExpirationQueue
 from bxcommon.utils.memory_utils import ObjectSize
 from bxcommon.utils.object_hash import Sha256Hash
@@ -35,6 +33,7 @@ from bxutils.logging.log_record_type import LogRecordType
 if TYPE_CHECKING:
     # pylint: disable=ungrouped-imports,cyclic-import
     from bxcommon.connections.abstract_node import AbstractNode
+    from task_pool_executor import Sha256 as tpe_Sha256
 else:
     tpe_Sha256 = Any
 
@@ -53,6 +52,8 @@ total_cached_transactions_size = Gauge(
     "Size of cached transactions",
     ("network",)
 )
+
+TransactionCacheKeyType = Union[Sha256Hash, bytes, bytearray, memoryview, str, tpe_Sha256]
 
 
 def wrap_sha256(transaction_hash: Union[bytes, bytearray, memoryview, Sha256Hash]) -> Sha256Hash:
@@ -162,6 +163,7 @@ class TransactionService:
         :param node: reference to node object
         :param network_num: network number
         """
+
         if node is None:
             raise ValueError("Node is required")
 
@@ -231,7 +233,6 @@ class TransactionService:
         if TransactionFlag.PAID_TX & tx_flag:
             self._short_id_to_tx_flag[short_id] = tx_flag
 
-    @deprecated
     def get_short_id(self, transaction_hash: Sha256Hash) -> int:
         """
         Fetches a single short id for transaction. If the transaction has multiple short id mappings, just gets
@@ -239,35 +240,18 @@ class TransactionService:
         :param transaction_hash: transaction long hash
         :return: short id
         """
-        return self.get_short_id_by_key(self.get_transaction_key(transaction_hash))
+        return next(iter(self.get_short_ids(transaction_hash)))
 
-    def get_short_id_by_key(self, transaction_key: TransactionKey) -> int:
-        """
-        Fetches a single short id for transaction. If the transaction has multiple short id mappings, just gets
-        the first one.
-        :param transaction_key: transaction key
-        :return: short id
-        """
-        return next(iter(self.get_short_ids_by_key(transaction_key)))
-
-    @deprecated
     def get_short_ids(self, transaction_hash: Sha256Hash) -> Set[int]:
         """
         Fetches all short ids for a given transactions
         :param transaction_hash: transaction long hash
         :return: set of short ids
         """
-        return self.get_short_ids_by_key(self.get_transaction_key(transaction_hash))
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
 
-    def get_short_ids_by_key(self, transaction_key: TransactionKey) -> Set[int]:
-        """
-        Fetches all short ids for a given transactions
-        :param transaction_key: transaction key
-        :return: set of short ids
-        """
-
-        if transaction_key.transaction_cache_key in self._tx_cache_key_to_short_ids:
-            return self._tx_cache_key_to_short_ids[transaction_key.transaction_cache_key]
+        if transaction_cache_key in self._tx_cache_key_to_short_ids:
+            return self._tx_cache_key_to_short_ids[transaction_cache_key]
         else:
             return constants.NULL_TX_SIDS
 
@@ -302,13 +286,12 @@ class TransactionService:
                 unknown_tx_sids.append(short_id)
                 has_missing = True
                 continue
-            transaction_key = self.get_transaction_key(None, transaction_cache_key)
-            if not self.has_transaction_contents_by_key(transaction_key):
-                unknown_tx_hashes.append(transaction_key.transaction_hash)
+            transaction_hash = self._tx_cache_key_to_hash(transaction_cache_key)
+            if not self.has_transaction_contents(transaction_hash):
+                unknown_tx_hashes.append(transaction_hash)
                 has_missing = True
         return has_missing, unknown_tx_sids, unknown_tx_hashes
 
-    @deprecated
     def get_transaction_by_hash(self, transaction_hash: Sha256Hash) -> Optional[Union[bytearray, memoryview]]:
         """
         Fetches transaction contents for a given transaction hash.
@@ -316,17 +299,9 @@ class TransactionService:
         :param transaction_hash: transaction hash
         :return: transaction contents.
         """
-        return self.get_transaction_by_key(self.get_transaction_key(transaction_hash))
-
-    def get_transaction_by_key(self, transaction_key: TransactionKey) -> Optional[Union[bytearray, memoryview]]:
-        """
-        Fetches transaction contents for a given transaction key.
-        Results might be None.
-        :param transaction_key: transaction key
-        :return: transaction contents.
-        """
-        if transaction_key.transaction_cache_key in self._tx_cache_key_to_contents:
-            return self._tx_cache_key_to_contents[transaction_key.transaction_cache_key]
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        if transaction_cache_key in self._tx_cache_key_to_contents:
+            return self._tx_cache_key_to_contents[transaction_cache_key]
 
         return None
 
@@ -375,7 +350,6 @@ class TransactionService:
     def get_short_id_count(self) -> int:
         return len(self._short_id_to_tx_cache_key)
 
-    @deprecated
     def has_transaction_contents(self, transaction_hash: Sha256Hash) -> bool:
         """
         Checks if transaction contents is available in transaction service cache
@@ -383,9 +357,8 @@ class TransactionService:
         :param transaction_hash: transaction hash
         :return: Boolean indicating if transaction contents exists
         """
-        return self.has_transaction_contents_by_key(self.get_transaction_key(transaction_hash))
+        return self.has_transaction_contents_by_cache_key(self._tx_hash_to_cache_key(transaction_hash))
 
-    @deprecated
     def has_transaction_contents_by_cache_key(self, cache_key: TransactionCacheKeyType) -> bool:
         """
         Checks if transaction contents is available in transaction service cache
@@ -395,16 +368,6 @@ class TransactionService:
         """
         return cache_key in self._tx_cache_key_to_contents
 
-    def has_transaction_contents_by_key(self, transaction_key: TransactionKey) -> bool:
-        """
-        Checks if transaction contents is available in transaction service cache
-
-        :param transaction_key: transaction key
-        :return: Boolean indicating if transaction contents exists
-        """
-        return transaction_key.transaction_cache_key in self._tx_cache_key_to_contents
-
-    @deprecated
     def has_transaction_short_id(self, transaction_hash: Sha256Hash) -> bool:
         """
         Checks if transaction short id is available in transaction service cache
@@ -412,16 +375,7 @@ class TransactionService:
         :param transaction_hash: transaction hash
         :return: Boolean indicating if transaction short id exists
         """
-        return self.has_transaction_short_id_by_key(self.get_transaction_key(transaction_hash))
-
-    def has_transaction_short_id_by_key(self, transaction_key: TransactionKey) -> bool:
-        """
-        Checks if transaction short id is available in transaction service cache
-
-        :param transaction_key: transaction key
-        :return: Boolean indicating if transaction short id exists
-        """
-        return transaction_key.transaction_cache_key in self._tx_cache_key_to_short_ids
+        return self._tx_hash_to_cache_key(transaction_hash) in self._tx_cache_key_to_short_ids
 
     def has_short_id(self, short_id: int) -> bool:
         """
@@ -434,16 +388,14 @@ class TransactionService:
     def has_cache_key_no_sid_entry(self, transaction_hash: Sha256Hash) -> bool:
         return transaction_hash in self.tx_hashes_without_short_id.queue
 
-    @deprecated
     def removed_transaction(self, transaction_hash: Sha256Hash) -> bool:
         """
         Check if transaction was seen and removed from cache
         :param transaction_hash: transaction hash
         :return: Boolean indicating in transaction was seen
         """
-        return self.removed_transaction_by_key(self.get_transaction_key(transaction_hash))
+        return self.removed_transaction_by_cache_key(self._tx_hash_to_cache_key(transaction_hash))
 
-    @deprecated
     def removed_transaction_by_cache_key(self, cache_key: TransactionCacheKeyType) -> bool:
         """
         Check if transaction was seen and removed from cache
@@ -452,55 +404,35 @@ class TransactionService:
         """
         return cache_key in self._tx_hash_to_time_removed
 
-    def removed_transaction_by_key(self, transaction_key: TransactionKey) -> bool:
-        """
-        Check if transaction was seen and removed from cache
-        :param transaction_key: transaction key
-        :return: Boolean indicating in transaction was seen
-        """
-        return transaction_key.transaction_cache_key in self._tx_hash_to_time_removed
-
-    @deprecated
     def remove_sid_by_tx_hash(self, transaction_hash: Sha256Hash) -> None:
-        self.remove_sid_by_key(self.get_transaction_key(transaction_hash))
-
-    def remove_sid_by_key(self, transaction_key: TransactionKey) -> None:
-        if transaction_key.transaction_cache_key in self._tx_cache_key_to_contents:
-            logger.trace("attempted to clear sid, for transaction {} with content, ignore", transaction_key)
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        if transaction_cache_key in self._tx_cache_key_to_contents:
+            logger.trace("attempted to clear sid, for transaction {} with content, ignore", transaction_hash)
         else:
-            if transaction_key.transaction_cache_key in self._tx_cache_key_to_short_ids:
-                short_ids = self._tx_cache_key_to_short_ids[transaction_key.transaction_cache_key]
-                del self._tx_cache_key_to_short_ids[transaction_key.transaction_cache_key]
+            if transaction_cache_key in self._tx_cache_key_to_short_ids:
+                short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
+                del self._tx_cache_key_to_short_ids[transaction_cache_key]
                 for short_id in short_ids:
                     del self._short_id_to_tx_cache_key[short_id]
                     self._tx_assignment_expire_queue.remove(short_id)
 
-    @deprecated
     def assign_short_id(
         self,
         transaction_hash: Sha256Hash,
         short_id: int,
         transaction_cache_key: Optional[TransactionCacheKeyType] = None
     ) -> None:
-        return self.assign_short_id_by_key(
-            self.get_transaction_key(transaction_hash, transaction_cache_key),
-            short_id
-        )
-
-    def assign_short_id_by_key(
-        self,
-        transaction_key: TransactionKey,
-        short_id: int,
-    ) -> None:
         """
         Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
-        :param transaction_key: transaction key
+        :param transaction_hash: transaction long hash
         :param short_id: short id to be mapped to transaction
+        :param transaction_cache_key: transaction cache key
         """
-        has_contents = transaction_key.transaction_cache_key in self._tx_cache_key_to_contents
-        self.assign_short_id_base_by_key(transaction_key, short_id, has_contents, True)
+        if not transaction_cache_key:
+            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        has_contents = transaction_cache_key in self._tx_cache_key_to_contents
+        self.assign_short_id_base(transaction_hash, transaction_cache_key, short_id, has_contents, True)
 
-    @deprecated
     def assign_short_id_base(
         self,
         transaction_hash: Sha256Hash,
@@ -509,37 +441,25 @@ class TransactionService:
         has_contents: bool,
         call_to_assign_short_id: bool
     ) -> None:
-        return self.assign_short_id_base_by_key(
-            self.get_transaction_key(transaction_hash, transaction_cache_key),
-            short_id,
-            has_contents,
-            call_to_assign_short_id
-        )
-
-    def assign_short_id_base_by_key(
-        self,
-        transaction_key: TransactionKey,
-        short_id: int,
-        has_contents: bool,
-        call_to_assign_short_id: bool
-    ) -> None:
         """
         Base method to assign short id for a transaction
 
-        :param transaction_key: transaction key object
+        :param transaction_hash: transaction hash
+        :param transaction_cache_key: transaction cache key
         :param short_id: transaction short id
         :param has_contents: flag indicating if content already exists in cache for given transaction
         :param call_to_assign_short_id: flag indicating if method should make a call to assign short id form Python code
         :return:
         """
+
         if short_id == constants.NULL_TX_SID:
             # TODO: this should be an assertion; requires testing
-            logger.warning(log_messages.ATTEMPTED_TO_ASSIGN_NULL_SHORT_ID_TO_TX_HASH, transaction_key)
+            logger.warning(log_messages.ATTEMPTED_TO_ASSIGN_NULL_SHORT_ID_TO_TX_HASH, transaction_hash)
             return
-        logger.trace("Assigning sid {} to transaction {}", short_id, transaction_key)
+        logger.trace("Assigning sid {} to transaction {}", short_id, transaction_hash)
 
         if not has_contents:
-            self.tx_hashes_without_content.add(transaction_key.transaction_hash)
+            self.tx_hashes_without_content.add(transaction_hash)
             if not self.tx_without_content_alarm_scheduled:
                 self.node.alarm_queue.register_alarm(
                     constants.TX_CONTENT_NO_SID_EXPIRE_S,
@@ -548,10 +468,12 @@ class TransactionService:
                 self.tx_without_content_alarm_scheduled = True
 
         if call_to_assign_short_id:
-            self._tx_cache_key_to_short_ids[transaction_key.transaction_cache_key].add(short_id)
-            self._short_id_to_tx_cache_key[short_id] = transaction_key.transaction_cache_key
+            if not transaction_cache_key:
+                transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+            self._tx_cache_key_to_short_ids[transaction_cache_key].add(short_id)
+            self._short_id_to_tx_cache_key[short_id] = transaction_cache_key
         self._tx_assignment_expire_queue.add(short_id)
-        self.tx_hashes_without_short_id.remove(transaction_key.transaction_hash)
+        self.tx_hashes_without_short_id.remove(transaction_hash)
 
         if not self.tx_assign_alarm_scheduled:
             self.node.alarm_queue.register_alarm(self.node.opts.sid_expire_time, self.expire_old_assignments)
@@ -560,33 +482,28 @@ class TransactionService:
     def set_final_tx_confirmations_count(self, val: int) -> None:
         self._final_tx_confirmations_count = val
 
-    @deprecated
     def set_transaction_contents(
         self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview],
         transaction_cache_key: Optional[TransactionCacheKeyType] = None
     ):
-        return self.set_transaction_contents_by_key(
-            self.get_transaction_key(transaction_hash, transaction_cache_key),
-            transaction_contents
-        )
-
-    def set_transaction_contents_by_key(
-        self, transaction_key: TransactionKey, transaction_contents: Union[bytearray, memoryview],
-    ):
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
 
-        :param transaction_key: transaction key object
+        :param transaction_hash: transaction hash
         :param transaction_contents: transaction contents bytes
+        :param transaction_cache_key: transaction cache key optional
         """
         previous_size = 0
+        if not transaction_cache_key:
+            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
 
-        if transaction_key.transaction_cache_key in self._tx_cache_key_to_contents:
-            previous_size = len(self._tx_cache_key_to_contents[transaction_key.transaction_cache_key])
-        has_short_id = transaction_key.transaction_cache_key in self._tx_cache_key_to_short_ids
+        if transaction_cache_key in self._tx_cache_key_to_contents:
+            previous_size = len(self._tx_cache_key_to_contents[transaction_cache_key])
+        has_short_id = transaction_cache_key in self._tx_cache_key_to_short_ids
 
-        self.set_transaction_contents_base_by_key(
-            transaction_key,
+        self.set_transaction_contents_base(
+            transaction_hash,
+            transaction_cache_key,
             has_short_id,
             previous_size,
             True,
@@ -594,7 +511,6 @@ class TransactionService:
             None
         )
 
-    @deprecated
     def set_transaction_contents_base(
         self,
         transaction_hash: Sha256Hash,
@@ -605,28 +521,11 @@ class TransactionService:
         transaction_contents: Optional[Union[bytearray, memoryview]] = None,
         transaction_contents_length: Optional[int] = None
     ) -> None:
-        return self.set_transaction_contents_base_by_key(
-            self.get_transaction_key(transaction_hash, transaction_cache_key),
-            has_short_id,
-            previous_size,
-            call_set_contents,
-            transaction_contents,
-            transaction_contents_length
-        )
-
-    def set_transaction_contents_base_by_key(
-        self,
-        transaction_key: TransactionKey,
-        has_short_id: bool,
-        previous_size: int,
-        call_set_contents: bool,
-        transaction_contents: Optional[Union[bytearray, memoryview]] = None,
-        transaction_contents_length: Optional[int] = None
-    ) -> None:
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
 
-        :param transaction_key:
+        :param transaction_hash: transaction hash
+        :param transaction_cache_key: transaction cache key
         :param has_short_id: flag indicating if cache already has short id for given transaction
         :param previous_size: previous size of transaction contents if already exists
         :param call_set_contents: flag indicating if method should make a call to set content form Python code
@@ -634,18 +533,18 @@ class TransactionService:
         :param transaction_contents_length: if the transaction contents bytes not available, just send the length
         """
         if not has_short_id:
-            self.tx_hashes_without_short_id.add(transaction_key.transaction_hash)
+            self.tx_hashes_without_short_id.add(transaction_hash)
             if not self.tx_content_without_sid_alarm_scheduled:
                 self.node.alarm_queue.register_alarm(constants.TX_CONTENT_NO_SID_EXPIRE_S,
                                                      self.expire_content_without_sid)
                 self.tx_content_without_sid_alarm_scheduled = True
 
-        self.tx_hashes_without_content.remove(transaction_key.transaction_hash)
+        self.tx_hashes_without_content.remove(transaction_hash)
 
         if transaction_contents is not None:
             self._total_tx_contents_size += len(transaction_contents) - previous_size
             if call_set_contents:
-                self._tx_cache_key_to_contents[transaction_key.transaction_cache_key] = transaction_contents
+                self._tx_cache_key_to_contents[transaction_cache_key] = transaction_contents
         elif transaction_contents_length is not None:
             self._total_tx_contents_size += transaction_contents_length - previous_size
         else:
@@ -653,35 +552,27 @@ class TransactionService:
 
         self._memory_limit_clean_up()
 
-    @deprecated
     def remove_transaction_by_tx_hash(
         self,
         transaction_hash: Sha256Hash,
         force: bool = True,
         assume_no_sid: bool = False
     ) -> Optional[Set[int]]:
-        return self.remove_transaction_by_key(self.get_transaction_key(transaction_hash), force, assume_no_sid)
-
-    def remove_transaction_by_key(
-        self,
-        transaction_key: TransactionKey,
-        force: bool = True,
-        assume_no_sid: bool = False
-    ) -> Optional[Set[int]]:
         """
         Clean up mapping. Removes transaction contents and mapping.
-        :param transaction_key: tx key to clean up
+        :param transaction_hash: tx hash to clean up
         :param force: when false, cleanup will ignore tx / sids marked with tx flag
         :param assume_no_sid: cleanup request will be ignored if the tx has short ids
         """
+        transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
         removed_sids = 0
         removed_txns = 0
 
-        if transaction_key.transaction_cache_key in self._tx_cache_key_to_short_ids:
+        if transaction_cache_key in self._tx_cache_key_to_short_ids:
             time_removed = time.time()
-            short_ids = self._tx_cache_key_to_short_ids[transaction_key.transaction_cache_key]
+            short_ids = self._tx_cache_key_to_short_ids[transaction_cache_key]
             if assume_no_sid and short_ids:
-                logger.trace("removal of tx {} aborted, ", transaction_key)
+                logger.trace("removal of tx {} aborted, ", transaction_hash)
                 return None
             short_id_flags = [
                 self._short_id_to_tx_flag.get(sid, TransactionFlag.NO_FLAGS)
@@ -691,11 +582,11 @@ class TransactionService:
             if TransactionFlag.PAID_TX in tx_flag and not force:
                 return None
             else:
-                short_ids = self._tx_cache_key_to_short_ids.pop(transaction_key.transaction_cache_key)
+                short_ids = self._tx_cache_key_to_short_ids.pop(transaction_cache_key)
 
             for _, short_id in zip(short_id_flags, short_ids):
                 tx_stats.add_tx_by_hash_event(
-                    transaction_key.transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
+                    transaction_hash, TransactionStatEventType.TX_REMOVED_FROM_MEMORY,
                     self.network_num, short_id, reason=TxRemovalReason.BLOCK_CLEANUP.value
                 )
                 self._short_id_to_time_removed[short_id] = time_removed
@@ -710,13 +601,13 @@ class TransactionService:
         else:
             short_ids = None
 
-        if transaction_key.transaction_cache_key in self._tx_cache_key_to_contents:
-            self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_key.transaction_cache_key])
-            del self._tx_cache_key_to_contents[transaction_key.transaction_cache_key]
-            self._tx_hash_to_time_removed[transaction_key.transaction_cache_key] = time.time()
+        if transaction_cache_key in self._tx_cache_key_to_contents:
+            self._total_tx_contents_size -= len(self._tx_cache_key_to_contents[transaction_cache_key])
+            del self._tx_cache_key_to_contents[transaction_cache_key]
+            self._tx_hash_to_time_removed[transaction_cache_key] = time.time()
             removed_txns += 1
 
-        logger.trace("Removed transaction: {}, with {} associated short ids and {} contents.", transaction_key,
+        logger.trace("Removed transaction: {}, with {} associated short ids and {} contents.", transaction_hash,
                      removed_sids, removed_txns)
         return short_ids
 
@@ -1030,21 +921,20 @@ class TransactionService:
         result_items = []
         txs_content_short_ids = msg.txs_content_short_ids()
         for tx_content_short_ids in txs_content_short_ids:
-            transaction_key = self.get_transaction_key(tx_content_short_ids.tx_hash)
-
+            tx_hash = tx_content_short_ids.tx_hash
             tx_content = tx_content_short_ids.tx_content
             tx_content_len = 0
 
             if tx_content:
                 tx_content_len = len(tx_content)
-                self.set_transaction_contents_by_key(transaction_key, tx_content)
+                self.set_transaction_contents(tx_hash, tx_content)
 
             for short_id, _ in zip(
                 tx_content_short_ids.short_ids, tx_content_short_ids.short_id_flags
             ):
-                self.assign_short_id_by_key(transaction_key, short_id)
+                self.assign_short_id(tx_hash, short_id)
 
-            result_item = TxSyncMsgProcessingItem(transaction_key.transaction_hash,
+            result_item = TxSyncMsgProcessingItem(tx_hash,
                                                   tx_content_len,
                                                   tx_content_short_ids.short_ids,
                                                   tx_content_short_ids.short_id_flags)
@@ -1288,22 +1178,6 @@ class TransactionService:
                     oldest_removed_short_id = self._short_id_to_time_removed[short_id]
         return oldest_removed_short_id, removed_short_id_count
 
-    def get_transaction_key(
-        self,
-        transaction_hash: Optional[Sha256Hash],
-        transaction_cache_key: Optional[TransactionCacheKeyType] = None
-    ) -> TransactionKey:
-        if transaction_hash is None:
-            assert transaction_cache_key is not None
-            transaction_hash = self._tx_cache_key_to_hash(transaction_cache_key)
-
-        transaction_hash = wrap_sha256(transaction_hash)
-        return TransactionKey(
-            transaction_hash,
-            transaction_cache_key,
-            _lazy_transaction_cache_key=iter((self._tx_hash_to_cache_key(transaction_hash)) for _ in iter((None,)))
-        )
-
     def _dump_removed_short_ids(self) -> int:
         if self._removed_short_ids:
             with open(f"{self.node.opts.dump_removed_short_ids_path}/{int(time.time())}", "w") as file_handle:
@@ -1477,6 +1351,10 @@ class TransactionService:
     def _cleanup_removed_transactions_history(self) -> int:
         """
         Removes expired items from the queue
+        :param current_time: time to use as current time for expiration
+        :param remove_callback: reference to a callback function that is being called when item is removed
+        :param args: arguments to pass into the callback method
+        :param kwargs: keyword args to pass into the callback method
         """
         logger.trace(
             "Starting to cleanup transaction cache history for network "
