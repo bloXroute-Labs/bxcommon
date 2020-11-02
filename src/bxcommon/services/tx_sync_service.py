@@ -73,6 +73,8 @@ class TxSyncService:
         sending transaction service sync request
         """
         self.node.last_sync_message_received_by_network[network_num] = time.time()
+        self.node.sync_short_id_buckets.pop(network_num, None)
+        self.node.sync_metrics.pop(network_num, None)
         self.conn.enqueue_msg(TxServiceSyncReqMessage(network_num))
 
         if self.node.check_sync_relay_connections_alarm_id:
