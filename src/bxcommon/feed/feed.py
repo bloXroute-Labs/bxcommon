@@ -81,6 +81,6 @@ class Feed(Generic[T, S], metaclass=ABCMeta):
     ) -> bool:
         return True
 
-    # pylint: disable=unused-argument
-    def reformat_filters(self, filters: Dict[str, Any]) -> Dict[str, Any]:
-        return {}
+
+    def validate_filters(self, filters: str) -> str:
+        return filters
