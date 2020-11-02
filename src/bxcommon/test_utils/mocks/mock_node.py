@@ -83,3 +83,9 @@ class MockNode(AbstractNode):
         prepend_to_queue: bool = False
     ) -> None:
         pass
+
+    def on_new_subscriber_request(self) -> None:
+        pass
+
+    def reevaluate_transaction_streamer_connection(self) -> None:
+        pass

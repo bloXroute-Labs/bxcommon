@@ -3,6 +3,7 @@ import uuid
 from typing import Generic, TypeVar, Union, Dict, Any
 
 from bxcommon import constants
+from bxcommon.feed import filter_parsing
 
 T = TypeVar("T")
 
@@ -22,18 +23,17 @@ class Subscriber(Generic[T]):
     """
 
     subscription_id: str
-    messages: 'asyncio.Queue[Union[T, Dict[str, Any]]]'
+    messages: "asyncio.Queue[Union[T, Dict[str, Any]]]"
     options: Dict[str, Any]
     filters: str
 
     def __init__(self, options: Dict[str, Any]) -> None:
         self.options = options
         self.subscription_id = str(uuid.uuid4())
-        self.messages = asyncio.Queue(
-            constants.RPC_SUBSCRIBER_MAX_QUEUE_SIZE
-        )
+        self.messages = asyncio.Queue(constants.RPC_SUBSCRIBER_MAX_QUEUE_SIZE)
         filters = options.get("filters", None)
         self.filters = filters if filters else ""
+        self.validator = filter_parsing.get_validator(self.filters)
 
     async def receive(self) -> Union[T, Dict[str, Any]]:
         """
@@ -54,13 +54,10 @@ class Subscriber(Generic[T]):
         include_fields = self.options.get("include", None)
         if include_fields is not None:
             if isinstance(message, dict):
-                filtered_message = {
-                    key: message[key] for key in include_fields
-                }
+                filtered_message = {key: message[key] for key in include_fields}
+
             else:
-                filtered_message = {
-                    key: getattr(message, key) for key in include_fields
-                }
+                filtered_message = {key: getattr(message, key) for key in include_fields}
             self.messages.put_nowait(filtered_message)
         else:
             if hasattr(message, "__dict__"):

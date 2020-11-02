@@ -5,19 +5,21 @@ import ssl
 from ssl import Purpose
 from abc import abstractmethod
 from asyncio import Future
-from typing import Callable, Awaitable, Optional, TYPE_CHECKING, TypeVar, Generic
+from typing import Callable, Awaitable, Optional, TYPE_CHECKING, TypeVar, Generic, List
 from aiohttp import web
 from aiohttp.abc import StreamResponse
-from aiohttp.web import Application, Request, Response, AppRunner, TCPSite
+from aiohttp.web import Application, Request, Response, AppRunner, TCPSite, WebSocketResponse
 from aiohttp.web_exceptions import HTTPClientError, HTTPBadRequest, HTTPInternalServerError
 from aiohttp.web_exceptions import HTTPUnauthorized
 
 from bxcommon.rpc import rpc_constants
+from bxcommon.rpc.abstract_ws_rpc_handler import AbstractWsRpcHandler
 from bxcommon.rpc.https.http_rpc_handler import HttpRpcHandler
 from bxcommon.rpc.https.request_formatter import RequestFormatter
 from bxcommon.rpc.https.response_formatter import ResponseFormatter
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.rpc_constants import ContentType
+from bxcommon.rpc.ws.ws_connection import WsConnection
 
 from bxcommon.rpc.rpc_errors import RpcError, RpcParseError, RpcMethodNotFound, \
     RpcInvalidParams, RpcAccountIdError
@@ -41,11 +43,18 @@ async def request_middleware(
     request_formatter = RequestFormatter(request)
     logger.trace("Handling RPC request: {}.", request_formatter)
     response = await handler(request)
-    logger.trace(
-        "Finished handling request: {}, returning response: {}.",
-        request_formatter,
-        ResponseFormatter(response),
-    )
+    if isinstance(response, Response):
+        logger.trace(
+            "Finished handling request: {}, returning response: {}.",
+            request_formatter,
+            ResponseFormatter(response),
+        )
+    else:
+        logger.trace(
+            "Finished handling web scoket: {}.",
+            request_formatter,
+        )
+
     return response
 
 
@@ -89,24 +98,36 @@ class AbstractHttpRpcServer(Generic[Node]):
     _runner: AppRunner
     _site: Optional[TCPSite]
     _handler: HttpRpcHandler[Node]
+    _ws_handler: Optional[AbstractWsRpcHandler]
     _stop_requested: bool
     _stop_waiter: Future
     _started: bool
     _encoded_auth: Optional[str]
+    _ws_connections: List[WsConnection] = []
 
-    def __init__(self, node: Node) -> None:
+    def __init__(
+        self,
+        node: Node,
+    ) -> None:
         self.node = node
         self._app = Application(middlewares=[request_middleware])
         self._app.add_routes(
             [web.post("/", self.handle_request), web.get("/", self.handle_get_request)]
         )
+        self._app.add_routes(
+            [web.post("/ws", self.handle_ws_request),
+             web.get("/ws", self.handle_ws_request)]
+        )
         self._runner = AppRunner(self._app)
         self._site = None
         self._handler = self.request_handler()
+        self._ws_handler = self.request_ws_handler()
         self._stop_requested = False
         self._stop_waiter = asyncio.get_event_loop().create_future()
         self._started = False
         self._encoded_auth = None
+        self._ws_connections: List[WsConnection] = []
+
         rpc_user = self.node.opts.rpc_user
         if rpc_user:
             rpc_password = self.node.opts.rpc_password
@@ -120,6 +141,10 @@ class AbstractHttpRpcServer(Generic[Node]):
 
     @abstractmethod
     def request_handler(self) -> HttpRpcHandler:
+        pass
+
+    @abstractmethod
+    def request_ws_handler(self) -> Optional[AbstractWsRpcHandler]:
         pass
 
     def status(self) -> bool:
@@ -143,6 +168,10 @@ class AbstractHttpRpcServer(Generic[Node]):
 
     async def stop(self) -> None:
         self._stop_requested = True
+        if self._started:
+            await asyncio.gather(
+                *(connection.close() for connection in self._ws_connections)
+            )
         await self._stop_waiter
         await self._runner.cleanup()
         self._started = False
@@ -180,6 +209,19 @@ class AbstractHttpRpcServer(Generic[Node]):
             }
             json_response = JsonRpcResponse.from_json(response_dict)
             return web.json_response(json_response.to_jsons(), dumps=json_encoder.to_json)
+
+    async def handle_ws_request(self, request: Request) -> WebSocketResponse:
+        ws_response = web.WebSocketResponse()
+        websocket_handler = self._ws_handler
+        assert websocket_handler is not None
+        ws_connection = WsConnection(
+            ws_response,
+            request.path(),
+            websocket_handler
+        )
+        self._ws_connections.append(ws_connection)
+
+        return await ws_connection.handle(request)
 
     async def _start(self) -> None:
         self._started = True

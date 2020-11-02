@@ -38,7 +38,6 @@ class FeedManager:
             logger.debug(
                 "Creating new subscriber ({}) to {}", subscriber.subscription_id, name
             )
-            # pyre-fixme[16]: `AbstractNode` has no attribute `reevaluate_transaction_streamer_connection`
             self._node.reevaluate_transaction_streamer_connection()
             return subscriber
         else:
@@ -54,7 +53,6 @@ class FeedManager:
                 subscriber.subscription_id,
                 name,
             )
-        # pyre-fixme[16]: `AbstractNode` has no attribute `reevaluate_transaction_streamer_connection`
         self._node.reevaluate_transaction_streamer_connection()
         return subscriber
 
@@ -71,7 +69,5 @@ class FeedManager:
     def get_valid_feed_filters(self, feed_name: str) -> Set[str]:
         return self.feeds[feed_name].FILTERS
 
-    def validate_feed_filters(
-        self, feed_name: str, filters: str
-    ) -> str:
+    def validate_feed_filters(self, feed_name: str, filters: str) -> str:
         return self.feeds[feed_name].validate_filters(filters)

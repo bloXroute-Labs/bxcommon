@@ -582,6 +582,14 @@ class AbstractNode:
         return self.node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
 
     @abstractmethod
+    def reevaluate_transaction_streamer_connection(self) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def on_new_subscriber_request(self) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     def sync_tx_services(self):
         self.start_sync_time = time.time()
         self.sync_metrics = defaultdict(Counter)
