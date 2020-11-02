@@ -1,7 +1,7 @@
 import struct
 import time
 from datetime import datetime
-from typing import Any, List, Union, Optional, cast
+from typing import Any, List, Union, Optional
 
 import task_pool_executor as tpe
 
@@ -10,9 +10,11 @@ from bxcommon.messages.bloxroute import transactions_info_serializer
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
-from bxcommon.services.transaction_service import TransactionService, TransactionCacheKeyType, TxSyncMsgProcessingItem
+from bxcommon.models.transaction_key import TransactionKey, TransactionCacheKeyType
+from bxcommon.services.transaction_service import TransactionService, TxSyncMsgProcessingItem
 from bxcommon.services.transaction_service import TxRemovalReason
 from bxcommon.utils import memory_utils, crypto
+from bxcommon.utils.deprecated import deprecated
 from bxcommon.utils.object_encoder import ObjectEncoder
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
@@ -35,7 +37,6 @@ class ExtensionTransactionService(TransactionService):
 
     def __init__(self, node, network_num) -> None:
         super(ExtensionTransactionService, self).__init__(node, network_num)
-
         # Log levels need to be set again to include the loggers created in this conditionally imported class
         log_config.lazy_set_log_level(node.opts.log_level_overrides)
 
@@ -117,48 +118,60 @@ class ExtensionTransactionService(TransactionService):
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
 
+    @deprecated
     def assign_short_id(
         self,
         transaction_hash: Sha256Hash,
         short_id: int,
         transaction_cache_key: Optional[TransactionCacheKeyType] = None
     ) -> None:
+        return self.assign_short_id_by_key(
+            self.get_transaction_key(transaction_hash, transaction_cache_key),
+            short_id,
+        )
+
+    def assign_short_id_by_key(
+        self,
+        transaction_key: TransactionKey,
+        short_id: int,
+    ) -> None:
         """
         Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
-        :param transaction_hash: transaction long hash
+        :param transaction_key: transaction key object
         :param short_id: short id to be mapped to transaction
-        :param transaction_cache_key: transaction cache key
         """
-        logger.trace("Assigning sid {} to transaction {}", short_id, transaction_hash)
-        if not transaction_cache_key:
-            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        logger.trace("Assigning sid {} to transaction {}", short_id, transaction_key.transaction_hash)
 
-        transaction_cache_key = cast(tpe.Sha256, transaction_cache_key)
-        has_contents = self.proxy.assign_short_id(transaction_cache_key, short_id)
-        self.assign_short_id_base(transaction_hash, transaction_cache_key, short_id, has_contents, False)
+        # pyre-fixme[6]: Expected `tpe.Sha256` got `TransactionCacheKeyType`.
+        has_contents = self.proxy.assign_short_id(transaction_key.transaction_cache_key, short_id)
+        self.assign_short_id_base_by_key(transaction_key, short_id, has_contents, False)
 
+    @deprecated
     def set_transaction_contents(
         self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview],
         transaction_cache_key: Optional[TransactionCacheKeyType] = None
     ):
+        return self.set_transaction_contents_by_key(
+            self.get_transaction_key(transaction_hash, transaction_cache_key),
+            transaction_contents
+        )
+
+    def set_transaction_contents_by_key(
+        self, transaction_key: TransactionKey, transaction_contents: Union[bytearray, memoryview]
+    ):
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
 
-        :param transaction_hash: transaction hash
+        :param transaction_key: transaction key object
         :param transaction_contents: transaction contents bytes
-        :param transaction_cache_key: transaction cache key optional
         """
-        if not transaction_cache_key:
-            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
-
-        assert isinstance(transaction_cache_key, tpe.Sha256)
         has_short_id, previous_size = self.proxy.set_transaction_contents(
-            transaction_cache_key,
+            # pyre-fixme[6]: Expected `tpe.Sha256` got `TransactionCacheKeyType`.
+            transaction_key.transaction_cache_key,
             tpe.InputBytes(transaction_contents))
 
-        self.set_transaction_contents_base(
-            transaction_hash,
-            transaction_cache_key,
+        self.set_transaction_contents_base_by_key(
+            transaction_key,
             has_short_id,
             previous_size,
             False,
@@ -229,7 +242,7 @@ class ExtensionTransactionService(TransactionService):
 
         for _ in range(txs_count):
             transaction_hash = Sha256Hash(result_memory_view[offset:offset + crypto.SHA256_HASH_LEN])
-            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+            transaction_key = self.get_transaction_key(transaction_hash)
             offset += crypto.SHA256_HASH_LEN
 
             content_len, = struct.unpack_from("<L", result_memory_view, offset)
@@ -239,9 +252,8 @@ class ExtensionTransactionService(TransactionService):
             offset += constants.UL_INT_SIZE_IN_BYTES
 
             if content_len > 0:
-                self.set_transaction_contents_base(
-                    transaction_hash,
-                    transaction_cache_key,
+                self.set_transaction_contents_base_by_key(
+                    transaction_key,
                     short_id_count > 0,
                     0,
                     False,
@@ -255,9 +267,8 @@ class ExtensionTransactionService(TransactionService):
                 short_id, = struct.unpack_from("<L", result_memory_view, offset)
                 offset += constants.UL_INT_SIZE_IN_BYTES
 
-                self.assign_short_id_base(
-                    transaction_hash,
-                    transaction_cache_key,
+                self.assign_short_id_base_by_key(
+                    transaction_key,
                     short_id,
                     content_len > 0,
                     False
