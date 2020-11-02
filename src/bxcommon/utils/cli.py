@@ -136,7 +136,7 @@ def get_argument_parser() -> argparse.ArgumentParser:
 def add_argument_parser_rpc(arg_parser: ArgumentParser):
     arg_parser.add_argument(
         "--rpc",
-        help="Start a JSON-RPC server",
+        help="Start a HTTP(S) JSON-RPC server",
         type=convert.str_to_bool,
         default=True
     )
@@ -154,7 +154,7 @@ def add_argument_parser_rpc(arg_parser: ArgumentParser):
     )
     arg_parser.add_argument(
         "--rpc-use-ssl",
-        help="Should the rpc port communication will be encrypted using ssl",
+        help="Use secured communication (HTTPS, WSS)",
         type=convert.str_to_bool,
         default=False,
     )
