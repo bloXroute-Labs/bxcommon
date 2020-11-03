@@ -1,8 +1,10 @@
 from enum import Enum
 
 CONTENT_TYPE_HEADER_KEY = "Content-Type"
+ACCEPT_HEADER_KEY = "Accept"
 PLAIN_HEADER_TYPE = "text/plain"
 JSON_HEADER_TYPE = "application/json"
+OCTET_STREAM_HEADER_TYPE = "application/octet-stream"
 TRANSACTION_PARAMS_KEY = "transaction"
 TRANSACTION_JSON_PARAMS_KEY = "transaction_json"
 TAG_PARAMS_KEY = "tag"
@@ -36,6 +38,7 @@ JSON_RPC_PARAMS = "params"
 JSON_RPC_VERSION_FIELD = "jsonrpc"
 JSON_RPC_RESULT = "result"
 JSON_RPC_ERROR = "error"
+JSON_RPC_ERROR_MESSAGE = "message"
 
 NEW_TRANSACTION_FEED_NAME = "newTxs"
 ETH_ON_BLOCK_FEED_NAME = "ethOnBlock"
