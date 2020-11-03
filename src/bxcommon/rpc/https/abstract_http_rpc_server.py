@@ -216,7 +216,8 @@ class AbstractHttpRpcServer(Generic[Node]):
         assert websocket_handler is not None
         ws_connection = WsConnection(
             ws_response,
-            request.path(),
+            # pyre-fixme[6]: Expected `str` but got `BoundMethod`
+            request.path,
             websocket_handler
         )
         self._ws_connections.append(ws_connection)
