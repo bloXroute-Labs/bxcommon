@@ -1,12 +1,13 @@
 import asyncio
 from asyncio import Future
-from typing import Optional, Union
+from typing import Optional, Union, cast
 
+from aiohttp import WSMessage
 from aiohttp.web import Request
 from aiohttp.web_ws import WebSocketResponse
 from websockets import WebSocketServerProtocol
 
-from bxcommon.rpc.abstract_ws_rpc_handler import AbstractWsRpcHandler
+from bxcommon.rpc.abstract_ws_rpc_handler import AbstractWsRpcHandler, WsRequest
 from bxcommon.rpc.rpc_errors import RpcError
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 
@@ -49,7 +50,10 @@ class WsConnection:
         await websocket.prepare(request)
         async for message in websocket:
             try:
-                response = await self.ws_rpc_handler.handle_request(message.data)
+                response = await self.ws_rpc_handler.handle_request(
+                    # pyre-ignore[6] Expected `multidict.CIMultiDictProxy[typing.Any]`
+                    WsRequest(cast(WSMessage, message), request.headers)
+                )
             except RpcError as err:
                 response = JsonRpcResponse(err.id, error=err).to_jsons()
             await websocket.send_str(response)

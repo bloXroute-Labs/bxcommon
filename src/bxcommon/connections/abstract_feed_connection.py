@@ -1,6 +1,6 @@
 import asyncio
 from abc import ABCMeta
-from typing import Dict, Callable
+from typing import Dict, Callable, Optional
 
 from bxcommon.rpc.provider.abstract_provider import SubscriptionNotification
 
@@ -25,13 +25,13 @@ class AbstractFeedConnection:
         node: AbstractNode,
         feed_ip: str = LOCALHOST,
         feed_port: int = WS_DEFAULT_PORT,
-        extra_headers=None
+        headers: Optional[Dict] = None
     ) -> None:
         self.node = node
         self.feed_ip = feed_ip
         self.feed_port = feed_port
 
-        self.ws_feed_client = WsFeedClient(f"ws://{self.feed_ip}:{self.feed_port}/ws", extra_headers=extra_headers)
+        self.ws_feed_client = WsFeedClient(f"ws://{self.feed_ip}:{self.feed_port}/ws", headers=headers)
         self.feeds_process: Dict[str, Callable[[SubscriptionNotification], None]] = {}
 
     async def subscribe_feeds(self) -> None:

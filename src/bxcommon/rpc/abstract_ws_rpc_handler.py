@@ -3,13 +3,15 @@ import asyncio
 from asyncio import Future
 from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Any
 
+from aiohttp import WSMessage
+from multidict import CIMultiDictProxy
+
 from bxcommon.rpc.abstract_rpc_handler import AbstractRpcHandler
 from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
 from bxcommon.rpc.requests.subscribe_rpc_request import SubscribeRpcRequest
 from bxcommon.rpc.requests.unsubscribe_rpc_request import UnsubscribeRpcRequest
-from bxcommon.rpc.rpc_errors import RpcParseError, RpcError, RpcInternalError
 from bxcommon.rpc.rpc_request_type import RpcRequestType
 
 from bxcommon import constants
@@ -34,7 +36,12 @@ class Subscription(NamedTuple):
     task: Future
 
 
-class AbstractWsRpcHandler(AbstractRpcHandler["AbstractNode", str, str]):
+class WsRequest(NamedTuple):
+    message: WSMessage
+    headers: CIMultiDictProxy
+
+
+class AbstractWsRpcHandler(AbstractRpcHandler["AbstractNode", WsRequest, str]):
     feed_manager: FeedManager
     subscriptions: Dict[str, Subscription]
     subscribed_messages: "asyncio.Queue[BxJsonRpcRequest]"
@@ -49,29 +56,8 @@ class AbstractWsRpcHandler(AbstractRpcHandler["AbstractNode", str, str]):
         )
         self.disconnect_event = asyncio.Event()
 
-    async def handle_request(self, request: str) -> str:
-        try:
-            payload = await self.parse_request(request)
-        except Exception:
-            raise RpcParseError(None, f"Unable to parse the request: {request}")
-
-        rpc_request = BxJsonRpcRequest.from_json(payload)
-
-        request_handler = self.get_request_handler(rpc_request)
-        try:
-            return self.serialize_response(
-                await request_handler.process_request()
-            )
-        except RpcError as e:
-            raise e
-        except Exception as e:
-            logger.error(
-                log_messages.INTERNAL_ERROR_HANDLING_RPC_REQUEST, e, rpc_request
-            )
-            raise RpcInternalError(rpc_request.id, "Please contact bloXroute support.")
-
-    async def parse_request(self, request: str) -> Dict[str, Any]:
-        return json.loads(request)
+    async def parse_request(self, request: WsRequest) -> Dict[str, Any]:
+        return json.loads(request.message.data)
 
     def get_request_handler(self, request: BxJsonRpcRequest) -> AbstractRpcRequest:
         if request.method == RpcRequestType.SUBSCRIBE and request.method in self.request_handlers:
