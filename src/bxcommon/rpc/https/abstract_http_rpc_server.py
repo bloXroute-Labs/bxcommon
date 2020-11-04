@@ -12,6 +12,7 @@ from aiohttp.web import Application, Request, Response, AppRunner, TCPSite, WebS
 from aiohttp.web_exceptions import HTTPClientError, HTTPBadRequest, HTTPInternalServerError
 from aiohttp.web_exceptions import HTTPUnauthorized
 
+from bxcommon import constants
 from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.abstract_ws_rpc_handler import AbstractWsRpcHandler
 from bxcommon.rpc.https.http_rpc_handler import HttpRpcHandler
@@ -98,7 +99,6 @@ class AbstractHttpRpcServer(Generic[Node]):
     _runner: AppRunner
     _site: Optional[TCPSite]
     _handler: HttpRpcHandler[Node]
-    _ws_handler: Optional[AbstractWsRpcHandler]
     _stop_requested: bool
     _stop_waiter: Future
     _started: bool
@@ -121,7 +121,6 @@ class AbstractHttpRpcServer(Generic[Node]):
         self._runner = AppRunner(self._app)
         self._site = None
         self._handler = self.request_handler()
-        self._ws_handler = self.request_ws_handler()
         self._stop_requested = False
         self._stop_waiter = asyncio.get_event_loop().create_future()
         self._started = False
@@ -211,18 +210,33 @@ class AbstractHttpRpcServer(Generic[Node]):
             return web.json_response(json_response.to_jsons(), dumps=json_encoder.to_json)
 
     async def handle_ws_request(self, request: Request) -> WebSocketResponse:
-        ws_response = web.WebSocketResponse()
-        websocket_handler = self._ws_handler
-        assert websocket_handler is not None
-        ws_connection = WsConnection(
-            ws_response,
-            # pyre-fixme[6]: Expected `str` but got `BoundMethod`
-            request.path,
-            websocket_handler
-        )
-        self._ws_connections.append(ws_connection)
+        try:
+            self.authenticate_request(request)
+        except RpcError as e:
+            websocket_response = web.WebSocketResponse()
+            await websocket_response.prepare(request)
+            error_message = e.data
+            assert error_message is not None
+            # WebSockets close event code 1008: Policy Violation.
+            await websocket_response.close(
+                code=1008, message=bytes(error_message.encode(constants.DEFAULT_TEXT_ENCODING))
+            )
+            return websocket_response
+        else:
+            ws_response = web.WebSocketResponse()
+            websocket_handler = self.request_ws_handler()
+            assert websocket_handler is not None
+            ws_connection = WsConnection(
+                ws_response,
+                # pyre-fixme[6]: Expected `str` but got `BoundMethod`
+                request.path,
+                websocket_handler
+            )
+            self._ws_connections.append(ws_connection)
+            websocket_response = await ws_connection.handle(request)
+            self._ws_connections.remove(ws_connection)
 
-        return await ws_connection.handle(request)
+            return websocket_response
 
     async def _start(self) -> None:
         self._started = True
