@@ -30,10 +30,12 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         self,
         uri: str,
         retry_connection: bool = False,
-        queue_limit: int = constants.WS_PROVIDER_MAX_QUEUE_SIZE
+        queue_limit: int = constants.WS_PROVIDER_MAX_QUEUE_SIZE,
+        extra_headers=None,
     ):
         self.uri = uri
         self.retry_connection = retry_connection
+        self.extra_headers = extra_headers
 
         self.ws: Optional[websockets.WebSocketClientProtocol] = None
         self.listener_task: Optional[Future] = None
@@ -97,7 +99,7 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
             self.listener_task = asyncio.create_task(self.receive())
 
     async def connect_websocket(self) -> websockets.WebSocketClientProtocol:
-        return await websockets.connect(self.uri)
+        return await websockets.connect(self.uri, extra_headers=self.extra_headers)
 
     @abstractmethod
     async def subscribe(self, channel: str, options: Optional[Dict[str, Any]] = None) -> str:
