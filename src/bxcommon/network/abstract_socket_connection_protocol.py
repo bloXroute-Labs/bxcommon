@@ -1,6 +1,7 @@
 import socket
-import typing
 import sys
+import typing
+from abc import abstractmethod
 from asyncio import BaseTransport, Transport, BaseProtocol
 from typing import TYPE_CHECKING, Optional
 
@@ -139,7 +140,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
                 self,
                 bytes_to_send,
                 transport.get_write_buffer_size(),
-                        buffer_limits
+                buffer_limits
             )
             transport.write(data)
             conn.advance_sent_bytes(bytes_to_send)
@@ -239,3 +240,11 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
                 logger.debug("Socket info is None on connection")
             else:
                 sock.setsockopt(socket.SOL_SOCKET, SO_QUICKACK, 1)
+
+    @abstractmethod
+    def get_last_read_duration_ms(self) -> float:
+        pass
+
+    @abstractmethod
+    def get_time_since_read_end_ms(self, end_time: float):
+        pass

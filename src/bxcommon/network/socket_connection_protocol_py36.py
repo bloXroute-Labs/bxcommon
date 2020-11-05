@@ -18,3 +18,9 @@ class SocketConnectionProtocolPy36(AbstractSocketConnectionProtocol, Protocol):
     def data_received(self, data: bytes) -> None:
         if self.is_receivable():
             self._node.on_bytes_received(self.file_no, data)
+
+    def get_last_read_duration_ms(self) -> float:
+        return 0
+
+    def get_time_since_read_end_ms(self, end_time: float) -> float:
+        return 0
