@@ -13,3 +13,8 @@ BAD_FEED_SUBSCRIBER = LogMessage(
     "Subscriber {} was not receiving messages and emptying its queue from "
     "{}. Disconnecting.",
 )
+COULD_NOT_DESERIALIZE_TRANSACTION = LogMessage(
+    "C-000069",
+    PROCESSING_FAILED_CATEGORY,
+    "Could not deserialize transaction in transaction service to Ethereum payload: {}, body: {}. Error: {}",
+)
