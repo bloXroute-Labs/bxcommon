@@ -27,7 +27,12 @@ from bxcommon.utils import config, crypto, convert, cli
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.common_opts import CommonOpts
 from bxcommon.utils.object_hash import Sha256Hash
-from bxcommon.utils.proxy import task_pool_proxy
+
+try:
+    from bxcommon.utils.proxy import task_pool_proxy
+    # pylint: disable=broad-except
+except Exception:
+    pass
 from bxutils.logging.log_level import LogLevel
 
 if TYPE_CHECKING:
