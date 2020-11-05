@@ -12,6 +12,7 @@ from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
 from bxcommon.rpc.requests.subscribe_rpc_request import SubscribeRpcRequest
 from bxcommon.rpc.requests.unsubscribe_rpc_request import UnsubscribeRpcRequest
+from bxcommon.rpc.rpc_errors import RpcParseError
 from bxcommon.rpc.rpc_request_type import RpcRequestType
 
 from bxcommon import constants
@@ -57,7 +58,14 @@ class AbstractWsRpcHandler(AbstractRpcHandler["AbstractNode", WsRequest, str]):
         self.disconnect_event = asyncio.Event()
 
     async def parse_request(self, request: WsRequest) -> Dict[str, Any]:
-        return json.loads(request.message.data)
+        try:
+            request_message_dict = {}
+            if request.message.data:
+                request_message_dict = json.loads(request.message.data)
+            assert isinstance(request_message_dict, Dict)
+            return request_message_dict
+        except Exception:
+            raise RpcParseError(None, f"Unable to parse the request: {request}")
 
     def get_request_handler(self, request: BxJsonRpcRequest) -> AbstractRpcRequest:
         if request.method == RpcRequestType.SUBSCRIBE and request.method in self.request_handlers:
