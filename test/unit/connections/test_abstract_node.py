@@ -270,33 +270,19 @@ class AbstractNodeTest(AbstractTestCase):
 
     @patch("bxcommon.connections.abstract_node.memory_logger")
     def test_dump_memory_usage(self, logger_mock):
-        # set to dump memory at 10 MB
-        self.node.next_report_mem_usage_bytes = 10 * 1024 * 1024
-
-        # current memory usage is 5 MB
-        memory_utils.get_app_memory_usage = MagicMock(return_value=5 * 1024 * 1024)
-
-        self.node.dump_memory_usage()
+        # current memory usage is 0.7GB
+        self.node.dump_memory_usage(1024 * 1024 * 1024 * 0.7, constants.GC_HIGH_MEMORY_THRESHOLD)
         # expect that memory details are not logged
-        self.assertEqual(10 * 1024 * 1024, self.node.next_report_mem_usage_bytes)
         logger_mock.assert_not_called()
 
-        # current memory usage goes up to 11 MB
-        memory_utils.get_app_memory_usage = MagicMock(return_value=11 * 1024 * 1024)
-
-        self.node.dump_memory_usage()
-        # expect that memory details are logged
-        self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
-                         self.node.next_report_mem_usage_bytes)
+        # current memory usage goes up to 1.9GB
+        self.node.dump_memory_usage(1024 * 1024 * 1024 * 1.9, constants.GC_HIGH_MEMORY_THRESHOLD)
+        # expect that memory details are logged once
         logger_mock.debug.assert_called_once()
 
-        # current memory usage goes up to 15 MB
-        memory_utils.get_app_memory_usage = MagicMock(return_value=15 * 1024 * 1024)
-
-        self.node.dump_memory_usage()
+        # current memory usage reduce to 1.3GB
+        self.node.dump_memory_usage(1024 * 1024 * 1024 * 1.3, constants.GC_HIGH_MEMORY_THRESHOLD)
         # expect that memory details are not logged again
-        self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
-                         self.node.next_report_mem_usage_bytes)
         logger_mock.debug.assert_called_once()
 
     def _assert_socket_connected(self):

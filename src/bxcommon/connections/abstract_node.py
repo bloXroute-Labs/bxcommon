@@ -45,7 +45,7 @@ from bxutils import log_messages
 from bxutils import logging
 from bxutils.exceptions.connection_authentication_error import \
     ConnectionAuthenticationError
-from bxutils.logging import LogRecordType
+from bxutils.logging import LogRecordType, LogLevel
 from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.extensions import extensions_factory
 from bxutils.ssl.ssl_certificate_type import SSLCertificateType
@@ -530,17 +530,15 @@ class AbstractNode:
             )
         bdn_tx_to_bx_tx.init(blockchain_networks)
 
-    def dump_memory_usage(self):
-        total_mem_usage = memory_utils.get_app_memory_usage()
-        if total_mem_usage >= self.next_report_mem_usage_bytes:
+    def dump_memory_usage(self, total_memory: int, threshold: int):
+        if total_memory > threshold and logger.isEnabledFor(LogLevel.DEBUG):
             node_size = self.get_node_memory_size()
             memory_logger.debug(
                 "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}",
-                total_mem_usage,
-                self.next_report_mem_usage_bytes,
+                total_memory,
+                threshold,
                 node_size
             )
-            self.next_report_mem_usage_bytes = total_mem_usage + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES
 
     def get_node_memory_size(self):
         return memory_utils.get_detailed_object_size(self)
