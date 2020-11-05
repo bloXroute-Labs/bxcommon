@@ -5,7 +5,7 @@ from typing import Dict, Callable, Optional
 from bxcommon.rpc.provider.abstract_provider import SubscriptionNotification
 
 from bxcommon.constants import LOCALHOST, WS_DEFAULT_PORT
-from bxcommon.rpc.ws.ws_feed_client import WsFeedClient
+from bxcommon.rpc.ws.ws_client import WsClient
 from bxcommon.connections.abstract_node import AbstractNode
 from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
@@ -31,14 +31,14 @@ class AbstractFeedConnection:
         self.feed_ip = feed_ip
         self.feed_port = feed_port
 
-        self.ws_feed_client = WsFeedClient(f"ws://{self.feed_ip}:{self.feed_port}/ws", headers=headers)
+        self.ws_client = WsClient(f"ws://{self.feed_ip}:{self.feed_port}/ws", headers=headers)
         self.feeds_process: Dict[str, Callable[[SubscriptionNotification], None]] = {}
 
     async def subscribe_feeds(self) -> None:
-        await self.ws_feed_client.initialize()
+        await self.ws_client.initialize()
 
         for feed_name, process in self.feeds_process.items():
-            self.ws_feed_client.subscribe_with_callback(process, feed_name)
+            self.ws_client.subscribe_with_callback(process, feed_name)
 
         while True:
             await asyncio.sleep(0)  # otherwise program would exit

@@ -7,7 +7,7 @@ from bxcommon.rpc.rpc_errors import RpcError
 from bxcommon.rpc.rpc_request_type import RpcRequestType
 
 
-class WsFeedClient(AbstractWsProvider):
+class WsClient(AbstractWsProvider):
     async def call_bx(
         self,
         method: RpcRequestType,
