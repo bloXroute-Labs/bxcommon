@@ -14,7 +14,7 @@ class TransactionFlag(SerializableFlag):
         return str(self.name).lower()
 
     def get_quota_type(self) -> QuotaType:
-        if self & TransactionFlag.PAID_TX:
+        if TransactionFlag.PAID_TX in self:
             return QuotaType.PAID_DAILY_QUOTA
         else:
             return QuotaType.FREE_DAILY_QUOTA
