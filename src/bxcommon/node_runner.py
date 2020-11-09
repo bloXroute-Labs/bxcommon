@@ -78,6 +78,7 @@ def run_node(
         third_party_loggers=third_party_loggers,
         fluent_log_level=opts.log_level_fluentd,
         stdout_log_level=opts.log_level_stdout,
+        fluentd_tag_suffix=node_type.name.lower()
     )
     if node_init_tasks is None:
         node_init_tasks = common_init_tasks.init_tasks
