@@ -220,6 +220,36 @@ class NetworkLatencyTests(unittest.TestCase):
         self.assertEqual("0", best_relays[0].node_id)
         self.assertEqual("3", best_relays[1].node_id)
 
+    @patch("bxcommon.utils.ping_latency.get_ping_latencies")
+    def test_get_ping_latencies_current_relay_within_threshold_of_fastest(
+        self, mock_get_ping_latencies
+    ):
+        current_relay = OutboundPeerModel("52.221.211.38", 1609, node_id="2", attributes={"country": "EU"})
+        fastest_relay = OutboundPeerModel("35.198.90.230", 1609, node_id="1", attributes={"country": "EU"})
+        first_recommended_relay = OutboundPeerModel("34.227.149.148", 1609, node_id="0", attributes={"country": "EU"})
+        self.peer_relays = set()
+        self.peer_relays.add(current_relay)
+
+        relays = [
+            first_recommended_relay,
+            fastest_relay,
+            current_relay,
+            OutboundPeerModel("34.245.23.125", 1609, node_id="3", attributes={"country": "China"}),
+            OutboundPeerModel("34.238.245.201", 1609, node_id="4", attributes={"country": "China"}),
+        ]
+
+        mock_get_ping_latencies.return_value = [
+            NodeLatencyInfo(relays[4], 100),
+            NodeLatencyInfo(fastest_relay, 8),
+            NodeLatencyInfo(relays[3], 109),
+            NodeLatencyInfo(current_relay, 10),
+            NodeLatencyInfo(first_recommended_relay, 9),
+        ]
+        best_relays = network_latency.get_best_relays_by_ping_latency_one_per_country(relays, 2, self.peer_relays)
+        self.assertEqual(2, len(best_relays))
+        self.assertEqual("2", best_relays[0].node_id)
+        self.assertEqual("3", best_relays[1].node_id)
+
     def test_get_ping_latency(self):
         relay = OutboundPeerModel("34.227.149.148", 1609, node_id="0", attributes={"country": "China"})
         start = time.time()
