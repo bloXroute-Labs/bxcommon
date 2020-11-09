@@ -1,4 +1,3 @@
-import asyncio
 from abc import ABCMeta
 from typing import Dict, Callable, Optional
 
@@ -36,9 +35,14 @@ class AbstractFeedConnection:
 
     async def subscribe_feeds(self) -> None:
         await self.ws_client.initialize()
-
         for feed_name, process in self.feeds_process.items():
+            logger.debug("FeedConnection subscribed to feed {} from source {}", feed_name, self.feed_ip)
             self.ws_client.subscribe_with_callback(process, feed_name)
 
-        while True:
-            await asyncio.sleep(0)  # otherwise program would exit
+    async def revive(self) -> None:
+        if self.ws_client.ws is None and not self.ws_client.running:
+            logger.info("Attempting to revive websockets source feed...")
+            await self.ws_client.reconnect()
+
+    async def stop(self) -> None:
+        await self.ws_client.close()
