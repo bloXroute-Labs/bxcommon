@@ -402,7 +402,7 @@ class AbstractNode:
     def fire_alarms(self) -> float:
         time_to_next = self.alarm_queue.fire_ready_alarms()
         if time_to_next is not None:
-            return max(time_to_next, constants.MIN_SLEEP_TIMEOUT)
+            return time_to_next
         else:
             return constants.MAX_EVENT_LOOP_TIMEOUT
 
