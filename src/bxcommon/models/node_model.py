@@ -126,6 +126,7 @@ class NodeModel:
     first_seen_time: str = None
 
     is_docker: bool = False
+    using_private_ip_connection: bool = False
 
     def __post_init__(self):
         self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
