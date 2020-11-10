@@ -114,7 +114,8 @@ class AbstractWsRpcHandler(AbstractRpcHandler["AbstractNode", WsRequest, str]):
         self.close()
 
     def close(self) -> None:
-        for subscription_id in self.subscriptions:
+        subscription_ids = list(self.subscriptions.keys())
+        for subscription_id in subscription_ids:
             feed_name = self._on_unsubscribe(subscription_id)
             assert feed_name is not None
             self.feed_manager.unsubscribe_from_feed(feed_name, subscription_id)
