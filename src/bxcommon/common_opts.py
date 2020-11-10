@@ -1,3 +1,4 @@
+import base64
 import ipaddress
 import sys
 import dataclasses
@@ -24,6 +25,19 @@ from bxcommon import constants
 
 
 logger = logging.get_logger(__name__)
+
+
+@dataclass()
+class SourceFeedOpts:
+    source_feed_ip: str
+    source_feed_port: int
+    source_feed_rpc_user: str
+    source_feed_rpc_password: str
+
+    def get_source_feed_auth(self) -> str:
+        return base64.b64encode(
+            f"{self.source_feed_rpc_user}:{self.source_feed_rpc_password}".encode("utf-8")
+        ).decode("utf-8")
 
 
 @dataclass

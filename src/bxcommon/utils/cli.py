@@ -285,6 +285,13 @@ def add_argument_parser_common(arg_parser: ArgumentParser):
     )
 
 
+def add_feed_source_arguments(arg_parser: argparse.ArgumentParser) -> None:
+    arg_parser.add_argument("--source-feed-ip", help="Source feed ip", type=str)
+    arg_parser.add_argument("--source-feed-port", help="Source feed port", type=int)
+    arg_parser.add_argument("--source-feed-rpc-user", help="Source feed user", type=str)
+    arg_parser.add_argument("--source-feed-rpc-password", help="Source feed pass", type=str)
+
+
 def parse_arguments(arg_parser: argparse.ArgumentParser, args: Optional[List[str]] = None) -> argparse.Namespace:
     opts, _unknown = arg_parser.parse_known_args(args)
     if not opts.external_ip:
