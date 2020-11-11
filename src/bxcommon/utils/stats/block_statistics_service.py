@@ -88,8 +88,12 @@ class _BlockStatisticsService(StatisticsEventService):
             block_hash_str = block_hash
 
         self.log_event(
-            block_event_settings, convert.bytes_to_hex(block_hash_str), start_date_time,
-            end_date_time, network_num=network_num, broadcast_type=broadcast_type.value,
+            block_event_settings,
+            convert.bytes_to_hex(block_hash_str),
+            start_date_time,
+            end_date_time,
+            network_num=network_num,
+            broadcast_type=broadcast_type.value,
             peers=peers, **kwargs)
 
     def _should_log_stat_event(self, event_type_settings) -> bool:

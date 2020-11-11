@@ -7,6 +7,9 @@ from bxcommon.rpc import rpc_constants
 from bxcommon.feed.feed import Feed
 from bxcommon.feed.subscriber import Subscriber
 from bxcommon.feed.feed_source import FeedSource
+from bxutils import logging
+
+logger = logging.get_logger(__name__)
 
 
 class RawTransactionFeedEntry:

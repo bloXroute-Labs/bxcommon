@@ -6,3 +6,4 @@ class FeedSource(Enum):
     BLOCKCHAIN_RPC = auto()
     BDN_SOCKET = auto()
     BDN_INTERNAL = auto()
+    CLIENT_RPC = auto()

@@ -6,7 +6,7 @@ class TransactionFlag(SerializableFlag):
     NO_FLAGS = 0
     STATUS_TRACK = 1
     PAID_TX = 2
-    NONCE = 4
+    NONCE_TRACK = 4
     RE_PROPAGATE = 8
     PAID_STATUS_TRACK = STATUS_TRACK | PAID_TX
 
