@@ -169,9 +169,17 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             buffer_limits
         )
         transport.write(bytes_to_send)
+        len_bytes_to_sent = len(bytes_to_send)
+        conn.hooks.add_throughput_event(
+            NetworkDirection.OUTBOUND,
+            None,
+            len_bytes_to_sent,
+            conn.peer_desc,
+            conn.peer_id
+        )
         conn.advance_bytes_written_to_socket(bytes_to_send)
 
-        logger.trace("[{}] - sent {} bytes", self, len(bytes_to_send))
+        logger.trace("[{}] - sent {} bytes", self, len_bytes_to_sent)
 
     def pause_reading(self) -> None:
         if self.is_alive():
