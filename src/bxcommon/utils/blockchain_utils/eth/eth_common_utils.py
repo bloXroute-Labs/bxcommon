@@ -57,3 +57,21 @@ def keccak_hash(string):
 
 def int_to_big_endian(value: int) -> bytes:
     return value.to_bytes((value.bit_length() + 7) // 8 or 1, byteorder="big")
+
+
+def block_header_number(full_block_header_bytes: Union[memoryview, bytearray]) -> int:
+    _, block_header_len, block_header_start = rlp_utils.consume_length_prefix(full_block_header_bytes, 0)
+    block_header_bytes = full_block_header_bytes[block_header_start:block_header_start + block_header_len]
+    offset = eth_common_constants.FIXED_LENGTH_FIELD_OFFSET
+    _difficulty, difficulty_length = rlp_utils.decode_int(block_header_bytes, offset)
+    offset += difficulty_length
+    number, _ = rlp_utils.decode_int(block_header_bytes, offset)
+    return number
+
+
+def block_header_difficulty(full_block_header_bytes: Union[memoryview, bytearray]) -> int:
+    _, block_header_len, block_header_start = rlp_utils.consume_length_prefix(full_block_header_bytes, 0)
+    block_header_bytes = full_block_header_bytes[block_header_start:block_header_start + block_header_len]
+    offset = eth_common_constants.FIXED_LENGTH_FIELD_OFFSET
+    difficulty, _difficulty_length = rlp_utils.decode_int(block_header_bytes, offset)
+    return difficulty
