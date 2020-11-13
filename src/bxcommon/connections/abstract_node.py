@@ -24,7 +24,7 @@ from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
-from bxcommon.network.socket_connection_state import SocketConnectionState
+from bxcommon.network.socket_connection_state import SocketConnectionStates
 from bxcommon.services import sdn_http_service
 from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
@@ -640,7 +640,7 @@ class AbstractNode:
         """
         self.log_closed_connection(conn)
 
-        should_retry = SocketConnectionState.DO_NOT_RETRY not in conn.socket_connection.state
+        should_retry = SocketConnectionStates.DO_NOT_RETRY not in conn.socket_connection.state
 
         logger.debug("Breaking connection to {}. Attempting retry: {}", conn, should_retry)
         conn.dispose()

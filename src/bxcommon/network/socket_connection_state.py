@@ -1,9 +1,16 @@
-from enum import Flag, auto
+from bxcommon.utils.flag_enum import Flag, FlagCollection
 
 
 class SocketConnectionState(Flag):
-    CONNECTING = auto()
-    INITIALIZED = auto()
-    MARK_FOR_CLOSE = auto()
-    DO_NOT_RETRY = auto()
-    HALT_RECEIVE = auto()
+    pass
+
+
+class SocketConnectionStates(FlagCollection):
+    CONNECTING = SocketConnectionState()
+    INITIALIZED = SocketConnectionState()
+    MARK_FOR_CLOSE = SocketConnectionState()
+    DO_NOT_RETRY = SocketConnectionState()
+    HALT_RECEIVE = SocketConnectionState()
+
+
+SocketConnectionStates.init(SocketConnectionState)

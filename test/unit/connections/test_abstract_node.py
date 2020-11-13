@@ -1,26 +1,25 @@
 import time
 from typing import Optional, List
+
 from mock import patch, MagicMock
 
-from bxcommon.models.node_type import NodeType
-from bxcommon.test_utils.helpers import async_test
-from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
-from bxcommon.network.ip_endpoint import IpEndpoint
-from bxcommon.network.peer_info import ConnectionPeerInfo
-from bxcommon.services.broadcast_service import BroadcastService
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import MAX_CONNECT_RETRIES
+from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
-from bxcommon.network.socket_connection_state import SocketConnectionState
+from bxcommon.network.ip_endpoint import IpEndpoint
+from bxcommon.network.peer_info import ConnectionPeerInfo
+from bxcommon.network.socket_connection_state import SocketConnectionStates
 from bxcommon.services import sdn_http_service
+from bxcommon.services.broadcast_service import BroadcastService
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.test_utils.helpers import async_test
 from bxcommon.test_utils.mocks.mock_connection import MockConnection
-from bxcommon.utils import memory_utils
-
+from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
 from bxutils.services.node_ssl_service import NodeSSLService
 
 
@@ -286,11 +285,11 @@ class AbstractNodeTest(AbstractTestCase):
         logger_mock.debug.assert_called_once()
 
     def _assert_socket_connected(self):
-        self.assertFalse(SocketConnectionState.MARK_FOR_CLOSE in self.socket_connection.state)
+        self.assertFalse(SocketConnectionStates.MARK_FOR_CLOSE in self.socket_connection.state)
 
     def _assert_socket_disconnected(self, should_retry: bool):
-        self.assertTrue(SocketConnectionState.MARK_FOR_CLOSE in self.socket_connection.state)
+        self.assertTrue(SocketConnectionStates.MARK_FOR_CLOSE in self.socket_connection.state)
         if should_retry:
-            self.assertFalse(SocketConnectionState.DO_NOT_RETRY in self.socket_connection.state)
+            self.assertFalse(SocketConnectionStates.DO_NOT_RETRY in self.socket_connection.state)
         else:
-            self.assertTrue(SocketConnectionState.DO_NOT_RETRY in self.socket_connection.state)
+            self.assertTrue(SocketConnectionStates.DO_NOT_RETRY in self.socket_connection.state)
