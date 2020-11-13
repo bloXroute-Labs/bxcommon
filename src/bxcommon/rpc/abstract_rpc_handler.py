@@ -57,7 +57,7 @@ class AbstractRpcHandler(Generic[Node, Req, Res]):
         except RpcError as e:
             raise e
         except Exception as e:
-            logger.error(
+            logger.exception(
                 log_messages.INTERNAL_ERROR_HANDLING_RPC_REQUEST, e, rpc_request
             )
             raise RpcInternalError(rpc_request.id, "Please contact bloXroute support.")
