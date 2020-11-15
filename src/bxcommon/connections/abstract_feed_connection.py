@@ -40,9 +40,10 @@ class AbstractFeedConnection:
             self.ws_client.subscribe_with_callback(process, feed_name)
 
     async def revive(self) -> None:
-        if self.ws_client.ws is None and not self.ws_client.running:
+        if self.ws_client.ws is None or not self.ws_client.running:
             logger.info("Attempting to revive websockets source feed...")
             await self.ws_client.reconnect()
+            await self.subscribe_feeds()
 
     async def stop(self) -> None:
         await self.ws_client.close()
