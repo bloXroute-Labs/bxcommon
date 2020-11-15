@@ -1,5 +1,6 @@
 from typing import NamedTuple, Dict, Any
 
+from bxcommon import constants
 from bxcommon.rpc.rpc_errors import RpcInvalidParams
 from bxcommon.utils import convert
 from bxcommon.utils.object_hash import Sha256Hash
@@ -42,8 +43,8 @@ class NewTransactionFeed(Feed[RawTransactionFeedEntry, RawTransaction]):
     NAME = rpc_constants.NEW_TRANSACTION_FEED_NAME
     FIELDS = ["tx_hash", "tx_contents"]
 
-    def __init__(self) -> None:
-        super().__init__(self.NAME)
+    def __init__(self, network_num: int = constants.ALL_NETWORK_NUM,) -> None:
+        super().__init__(self.NAME, network_num)
 
     def subscribe(
         self, options: Dict[str, Any]

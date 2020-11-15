@@ -1,5 +1,6 @@
 from typing import Dict, Any
 
+from bxcommon import constants
 from bxcommon.rpc.rpc_errors import RpcInvalidParams
 from bxcommon.rpc import rpc_constants
 from bxcommon.feed.feed import Feed
@@ -26,8 +27,8 @@ class EthPendingTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]
 
     published_transactions: ExpiringSet[Sha256Hash]
 
-    def __init__(self, alarm_queue: AlarmQueue) -> None:
-        super().__init__(self.NAME)
+    def __init__(self, alarm_queue: AlarmQueue, network_num: int = constants.ALL_NETWORK_NUM,) -> None:
+        super().__init__(self.NAME, network_num=network_num)
 
         # enforce uniqueness, since multiple sources can publish to
         # pending transactions (eth ws + remote)

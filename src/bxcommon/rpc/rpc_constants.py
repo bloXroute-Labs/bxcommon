@@ -42,8 +42,10 @@ JSON_RPC_ERROR = "error"
 JSON_RPC_ERROR_MESSAGE = "message"
 
 NEW_TRANSACTION_FEED_NAME = "newTxs"
+NEW_BLOCKS_FEED_NAME = "newBlocks"
 ETH_ON_BLOCK_FEED_NAME = "ethOnBlock"
 ETH_PENDING_TRANSACTION_FEED_NAME = "pendingTxs"
+TRANSACTION_STATUS_FEED_NAME = "transactionStatus"
 
 
 class ContentType(Enum):

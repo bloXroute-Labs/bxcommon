@@ -2,7 +2,7 @@ from typing import Dict, Optional, List, Any, Set, TYPE_CHECKING
 
 from bxutils import logging
 
-from bxcommon.feed.feed import Feed
+from bxcommon.feed.feed import Feed, FeedKey
 from bxcommon.feed.subscriber import Subscriber
 
 if TYPE_CHECKING:
@@ -12,7 +12,7 @@ logger = logging.get_logger(__name__)
 
 
 class FeedManager:
-    feeds: Dict[str, Feed]
+    feeds: Dict[FeedKey, Feed]
     _node: "AbstractNode"
 
     def __init__(self, node: "AbstractNode") -> None:
@@ -20,54 +20,62 @@ class FeedManager:
         self._node = node
 
     def __contains__(self, item):
-        return item in self.feeds
+        if isinstance(item, FeedKey):
+            return item in self.feeds
+        else:
+            return FeedKey(item) in self.feeds
 
     def register_feed(self, feed: Feed) -> None:
-        if feed.name in self.feeds:
+        if feed.feed_key in self.feeds:
             raise ValueError(
                 f"Cannot register two feeds with the same name: {feed.name}"
             )
+        self.feeds[feed.feed_key] = feed
 
-        self.feeds[feed.name] = feed
-
-    def subscribe_to_feed(
-        self, name: str, options: Dict[str, Any]
+    def subscribe_to_feed_by_key(
+        self, feed_key: FeedKey, options: Dict[str, Any]
     ) -> Optional[Subscriber]:
-        if name in self.feeds:
-            subscriber = self.feeds[name].subscribe(options)
+        if feed_key in self.feeds:
+            subscriber = self.feeds[feed_key].subscribe(options)
             logger.debug(
-                "Creating new subscriber ({}) to {}", subscriber.subscription_id, name
+                "Creating new subscriber ({}) to {}", subscriber.subscription_id, feed_key.name
             )
             self._node.reevaluate_transaction_streamer_connection()
             return subscriber
         else:
             return None
 
-    def unsubscribe_from_feed(
-        self, name: str, subscriber_id: str
+    def unsubscribe_from_feed_by_key(
+        self, feed_key: FeedKey, subscriber_id: str
     ) -> Optional[Subscriber]:
-        subscriber = self.feeds[name].unsubscribe(subscriber_id)
+        subscriber = self.feeds[feed_key].unsubscribe(subscriber_id)
         if subscriber is not None:
             logger.debug(
                 "Unsubscribing subscriber ({}) from {}",
                 subscriber.subscription_id,
-                name,
+                feed_key.name,
             )
         self._node.reevaluate_transaction_streamer_connection()
         return subscriber
 
-    def publish_to_feed(self, name: str, message: Any) -> None:
-        if name in self.feeds:
-            self.feeds[name].publish(message)
+    def publish_to_feed_by_key(self, feed_key: FeedKey, message: Any) -> None:
+        if feed_key in self.feeds:
+            self.feeds[feed_key].publish(message)
 
-    def get_feed_fields(self, feed_name: str) -> List[str]:
-        return self.feeds[feed_name].FIELDS
+    def get_feed_fields_by_key(self, feed_key: FeedKey) -> List[str]:
+        return self.feeds[feed_key].FIELDS
+
+    def get_feed_by_key(self, feed_key: FeedKey):
+        return self.feeds.get(feed_key)
+
+    def get_feed_keys(self, network_num: int = 0) -> List[FeedKey]:
+        return [key for key in self.feeds if key.network_num == network_num]
 
     def any_subscribers(self) -> bool:
         return any(feed.subscriber_count() > 0 for feed in self.feeds.values())
 
-    def get_valid_feed_filters(self, feed_name: str) -> Set[str]:
-        return self.feeds[feed_name].FILTERS
+    def get_valid_feed_filters_by_key(self, feed_key: FeedKey) -> Set[str]:
+        return self.feeds[feed_key].FILTERS
 
-    def validate_feed_filters(self, feed_name: str, filters: str) -> str:
-        return self.feeds[feed_name].validate_filters(filters)
+    def validate_feed_filters_by_key(self, feed_key: FeedKey, filters: str) -> str:
+        return self.feeds[feed_key].validate_filters(filters)

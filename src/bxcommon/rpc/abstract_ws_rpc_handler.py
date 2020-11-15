@@ -1,11 +1,12 @@
 import json
 import asyncio
 from asyncio import Future
-from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Any
+from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Any, cast, Type
 
 from aiohttp import WSMessage
 from multidict import CIMultiDictProxy
 
+from bxcommon.feed.feed import FeedKey
 from bxcommon.rpc.abstract_rpc_handler import AbstractRpcHandler
 from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
@@ -33,7 +34,7 @@ logger = logging.get_logger(__name__)
 
 class Subscription(NamedTuple):
     subscriber: Subscriber
-    feed_name: str
+    feed_key: FeedKey
     task: Future
 
 
@@ -69,9 +70,9 @@ class AbstractWsRpcHandler(AbstractRpcHandler["AbstractNode", WsRequest, str]):
 
     def get_request_handler(self, request: BxJsonRpcRequest) -> AbstractRpcRequest:
         if request.method == RpcRequestType.SUBSCRIBE and request.method in self.request_handlers:
-            return self._subscribe_request_factory(request, self.node)
+            return self._subscribe_request_factory(request)
         elif request.method == RpcRequestType.UNSUBSCRIBE and request.method in self.request_handlers:
-            return self._unsubscribe_request_factory(request, self.node)
+            return self._unsubscribe_request_factory(request)
 
         request_handler_type = self.request_handlers[request.method]
         # seems to be pyre bug: https://github.com/facebook/pyre-check/issues/267
@@ -116,37 +117,39 @@ class AbstractWsRpcHandler(AbstractRpcHandler["AbstractNode", WsRequest, str]):
     def close(self) -> None:
         subscription_ids = list(self.subscriptions.keys())
         for subscription_id in subscription_ids:
-            feed_name = self._on_unsubscribe(subscription_id)
-            assert feed_name is not None
-            self.feed_manager.unsubscribe_from_feed(feed_name, subscription_id)
+            feed_key = self._on_unsubscribe(subscription_id)
+            assert feed_key is not None
+            self.feed_manager.unsubscribe_from_feed_by_key(feed_key, subscription_id)
         self.subscriptions = {}
 
         self.disconnect_event.set()
 
-    def _on_new_subscriber(self, subscriber: Subscriber, feed_name: str) -> None:
+    def _on_new_subscriber(self, subscriber: Subscriber, feed_key: FeedKey) -> None:
         task = asyncio.ensure_future(self.handle_subscription(subscriber))
         self.subscriptions[subscriber.subscription_id] = Subscription(
-            subscriber, feed_name, task
+            subscriber, feed_key, task
         )
         self.node.on_new_subscriber_request()
 
-    def _on_unsubscribe(self, subscriber_id: str) -> Optional[str]:
+    def _on_unsubscribe(self, subscriber_id: str) -> Optional[FeedKey]:
         if subscriber_id in self.subscriptions:
-            (_, feed_name, task) = self.subscriptions.pop(subscriber_id)
+            (_, feed_key, task) = self.subscriptions.pop(subscriber_id)
             task.cancel()
-            return feed_name
+            return feed_key
         return None
 
     def _subscribe_request_factory(
-        self, request: BxJsonRpcRequest, node: "AbstractNode"
+        self, request: BxJsonRpcRequest
     ) -> AbstractRpcRequest:
-        return SubscribeRpcRequest(
-            request, node, self.feed_manager, self._on_new_subscriber
+        subscribe_rpc_request = cast(Type[SubscribeRpcRequest], self.request_handlers[RpcRequestType.SUBSCRIBE])
+        return subscribe_rpc_request(
+            request, self.node, self.feed_manager, self._on_new_subscriber
         )
 
     def _unsubscribe_request_factory(
-        self, request: BxJsonRpcRequest, node: "AbstractNode"
+        self, request: BxJsonRpcRequest
     ) -> AbstractRpcRequest:
-        return UnsubscribeRpcRequest(
-            request, node, self.feed_manager, self._on_unsubscribe
+        unsubscribe_rpc_request = cast(Type[UnsubscribeRpcRequest], self.request_handlers[RpcRequestType.UNSUBSCRIBE])
+        return unsubscribe_rpc_request(
+            request, self.node, self.feed_manager, self._on_unsubscribe
         )

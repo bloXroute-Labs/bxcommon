@@ -52,7 +52,7 @@ class Subscriber(Generic[T]):
         will eventually fail and must be handled.
         """
         include_fields = self.options.get("include", None)
-        if include_fields is not None:
+        if include_fields:
             if isinstance(message, dict):
                 filtered_message = {key: message[key] for key in include_fields}
 

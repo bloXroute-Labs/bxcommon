@@ -1,5 +1,6 @@
 from typing import NamedTuple
 
+from bxcommon import constants
 from bxcommon.feed.feed import Feed
 from bxcommon.models.tx_blockchain_status import TxBlockchainStatus
 from bxcommon.utils.object_hash import Sha256Hash
@@ -34,8 +35,8 @@ class TransactionStatusFeed(Feed[TransactionStatusFeedEntry, TransactionStatus])
     NAME = "transactionStatus"
     FIELDS = ["tx_hash", "status"]
 
-    def __init__(self) -> None:
-        super().__init__(self.NAME)
+    def __init__(self, network_num: int = constants.ALL_NETWORK_NUM) -> None:
+        super().__init__(self.NAME, network_num)
 
     def serialize(self, raw_message: TransactionStatus) -> TransactionStatusFeedEntry:
         return TransactionStatusFeedEntry(raw_message.tx_hash, raw_message.status)

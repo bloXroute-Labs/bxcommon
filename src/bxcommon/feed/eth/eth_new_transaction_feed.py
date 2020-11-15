@@ -1,5 +1,6 @@
 from typing import Dict, Any
 
+from bxcommon import constants
 from bxcommon.feed.feed import Feed
 from bxcommon.feed.subscriber import Subscriber
 from bxcommon.rpc.rpc_errors import RpcInvalidParams
@@ -19,8 +20,8 @@ class EthNewTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
     FIELDS = ["tx_hash", "tx_contents"]
     FILTERS = {"transaction_value_range_eth", "from", "to"}
 
-    def __init__(self) -> None:
-        super().__init__(self.NAME)
+    def __init__(self, network_num: int = constants.ALL_NETWORK_NUM,) -> None:
+        super().__init__(self.NAME, network_num)
 
     def subscribe(self, options: Dict[str, Any]) -> Subscriber[EthTransactionFeedEntry]:
         include_from_blockchain = options.get("include_from_blockchain", None)

@@ -1,5 +1,6 @@
 from typing import NamedTuple
 
+from bxcommon import constants
 from bxcommon.utils import convert
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.feed.feed import Feed
@@ -35,8 +36,8 @@ class NewBlockFeed(Feed[RawBlockFeedEntry, RawBlock]):
     NAME = "newBlocks"
     FIELDS = ["hash", "block"]
 
-    def __init__(self) -> None:
-        super().__init__(self.NAME)
+    def __init__(self, network_num: int = constants.ALL_NETWORK_NUM,) -> None:
+        super().__init__(self.NAME, network_num=network_num)
 
     def serialize(self, raw_message: RawBlock) -> RawBlockFeedEntry:
         return RawBlockFeedEntry(raw_message.hash, raw_message.block)

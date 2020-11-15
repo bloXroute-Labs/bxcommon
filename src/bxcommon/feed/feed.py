@@ -1,9 +1,9 @@
 from abc import abstractmethod, ABCMeta
 from asyncio import QueueFull
 
-from typing import TypeVar, Generic, List, Dict, Optional, Any, Set
+from typing import TypeVar, Generic, List, Dict, Optional, Any, Set, NamedTuple
 
-from bxcommon import log_messages
+from bxcommon import log_messages, constants
 from bxcommon.feed.subscriber import Subscriber
 from bxcommon.feed import filter_parsing
 from bxutils import logging
@@ -13,15 +13,24 @@ T = TypeVar("T")
 S = TypeVar("S")
 
 
+class FeedKey(NamedTuple):
+    name: str
+    network_num: int = 0
+
+
 class Feed(Generic[T, S], metaclass=ABCMeta):
     FIELDS: List[str] = []
     FILTERS: Set[str] = set()
     name: str
+    network_num: int
     subscribers: Dict[str, Subscriber[T]]
+    feed_key: FeedKey
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, network_num: int = constants.ALL_NETWORK_NUM) -> None:
         self.name = name
+        self.network_num = network_num
         self.subscribers = {}
+        self.feed_key = FeedKey(name, network_num)
 
     def __repr__(self) -> str:
         return f"Feed<{self.name}>"
