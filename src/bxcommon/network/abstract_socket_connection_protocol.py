@@ -11,6 +11,7 @@ from bxcommon import constants
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.network.socket_connection_state import SocketConnectionState, SocketConnectionStates
+from bxcommon.utils.stats import hooks
 from bxutils import logging
 from bxutils.logging import LogRecordType
 from bxutils.ssl import ssl_certificate_factory
@@ -170,9 +171,9 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         )
         transport.write(bytes_to_send)
         len_bytes_to_sent = len(bytes_to_send)
-        conn.hooks.add_throughput_event(
+        hooks.add_throughput_event(
             NetworkDirection.OUTBOUND,
-            None,
+            "outgoing",
             len_bytes_to_sent,
             conn.peer_desc,
             conn.peer_id
