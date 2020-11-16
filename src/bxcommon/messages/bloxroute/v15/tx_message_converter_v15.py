@@ -70,8 +70,6 @@ class _TxMessageConverterV15(AbstractMessageConverter):
         old_version_msg_bytes[: self._LEFT_BREAKPOINT] = msg.rawbytes()[:self._LEFT_BREAKPOINT]
         old_version_msg_bytes[self._LEFT_BREAKPOINT:] = msg.rawbytes()[self._RIGHT_BREAKPOINT:]
 
-        logger.info(len(old_version_msg_bytes))
-
         return AbstractBloxrouteMessage.initialize_class(
             old_version_msg_class,
             old_version_msg_bytes,

@@ -304,6 +304,7 @@ def get_common_opts(
             "private_ssl_base_url": "https://certificates.blxrbdn.com",
             "rpc": rpc,
             "transaction_validation": transaction_validation,
+            "using_private_ip_connection": False,
         }
     )
 

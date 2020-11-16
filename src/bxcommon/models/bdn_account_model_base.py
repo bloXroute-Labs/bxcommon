@@ -1,5 +1,5 @@
-from dataclasses import dataclass, fields
-from typing import Optional, Dict, Any
+from dataclasses import dataclass
+from typing import Optional
 from datetime import datetime, date
 
 from bxcommon.models.bdn_service_model_config_base import (
@@ -39,12 +39,6 @@ class AccountTemplate:
     new_pending_transaction_streaming: Optional[BdnFeedServiceModelConfigBase] = None
     transaction_state_feed: Optional[BdnFeedServiceModelConfigBase] = None
     on_block_feed: Optional[BdnBasicServiceModel] = None
-
-    def account_template_dict(self) -> Dict[str, Any]:
-        return {
-            template_field.name: getattr(self, template_field.name)
-            for template_field in fields(AccountTemplate)
-        }
 
 
 @dataclass

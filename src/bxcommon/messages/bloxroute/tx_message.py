@@ -117,6 +117,16 @@ class TxMessage(AbstractBroadcastMessage):
         assert self._transaction_flag is not None
         return TransactionFlag(self._transaction_flag)
 
+    def set_transaction_flag(self, flag: TransactionFlag) -> None:
+        off = (
+            self.HEADER_LENGTH
+            + AbstractBroadcastMessage.PAYLOAD_LENGTH
+            + constants.SID_LEN
+            - constants.CONTROL_FLAGS_LEN
+        )
+        self._transaction_flag = flag
+        struct.pack_into("<H", self.buf, off, flag.value)
+
     def timestamp(self) -> int:
         if self._timestamp is None:
             off = (

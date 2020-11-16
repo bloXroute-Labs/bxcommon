@@ -1,3 +1,5 @@
+import time
+
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
@@ -17,6 +19,8 @@ from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyn
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v16.bdn_performance_stats_message_v16 import \
     BdnPerformanceStatsMessageV16
+from bxcommon.models.transaction_flag import TransactionFlag
+from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
@@ -107,4 +111,22 @@ class BloxrouteVersionManagerV16Test(
         self.assertEqual(
             converted_single_node_stats.new_block_announcements_from_blockchain_node,
             original_single_node_stats.new_block_announcements_from_blockchain_node
+        )
+
+    def tx_message(self) -> TxMessage:
+        return TxMessage(
+            helpers.generate_object_hash(),
+            self.NETWORK_NUMBER,
+            self.NODE_ID,
+            50,
+            helpers.generate_bytearray(250),
+            TransactionFlag.PAID_TX | TransactionFlag.CEN_ENABLED,
+            time.time(),
+            )
+
+    def compare_tx_current_to_old(
+        self, converted_old_message: TxMessage, original_old_message: TxMessage,
+    ):
+        self.assertEqual(
+            TransactionFlag.PAID_TX, converted_old_message.transaction_flag()
         )

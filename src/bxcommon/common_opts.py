@@ -96,6 +96,7 @@ class CommonOpts:
     node_type: NodeType
     logger_names: Optional[Iterable[str]]
     third_party_loggers: Optional[List[LoggerConfig]]
+    using_private_ip_connection: bool
 
     # set after node runner
     has_fully_updated_tx_service: bool

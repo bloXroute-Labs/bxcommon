@@ -10,6 +10,9 @@ class TransactionFlag(SerializableFlag):
     RE_PROPAGATE = 8
     PAID_STATUS_TRACK = STATUS_TRACK | PAID_TX
 
+    # for professional/enterprise accounts only
+    CEN_ENABLED = 16
+
     def __str__(self):
         return str(self.name).lower()
 
