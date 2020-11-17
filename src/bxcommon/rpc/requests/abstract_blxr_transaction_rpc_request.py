@@ -7,10 +7,13 @@ from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest, Node
 from bxcommon.rpc.rpc_errors import RpcInvalidParams, RpcAccountIdError
+from bxcommon.utils import convert
 
 
 class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node]):
     SYNCHRONOUS = rpc_constants.SYNCHRONOUS_PARAMS_KEY
+    track_flag: TransactionFlag = TransactionFlag.PAID_TX
+
     help = {
         "params": f"[Required - {rpc_constants.TRANSACTION_PARAMS_KEY}: [transaction payload in hex string format]]. "
                   f"Optional - {SYNCHRONOUS}: [True (wait for response from the relay - default), "
@@ -44,12 +47,17 @@ class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node]):
 
         transaction_str: str = params[rpc_constants.TRANSACTION_PARAMS_KEY]
         network_num = self.get_network_num()
-        transaction_flag = TransactionFlag.PAID_TX
-        return await self.process_transaction(network_num, account_id, transaction_flag, transaction_str)
+        if rpc_constants.STATUS_TRACK_PARAMS_KEY in params:
+            track_flag_str = params[rpc_constants.STATUS_TRACK_PARAMS_KEY]
+            track_flag = convert.str_to_bool(str(track_flag_str).lower(), default=True)
+            if track_flag:
+                self.track_flag |= TransactionFlag.STATUS_TRACK
+
+        return await self.process_transaction(network_num, account_id, transaction_str)
 
     @abstractmethod
     async def process_transaction(
-        self, network_num: int, account_id: str, transaction_flag: TransactionFlag, transaction_str: str
+        self, network_num: int, account_id: str, transaction_str: str
     ) -> JsonRpcResponse:
         pass
 
