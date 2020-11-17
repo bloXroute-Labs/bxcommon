@@ -119,7 +119,7 @@ class AbstractWsRpcHandler(AbstractRpcHandler["AbstractNode", WsRequest, str]):
         for subscription_id in subscription_ids:
             feed_key = self._on_unsubscribe(subscription_id)
             assert feed_key is not None
-            self.feed_manager.unsubscribe_from_feed_by_key(feed_key, subscription_id)
+            self.feed_manager.unsubscribe_from_feed(feed_key, subscription_id)
         self.subscriptions = {}
 
         self.disconnect_event.set()

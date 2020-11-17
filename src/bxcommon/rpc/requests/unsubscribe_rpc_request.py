@@ -52,5 +52,5 @@ class UnsubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
                 self.request_id,
                 f"Subscriber {self.subscriber_id} was not found."
             )
-        self.feed_manager.unsubscribe_from_feed_by_key(feed_key, self.subscriber_id)
+        self.feed_manager.unsubscribe_from_feed(feed_key, self.subscriber_id)
         return JsonRpcResponse(self.request_id, True)

@@ -81,7 +81,7 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         self.options = options
 
     def validate_params_feed_details(self):
-        feed = self.feed_manager.get_feed_by_key(self.feed_key)
+        feed = self.feed_manager.get_feed(self.feed_key)
         if feed is None:
             raise RpcInvalidParams(
                 self.request_id,
@@ -128,14 +128,14 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         params = self.params
         assert isinstance(params, list)
 
-        subscriber = self.feed_manager.subscribe_to_feed_by_key(self.feed_key, self.options)
+        subscriber = self.feed_manager.subscribe_to_feed(self.feed_key, self.options)
         assert subscriber is not None  # already validated
         self.subscribe_handler(subscriber, self.feed_key)
 
         return JsonRpcResponse(self.request_id, subscriber.subscription_id)
 
     def format_filters(self, filters: Any) -> str:
-        valid_filters = self.feed_manager.get_valid_feed_filters_by_key(self.feed_key)
+        valid_filters = self.feed_manager.get_valid_feed_filters(self.feed_key)
         invalid_filters = RpcInvalidParams(
             self.request_id,
             f"{filters} is not a valid set of filters. "
@@ -150,7 +150,7 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
             raise invalid_filters
         logger_filters.debug("Validating filters")
         try:
-            filters = self.feed_manager.validate_feed_filters_by_key(self.feed_key, filters)
+            filters = self.feed_manager.validate_feed_filters(self.feed_key, filters)
         except Exception:
             raise invalid_filters
         return filters
