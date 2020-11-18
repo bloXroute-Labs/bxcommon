@@ -106,7 +106,13 @@ class AlarmQueue:
         self.lock = RLock()
 
     def register_alarm(
-        self, fire_delay: float, fn: Callable, *args, alarm_name: Optional[str] = None, **kwargs
+        self,
+        fire_delay: float,
+        fn: Callable,
+        *args,
+        alarm_name: Optional[str] = None,
+        fire_immediately: bool = False,
+        **kwargs
     ) -> AlarmId:
         """
         Schedules an alarm to be fired in `fire_delay` seconds. Function must return a positive integer
@@ -114,6 +120,7 @@ class AlarmQueue:
         :param fire_delay: delay in seconds before firing alarm
         :param fn: function to be fired on delay
         :param alarm_name: optional label for alarm
+        :param fire_immediately: fires alarm immediately if delay is 0
         :param args: function arguments
         :return: (fire time, unique count, alarm function)
         """
@@ -129,6 +136,11 @@ class AlarmQueue:
 
         alarm = Alarm(fn, time.time() + fire_delay, *args, name=alarm_name, **kwargs)
         alarm_id = AlarmId(time.time() + fire_delay, self.uniq_count, alarm)
+
+        if fire_immediately and fire_delay == 0:
+            alarm.fire()
+            return alarm_id
+
         with self.lock:
             heappush(self.alarms, alarm_id)
             self.uniq_count += 1
