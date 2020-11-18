@@ -30,9 +30,10 @@ from bxcommon.utils.object_hash import Sha256Hash
 
 try:
     from bxcommon.utils.proxy import task_pool_proxy
+    use_extensions = True
     # pylint: disable=broad-except
 except Exception:
-    pass
+    use_extensions = False
 from bxutils.logging.log_level import LogLevel
 
 if TYPE_CHECKING:
@@ -199,7 +200,8 @@ def create_input_buffer_with_bytes(message_bytes):
 def set_extensions_parallelism(
     degree: int = constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE,
 ) -> None:
-    task_pool_proxy.init(config.get_thread_pool_parallelism_degree(str(degree)))
+    if use_extensions:
+        task_pool_proxy.init(config.get_thread_pool_parallelism_degree(str(degree)))
 
 
 def blockchain_network(
