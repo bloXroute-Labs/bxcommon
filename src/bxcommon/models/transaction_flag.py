@@ -13,9 +13,6 @@ class TransactionFlag(SerializableFlag):
     # for professional/enterprise accounts only
     CEN_ENABLED = 16
 
-    def __str__(self):
-        return str(self.name).lower()
-
     def get_quota_type(self) -> QuotaType:
         if TransactionFlag.PAID_TX in self:
             return QuotaType.PAID_DAILY_QUOTA
