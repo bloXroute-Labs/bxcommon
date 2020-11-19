@@ -49,7 +49,7 @@ class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
         BdnPerformanceStatsMessageV9.MSG_SIZE +
         constants.UL_SHORT_SIZE_IN_BYTES +                                              # memory
         (2 * (constants.UL_INT_SIZE_IN_BYTES - constants.UL_SHORT_SIZE_IN_BYTES)) +     # new length of tx fields
-        (3 * constants.UL_INT_SIZE_IN_BYTES) +                                          # new stats
+        (5 * constants.UL_INT_SIZE_IN_BYTES) +                                          # new stats
         constants.IP_ADDR_SIZE_IN_BYTES +                                               # blockchain ip
         (2 * constants.UL_SHORT_SIZE_IN_BYTES)                                          # port, num blockchain peers
     )
@@ -104,6 +104,10 @@ class _BdnPerformanceStatsMessageConverterV9(AbstractMessageConverter):
         struct.pack_into("<I", new_msg_bytes, off, tx_received_from_bdn)
         off += constants.UL_INT_SIZE_IN_BYTES
 
+        struct.pack_into("<I", new_msg_bytes, off, default_new_stats)
+        off += constants.UL_INT_SIZE_IN_BYTES
+        struct.pack_into("<I", new_msg_bytes, off, default_new_stats)
+        off += constants.UL_INT_SIZE_IN_BYTES
         struct.pack_into("<I", new_msg_bytes, off, default_new_stats)
         off += constants.UL_INT_SIZE_IN_BYTES
         struct.pack_into("<I", new_msg_bytes, off, default_new_stats)

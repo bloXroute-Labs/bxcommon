@@ -13,7 +13,7 @@ from bxutils.logging import LogLevel
 
 
 @dataclass
-class BdnPerformanceStatsData:
+class BdnPerformanceStatsDataV18:
     new_blocks_received_from_blockchain_node: int = 0
     new_blocks_received_from_bdn: int = 0
     new_blocks_seen: int = 0
@@ -29,11 +29,8 @@ class BdnPerformanceStatsData:
     new_tx_received_from_blockchain_node_low_fee: int = 0  # not sent in msg
     new_tx_received_from_bdn_low_fee: int = 0  # not sent in msg
 
-    tx_sent_to_node: int = 0
-    duplicate_tx_from_node: int = 0
 
-
-class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
+class BdnPerformanceStatsMessageV18(AbstractBloxrouteMessage):
     """
     Bloxroute message sent from gateway to relay that contains statistics on BDN performance.
     """
@@ -42,14 +39,14 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
     _interval_start_time: Optional[float] = None
     _interval_end_time: Optional[float] = None
     _memory_utilization_mb: Optional[int] = None
-    _node_stats: Optional[Dict[IpEndpoint, BdnPerformanceStatsData]] = None
+    _node_stats: Optional[Dict[IpEndpoint, BdnPerformanceStatsDataV18]] = None
 
     def __init__(
         self,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
         memory_utilization_mb: Optional[int] = None,
-        node_stats: Optional[Dict[IpEndpoint, BdnPerformanceStatsData]] = None,
+        node_stats: Optional[Dict[IpEndpoint, BdnPerformanceStatsDataV18]] = None,
         buf: Optional[bytearray] = None
     ):
         self.node_stats_offset = (
@@ -96,7 +93,7 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
         assert memory_utilization_mb is not None
         return memory_utilization_mb
 
-    def node_stats(self) -> Dict[IpEndpoint, BdnPerformanceStatsData]:
+    def node_stats(self) -> Dict[IpEndpoint, BdnPerformanceStatsDataV18]:
         if self._node_stats is None:
             self._unpack()
 
@@ -109,13 +106,13 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
         start_time: datetime,
         end_time: datetime,
         memory_utilization_mb: int,
-        node_stats: Dict[IpEndpoint, BdnPerformanceStatsData]
+        node_stats: Dict[IpEndpoint, BdnPerformanceStatsDataV18]
     ):
         stats_serialized_length = constants.UL_SHORT_SIZE_IN_BYTES + len(node_stats) * (
             constants.IP_ADDR_SIZE_IN_BYTES +
             constants.UL_SHORT_SIZE_IN_BYTES +
             (2 * constants.UL_SHORT_SIZE_IN_BYTES) +
-            (7 * constants.UL_INT_SIZE_IN_BYTES)
+            (5 * constants.UL_INT_SIZE_IN_BYTES)
         )
         msg_size = (
             self.node_stats_offset
@@ -163,12 +160,6 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
             struct.pack_into("<I", buf, off, node_stat.new_block_announcements_from_blockchain_node)
             off += constants.UL_INT_SIZE_IN_BYTES
 
-            struct.pack_into("<I", buf, off, node_stat.tx_sent_to_node)
-            off += constants.UL_INT_SIZE_IN_BYTES
-
-            struct.pack_into("<I", buf, off, node_stat.duplicate_tx_from_node)
-            off += constants.UL_INT_SIZE_IN_BYTES
-
         return buf
 
     def _unpack(self) -> None:
@@ -191,7 +182,7 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
             ip, port = message_utils.unpack_ip_port(self._memoryview[off:].tobytes())
             off += constants.IP_ADDR_SIZE_IN_BYTES + constants.UL_SHORT_SIZE_IN_BYTES
 
-            single_node_stats = BdnPerformanceStatsData()
+            single_node_stats = BdnPerformanceStatsDataV18()
             single_node_stats.new_blocks_received_from_blockchain_node, = struct.unpack_from("<H", buf, off)
             off += constants.UL_SHORT_SIZE_IN_BYTES
             single_node_stats.new_blocks_received_from_bdn, = struct.unpack_from("<H", buf, off)
@@ -205,10 +196,6 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
             single_node_stats.new_block_messages_from_blockchain_node, = struct.unpack_from("<I", buf, off)
             off += constants.UL_INT_SIZE_IN_BYTES
             single_node_stats.new_block_announcements_from_blockchain_node, = struct.unpack_from("<I", buf, off)
-            off += constants.UL_INT_SIZE_IN_BYTES
-            single_node_stats.tx_sent_to_node, = struct.unpack_from("<I", buf, off)
-            off += constants.UL_INT_SIZE_IN_BYTES
-            single_node_stats.duplicate_tx_from_node, = struct.unpack_from("<I", buf, off)
             off += constants.UL_INT_SIZE_IN_BYTES
 
             node_stats[IpEndpoint(ip, port)] = single_node_stats

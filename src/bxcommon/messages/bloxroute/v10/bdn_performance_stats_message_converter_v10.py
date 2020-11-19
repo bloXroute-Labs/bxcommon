@@ -43,7 +43,7 @@ class _BdnPerformanceStatsMessageConverterV10(AbstractMessageConverter):
     _NEW_MESSAGE_LEN = (
         BdnPerformanceStatsMessageV10.MSG_SIZE +
         constants.UL_SHORT_SIZE_IN_BYTES +
-        (3 * constants.UL_INT_SIZE_IN_BYTES) +
+        (5 * constants.UL_INT_SIZE_IN_BYTES) +
         constants.IP_ADDR_SIZE_IN_BYTES +
         (2 * constants.UL_SHORT_SIZE_IN_BYTES)
     )
@@ -86,6 +86,10 @@ class _BdnPerformanceStatsMessageConverterV10(AbstractMessageConverter):
             ]
         off += self._FIRST_STATS_SETS_LENGTH
 
+        struct.pack_into("<I", new_msg_bytes, off, default_new_stats)
+        off += constants.UL_INT_SIZE_IN_BYTES
+        struct.pack_into("<I", new_msg_bytes, off, default_new_stats)
+        off += constants.UL_INT_SIZE_IN_BYTES
         struct.pack_into("<I", new_msg_bytes, off, default_new_stats)
         off += constants.UL_INT_SIZE_IN_BYTES
         struct.pack_into("<I", new_msg_bytes, off, default_new_stats)

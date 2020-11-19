@@ -102,3 +102,5 @@ class BloxrouteVersionManagerV13Test(
         self.assertEqual(0, converted_single_node_stats.new_blocks_seen)
         self.assertEqual(0, converted_single_node_stats.new_block_messages_from_blockchain_node)
         self.assertEqual(0, converted_single_node_stats.new_block_announcements_from_blockchain_node)
+        self.assertEqual(0, converted_single_node_stats.tx_sent_to_node)
+        self.assertEqual(0, converted_single_node_stats.duplicate_tx_from_node)

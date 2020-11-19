@@ -222,7 +222,7 @@ class AbstractBloxrouteVersionManagerTest(
         helpers.add_stats_to_node_stats(
             node_stats,
             "127.0.0.1", 8001,
-            20, 30, 40, 50, 10, 10, 20
+            20, 30, 40, 50, 10, 10, 20, 100, 50
         )
         return BdnPerformanceStatsMessage(
             datetime.utcnow(),

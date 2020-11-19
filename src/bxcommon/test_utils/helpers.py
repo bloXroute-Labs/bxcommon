@@ -486,7 +486,9 @@ def add_stats_to_node_stats(
     new_tx_from_bdn: int,
     new_blocks_seen: int,
     new_block_messages_from_node: int,
-    new_block_announcements_from_node: int
+    new_block_announcements_from_node: int,
+    tx_sent_to_node: int,
+    duplicate_tx_from_node: int
 ) -> None:
     new_node_stats = BdnPerformanceStatsData()
     new_node_stats.new_blocks_received_from_blockchain_node = new_blocks_from_node
@@ -496,4 +498,6 @@ def add_stats_to_node_stats(
     new_node_stats.new_block_announcements_from_blockchain_node = new_block_announcements_from_node
     new_node_stats.new_tx_received_from_blockchain_node = new_tx_from_node
     new_node_stats.new_tx_received_from_bdn = new_tx_from_bdn
+    new_node_stats.tx_sent_to_node = tx_sent_to_node
+    new_node_stats.duplicate_tx_from_node = duplicate_tx_from_node
     node_stats[IpEndpoint(ip, port)] = new_node_stats

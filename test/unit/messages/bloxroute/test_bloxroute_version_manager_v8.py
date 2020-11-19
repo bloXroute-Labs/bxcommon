@@ -144,6 +144,8 @@ class BloxrouteVersionManagerV8Test(
         self.assertEqual(0, converted_single_node_stats.new_block_messages_from_blockchain_node)
         self.assertEqual(0, converted_single_node_stats.new_block_announcements_from_blockchain_node)
         self.assertEqual(0, converted_current_message.memory_utilization())
+        self.assertEqual(0, converted_single_node_stats.tx_sent_to_node)
+        self.assertEqual(0, converted_single_node_stats.duplicate_tx_from_node)
 
     def old_pong_message(self, original_message: PongMessage) -> PongMessageV13:
         return PongMessageV13(original_message.nonce())
