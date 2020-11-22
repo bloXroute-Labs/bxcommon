@@ -36,6 +36,7 @@ class EthTransactionProxyFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
     def should_publish_message_to_subscriber(
         self,
         subscriber: Subscriber[EthTransactionFeedEntry],
+        # pylint: disable=unused-argument
         raw_message: EthRawTransaction,
         serialized_message: EthTransactionFeedEntry,
     ) -> bool:
