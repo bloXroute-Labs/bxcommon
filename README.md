@@ -8,5 +8,5 @@ If you are interested in contributing to bloXroute, please refer to the `README.
 You can find our comprehensive technical documentation [on our website].
 
 [bxgateway]: https://github.com/bloXroute-Labs/bxgateway
-[on our website]: https://bloxroute.com/docs/bloxroute-documentation/
+[on our website]: https://docs.bloxroute.com/
 
