@@ -64,6 +64,7 @@ MAX_CONNECT_TIMEOUT_INCREASE = 7
 RECV_BUFSIZE = 1024 * 1024
 MAX_BAD_MESSAGES = 3
 PING_INTERVAL_S = 60
+PING_PONG_TRESHOLD = 0.5
 # </editor-fold>
 
 # <editor-fold desc="Logging">

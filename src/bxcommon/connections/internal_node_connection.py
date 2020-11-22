@@ -196,11 +196,18 @@ class InternalNodeConnection(AbstractConnection[Node]):
             if nonce in self._nonce_to_network_num:
                 self.sync_ping_latencies[self._nonce_to_network_num[nonce]] = request_response_time
 
-            self.log_debug(
-                "Ping/pong exchange nonce {} took {:.2f} seconds to complete.",
-                msg.nonce(),
-                request_response_time
-            )
+            if request_msg_timestamp > constants.PING_PONG_TRESHOLD:
+                self.log_debug(
+                    "Ping/pong exchange nonce {} took {:.2f} seconds to complete.",
+                    msg.nonce(),
+                    request_response_time
+                )
+            else:
+                self.log_trace(
+                    "Ping/pong exchange nonce {} took {:.2f} seconds to complete.",
+                    msg.nonce(),
+                    request_response_time
+                )
 
             hooks.add_measurement(self.peer_desc, MeasurementType.PING, request_response_time, self.peer_id)
             if timestamp:

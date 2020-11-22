@@ -10,7 +10,6 @@ from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
 from bxutils import logging
-from bxutils.logging.log_level import LogLevel
 
 logger = logging.get_logger(__name__)
 
@@ -58,9 +57,6 @@ class CompressedBlockTxsMessage(AbstractBloxrouteMessage):
         self._txs_count = None
         self._network_num = None
         self._block_hash = None
-
-    def log_level(self):
-        return LogLevel.DEBUG
 
     def get_txs(self) -> List[TransactionInfo]:
         if self._txs is None:
