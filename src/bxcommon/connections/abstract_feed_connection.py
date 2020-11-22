@@ -1,11 +1,10 @@
 from abc import ABCMeta
-from typing import Dict, Callable, Optional
+from typing import Dict, Callable, Optional, Generic, TypeVar
 
 from bxcommon.rpc.provider.abstract_provider import SubscriptionNotification
 
 from bxcommon.constants import LOCALHOST, WS_DEFAULT_PORT
 from bxcommon.rpc.ws.ws_client import WsClient
-from bxcommon.connections.abstract_node import AbstractNode
 from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 
@@ -14,14 +13,15 @@ logger = logging.get_logger(__name__)
 memory_logger = logging.get_logger(LogRecordType.BxMemory, __name__)
 msg_handling_logger = logging.get_logger(LogRecordType.MessageHandlingTroubleshooting, __name__)
 
+T = TypeVar("T")
+
 
 # pylint: disable=too-many-public-methods
-class AbstractFeedConnection:
-    __metaclass__ = ABCMeta
+class AbstractFeedConnection(Generic[T], metaclass=ABCMeta):
 
     def __init__(
         self,
-        node: AbstractNode,
+        node: T,
         feed_ip: str = LOCALHOST,
         feed_port: int = WS_DEFAULT_PORT,
         headers: Optional[Dict] = None
