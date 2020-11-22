@@ -27,13 +27,3 @@ class ProxyFeed(Feed[Dict[str, Any], Dict[str, Any]]):
 
     def serialize(self, raw_message: Dict[str, Any]) -> Dict[str, Any]:
         return raw_message
-
-    def publish(self, raw_message: Dict[str, Any]) -> None:
-        logger.trace(
-            "attempting to publish message: {} for feed {}", raw_message, self.name
-        )
-
-        if self.subscriber_count() == 0:
-            return
-
-        super(ProxyFeed, self).publish(raw_message)

@@ -133,7 +133,11 @@ def get_argument_parser() -> argparse.ArgumentParser:
     return arg_parser
 
 
-def add_argument_parser_rpc(arg_parser: ArgumentParser):
+def add_argument_parser_rpc(
+    arg_parser: ArgumentParser,
+    default_rpc_host=rpc_constants.DEFAULT_RPC_HOST,
+    default_rpc_port=rpc_constants.DEFAULT_RPC_PORT
+):
     arg_parser.add_argument(
         "--rpc",
         help="Start a HTTP(S) JSON-RPC server",
@@ -144,13 +148,13 @@ def add_argument_parser_rpc(arg_parser: ArgumentParser):
         "--rpc-host",
         help="The node RPC host (default: {}).".format(rpc_constants.DEFAULT_RPC_HOST),
         type=str,
-        default=rpc_constants.DEFAULT_RPC_HOST
+        default=default_rpc_host
     )
     arg_parser.add_argument(
         "--rpc-port",
         help="The node RPC port (default: {}).".format(rpc_constants.DEFAULT_RPC_PORT),
         type=int,
-        default=rpc_constants.DEFAULT_RPC_PORT,
+        default=default_rpc_port,
     )
     arg_parser.add_argument(
         "--rpc-use-ssl",
