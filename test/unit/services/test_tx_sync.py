@@ -31,7 +31,8 @@ class SyncTxServiceTest(MessageFactoryTestCase):
         for i in range(int(tx_count)):
             tx_hash = Sha256Hash(binary=helpers.generate_bytearray(crypto.SHA256_HASH_LEN))
             tx_content = helpers.generate_bytearray(tx_size)
-            self.transaction_service.set_transaction_contents(tx_hash, tx_content)
+            transaction_key = self.transaction_service.get_transaction_key(tx_hash)
+            self.transaction_service.set_transaction_contents_by_key(transaction_key, tx_content)
             for _ in range(random.randrange(1, 10)):
                 short_id += 1
                 self.transaction_service.assign_short_id(tx_hash, short_id)

@@ -231,16 +231,6 @@ class TransactionService:
         if TransactionFlag.PAID_TX & tx_flag:
             self._short_id_to_tx_flag[short_id] = tx_flag
 
-    @deprecated
-    def get_short_id(self, transaction_hash: Sha256Hash) -> int:
-        """
-        Fetches a single short id for transaction. If the transaction has multiple short id mappings, just gets
-        the first one.
-        :param transaction_hash: transaction long hash
-        :return: short id
-        """
-        return self.get_short_id_by_key(self.get_transaction_key(transaction_hash))
-
     def get_short_id_by_key(self, transaction_key: TransactionKey) -> int:
         """
         Fetches a single short id for transaction. If the transaction has multiple short id mappings, just gets
@@ -249,15 +239,6 @@ class TransactionService:
         :return: short id
         """
         return next(iter(self.get_short_ids_by_key(transaction_key)))
-
-    @deprecated
-    def get_short_ids(self, transaction_hash: Sha256Hash) -> Set[int]:
-        """
-        Fetches all short ids for a given transactions
-        :param transaction_hash: transaction long hash
-        :return: set of short ids
-        """
-        return self.get_short_ids_by_key(self.get_transaction_key(transaction_hash))
 
     def get_short_ids_by_key(self, transaction_key: TransactionKey) -> Set[int]:
         """
@@ -307,16 +288,6 @@ class TransactionService:
                 unknown_tx_hashes.append(transaction_key.transaction_hash)
                 has_missing = True
         return has_missing, unknown_tx_sids, unknown_tx_hashes
-
-    @deprecated
-    def get_transaction_by_hash(self, transaction_hash: Sha256Hash) -> Optional[Union[bytearray, memoryview]]:
-        """
-        Fetches transaction contents for a given transaction hash.
-        Results might be None.
-        :param transaction_hash: transaction hash
-        :return: transaction contents.
-        """
-        return self.get_transaction_by_key(self.get_transaction_key(transaction_hash))
 
     def get_transaction_by_key(self, transaction_key: TransactionKey) -> Optional[Union[bytearray, memoryview]]:
         """
@@ -592,26 +563,6 @@ class TransactionService:
             True,
             transaction_contents,
             None
-        )
-
-    @deprecated
-    def set_transaction_contents_base(
-        self,
-        transaction_hash: Sha256Hash,
-        transaction_cache_key: TransactionCacheKeyType,
-        has_short_id: bool,
-        previous_size: int,
-        call_set_contents: bool,
-        transaction_contents: Optional[Union[bytearray, memoryview]] = None,
-        transaction_contents_length: Optional[int] = None
-    ) -> None:
-        return self.set_transaction_contents_base_by_key(
-            self.get_transaction_key(transaction_hash, transaction_cache_key),
-            has_short_id,
-            previous_size,
-            call_set_contents,
-            transaction_contents,
-            transaction_contents_length
         )
 
     def set_transaction_contents_base_by_key(
