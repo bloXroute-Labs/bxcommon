@@ -180,7 +180,8 @@ def _init_ssl_service(
     )
     node_ssl_service.blocking_load()
 
-    if node_ssl_service.has_valid_certificate(SSLCertificateType.PRIVATE):
+    if node_ssl_service.has_valid_certificate(SSLCertificateType.PRIVATE) \
+        and not node_ssl_service.should_renew_node_certificate():
         ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
     else:
         ssl_context = node_ssl_service.create_ssl_context(
