@@ -431,7 +431,7 @@ class AbstractTransactionServiceTestCase(AbstractTestCase):
 
     def _test_memory_stats(self):
         self._add_transactions(1000, 100)
-        self.transaction_service.log_tx_service_mem_stats()
+        self.transaction_service.log_tx_service_mem_stats(True)
         memory_statistics.flush_info()
 
     def _test_iter_transaction_hashes_from_oldest(self):

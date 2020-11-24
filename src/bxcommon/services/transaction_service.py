@@ -22,7 +22,7 @@ from bxcommon.utils import memory_utils, convert
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.deprecated import deprecated
 from bxcommon.utils.expiration_queue import ExpirationQueue
-from bxcommon.utils.memory_utils import ObjectSize
+from bxcommon.utils.memory_utils import ObjectSize, SizeType
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.stats import hooks
 from bxcommon.utils.stats.transaction_stat_event_type import TransactionStatEventType
@@ -1018,44 +1018,21 @@ class TransactionService:
             }
         )
 
-    def log_tx_service_mem_stats(self) -> None:
+    def log_tx_service_mem_stats(self, include_data_structure_memory: bool = False) -> None:
         """
         Logs transactions service memory statistics
         """
-        if self.node.opts.stats_calculate_actual_size:
+        if self.node.opts.stats_calculate_actual_size and include_data_structure_memory:
             size_type = memory_utils.SizeType.OBJECT
         else:
             size_type = memory_utils.SizeType.ESTIMATE
 
         class_name = self.__class__.__name__
-        tx_cache_key_to_short_ids_mem_stats = self.get_collection_mem_stats(
-            self._tx_cache_key_to_short_ids,
-            self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._tx_cache_key_to_short_ids)
-        )
         tx_cache_key_to_contents_mem_stats = self.get_collection_mem_stats(
+            size_type,
             self._tx_cache_key_to_contents,
             self.ESTIMATED_TX_HASH_ITEM_SIZE * len(self._tx_cache_key_to_contents) + self._total_tx_contents_size
         )
-        short_id_to_tx_cache_key_mem_stats = self.get_collection_mem_stats(
-            self._short_id_to_tx_cache_key,
-            self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._short_id_to_tx_cache_key)
-        )
-        short_ids_seen_in_block_mem_stats = self.get_collection_mem_stats(
-            self._short_ids_seen_in_block,
-            self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._short_ids_seen_in_block)
-        )
-
-        hooks.add_obj_mem_stats(
-            class_name,
-            self.network_num,
-            self._tx_cache_key_to_short_ids,
-            "tx_cache_key_to_short_ids",
-            tx_cache_key_to_short_ids_mem_stats,
-            object_item_count=len(self._tx_cache_key_to_short_ids),
-            object_type=self.get_object_type(self._tx_cache_key_to_short_ids),
-            size_type=size_type
-        )
-
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
@@ -1066,7 +1043,11 @@ class TransactionService:
             object_type=self.get_object_type(self._tx_cache_key_to_contents),
             size_type=size_type
         )
-
+        short_id_to_tx_cache_key_mem_stats = self.get_collection_mem_stats(
+            size_type,
+            self._short_id_to_tx_cache_key,
+            self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._short_id_to_tx_cache_key)
+        )
         hooks.add_obj_mem_stats(
             class_name,
             self.network_num,
@@ -1078,89 +1059,126 @@ class TransactionService:
             size_type=size_type
         )
 
-        hooks.add_obj_mem_stats(
-            class_name,
-            self.network_num,
-            self._short_ids_seen_in_block,
-            "short_ids_seen_in_block",
-            short_ids_seen_in_block_mem_stats,
-            object_item_count=len(self._short_ids_seen_in_block),
-            object_type=memory_utils.ObjectType.BASE,
-            size_type=size_type
-        )
-
-        hooks.add_obj_mem_stats(
-            class_name,
-            self.network_num,
-            self._tx_assignment_expire_queue,
-            "tx_assignment_expire_queue",
-            self.get_collection_mem_stats(
+        if include_data_structure_memory:
+            tx_cache_key_to_short_ids_mem_stats = self.get_collection_mem_stats(
+                size_type,
+                self._tx_cache_key_to_short_ids,
+                self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._tx_cache_key_to_short_ids)
+            )
+            hooks.add_obj_mem_stats(
+                class_name,
+                self.network_num,
+                self._tx_cache_key_to_short_ids,
+                "tx_cache_key_to_short_ids",
+                tx_cache_key_to_short_ids_mem_stats,
+                object_item_count=len(self._tx_cache_key_to_short_ids),
+                object_type=self.get_object_type(self._tx_cache_key_to_short_ids),
+                size_type=size_type
+            )
+            short_ids_seen_in_block_mem_stats = self.get_collection_mem_stats(
+                size_type,
+                self._short_ids_seen_in_block,
+                self.ESTIMATED_TX_HASH_AND_SHORT_ID_ITEM_SIZE * len(self._short_ids_seen_in_block)
+            )
+            hooks.add_obj_mem_stats(
+                class_name,
+                self.network_num,
+                self._short_ids_seen_in_block,
+                "short_ids_seen_in_block",
+                short_ids_seen_in_block_mem_stats,
+                object_item_count=len(self._short_ids_seen_in_block),
+                object_type=memory_utils.ObjectType.BASE,
+                size_type=size_type
+            )
+            hooks.add_obj_mem_stats(
+                class_name,
+                self.network_num,
                 self._tx_assignment_expire_queue,
-                self.ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE * len(self._tx_assignment_expire_queue)
-            ),
-            object_item_count=len(self._tx_assignment_expire_queue),
-            object_type=memory_utils.ObjectType.BASE,
-            size_type=size_type
-        )
+                "tx_assignment_expire_queue",
+                self.get_collection_mem_stats(
+                    size_type,
+                    self._tx_assignment_expire_queue,
+                    self.ESTIMATED_SHORT_ID_EXPIRATION_ITEM_SIZE * len(self._tx_assignment_expire_queue)
+                ),
+                object_item_count=len(self._tx_assignment_expire_queue),
+                object_type=memory_utils.ObjectType.BASE,
+                size_type=size_type
+            )
 
-        hooks.add_obj_mem_stats(
-            class_name,
-            self.network_num,
-            self._removed_short_ids,
-            "removed_short_ids",
-            self.get_collection_mem_stats(self._removed_short_ids, len(self._removed_short_ids) * constants.SID_LEN),
-            object_item_count=len(self._removed_short_ids),
-            object_type=memory_utils.ObjectType.BASE,
-            size_type=size_type
-        )
+            hooks.add_obj_mem_stats(
+                class_name,
+                self.network_num,
+                self._removed_short_ids,
+                "removed_short_ids",
+                self.get_collection_mem_stats(
+                    size_type,
+                    self._removed_short_ids,
+                    len(self._removed_short_ids) * constants.SID_LEN
+                ),
+                object_item_count=len(self._removed_short_ids),
+                object_type=memory_utils.ObjectType.BASE,
+                size_type=size_type
+            )
 
-        hooks.add_obj_mem_stats(
-            class_name,
-            self.network_num,
-            self._tx_hash_to_time_removed,
-            "tx_hash_to_time_removed",
-            self.get_collection_mem_stats(self._tx_hash_to_time_removed,
-                                          len(self._tx_hash_to_time_removed) * SHA256_HASH_LEN),
-            object_item_count=len(self._tx_hash_to_time_removed),
-            object_type=memory_utils.ObjectType.BASE,
-            size_type=size_type
-        )
+            hooks.add_obj_mem_stats(
+                class_name,
+                self.network_num,
+                self._tx_hash_to_time_removed,
+                "tx_hash_to_time_removed",
+                self.get_collection_mem_stats(
+                    size_type,
+                    self._tx_hash_to_time_removed,
+                    len(self._tx_hash_to_time_removed) * SHA256_HASH_LEN
+                ),
+                object_item_count=len(self._tx_hash_to_time_removed),
+                object_type=memory_utils.ObjectType.BASE,
+                size_type=size_type
+            )
 
-        hooks.add_obj_mem_stats(
-            class_name,
-            self.network_num,
-            self._short_id_to_time_removed,
-            "_short_id_to_time_removed",
-            self.get_collection_mem_stats(self._short_id_to_time_removed,
-                                          len(self._short_id_to_time_removed) * constants.SID_LEN),
-            object_item_count=len(self._short_id_to_time_removed),
-            object_type=memory_utils.ObjectType.BASE,
-            size_type=size_type
-        )
+            hooks.add_obj_mem_stats(
+                class_name,
+                self.network_num,
+                self._short_id_to_time_removed,
+                "_short_id_to_time_removed",
+                self.get_collection_mem_stats(
+                    size_type,
+                    self._short_id_to_time_removed,
+                    len(self._short_id_to_time_removed) * constants.SID_LEN
+                ),
+                object_item_count=len(self._short_id_to_time_removed),
+                object_type=memory_utils.ObjectType.BASE,
+                size_type=size_type
+            )
 
-        hooks.add_obj_mem_stats(
-            class_name,
-            self.network_num,
-            self.tx_hashes_without_short_id,
-            "tx_hash_without_sid",
-            self.get_collection_mem_stats(self.tx_hashes_without_short_id,
-                                          len(self.tx_hashes_without_short_id) * SHA256_HASH_LEN),
-            object_item_count=len(self.tx_hashes_without_short_id),
-            object_type=memory_utils.ObjectType.BASE,
-            size_type=size_type
-        )
+            hooks.add_obj_mem_stats(
+                class_name,
+                self.network_num,
+                self.tx_hashes_without_short_id,
+                "tx_hash_without_sid",
+                self.get_collection_mem_stats(
+                    size_type,
+                    self.tx_hashes_without_short_id,
+                    len(self.tx_hashes_without_short_id) * SHA256_HASH_LEN
+                ),
+                object_item_count=len(self.tx_hashes_without_short_id),
+                object_type=memory_utils.ObjectType.BASE,
+                size_type=size_type
+            )
 
-        hooks.add_obj_mem_stats(
-            class_name,
-            self.network_num,
-            self.tx_hashes_without_content,
-            "tx_hash_sid_without_content",
-            self.get_collection_mem_stats(self.tx_hashes_without_content,
-                                          len(self.tx_hashes_without_content) * SHA256_HASH_LEN),
-            object_item_count=len(self.tx_hashes_without_content),
-            object_type=memory_utils.ObjectType.BASE,
-            size_type=size_type
-        )
+            hooks.add_obj_mem_stats(
+                class_name,
+                self.network_num,
+                self.tx_hashes_without_content,
+                "tx_hash_sid_without_content",
+                self.get_collection_mem_stats(
+                    size_type,
+                    self.tx_hashes_without_content,
+                    len(self.tx_hashes_without_content) * SHA256_HASH_LEN
+                ),
+                object_item_count=len(self.tx_hashes_without_content),
+                object_type=memory_utils.ObjectType.BASE,
+                size_type=size_type
+            )
 
     def get_object_type(
         self,
@@ -1200,8 +1218,8 @@ class TransactionService:
             "delta": difference.__dict__
         }
 
-    def get_collection_mem_stats(self, collection_obj: Any, estimated_size: int = 0) -> ObjectSize:
-        if self.node.opts.stats_calculate_actual_size:
+    def get_collection_mem_stats(self, size_type: SizeType, collection_obj: Any, estimated_size: int = 0) -> ObjectSize:
+        if size_type == SizeType.OBJECT:
             return memory_utils.get_object_size(collection_obj)
         else:
             return ObjectSize(size=estimated_size, flat_size=0, is_actual_size=False)

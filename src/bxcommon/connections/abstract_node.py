@@ -519,8 +519,9 @@ class AbstractNode:
         """
         return memory_statistics.flush_info()
 
-    def _record_mem_stats(self):
-        self.connection_pool.log_connection_pool_mem_stats()
+    def _record_mem_stats(self, include_data_structure_memory: bool = False):
+        if include_data_structure_memory:
+            self.connection_pool.log_connection_pool_mem_stats()
 
     def set_node_config_opts_from_sdn(self, opts: CommonOpts) -> None:
         blockchain_networks: Dict[int, BlockchainNetworkModel] = opts.blockchain_networks
