@@ -1,5 +1,6 @@
 import dataclasses
 import functools
+import sys
 
 from dataclasses import dataclass
 from collections import defaultdict
@@ -37,9 +38,6 @@ class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "Abs
         interval: int = 0
     ) -> None:
         self.sizer_obj = Sizer()
-        self.low_threshold = constants.GC_LOW_MEMORY_THRESHOLD
-        self.medium_threshold = constants.GC_MEDIUM_MEMORY_THRESHOLD
-        self.high_threshold = constants.GC_HIGH_MEMORY_THRESHOLD
         super(MemoryStatsService, self).__init__(
             "MemoryStats",
             interval=interval,
@@ -109,13 +107,13 @@ class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "Abs
 
         return payload
 
-    def flush_info(self) -> int:
+    def flush_info(self, threshold: int = sys.maxsize) -> int:
         node = self.node
         assert node is not None
         total_memory = memory_utils.get_app_memory_usage()
-        node.dump_memory_usage(total_memory, self.high_threshold)
+        node.dump_memory_usage(total_memory, threshold)
 
-        return super(MemoryStatsService, self).flush_info()
+        return super(MemoryStatsService, self).flush_info(threshold)
 
     def increment_mem_stats(
         self,
@@ -152,11 +150,6 @@ class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "Abs
         mem_stats.timestamp = datetime.utcnow()
         # pyre-ignore having some difficulty with subclassing generics
         self.interval_data.class_mem_stats[class_name] = mem_stats
-
-    def set_thresholds(self, low_threshold: int, medium_threshold: int, high_threshold: int) -> None:
-        self.low_threshold = low_threshold
-        self.medium_threshold = medium_threshold
-        self.high_threshold = high_threshold
 
 
 memory_statistics = MemoryStatsService(constants.MEMORY_STATS_INTERVAL_S)

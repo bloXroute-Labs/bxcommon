@@ -493,10 +493,6 @@ class AbstractNode:
         node_info_statistics.set_node(self)
         self.alarm_queue.register_alarm(constants.FIRST_STATS_INTERVAL_S, node_info_statistics.flush_info)
 
-    def init_memory_stats_logging(self):
-        memory_statistics.set_node(self)
-        memory_statistics.start_recording(self.record_mem_stats)
-
     def cleanup_memory_stats_logging(self):
         memory_statistics.stop_recording()
 
@@ -512,12 +508,18 @@ class AbstractNode:
                 conn.socket_connection.send()
         return self.FLUSH_SEND_BUFFERS_INTERVAL
 
-    def record_mem_stats(self):
+    def record_mem_stats(self, low_threshold: int, medium_threshold: int, high_threshold: int):
         """
         When overridden, records identified memory stats and flushes them to std out
         :returns memory stats flush interval
         """
-        return memory_statistics.flush_info()
+        total_memory = memory_utils.get_app_memory_usage()
+        if total_memory > low_threshold:
+            gc.collect()
+            total_memory = memory_utils.get_app_memory_usage()
+        self._record_mem_stats(total_memory > medium_threshold)
+
+        return memory_statistics.flush_info(high_threshold)
 
     def _record_mem_stats(self, include_data_structure_memory: bool = False):
         if include_data_structure_memory:
@@ -588,6 +590,10 @@ class AbstractNode:
 
     @abstractmethod
     def on_new_subscriber_request(self) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def init_memory_stats_logging(self):
         raise NotImplementedError
 
     @abstractmethod

@@ -9,7 +9,6 @@ from datetime import datetime
 from threading import Thread, Lock
 from typing import Optional, TypeVar, Generic, Deque, Type, Callable, Dict, Any, TYPE_CHECKING
 
-
 from bxcommon import constants
 from bxutils import log_messages
 from bxutils import logging
@@ -96,7 +95,8 @@ class StatisticsService(Generic[T, N], metaclass=ABCMeta):
         self.interval_data.close()
         self.history.append(self.interval_data)
 
-    def flush_info(self) -> int:
+    # pylint: disable=unused-argument
+    def flush_info(self, threshold: int = 0) -> int:
         self.close_interval_data()
         data = self.get_info()
         if data:

@@ -1,8 +1,10 @@
+import functools
 from asyncio import Future
 from typing import List, Optional
 
 from mock import MagicMock
 
+from bxcommon import constants
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
@@ -16,6 +18,7 @@ from bxcommon.services.transaction_service import TransactionService
 from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
 from bxcommon.utils.alarm_queue import AlarmQueue
 from bxcommon.common_opts import CommonOpts
+from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxutils.services.node_ssl_service import NodeSSLService
 
 
@@ -86,6 +89,17 @@ class MockNode(AbstractNode):
 
     def on_new_subscriber_request(self) -> None:
         pass
+
+    def init_memory_stats_logging(self):
+        memory_statistics.set_node(self)
+        memory_statistics.start_recording(
+            functools.partial(
+                self.record_mem_stats,
+                constants.GC_LOW_MEMORY_THRESHOLD,
+                constants.GC_MEDIUM_MEMORY_THRESHOLD,
+                constants.GC_HIGH_MEMORY_THRESHOLD
+            )
+        )
 
     def reevaluate_transaction_streamer_connection(self) -> None:
         pass

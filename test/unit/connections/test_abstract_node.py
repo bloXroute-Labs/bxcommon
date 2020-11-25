@@ -63,6 +63,9 @@ class TestNode(AbstractNode):
     def check_sync_relay_connections(self, conn: MockConnection) -> int:
         pass
 
+    def init_memory_stats_logging(self):
+        pass
+
 
 class AbstractNodeTest(AbstractTestCase):
     def setUp(self):

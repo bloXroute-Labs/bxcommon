@@ -46,7 +46,7 @@ class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node]):
 
         if rpc_constants.STATUS_TRACK_PARAMS_KEY in params:
             track_flag_str = params[rpc_constants.STATUS_TRACK_PARAMS_KEY]
-            track_flag = convert.str_to_bool(str(track_flag_str).lower(), default=True)
+            track_flag = convert.str_to_bool(str(track_flag_str).lower(), default=False)
             if track_flag:
                 self.track_flag |= TransactionFlag.STATUS_TRACK
 
