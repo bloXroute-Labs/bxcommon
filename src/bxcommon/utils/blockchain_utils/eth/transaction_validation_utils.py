@@ -1,7 +1,6 @@
 from typing import Optional, Union
 
 import rlp
-from rlp.sedes import List
 
 from bxcommon.utils.blockchain_utils.eth import crypto_utils
 from bxcommon.utils.blockchain_utils.eth.eth_common_utils import keccak_hash
@@ -30,12 +29,10 @@ def parse_transaction(tx_bytes: memoryview) -> Optional[Transaction]:
     :param tx_bytes: transaction bytes
     :return: if transaction successfully parsed returns None else transaction
     """
+
     try:
         payload = rlp.decode(bytearray(tx_bytes), strict=False)
-        serializers: List = List([serializer for _, serializer in Transaction.fields])
-        serializers.deserialize(payload)
-
-        return Transaction(*serializers.deserialize(payload))
+        return Transaction.deserialize(payload)
 
     # pylint: disable=broad-except
     except Exception:
