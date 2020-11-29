@@ -25,3 +25,4 @@ class BloxrouteMessageType:
     REFRESH_BLOCKCHAIN_NETWORK = b"blkntwrk"
     GET_COMPRESSED_BLOCK_TXS = b"getblocktxs"
     COMPRESSED_BLOCK_TXS = b"blocktxs"
+    ROUTING_UPDATE = b"routing"

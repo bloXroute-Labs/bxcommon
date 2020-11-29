@@ -26,6 +26,7 @@ from bxcommon.messages.bloxroute.key_message import KeyMessage
 from bxcommon.messages.bloxroute.notification_message import NotificationMessage, NotificationCode
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
+from bxcommon.messages.bloxroute.routing_update_message import RoutingUpdateMessage
 from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.tx_contents_message import TxContentsMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
@@ -680,3 +681,32 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         )
         self.assertEqual(node_2_bdn_stats.tx_sent_to_node, stats.tx_sent_to_node)
         self.assertEqual(node_2_bdn_stats.duplicate_tx_from_node, stats.duplicate_tx_from_node)
+
+    def test_routing_message(self):
+        origin_node_id = helpers.generate_node_id()
+        forwarding_node_id = helpers.generate_node_id()
+        node_id_2 = helpers.generate_node_id()
+        node_id_3 = helpers.generate_node_id()
+        routing_update = [node_id_2, node_id_3]
+
+        expected_length = (
+            RoutingUpdateMessage.PAYLOAD_LENGTH
+            + 2 * constants.NODE_ID_SIZE_IN_BYTES
+        )
+        self.get_message_preview_successfully(
+            RoutingUpdateMessage(
+                helpers.generate_object_hash(), "", origin_node_id, forwarding_node_id, routing_update
+            ),
+            RoutingUpdateMessage.MESSAGE_TYPE,
+            expected_length
+        )
+        routing_update_message = self.create_message_successfully(
+            RoutingUpdateMessage(
+                helpers.generate_object_hash(), "", origin_node_id, forwarding_node_id, routing_update
+            ),
+            RoutingUpdateMessage
+        )
+        self.assertEqual(origin_node_id, routing_update_message.origin_node_id())
+        self.assertEqual(forwarding_node_id, routing_update_message.forwarding_node_id())
+        self.assertEqual(routing_update, routing_update_message.routing_update())
+
