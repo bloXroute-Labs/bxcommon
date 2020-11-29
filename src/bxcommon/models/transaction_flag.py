@@ -4,11 +4,12 @@ from bxcommon.models.serializable_flag import SerializableFlag
 
 class TransactionFlag(SerializableFlag):
     NO_FLAGS = 0
-    STATUS_TRACK = 1
+    STATUS_MONITORING = 1
     PAID_TX = 2
-    NONCE_TRACK = 4
+    STATUS_TRACK = STATUS_MONITORING | PAID_TX
+    NONCE_MONITORING = 4
     RE_PROPAGATE = 8
-    PAID_STATUS_TRACK = STATUS_TRACK | PAID_TX
+    NONCE_TRACK = NONCE_MONITORING | STATUS_TRACK
 
     # for professional/enterprise accounts only
     CEN_ENABLED = 16

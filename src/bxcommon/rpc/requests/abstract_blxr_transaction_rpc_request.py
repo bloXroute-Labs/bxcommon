@@ -44,11 +44,20 @@ class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node]):
         assert params is not None
         assert isinstance(params, dict)
 
+        if not self.track_flag:
+            self.track_flag = TransactionFlag.PAID_TX
+
         if rpc_constants.STATUS_TRACK_PARAMS_KEY in params:
             track_flag_str = params[rpc_constants.STATUS_TRACK_PARAMS_KEY]
             track_flag = convert.str_to_bool(str(track_flag_str).lower(), default=False)
             if track_flag:
                 self.track_flag |= TransactionFlag.STATUS_TRACK
+
+        if rpc_constants.NONCE_MONITORING_PARAMS_KEY in params:
+            nonce_flag_str = params[rpc_constants.NONCE_MONITORING_PARAMS_KEY]
+            nonce_flag = convert.str_to_bool(str(nonce_flag_str).lower(), default=False)
+            if nonce_flag:
+                self.track_flag |= TransactionFlag.NONCE_TRACK
 
     async def process_request(self) -> JsonRpcResponse:
         params = self.params
