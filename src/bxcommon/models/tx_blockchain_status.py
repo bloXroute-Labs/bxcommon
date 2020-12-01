@@ -7,7 +7,7 @@ class TxBlockchainStatus(SerializableFlag):
     UNKNOWN = auto()
     PROPAGATING = auto()
     REPROPAGATE = auto()
-    SINGLE_TX_POOL = auto()
+    TX_POOL = auto()
     MULTIPLE_TX_POOL = auto()
     MINED = auto()
     CONFIRMED = auto()
