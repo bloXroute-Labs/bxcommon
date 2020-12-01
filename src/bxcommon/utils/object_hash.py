@@ -1,3 +1,4 @@
+import os
 import struct
 from abc import ABCMeta
 
@@ -66,6 +67,12 @@ class Sha256Hash(AbstractObjectHash):
             s = s[2:]
 
         return cls(convert.hex_to_bytes(s))
+
+    @classmethod
+    def generate_object_hash(cls) -> "Sha256Hash":
+        raw_bytes = bytearray(0)
+        raw_bytes.extend(os.urandom(SHA256_HASH_LEN))
+        return Sha256Hash(raw_bytes)
 
 
 class ConcatHash(AbstractObjectHash):

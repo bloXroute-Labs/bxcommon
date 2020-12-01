@@ -1,11 +1,7 @@
-import os
 import time
 from datetime import datetime, timedelta
 from datetime import time as dttime
-from typing import TypeVar, Optional, Callable, Any, Union
-
-from bxcommon.utils import crypto
-from bxcommon.utils.object_hash import Sha256Hash
+from typing import TypeVar, Optional, Callable, Any
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -89,9 +85,3 @@ def safe_divide(value1: float, value2: float) -> float:
 
 def bind_range(min_value: float, max_value: float, value: float) -> float:
     return min(max_value, max(min_value, value))
-
-
-def generate_object_hash() -> Sha256Hash:
-    raw_bytes = bytearray(0)
-    raw_bytes.extend(os.urandom(crypto.SHA256_HASH_LEN))
-    return Sha256Hash(raw_bytes)
