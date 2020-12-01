@@ -10,7 +10,9 @@ from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageT
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.utils.stats import message_utils
 from bxutils.logging import LogLevel
+from bxutils import logging
 
+logger = logging.get_logger(__name__)
 
 @dataclass
 class BdnPerformanceStatsData:
@@ -186,11 +188,11 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
 
         num_peers, = struct.unpack_from("<H", buf, off)
         off += constants.UL_SHORT_SIZE_IN_BYTES
-
+        peer_data_len = (len(buf)-off - 1) / num_peers
         for _ in range(num_peers):
+            start_offset = off
             ip, port = message_utils.unpack_ip_port(self._memoryview[off:].tobytes())
             off += constants.IP_ADDR_SIZE_IN_BYTES + constants.UL_SHORT_SIZE_IN_BYTES
-
             single_node_stats = BdnPerformanceStatsData()
             single_node_stats.new_blocks_received_from_blockchain_node, = struct.unpack_from("<H", buf, off)
             off += constants.UL_SHORT_SIZE_IN_BYTES
@@ -206,11 +208,13 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
             off += constants.UL_INT_SIZE_IN_BYTES
             single_node_stats.new_block_announcements_from_blockchain_node, = struct.unpack_from("<I", buf, off)
             off += constants.UL_INT_SIZE_IN_BYTES
-            single_node_stats.tx_sent_to_node, = struct.unpack_from("<I", buf, off)
-            off += constants.UL_INT_SIZE_IN_BYTES
-            single_node_stats.duplicate_tx_from_node, = struct.unpack_from("<I", buf, off)
-            off += constants.UL_INT_SIZE_IN_BYTES
-
+            if off - start_offset == peer_data_len:
+                logger.trace("Message processing issue, payload was not converted to current version")
+            else:
+                single_node_stats.tx_sent_to_node, = struct.unpack_from("<I", buf, off)
+                off += constants.UL_INT_SIZE_IN_BYTES
+                single_node_stats.duplicate_tx_from_node, = struct.unpack_from("<I", buf, off)
+                off += constants.UL_INT_SIZE_IN_BYTES
             node_stats[IpEndpoint(ip, port)] = single_node_stats
         self._node_stats = node_stats
 

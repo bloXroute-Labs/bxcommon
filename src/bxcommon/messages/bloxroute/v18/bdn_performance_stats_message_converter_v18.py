@@ -74,11 +74,16 @@ class _BdnPerformanceStatsMessageConverterV18(AbstractMessageConverter):
             raise ValueError(
                 f"Tried to convert unexpected old message type from v18: {msg_type}"
             )
-
-        num_blockchain_peers, = struct.unpack_from("<I", msg.rawbytes(), self._MEMORY_UTILIZATION_BREAKPOINT)
-        length_difference = self._NODE_STATS_LENGTH_DIFFERENCE * num_blockchain_peers
-        new_message_len = self._MESSAGE_LEN_WITHOUT_NODE_STATS + \
-                           (num_blockchain_peers * self._NEW_MESSAGE_NODE_STATS_LEN)
+        if len(msg.rawbytes()) == self._MESSAGE_LEN_WITHOUT_NODE_STATS:
+            # per Endpoint Stats is not available
+            length_difference = 0
+            new_message_len = self._MESSAGE_LEN_WITHOUT_NODE_STATS
+            num_blockchain_peers = 0
+        else:
+            num_blockchain_peers, = struct.unpack_from("<I", msg.rawbytes(), self._MEMORY_UTILIZATION_BREAKPOINT)
+            length_difference = self._NODE_STATS_LENGTH_DIFFERENCE * num_blockchain_peers
+            new_message_len = self._MESSAGE_LEN_WITHOUT_NODE_STATS + \
+                (num_blockchain_peers * self._NEW_MESSAGE_NODE_STATS_LEN)
 
         new_msg_class = self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING[msg_type]
         new_payload_len = msg.payload_len() + length_difference
