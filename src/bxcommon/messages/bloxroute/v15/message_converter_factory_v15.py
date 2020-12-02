@@ -1,4 +1,6 @@
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
+from bxcommon.messages.bloxroute.v14.bdn_performance_stats_message_converter_v14 import \
+    bdn_performance_stats_message_converter_v14
 from bxcommon.messages.bloxroute.v15.tx_message_converter_v15 import tx_message_converter_v15
 from bxcommon.messages.bloxroute.v15.tx_sync_message_converter_v15 import tx_sync_message_converter_v15
 from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
@@ -9,6 +11,7 @@ class _MessageConverterFactoryV15(AbstractMessageConverterFactory):
     _MESSAGE_CONVERTER_MAPPING = {
         BloxrouteMessageType.TRANSACTION: tx_message_converter_v15,
         BloxrouteMessageType.TX_SERVICE_SYNC_TXS: tx_sync_message_converter_v15,
+        BloxrouteMessageType.BDN_PERFORMANCE_STATS: bdn_performance_stats_message_converter_v14,
     }
 
     def get_message_converter(self, msg_type):

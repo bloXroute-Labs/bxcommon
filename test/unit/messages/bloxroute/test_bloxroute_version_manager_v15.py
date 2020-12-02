@@ -15,6 +15,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import
 from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
+from bxcommon.messages.bloxroute.v14.bdn_performance_stats_message_v14 import BdnPerformanceStatsMessageV14
 from bxcommon.messages.bloxroute.v15.tx_service_sync_txs_message_v15 import TxServiceSyncTxsMessageV15
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v15.tx_message_v15 import TxMessageV15
@@ -41,7 +42,7 @@ class BloxrouteVersionManagerV15Test(
         BlockConfirmationMessage,
         TransactionCleanupMessage,
         NotificationMessage,
-        BdnPerformanceStatsMessage,
+        BdnPerformanceStatsMessageV14,
     ]
 ):
 
@@ -154,3 +155,57 @@ class BloxrouteVersionManagerV15Test(
                 [TransactionFlag(short_id_flag.value) for short_id_flag in converted.short_id_flags],
                 converted.short_id_flags,
             )
+
+    def old_bdn_performance_stats_message(
+        self, original_message: BdnPerformanceStatsMessage
+    ) -> BdnPerformanceStatsMessageV14:
+        _, single_node_stats = next(iter(original_message.node_stats().items()))
+        return BdnPerformanceStatsMessageV14(
+            original_message.interval_start_time(),
+            original_message.interval_end_time(),
+            single_node_stats.new_blocks_received_from_blockchain_node,
+            single_node_stats.new_blocks_received_from_bdn,
+            single_node_stats.new_tx_received_from_blockchain_node,
+            single_node_stats.new_tx_received_from_bdn,
+            original_message.memory_utilization()
+        )
+
+    def compare_bdn_performance_stats_old_to_current(
+        self,
+        converted_current_message: BdnPerformanceStatsMessage,
+        original_current_message: BdnPerformanceStatsMessage,
+    ):
+        self.assert_attributes_equal(
+            converted_current_message,
+            original_current_message,
+            [
+                "interval_start_time",
+                "interval_end_time",
+                "memory_utilization"
+            ],
+        )
+        converted_node_stats = converted_current_message.node_stats()
+        converted_blockchain_peer_endpoint, converted_single_node_stats = converted_node_stats.popitem()
+        original_node_stats = original_current_message.node_stats()
+        original_blockchain_peer_endpoint, original_single_node_stats = original_node_stats.popitem()
+        self.assertEqual(
+            converted_single_node_stats.new_blocks_received_from_blockchain_node,
+            original_single_node_stats.new_blocks_received_from_blockchain_node
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_blocks_received_from_bdn,
+            original_single_node_stats.new_blocks_received_from_bdn
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_tx_received_from_blockchain_node,
+            original_single_node_stats.new_tx_received_from_blockchain_node
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_tx_received_from_bdn,
+            original_single_node_stats.new_tx_received_from_bdn
+        )
+        self.assertEqual(0, converted_single_node_stats.new_blocks_seen)
+        self.assertEqual(0, converted_single_node_stats.new_block_messages_from_blockchain_node)
+        self.assertEqual(0, converted_single_node_stats.new_block_announcements_from_blockchain_node)
+        self.assertEqual(0, converted_single_node_stats.tx_sent_to_node)
+        self.assertEqual(0, converted_single_node_stats.duplicate_tx_from_node)

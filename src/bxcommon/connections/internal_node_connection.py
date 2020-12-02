@@ -103,7 +103,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
             return False
 
         if protocol_version > self.version_manager.CURRENT_PROTOCOL_VERSION:
-            logger.debug(
+            self.log_debug(
                 "Got message protocol {} that is higher the current version {}. Using current protocol version",
                 protocol_version, self.version_manager.CURRENT_PROTOCOL_VERSION)
             protocol_version = self.version_manager.CURRENT_PROTOCOL_VERSION

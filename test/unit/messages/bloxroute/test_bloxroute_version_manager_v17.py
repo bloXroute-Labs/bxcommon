@@ -17,6 +17,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServi
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
+from bxcommon.messages.bloxroute.v16.bdn_performance_stats_message_v16 import BdnPerformanceStatsMessageV16
 from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
@@ -40,7 +41,7 @@ class BloxrouteVersionManagerV17Test(
         BlockConfirmationMessage,
         TransactionCleanupMessage,
         NotificationMessage,
-        BdnPerformanceStatsMessage
+        BdnPerformanceStatsMessageV16
     ]
 ):
 
@@ -64,3 +65,69 @@ class BloxrouteVersionManagerV17Test(
         self.assertEqual(
             TransactionFlag.PAID_TX, converted_old_message.transaction_flag()
         )
+
+    def old_bdn_performance_stats_message(
+        self, original_message: BdnPerformanceStatsMessage
+    ) -> BdnPerformanceStatsMessageV16:
+        _, single_node_stats = next(iter(original_message.node_stats().items()))
+        return BdnPerformanceStatsMessageV16(
+            original_message.interval_start_time(),
+            original_message.interval_end_time(),
+            single_node_stats.new_blocks_received_from_blockchain_node,
+            single_node_stats.new_blocks_received_from_bdn,
+            single_node_stats.new_tx_received_from_blockchain_node,
+            single_node_stats.new_tx_received_from_bdn,
+            original_message.memory_utilization(),
+            single_node_stats.new_blocks_seen,
+            single_node_stats.new_block_messages_from_blockchain_node,
+            single_node_stats.new_block_announcements_from_blockchain_node
+        )
+
+    def compare_bdn_performance_stats_old_to_current(
+        self,
+        converted_current_message: BdnPerformanceStatsMessage,
+        original_current_message: BdnPerformanceStatsMessage,
+    ):
+        self.assert_attributes_equal(
+            converted_current_message,
+            original_current_message,
+            [
+                "interval_start_time",
+                "interval_end_time",
+                "memory_utilization"
+            ],
+        )
+        converted_node_stats = converted_current_message.node_stats()
+        converted_blockchain_peer_endpoint, converted_single_node_stats = converted_node_stats.popitem()
+        original_node_stats = original_current_message.node_stats()
+        original_blockchain_peer_endpoint, original_single_node_stats = original_node_stats.popitem()
+        self.assertEqual(
+            converted_single_node_stats.new_blocks_received_from_blockchain_node,
+            original_single_node_stats.new_blocks_received_from_blockchain_node
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_blocks_received_from_bdn,
+            original_single_node_stats.new_blocks_received_from_bdn
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_tx_received_from_blockchain_node,
+            original_single_node_stats.new_tx_received_from_blockchain_node
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_tx_received_from_bdn,
+            original_single_node_stats.new_tx_received_from_bdn
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_blocks_seen,
+            original_single_node_stats.new_blocks_seen
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_block_messages_from_blockchain_node,
+            original_single_node_stats.new_block_messages_from_blockchain_node
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_block_announcements_from_blockchain_node,
+            original_single_node_stats.new_block_announcements_from_blockchain_node
+        )
+        self.assertEqual(0, converted_single_node_stats.tx_sent_to_node)
+        self.assertEqual(0, converted_single_node_stats.duplicate_tx_from_node)
