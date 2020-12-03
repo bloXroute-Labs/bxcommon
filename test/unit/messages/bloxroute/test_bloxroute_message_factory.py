@@ -687,6 +687,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         forwarding_node_id = helpers.generate_node_id()
         node_id_2 = helpers.generate_node_id()
         node_id_3 = helpers.generate_node_id()
+        routing_update_id = helpers.generate_object_hash()
         routing_update = [node_id_2, node_id_3]
 
         expected_length = (
@@ -695,18 +696,29 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         )
         self.get_message_preview_successfully(
             RoutingUpdateMessage(
-                helpers.generate_object_hash(), "", origin_node_id, forwarding_node_id, routing_update
+                helpers.generate_object_hash(),
+                "",
+                origin_node_id,
+                forwarding_node_id,
+                routing_update_id,
+                routing_update
             ),
             RoutingUpdateMessage.MESSAGE_TYPE,
             expected_length
         )
         routing_update_message = self.create_message_successfully(
             RoutingUpdateMessage(
-                helpers.generate_object_hash(), "", origin_node_id, forwarding_node_id, routing_update
+                helpers.generate_object_hash(),
+                "",
+                origin_node_id,
+                forwarding_node_id,
+                routing_update_id,
+                routing_update
             ),
             RoutingUpdateMessage
         )
         self.assertEqual(origin_node_id, routing_update_message.origin_node_id())
         self.assertEqual(forwarding_node_id, routing_update_message.forwarding_node_id())
         self.assertEqual(routing_update, routing_update_message.routing_update())
+        self.assertEqual(routing_update_id, routing_update_message.routing_update_id())
 
