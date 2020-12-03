@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-import rlp
+import blxr_rlp as rlp
 
 from bxcommon.utils import convert
 from bxcommon.utils.blockchain_utils.eth import eth_common_utils, eth_common_constants

@@ -1,6 +1,6 @@
 from typing import Dict, Any, Union
 
-import rlp
+import blxr_rlp as rlp
 
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon import log_messages

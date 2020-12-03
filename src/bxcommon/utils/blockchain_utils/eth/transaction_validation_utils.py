@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-import rlp
+import blxr_rlp as rlp
 
 from bxcommon.utils.blockchain_utils.eth import crypto_utils
 from bxcommon.utils.blockchain_utils.eth.eth_common_utils import keccak_hash
