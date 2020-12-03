@@ -113,3 +113,7 @@ class BloxrouteVersionManagerV13Test(
     @skip
     def test_tx_message(self):
         pass
+
+    @skip
+    def test_txtxs_message(self):
+        pass

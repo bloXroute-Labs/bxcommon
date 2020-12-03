@@ -6,26 +6,9 @@ from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
-from bxcommon.messages.bloxroute.ack_message import AckMessage
-from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
-from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
-from bxcommon.messages.bloxroute.block_holding_message import BlockHoldingMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.messages.bloxroute.disconnect_relay_peer_message import DisconnectRelayPeerMessage
-from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
-from bxcommon.messages.bloxroute.hello_message import HelloMessage
-from bxcommon.messages.bloxroute.key_message import KeyMessage
-from bxcommon.messages.bloxroute.ping_message import PingMessage
-from bxcommon.messages.bloxroute.v13.pong_message_v13 import PongMessageV13
-from bxcommon.messages.bloxroute.tx_message import TxMessage
-from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
-from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
-from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
-from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
-from bxcommon.messages.bloxroute.txs_message import TxsMessage
-from bxcommon.messages.bloxroute.notification_message import NotificationMessage
 from bxcommon.messages.bloxroute.v8.broadcast_message_v8 import BroadcastMessageV8
-from bxcommon.messages.bloxroute.v9.bdn_performance_stats_message_v9 import BdnPerformanceStatsMessageV9
+from bxcommon.messages.bloxroute.v9.bloxroute_message_factory_v9 import bloxroute_message_factory_v9
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -44,30 +27,13 @@ class BroadcastMessagePreview(NamedTuple):
 
 class _BloxrouteMessageFactoryV8(AbstractMessageFactory):
     _MESSAGE_TYPE_MAPPING = {
-        BloxrouteMessageType.HELLO: HelloMessage,
-        BloxrouteMessageType.ACK: AckMessage,
-        BloxrouteMessageType.PING: PingMessage,
-        BloxrouteMessageType.PONG: PongMessageV13,
+        # pylint: disable=protected-access
+        **bloxroute_message_factory_v9._MESSAGE_TYPE_MAPPING,
         BloxrouteMessageType.BROADCAST: BroadcastMessageV8,
-        BloxrouteMessageType.TRANSACTION: TxMessage,
-        BloxrouteMessageType.GET_TRANSACTIONS: GetTxsMessage,
-        BloxrouteMessageType.TRANSACTIONS: TxsMessage,
-        BloxrouteMessageType.KEY: KeyMessage,
-        BloxrouteMessageType.BLOCK_HOLDING: BlockHoldingMessage,
-        BloxrouteMessageType.DISCONNECT_RELAY_PEER: DisconnectRelayPeerMessage,
-        BloxrouteMessageType.TX_SERVICE_SYNC_REQ: TxServiceSyncReqMessage,
-        BloxrouteMessageType.TX_SERVICE_SYNC_BLOCKS_SHORT_IDS: TxServiceSyncBlocksShortIdsMessage,
-        BloxrouteMessageType.TX_SERVICE_SYNC_TXS: TxServiceSyncTxsMessage,
-        BloxrouteMessageType.TX_SERVICE_SYNC_COMPLETE: TxServiceSyncCompleteMessage,
-        BloxrouteMessageType.BLOCK_CONFIRMATION: BlockConfirmationMessage,
-        BloxrouteMessageType.TRANSACTION_CLEANUP: TransactionCleanupMessage,
-        BloxrouteMessageType.NOTIFICATION: NotificationMessage,
-        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV9
     }
 
     def __init__(self) -> None:
-        super(_BloxrouteMessageFactoryV8, self).__init__()
-        self.message_type_mapping = self._MESSAGE_TYPE_MAPPING
+        super(_BloxrouteMessageFactoryV8, self).__init__(self._MESSAGE_TYPE_MAPPING)
 
     def get_base_message_type(self) -> Type[AbstractMessage]:
         return AbstractBloxrouteMessage

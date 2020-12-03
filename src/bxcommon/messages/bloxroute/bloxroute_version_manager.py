@@ -61,7 +61,7 @@ class _BloxrouteVersionManager(AbstractVersionManager):
         14: bloxroute_message_factory_v14,
         15: bloxroute_message_factory_v15,
         16: bloxroute_message_factory_v16,
-        17: bloxroute_message_factory,
+        17: bloxroute_message_factory_v18,
         18: bloxroute_message_factory_v18,
         19: bloxroute_message_factory
     }

@@ -77,8 +77,7 @@ class _BloxrouteMessageFactoryV18(AbstractMessageFactory):
     }
 
     def __init__(self) -> None:
-        super(_BloxrouteMessageFactoryV18, self).__init__()
-        self.message_type_mapping = self._MESSAGE_TYPE_MAPPING
+        super(_BloxrouteMessageFactoryV18, self).__init__(self._MESSAGE_TYPE_MAPPING)
 
     def get_base_message_type(self) -> Type[AbstractMessage]:
         return AbstractBloxrouteMessage
