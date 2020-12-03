@@ -24,16 +24,16 @@ from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.tx_contents_message import TxContentsMessage
-from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import \
     TxServiceSyncBlocksShortIdsMessage
 from bxcommon.messages.bloxroute.tx_service_sync_complete_message import \
     TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
-from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v14.bdn_performance_stats_message_v14 import \
     BdnPerformanceStatsMessageV14
+from bxcommon.messages.bloxroute.v15.tx_message_v15 import TxMessageV15
+from bxcommon.messages.bloxroute.v15.tx_service_sync_txs_message_v15 import TxServiceSyncTxsMessageV15
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -57,7 +57,7 @@ class _BloxrouteMessageFactoryV14(AbstractMessageFactory):
         BloxrouteMessageType.PING: PingMessage,
         BloxrouteMessageType.PONG: PongMessage,
         BloxrouteMessageType.BROADCAST: BroadcastMessage,
-        BloxrouteMessageType.TRANSACTION: TxMessage,
+        BloxrouteMessageType.TRANSACTION: TxMessageV15,
         BloxrouteMessageType.GET_TRANSACTIONS: GetTxsMessage,
         BloxrouteMessageType.TRANSACTIONS: TxsMessage,
         BloxrouteMessageType.GET_TX_CONTENTS: GetTxContentsMessage,
@@ -67,7 +67,7 @@ class _BloxrouteMessageFactoryV14(AbstractMessageFactory):
         BloxrouteMessageType.DISCONNECT_RELAY_PEER: DisconnectRelayPeerMessage,
         BloxrouteMessageType.TX_SERVICE_SYNC_REQ: TxServiceSyncReqMessage,
         BloxrouteMessageType.TX_SERVICE_SYNC_BLOCKS_SHORT_IDS: TxServiceSyncBlocksShortIdsMessage,
-        BloxrouteMessageType.TX_SERVICE_SYNC_TXS: TxServiceSyncTxsMessage,
+        BloxrouteMessageType.TX_SERVICE_SYNC_TXS: TxServiceSyncTxsMessageV15,
         BloxrouteMessageType.TX_SERVICE_SYNC_COMPLETE: TxServiceSyncCompleteMessage,
         BloxrouteMessageType.BLOCK_CONFIRMATION: BlockConfirmationMessage,
         BloxrouteMessageType.TRANSACTION_CLEANUP: TransactionCleanupMessage,

@@ -1,3 +1,5 @@
+from unittest import skip
+
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
@@ -17,6 +19,8 @@ from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyn
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v14.bdn_performance_stats_message_v14 import BdnPerformanceStatsMessageV14
+from bxcommon.messages.bloxroute.v15.tx_message_v15 import TxMessageV15
+from bxcommon.messages.bloxroute.v15.tx_service_sync_txs_message_v15 import TxServiceSyncTxsMessageV15
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
@@ -27,13 +31,13 @@ class BloxrouteVersionManagerV13Test(
         PingMessage,
         PongMessageV13,
         BroadcastMessage,
-        TxMessage,
+        TxMessageV15,
         GetTxsMessage,
         TxsMessage,
         KeyMessage,
         TxServiceSyncReqMessage,
         TxServiceSyncBlocksShortIdsMessage,
-        TxServiceSyncTxsMessage,
+        TxServiceSyncTxsMessageV15,
         TxServiceSyncCompleteMessage,
         BlockConfirmationMessage,
         TransactionCleanupMessage,
@@ -104,3 +108,8 @@ class BloxrouteVersionManagerV13Test(
         self.assertEqual(0, converted_single_node_stats.new_block_announcements_from_blockchain_node)
         self.assertEqual(0, converted_single_node_stats.tx_sent_to_node)
         self.assertEqual(0, converted_single_node_stats.duplicate_tx_from_node)
+
+
+    @skip
+    def test_tx_message(self):
+        pass

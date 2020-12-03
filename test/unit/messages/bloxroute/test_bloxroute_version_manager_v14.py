@@ -1,3 +1,5 @@
+from unittest import skip
+
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
@@ -9,14 +11,14 @@ from bxcommon.messages.bloxroute.notification_message import NotificationMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
-from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
 from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
-from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v14.bdn_performance_stats_message_v14 import \
 BdnPerformanceStatsMessageV14
+from bxcommon.messages.bloxroute.v15.tx_message_v15 import TxMessageV15
+from bxcommon.messages.bloxroute.v15.tx_service_sync_txs_message_v15 import TxServiceSyncTxsMessageV15
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
@@ -27,13 +29,13 @@ class BloxrouteVersionManagerV14Test(
         PingMessage,
         PongMessage,
         BroadcastMessage,
-        TxMessage,
+        TxMessageV15,
         GetTxsMessage,
         TxsMessage,
         KeyMessage,
         TxServiceSyncReqMessage,
         TxServiceSyncBlocksShortIdsMessage,
-        TxServiceSyncTxsMessage,
+        TxServiceSyncTxsMessageV15,
         TxServiceSyncCompleteMessage,
         BlockConfirmationMessage,
         TransactionCleanupMessage,
@@ -98,3 +100,11 @@ class BloxrouteVersionManagerV14Test(
         self.assertEqual(0, converted_single_node_stats.new_block_announcements_from_blockchain_node)
         self.assertEqual(0, converted_single_node_stats.tx_sent_to_node)
         self.assertEqual(0, converted_single_node_stats.duplicate_tx_from_node)
+
+    @skip
+    def test_tx_message(self):
+        pass
+
+    @skip
+    def test_txtxs_message(self):
+        pass
