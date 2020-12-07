@@ -60,7 +60,7 @@ class WsConnection:
 
     async def handle_publications(self, ) -> None:
         websocket = self.ws
-        while True:
+        while not websocket.closed:
             message = await self.ws_rpc_handler.get_next_subscribed_message()
             await websocket.send_str(message.to_jsons(self.ws_rpc_handler.case))
 
