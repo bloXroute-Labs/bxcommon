@@ -97,7 +97,8 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
     def validate_params_include_fields(self):
         invalid_options = RpcInvalidParams(
             self.request_id,
-            f"{self.options} is not a valid set of options. "
+            f"{self.options} Invalid feed include parameter. "
+            "Your plan does not support all requested include parameters "
             'Valid format/fields: {"include": '
             f"{self.available_fields}"
             "}.",
