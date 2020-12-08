@@ -6,7 +6,7 @@ from bxcommon.feed.feed import FeedKey
 from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
-from bxcommon.rpc.rpc_errors import RpcInvalidParams, RpcAccountIdError
+from bxcommon.rpc.rpc_errors import RpcInvalidParams, RpcAccountIdError, RpcError
 from bxcommon.feed.feed_manager import FeedManager
 from bxcommon.feed.subscriber import Subscriber
 
@@ -53,19 +53,23 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         assert self.feed_name != ""
 
     def validate_params(self) -> None:
-        if not self.feed_manager.feeds:
-            raise RpcAccountIdError(
-                self.request_id,
-                f"Account does not have access to the transaction streaming service.",
-            )
+        try:
+            if not self.feed_manager.feeds:
+                raise RpcAccountIdError(
+                    self.request_id,
+                    f"Account does not have access to the transaction streaming service.",
+                )
 
-        self.validate_params_get_options()
-        self.validate_params_feed_details()
-        self.validate_params_service_details()
-        self.validate_params_include_fields()
-        self.validate_params_filters()
-        self.node.on_new_subscriber_request()
-        assert self.feed_name != ""
+            self.validate_params_get_options()
+            self.validate_params_feed_details()
+            self.validate_params_service_details()
+            self.validate_params_include_fields()
+            self.validate_params_filters()
+            self.node.on_new_subscriber_request()
+            assert self.feed_name != ""
+        except RpcError as e:
+            logger.debug({"msg": "Failed to validate subscribe request", "params": self.params, **e.to_json()})
+            raise e
 
     def validate_params_get_options(self):
         params = self.params

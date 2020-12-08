@@ -22,7 +22,19 @@ EXPIRATION_TIME_S = 5 * 60
 
 class EthPendingTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
     NAME = rpc_constants.ETH_PENDING_TRANSACTION_FEED_NAME
-    FIELDS = ["tx_hash", "tx_contents"]
+    FIELDS = [
+        "tx_hash",
+        "tx_contents.nonce",
+        "tx_contents.gas_price",
+        "tx_contents.gas",
+        "tx_contents.to",
+        "tx_contents.value",
+        "tx_contents.input",
+        "tx_contents.v",
+        "tx_contents.r",
+        "tx_contents.s",
+        "tx_contents.from",
+    ]
     FILTERS = {"transaction_value_range_eth", "from", "to"}
 
     published_transactions: ExpiringSet[Sha256Hash]

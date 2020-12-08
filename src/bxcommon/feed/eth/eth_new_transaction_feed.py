@@ -17,7 +17,19 @@ logger_filters = logging.get_logger(LogRecordType.TransactionFiltering, __name__
 
 class EthNewTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
     NAME = "newTxs"
-    FIELDS = ["tx_hash", "tx_contents"]
+    FIELDS = [
+        "tx_hash",
+        "tx_contents.nonce",
+        "tx_contents.gas_price",
+        "tx_contents.gas",
+        "tx_contents.to",
+        "tx_contents.value",
+        "tx_contents.input",
+        "tx_contents.v",
+        "tx_contents.r",
+        "tx_contents.s",
+        "tx_contents.from",
+    ]
     FILTERS = {"transaction_value_range_eth", "from", "to"}
 
     def __init__(self, network_num: int = constants.ALL_NETWORK_NUM,) -> None:

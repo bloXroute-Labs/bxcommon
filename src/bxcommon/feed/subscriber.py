@@ -1,6 +1,7 @@
 import asyncio
 import uuid
-from typing import Generic, TypeVar, Union, Dict, Any
+import dataclasses
+from typing import Generic, TypeVar, Union, Dict, Any, List
 
 from bxcommon import constants
 from bxcommon.feed import filter_parsing
@@ -54,13 +55,30 @@ class Subscriber(Generic[T]):
         include_fields = self.options.get("include", None)
         if include_fields:
             if isinstance(message, dict):
-                filtered_message = {key: message[key] for key in include_fields}
+                filtered_message = filter_message(message, include_fields)
 
+            elif dataclasses.is_dataclass(message):
+                filtered_message = filter_message(dataclasses.asdict(message), include_fields)
             else:
-                filtered_message = {key: getattr(message, key) for key in include_fields}
+                filtered_message = filter_message(message.__dict__, include_fields)
+
             self.messages.put_nowait(filtered_message)
         else:
             if hasattr(message, "__dict__"):
                 self.messages.put_nowait(message.__dict__)
             else:
                 self.messages.put_nowait(message)
+
+
+def filter_message(message: Dict[str, Any], include_fields: List[str]) -> Dict[str, Any]:
+    output = {}
+    for key in include_fields:
+        value = message
+        partial_message = output
+        for key_element in key.split("."):
+            value = value[key_element]
+            if isinstance(value, dict):
+                partial_message = partial_message.setdefault(key_element, {})
+            else:
+                partial_message = partial_message.setdefault(key_element, value)
+    return output

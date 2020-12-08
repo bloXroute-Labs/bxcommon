@@ -1,7 +1,7 @@
 import asyncio
 
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Any
 
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import async_test
@@ -105,3 +105,34 @@ class SubscriberTest(AbstractTestCase):
         self.assertEqual("lobster", second_meal["food"])
         self.assertEqual("lemonade", second_meal["drink"])
         self.assertNotIn("dessert", second_meal)
+
+    @async_test
+    async def test_field_filtering_composite_dict(self):
+        subscriber: Subscriber[Dict[str, Any]] = Subscriber({"include": ["food.dessert", "food.main_dish"]})
+        subscriber.queue({
+            "food": {
+                "main_dish": "steak",
+                "dessert": "chocolate cake",
+                "drink": "lemonade",
+            }
+        })
+        subscriber.queue({
+            "food": {
+                "main_dish": "lobster",
+                "drink": "lemonade",
+                "dessert": "cookie",
+            }
+        })
+
+        first_meal = await subscriber.receive()
+
+        self.assertIsInstance(first_meal, dict)
+        self.assertEqual("steak", first_meal["food"]["main_dish"])
+        self.assertEqual("chocolate cake", first_meal["food"]["dessert"])
+        self.assertNotIn("drink", first_meal)
+
+        second_meal = await subscriber.receive()
+        self.assertIsInstance(second_meal, dict)
+        self.assertEqual("lobster", second_meal["food"]["main_dish"])
+        self.assertEqual("cookie", second_meal["food"]["dessert"])
+        self.assertNotIn("drink", second_meal)
