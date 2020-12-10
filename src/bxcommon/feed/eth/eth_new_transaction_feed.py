@@ -31,7 +31,8 @@ class EthNewTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
         "tx_contents.s",
         "tx_contents.from",
     ]
-    FILTERS = {"transaction_value_range_eth", "from", "to"}
+    FILTERS = {"value", "from", "to"}
+    ALL_FIELDS = ["tx_hash", "tx_contents"]
 
     def __init__(self, network_num: int = constants.ALL_NETWORK_NUM,) -> None:
         super().__init__(self.NAME, network_num)

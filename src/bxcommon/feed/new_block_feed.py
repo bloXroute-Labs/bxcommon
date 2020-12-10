@@ -35,6 +35,7 @@ class RawBlock(NamedTuple):
 class NewBlockFeed(Feed[RawBlockFeedEntry, RawBlock]):
     NAME = "newBlocks"
     FIELDS = ["hash", "block"]
+    ALL_FIELDS = FIELDS
 
     def __init__(self, network_num: int = constants.ALL_NETWORK_NUM,) -> None:
         super().__init__(self.NAME, network_num=network_num)

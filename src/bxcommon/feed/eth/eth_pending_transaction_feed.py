@@ -36,7 +36,8 @@ class EthPendingTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]
         "tx_contents.s",
         "tx_contents.from",
     ]
-    FILTERS = {"transaction_value_range_eth", "from", "to"}
+    FILTERS = {"value", "from", "to"}
+    ALL_FIELDS = ["tx_hash", "tx_contents"]
 
     published_transactions: ExpiringSet[Sha256Hash]
 

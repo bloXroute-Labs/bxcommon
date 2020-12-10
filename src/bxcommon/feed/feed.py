@@ -21,6 +21,7 @@ class FeedKey(NamedTuple):
 class Feed(Generic[T, S], metaclass=ABCMeta):
     FIELDS: List[str] = []
     FILTERS: Set[str] = set()
+    ALL_FIELDS: List[str] = []
     name: str
     network_num: int
     subscribers: Dict[str, Subscriber[T]]
@@ -36,6 +37,10 @@ class Feed(Generic[T, S], metaclass=ABCMeta):
         return f"Feed<{self.name}>"
 
     def subscribe(self, options: Dict[str, Any]) -> Subscriber[T]:
+        include_fields = options.get("include", "all")
+        if include_fields == "all":
+            options["include"] = self.ALL_FIELDS
+
         subscriber: Subscriber[T] = Subscriber(options)
         self.subscribers[subscriber.subscription_id] = subscriber
         return subscriber

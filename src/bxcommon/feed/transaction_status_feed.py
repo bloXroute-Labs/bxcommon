@@ -39,6 +39,7 @@ class TransactionStatus(NamedTuple):
 class TransactionStatusFeed(Feed[TransactionStatusFeedEntry, TransactionStatus]):
     NAME = "transactionStatus"
     FIELDS = ["tx_hash", "status", "account_id"]
+    ALL_FIELDS = FIELDS
 
     def __init__(self, network_num: int = constants.ALL_NETWORK_NUM) -> None:
         super().__init__(self.NAME, network_num)

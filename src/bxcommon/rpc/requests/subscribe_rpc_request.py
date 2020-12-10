@@ -47,6 +47,7 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         self.subscribe_handler = subscribe_handler
         self.options = {}
         self.available_fields = []
+        self.all_fields = []
 
         super().__init__(request, node)
 
@@ -73,6 +74,7 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
 
     def validate_params_get_options(self):
         params = self.params
+
         if not isinstance(params, list) or len(params) != 2:
             raise RpcInvalidParams(
                 self.request_id,
@@ -93,6 +95,7 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
                 f"Available feeds: {[key.name for key in self.feed_manager.get_feed_keys(self.feed_network)]}",
             )
         self.available_fields = feed.FIELDS
+        self.all_fields = feed.ALL_FIELDS
 
     def validate_params_include_fields(self):
         invalid_options = RpcInvalidParams(
@@ -106,15 +109,18 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         if not isinstance(self.options, dict):
             raise invalid_options
 
-        include = self.options.get("include", None)
-        if include is not None:
-            if not isinstance(include, list):
-                raise invalid_options
+        include = self.options.get("include", self.all_fields)
+        if not isinstance(include, list):
+            raise invalid_options
 
+        if self.available_fields:
             if any(
                 included_field not in self.available_fields for included_field in include
             ):
                 raise invalid_options
+
+            # update options["include"] to support if was not specified
+            self.options["include"] = include
         else:
             self.options["include"] = self.available_fields
 

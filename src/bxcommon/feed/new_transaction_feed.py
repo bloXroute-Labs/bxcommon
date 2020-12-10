@@ -42,6 +42,7 @@ class RawTransaction(NamedTuple):
 class NewTransactionFeed(Feed[RawTransactionFeedEntry, RawTransaction]):
     NAME = rpc_constants.NEW_TRANSACTION_FEED_NAME
     FIELDS = ["tx_hash", "tx_contents"]
+    ALL_FIELDS = FIELDS
 
     def __init__(self, network_num: int = constants.ALL_NETWORK_NUM,) -> None:
         super().__init__(self.NAME, network_num)
