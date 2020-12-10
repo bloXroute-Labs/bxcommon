@@ -24,6 +24,7 @@ class EthPendingTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]
     NAME = rpc_constants.ETH_PENDING_TRANSACTION_FEED_NAME
     FIELDS = [
         "tx_hash",
+        "tx_contents",
         "tx_contents.nonce",
         "tx_contents.gas_price",
         "tx_contents.gas",

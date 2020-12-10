@@ -19,6 +19,7 @@ class EthNewTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
     NAME = "newTxs"
     FIELDS = [
         "tx_hash",
+        "tx_contents",
         "tx_contents.nonce",
         "tx_contents.gas_price",
         "tx_contents.gas",

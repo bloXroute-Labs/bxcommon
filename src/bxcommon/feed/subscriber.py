@@ -75,9 +75,10 @@ def filter_message(message: Dict[str, Any], include_fields: List[str]) -> Dict[s
     for key in include_fields:
         value = message
         partial_message = output
-        for key_element in key.split("."):
+        field_keys = key.split(".")
+        for key_element in field_keys:
             value = value[key_element]
-            if isinstance(value, dict):
+            if isinstance(value, dict) and len(field_keys) > 1 and key_element != field_keys[-1]:
                 partial_message = partial_message.setdefault(key_element, {})
             else:
                 partial_message = partial_message.setdefault(key_element, value)

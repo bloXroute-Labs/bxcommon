@@ -136,3 +136,21 @@ class SubscriberTest(AbstractTestCase):
         self.assertEqual("lobster", second_meal["food"]["main_dish"])
         self.assertEqual("cookie", second_meal["food"]["dessert"])
         self.assertNotIn("drink", second_meal)
+
+    @async_test
+    async def test_field_filtering_dict_option(self):
+        subscriber: Subscriber[Dict[str, Any]] = Subscriber({"include": ["food"]})
+        subscriber.queue({
+            "food": {
+                "main_dish": {"option_1": {"potato": "well done"}, "option_2": "steak"},
+                "dessert": "chocolate cake",
+                "drink": "lemonade",
+            }
+        })
+
+        first_meal = await subscriber.receive()
+
+        self.assertIsInstance(first_meal, dict)
+        self.assertEqual("well done", first_meal["food"]["main_dish"]["option_1"]["potato"])
+        self.assertEqual("chocolate cake", first_meal["food"]["dessert"])
+        self.assertNotIn("drink", first_meal)
