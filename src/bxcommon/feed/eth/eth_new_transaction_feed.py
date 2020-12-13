@@ -81,8 +81,8 @@ class EthNewTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
             contents = serialized_message.tx_contents
             state = {
                 "value": eth_filter_handlers.reformat_tx_value(contents["value"]),
-                "to": contents["to"],
-                "from": contents["from"],
+                "to": eth_filter_handlers.reformat_address(contents["to"]),
+                "from": eth_filter_handlers.reformat_address(contents["from"]),
             }
             should_publish = subscriber.validator(state)
             logger_filters.trace("should publish: {}", should_publish)
