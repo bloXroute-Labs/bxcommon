@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 from datetime import datetime, date
 
 from bxcommon.models.bdn_service_model_config_base import (
@@ -8,6 +8,7 @@ from bxcommon.models.bdn_service_model_config_base import (
     BdnFeedServiceModelConfigBase,
 )
 from bxcommon import constants
+from bxcommon.rpc import rpc_constants
 from bxutils import logging
 
 logger = logging.get_logger(__name__)
@@ -52,3 +53,19 @@ class BdnAccountModelBase(AccountTemplate, AccountInfo):
             return False
 
         return expire_date >= today
+
+    def get_feed_service_config_by_name(
+        self, feed_name: str
+    ) -> Union[Optional[BdnFeedServiceModelConfigBase], Optional[BdnBasicServiceModel]]:
+        if feed_name in {rpc_constants.NEW_TRANSACTION_FEED_NAME}:
+            return self.new_transaction_streaming
+        elif feed_name in {rpc_constants.ETH_PENDING_TRANSACTION_FEED_NAME}:
+            return self.new_pending_transaction_streaming
+        elif feed_name in {rpc_constants.NEW_BLOCKS_FEED_NAME}:
+            return self.new_block_streaming
+        elif feed_name in {rpc_constants.TRANSACTION_STATUS_FEED_NAME}:
+            return self.transaction_state_feed
+        elif feed_name in {rpc_constants.ETH_ON_BLOCK_FEED_NAME}:
+            return self.on_block_feed
+        else:
+            return None

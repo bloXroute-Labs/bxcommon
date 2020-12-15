@@ -1,14 +1,17 @@
-from typing import TYPE_CHECKING, Callable, Any
+import fnmatch
+from typing import TYPE_CHECKING, Callable, Any, List, Optional, Union
 
-from bxutils import logging
-from bxutils.logging.log_record_type import LogRecordType
 from bxcommon.feed.feed import FeedKey
+from bxcommon.feed.feed_manager import FeedManager
+from bxcommon.feed.subscriber import Subscriber
+from bxcommon.models.bdn_account_model_base import BdnAccountModelBase
+from bxcommon.models.bdn_service_model_config_base import BdnFeedServiceModelConfigBase, BdnBasicServiceModel
 from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
 from bxcommon.rpc.rpc_errors import RpcInvalidParams, RpcAccountIdError, RpcError
-from bxcommon.feed.feed_manager import FeedManager
-from bxcommon.feed.subscriber import Subscriber
+from bxutils import logging
+from bxutils.logging.log_record_type import LogRecordType
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
@@ -38,7 +41,8 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         node: "AbstractNode",
         feed_manager: FeedManager,
         subscribe_handler: Callable[[Subscriber, FeedKey], None],
-        feed_network: int = 0
+        feed_network: int = 0,
+        account_details: Optional[BdnAccountModelBase] = None
     ) -> None:
         self.feed_name = ""
         self.feed_network = feed_network
@@ -48,6 +52,8 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         self.options = {}
         self.available_fields = []
         self.all_fields = []
+        self.account_details = account_details
+        self.service_model: Union[Optional[BdnFeedServiceModelConfigBase], Optional[BdnBasicServiceModel]] = None
 
         super().__init__(request, node)
 
@@ -98,6 +104,11 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         self.all_fields = feed.ALL_FIELDS
 
     def validate_params_include_fields(self):
+        if self.service_model and self.service_model.available_fields:
+            self.available_fields = [
+                field for field in self.available_fields if allowed_field(field, self.service_model.available_fields)
+            ]
+
         invalid_options = RpcInvalidParams(
             self.request_id,
             f"{self.options} Invalid feed include parameter. "
@@ -125,6 +136,12 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
             self.options["include"] = self.available_fields
 
     def validate_params_filters(self):
+        if "filters" in self.options and (not self.service_model or not self.service_model.allow_filtering):
+            raise RpcAccountIdError(
+                self.request_id,
+                f"Account does not have filtering enabled for {self.feed_name} service.",
+            )
+
         filters = self.options.get("filters", None)
         if filters:
             logger_filters.debug(filters)
@@ -133,7 +150,20 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
             self.options["filters"] = formatted_filters
 
     def validate_params_service_details(self):
-        pass
+        if self.account_details is None:
+            return
+
+        service = self.account_details.get_feed_service_config_by_name(self.feed_name)
+        if service:
+            service_model = service.feed
+        else:
+            service_model = None
+        if not service or not service.is_service_valid():
+            raise RpcAccountIdError(
+                self.request_id,
+                f"Account does not have access to the {self.feed_name} service.",
+            )
+        self.service_model = service_model
 
     async def process_request(self) -> JsonRpcResponse:
         params = self.params
@@ -165,3 +195,10 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         except Exception:
             raise invalid_filters
         return filters
+
+
+def allowed_field(field: str, available_fields: List[str]):
+    for available_field in available_fields:
+        if fnmatch.fnmatch(field, available_field) or available_field == "all":
+            return True
+    return False
