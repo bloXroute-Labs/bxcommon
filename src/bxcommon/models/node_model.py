@@ -128,6 +128,8 @@ class NodeModel:
     is_docker: bool = False
     using_private_ip_connection: bool = False
 
+    private_node: bool = False
+
     def __post_init__(self):
         self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
         # TODO: Remove network attribute, not being used
