@@ -1,18 +1,21 @@
 import struct
 import time
 from datetime import datetime
-from typing import Any, List, Union, Optional, cast
+from typing import Any, List, Union, Optional
 
 import task_pool_executor as tpe
 
 from bxcommon import constants
 from bxcommon.messages.bloxroute import transactions_info_serializer
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.models.transaction_info import TransactionSearchResult, TransactionInfo
-from bxcommon.services.transaction_service import TransactionService, TransactionCacheKeyType, TxSyncMsgProcessingItem
+from bxcommon.models.transaction_key import TransactionKey, TransactionCacheKeyType
+from bxcommon.services.transaction_service import TransactionService, TxSyncMsgProcessingItem
 from bxcommon.services.transaction_service import TxRemovalReason
 from bxcommon.utils import memory_utils, crypto
+from bxcommon.utils.deprecated import deprecated
+from bxcommon.utils.memory_utils import ObjectSize, SizeType
 from bxcommon.utils.object_encoder import ObjectEncoder
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon.utils.proxy import task_pool_proxy
@@ -35,7 +38,6 @@ class ExtensionTransactionService(TransactionService):
 
     def __init__(self, node, network_num) -> None:
         super(ExtensionTransactionService, self).__init__(node, network_num)
-
         # Log levels need to be set again to include the loggers created in this conditionally imported class
         log_config.lazy_set_log_level(node.opts.log_level_overrides)
 
@@ -101,8 +103,9 @@ class ExtensionTransactionService(TransactionService):
         self.proxy.on_block_cleaned_up(wrapped_block_hash)
 
     def get_tx_service_sync_buffer(self, sync_tx_content: bool) -> memoryview:
-        byte_array_obj = self.proxy.get_tx_sync_buffer(self._total_tx_contents_size,
-                                                       sync_tx_content)
+        byte_array_obj = self.proxy.get_tx_sync_buffer(
+            self._total_tx_contents_size, sync_tx_content
+        )
         return memoryview(byte_array_obj)
 
     def update_removed_transactions(self, removed_content_size: int, short_ids: List[int]) -> None:
@@ -116,48 +119,60 @@ class ExtensionTransactionService(TransactionService):
             if self.node.opts.dump_removed_short_ids:
                 self._removed_short_ids.add(short_id)
 
+    @deprecated
     def assign_short_id(
         self,
         transaction_hash: Sha256Hash,
         short_id: int,
         transaction_cache_key: Optional[TransactionCacheKeyType] = None
     ) -> None:
+        return self.assign_short_id_by_key(
+            self.get_transaction_key(transaction_hash, transaction_cache_key),
+            short_id,
+        )
+
+    def assign_short_id_by_key(
+        self,
+        transaction_key: TransactionKey,
+        short_id: int,
+    ) -> None:
         """
         Adds short id mapping for transaction and schedules an alarm to cleanup entry on expiration.
-        :param transaction_hash: transaction long hash
+        :param transaction_key: transaction key object
         :param short_id: short id to be mapped to transaction
-        :param transaction_cache_key: transaction cache key
         """
-        logger.trace("Assigning sid {} to transaction {}", short_id, transaction_hash)
-        if not transaction_cache_key:
-            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+        logger.trace("Assigning sid {} to transaction {}", short_id, transaction_key.transaction_hash)
 
-        transaction_cache_key = cast(tpe.Sha256, transaction_cache_key)
-        has_contents = self.proxy.assign_short_id(transaction_cache_key, short_id)
-        self.assign_short_id_base(transaction_hash, transaction_cache_key, short_id, has_contents, False)
+        # pyre-fixme[6]: Expected `tpe.Sha256` got `TransactionCacheKeyType`.
+        has_contents = self.proxy.assign_short_id(transaction_key.transaction_cache_key, short_id)
+        self.assign_short_id_base_by_key(transaction_key, short_id, has_contents, False)
 
+    @deprecated
     def set_transaction_contents(
         self, transaction_hash: Sha256Hash, transaction_contents: Union[bytearray, memoryview],
         transaction_cache_key: Optional[TransactionCacheKeyType] = None
     ):
+        return self.set_transaction_contents_by_key(
+            self.get_transaction_key(transaction_hash, transaction_cache_key),
+            transaction_contents
+        )
+
+    def set_transaction_contents_by_key(
+        self, transaction_key: TransactionKey, transaction_contents: Union[bytearray, memoryview]
+    ):
         """
         Adds transaction contents to transaction service cache with lookup key by transaction hash
 
-        :param transaction_hash: transaction hash
+        :param transaction_key: transaction key object
         :param transaction_contents: transaction contents bytes
-        :param transaction_cache_key: transaction cache key optional
         """
-        if not transaction_cache_key:
-            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
-
-        assert isinstance(transaction_cache_key, tpe.Sha256)
         has_short_id, previous_size = self.proxy.set_transaction_contents(
-            transaction_cache_key,
+            # pyre-fixme[6]: Expected `tpe.Sha256` got `TransactionCacheKeyType`.
+            transaction_key.transaction_cache_key,
             tpe.InputBytes(transaction_contents))
 
-        self.set_transaction_contents_base(
-            transaction_hash,
-            transaction_cache_key,
+        self.set_transaction_contents_base_by_key(
+            transaction_key,
             has_short_id,
             previous_size,
             False,
@@ -228,7 +243,7 @@ class ExtensionTransactionService(TransactionService):
 
         for _ in range(txs_count):
             transaction_hash = Sha256Hash(result_memory_view[offset:offset + crypto.SHA256_HASH_LEN])
-            transaction_cache_key = self._tx_hash_to_cache_key(transaction_hash)
+            transaction_key = self.get_transaction_key(transaction_hash)
             offset += crypto.SHA256_HASH_LEN
 
             content_len, = struct.unpack_from("<L", result_memory_view, offset)
@@ -238,9 +253,8 @@ class ExtensionTransactionService(TransactionService):
             offset += constants.UL_INT_SIZE_IN_BYTES
 
             if content_len > 0:
-                self.set_transaction_contents_base(
-                    transaction_hash,
-                    transaction_cache_key,
+                self.set_transaction_contents_base_by_key(
+                    transaction_key,
                     short_id_count > 0,
                     0,
                     False,
@@ -254,9 +268,8 @@ class ExtensionTransactionService(TransactionService):
                 short_id, = struct.unpack_from("<L", result_memory_view, offset)
                 offset += constants.UL_INT_SIZE_IN_BYTES
 
-                self.assign_short_id_base(
-                    transaction_hash,
-                    transaction_cache_key,
+                self.assign_short_id_base_by_key(
+                    transaction_key,
                     short_id,
                     content_len > 0,
                     False
@@ -264,38 +277,33 @@ class ExtensionTransactionService(TransactionService):
 
                 short_ids.append(short_id)
 
-            quota_types = []
+            transaction_flags = []
 
             for _ in range(short_id_count):
-                quota_type, = struct.unpack_from("<B", result_memory_view, offset)
-                offset += constants.QUOTA_FLAG_LEN
-                quota_types.append(QuotaType(quota_type))
+                transaction_flag, = struct.unpack_from("<H", result_memory_view, offset)
+                offset += constants.TRANSACTION_FLAG_LEN
+                transaction_flags.append(TransactionFlag(transaction_flag))
 
-            result_items.append(TxSyncMsgProcessingItem(transaction_hash, content_len, short_ids, quota_types))
+            result_items.append(TxSyncMsgProcessingItem(transaction_hash, content_len, short_ids, transaction_flags))
 
         return result_items
 
-    def log_tx_service_mem_stats(self):
-        super(ExtensionTransactionService, self).log_tx_service_mem_stats()
-        if self.node.opts.stats_calculate_actual_size:
-            size_type = memory_utils.SizeType.OBJECT
-        else:
-            size_type = memory_utils.SizeType.ESTIMATE
-        hooks.add_obj_mem_stats(
-            self.__class__.__name__,
-            self.network_num,
-            self._tx_not_seen_in_blocks,
-            "tx_not_seen_in_blocks",
-            self.get_collection_mem_stats(
-                self._tx_not_seen_in_blocks),
-            object_item_count=len(self._tx_not_seen_in_blocks),
-            object_type=memory_utils.ObjectType.BASE,
-            size_type=size_type
-        )
+    def log_tx_service_mem_stats(self, include_data_structure_memory: bool = False) -> None:
+        super(ExtensionTransactionService, self).log_tx_service_mem_stats(include_data_structure_memory)
 
-    def get_collection_mem_stats(
-        self, collection_obj: Any, estimated_size: int = 0
-    ) -> memory_utils.ObjectSize:
+        if include_data_structure_memory:
+            hooks.add_obj_mem_stats(
+                self.__class__.__name__,
+                self.network_num,
+                self._tx_not_seen_in_blocks,
+                "tx_not_seen_in_blocks",
+                self.get_collection_mem_stats(SizeType.OBJECT, self._tx_not_seen_in_blocks),
+                object_item_count=len(self._tx_not_seen_in_blocks),
+                object_type=memory_utils.ObjectType.BASE,
+                size_type=SizeType.OBJECT
+            )
+
+    def get_collection_mem_stats(self, size_type: SizeType, collection_obj: Any, estimated_size: int = 0) -> ObjectSize:
         if self.get_object_type(collection_obj) == memory_utils.ObjectType.DEFAULT_MAP_PROXY:
             collection_size = collection_obj.map_obj.get_bytes_length()
             if collection_obj is self._tx_cache_key_to_short_ids:
@@ -304,7 +312,7 @@ class ExtensionTransactionService(TransactionService):
             return memory_utils.ObjectSize(size=collection_size, flat_size=0, is_actual_size=True)
         else:
             return super(ExtensionTransactionService, self).get_collection_mem_stats(
-                collection_obj, estimated_size
+                size_type, collection_obj, estimated_size
             )
 
     def get_object_type(self, collection_obj: Any):
@@ -386,7 +394,7 @@ class ExtensionTransactionService(TransactionService):
     def clear(self):
         self.proxy.clear()
 
-        self._short_id_to_tx_quota_flag.clear()
+        self._short_id_to_tx_flag.clear()
         self.tx_hashes_without_content.clear()
         self.tx_hashes_without_short_id.clear()
         self._tx_assignment_expire_queue.clear()

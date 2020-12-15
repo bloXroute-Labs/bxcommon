@@ -90,6 +90,7 @@ class NodeSSLService:
         elif not self.has_valid_certificate(SSLCertificateType.REGISTRATION_ONLY) and not \
                 self.has_valid_certificate(SSLCertificateType.PRIVATE):
             raise RuntimeError("Failed to load node certificate.")
+
         logger.info("{} is successfully loaded.", self)
 
     async def load(self) -> None:
@@ -218,12 +219,10 @@ class NodeSSLService:
 
     def get_account_id(self) -> Optional[str]:
         cert = None
-        for certificate_type in [SSLCertificateType.REGISTRATION_ONLY, SSLCertificateType.REGISTRATION_ONLY]:
-            try:
-                cert = self.get_certificate(certificate_type)
-                break
-            except ValueError:
-                pass
+        try:
+            cert = self.get_certificate(SSLCertificateType.REGISTRATION_ONLY)
+        except ValueError:
+            pass
         if cert is None:
             logger.info("Could not find SSL certificate, continue without account settings")
             return None

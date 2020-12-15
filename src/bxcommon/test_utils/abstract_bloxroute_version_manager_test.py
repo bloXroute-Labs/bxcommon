@@ -30,7 +30,7 @@ from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.txs_serializer import TxContentShortIds
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.models.notification_code import NotificationCode
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.models.transaction_info import TransactionInfo
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -144,7 +144,7 @@ class AbstractBloxrouteVersionManagerTest(
             self.NODE_ID,
             50,
             helpers.generate_bytearray(250),
-            QuotaType.PAID_DAILY_QUOTA,
+            TransactionFlag.PAID_TX,
             time.time(),
         )
 
@@ -187,7 +187,7 @@ class AbstractBloxrouteVersionManagerTest(
                     helpers.generate_object_hash(),
                     helpers.generate_bytearray(250),
                     [2, 3],
-                    [QuotaType.FREE_DAILY_QUOTA, QuotaType.PAID_DAILY_QUOTA],
+                    [TransactionFlag.NO_FLAGS, TransactionFlag.PAID_TX],
                 )
             ],
         )
@@ -218,17 +218,17 @@ class AbstractBloxrouteVersionManagerTest(
         )
 
     def bdn_performance_stats_message(self) -> BdnPerformanceStatsMessage:
+        node_stats = {}
+        helpers.add_stats_to_node_stats(
+            node_stats,
+            "127.0.0.1", 8001,
+            20, 30, 40, 50, 10, 10, 20, 100, 50
+        )
         return BdnPerformanceStatsMessage(
             datetime.utcnow(),
             datetime.utcnow(),
             100,
-            200,
-            300,
-            400,
-            500,
-            10,
-            10,
-            20
+            node_stats
         )
 
     # </editor-fold>
@@ -745,12 +745,9 @@ class AbstractBloxrouteVersionManagerTest(
         current_message = self.bdn_performance_stats_message()
         old_message = self.old_bdn_performance_stats_message(current_message)
 
-        current_to_old_message = self._convert_to_older_version(current_message, old_message)
         old_to_current_message = cast(
             M16, self._convert_to_current_version(old_message, current_message)
         )
-
-        self.compare_bdn_performance_stats_current_to_old(current_to_old_message, old_message)
         self.compare_bdn_performance_stats_old_to_current(old_to_current_message, current_message)
 
     # </editor-fold>

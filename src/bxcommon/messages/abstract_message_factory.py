@@ -22,10 +22,14 @@ class AbstractMessageFactory:
     """
 
     __metaclass__ = ABCMeta
+    message_type_mapping: Dict[bytes, Type[AbstractMessage]]
 
-    def __init__(self) -> None:
+    def __init__(self, message_type_mapping: Optional[Dict[bytes, Optional[Type[AbstractMessage]]]] = None) -> None:
         self.base_message_type = self.get_base_message_type()
-        self.message_type_mapping: Dict[bytes, Type[AbstractMessage]] = {}
+        if message_type_mapping:
+            self.message_type_mapping = {k: v for k, v in message_type_mapping.items() if v is not None}
+        else:
+            self.message_type_mapping = {}
 
     @abstractmethod
     def get_base_message_type(self) -> Type[AbstractMessage]:

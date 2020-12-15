@@ -1,6 +1,7 @@
 import socket
-import typing
 import sys
+import typing
+from abc import abstractmethod
 from asyncio import BaseTransport, Transport, BaseProtocol
 from typing import TYPE_CHECKING, Optional
 
@@ -9,7 +10,8 @@ from cryptography.x509 import Certificate
 from bxcommon import constants
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.network_direction import NetworkDirection
-from bxcommon.network.socket_connection_state import SocketConnectionState
+from bxcommon.network.socket_connection_state import SocketConnectionState, SocketConnectionStates
+from bxcommon.utils.stats import hooks
 from bxutils import logging
 from bxutils.logging import LogRecordType
 from bxutils.ssl import ssl_certificate_factory
@@ -52,7 +54,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         else:
             self.direction = NetworkDirection.OUTBOUND
         self.can_send = False
-        self.state = SocketConnectionState.CONNECTING
+        self.state = SocketConnectionStates.CONNECTING
         self.is_ssl = is_ssl
         self._should_retry = self.direction == NetworkDirection.OUTBOUND
         self._initial_bytes = None
@@ -76,18 +78,18 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             )
             logger.debug("[{}] - accepted connection.", self)
         self._node.on_connection_added(self)
-        self.state = SocketConnectionState.INITIALIZED
+        self.state = SocketConnectionStates.INITIALIZED
         self.can_send = True
         self.send()
         logger.debug("[{}] - connection established successfully.", self)
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         mark_connection_for_close = (
-            SocketConnectionState.MARK_FOR_CLOSE not in self.state
+            SocketConnectionStates.MARK_FOR_CLOSE not in self.state
         )
-        self.state |= SocketConnectionState.MARK_FOR_CLOSE
+        self.state |= SocketConnectionStates.MARK_FOR_CLOSE
         if not self._should_retry:
-            self.state |= SocketConnectionState.DO_NOT_RETRY
+            self.state |= SocketConnectionStates.DO_NOT_RETRY
         if exc is not None:
             logger.info(
                 "[{}] - lost connection due to an error: {}, closing connection, should_retry: {}.",
@@ -139,7 +141,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
                 self,
                 bytes_to_send,
                 transport.get_write_buffer_size(),
-                        buffer_limits
+                buffer_limits
             )
             transport.write(data)
             conn.advance_sent_bytes(bytes_to_send)
@@ -168,14 +170,22 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             buffer_limits
         )
         transport.write(bytes_to_send)
+        len_bytes_to_sent = len(bytes_to_send)
+        hooks.add_throughput_event(
+            NetworkDirection.OUTBOUND,
+            "outgoing",
+            len_bytes_to_sent,
+            conn.peer_desc,
+            conn.peer_id
+        )
         conn.advance_bytes_written_to_socket(bytes_to_send)
 
-        logger.trace("[{}] - sent {} bytes", self, len(bytes_to_send))
+        logger.trace("[{}] - sent {} bytes", self, len_bytes_to_sent)
 
     def pause_reading(self) -> None:
         if self.is_alive():
             assert self.transport is not None, "Connection is broken!"
-            self.state |= SocketConnectionState.HALT_RECEIVE
+            self.state |= SocketConnectionStates.HALT_RECEIVE
             logger.debug("[{}] - paused reading.", self)
 
     def resume_reading(self) -> None:
@@ -183,13 +193,13 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             assert self.transport is not None, "Connection is broken!"
             # pylint bug
             # pylint: disable=invalid-unary-operand-type
-            self.state &= ~SocketConnectionState.HALT_RECEIVE
+            self.state &= ~SocketConnectionStates.HALT_RECEIVE
             logger.debug("[{}] - resumed reading.", self)
 
     def mark_for_close(self, should_retry: bool = True) -> None:
-        if SocketConnectionState.MARK_FOR_CLOSE in self.state:
+        if SocketConnectionStates.MARK_FOR_CLOSE in self.state:
             return
-        self.state |= SocketConnectionState.MARK_FOR_CLOSE
+        self.state |= SocketConnectionStates.MARK_FOR_CLOSE
         self._should_retry = should_retry
 
         transport = self.transport
@@ -202,18 +212,18 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         )
 
     def is_alive(self) -> bool:
-        return SocketConnectionState.MARK_FOR_CLOSE not in self.state
+        return SocketConnectionStates.MARK_FOR_CLOSE not in self.state
 
     def is_receivable(self) -> bool:
         return (
             self.is_alive()
-            and SocketConnectionState.HALT_RECEIVE not in self.state
+            and SocketConnectionStates.HALT_RECEIVE not in self.state
         )
 
     def is_sendable(self) -> bool:
         return (
             self.is_alive()
-            and SocketConnectionState.INITIALIZED in self.state
+            and SocketConnectionStates.INITIALIZED in self.state
             and self.can_send
         )
 
@@ -239,3 +249,11 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
                 logger.debug("Socket info is None on connection")
             else:
                 sock.setsockopt(socket.SOL_SOCKET, SO_QUICKACK, 1)
+
+    @abstractmethod
+    def get_last_read_duration_ms(self) -> float:
+        pass
+
+    @abstractmethod
+    def get_time_since_read_end_ms(self, end_time: float):
+        pass

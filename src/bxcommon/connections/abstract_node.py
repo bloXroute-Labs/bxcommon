@@ -24,7 +24,7 @@ from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
-from bxcommon.network.socket_connection_state import SocketConnectionState
+from bxcommon.network.socket_connection_state import SocketConnectionStates
 from bxcommon.services import sdn_http_service
 from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
@@ -45,7 +45,7 @@ from bxutils import log_messages
 from bxutils import logging
 from bxutils.exceptions.connection_authentication_error import \
     ConnectionAuthenticationError
-from bxutils.logging import LogRecordType
+from bxutils.logging import LogRecordType, LogLevel
 from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.extensions import extensions_factory
 from bxutils.ssl.ssl_certificate_type import SSLCertificateType
@@ -402,7 +402,7 @@ class AbstractNode:
     def fire_alarms(self) -> float:
         time_to_next = self.alarm_queue.fire_ready_alarms()
         if time_to_next is not None:
-            return max(time_to_next, constants.MIN_SLEEP_TIMEOUT)
+            return time_to_next
         else:
             return constants.MAX_EVENT_LOOP_TIMEOUT
 
@@ -493,10 +493,6 @@ class AbstractNode:
         node_info_statistics.set_node(self)
         self.alarm_queue.register_alarm(constants.FIRST_STATS_INTERVAL_S, node_info_statistics.flush_info)
 
-    def init_memory_stats_logging(self):
-        memory_statistics.set_node(self)
-        memory_statistics.start_recording(self.record_mem_stats)
-
     def cleanup_memory_stats_logging(self):
         memory_statistics.stop_recording()
 
@@ -512,13 +508,22 @@ class AbstractNode:
                 conn.socket_connection.send()
         return self.FLUSH_SEND_BUFFERS_INTERVAL
 
-    def record_mem_stats(self):
+    def record_mem_stats(self, low_threshold: int, medium_threshold: int, high_threshold: int):
         """
         When overridden, records identified memory stats and flushes them to std out
         :returns memory stats flush interval
         """
-        self.connection_pool.log_connection_pool_mem_stats()
-        return memory_statistics.flush_info()
+        total_memory = memory_utils.get_app_memory_usage()
+        if total_memory > low_threshold:
+            gc.collect()
+            total_memory = memory_utils.get_app_memory_usage()
+        self._record_mem_stats(total_memory > medium_threshold)
+
+        return memory_statistics.flush_info(high_threshold)
+
+    def _record_mem_stats(self, include_data_structure_memory: bool = False):
+        if include_data_structure_memory:
+            self.connection_pool.log_connection_pool_mem_stats()
 
     def set_node_config_opts_from_sdn(self, opts: CommonOpts) -> None:
         blockchain_networks: Dict[int, BlockchainNetworkModel] = opts.blockchain_networks
@@ -530,17 +535,15 @@ class AbstractNode:
             )
         bdn_tx_to_bx_tx.init(blockchain_networks)
 
-    def dump_memory_usage(self):
-        total_mem_usage = memory_utils.get_app_memory_usage()
-        if total_mem_usage >= self.next_report_mem_usage_bytes:
+    def dump_memory_usage(self, total_memory: int, threshold: int):
+        if total_memory > threshold and logger.isEnabledFor(LogLevel.DEBUG):
             node_size = self.get_node_memory_size()
             memory_logger.debug(
                 "Application consumed {} bytes which is over set limit {} bytes. Detailed memory report: {}",
-                total_mem_usage,
-                self.next_report_mem_usage_bytes,
+                total_memory,
+                threshold,
                 node_size
             )
-            self.next_report_mem_usage_bytes = total_mem_usage + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES
 
     def get_node_memory_size(self):
         return memory_utils.get_detailed_object_size(self)
@@ -580,6 +583,18 @@ class AbstractNode:
     def get_target_ssl_ctx(self, endpoint: IpEndpoint, connection_type: ConnectionType) -> SSLContext:
         logger.trace("Fetching SSL certificate for: {} ({}).", endpoint, connection_type)
         return self.node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
+
+    @abstractmethod
+    def reevaluate_transaction_streamer_connection(self) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def on_new_subscriber_request(self) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def init_memory_stats_logging(self):
+        raise NotImplementedError
 
     @abstractmethod
     def sync_tx_services(self):
@@ -634,7 +649,7 @@ class AbstractNode:
         """
         self.log_closed_connection(conn)
 
-        should_retry = SocketConnectionState.DO_NOT_RETRY not in conn.socket_connection.state
+        should_retry = SocketConnectionStates.DO_NOT_RETRY not in conn.socket_connection.state
 
         logger.debug("Breaking connection to {}. Attempting retry: {}", conn, should_retry)
         conn.dispose()

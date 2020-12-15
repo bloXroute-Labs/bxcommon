@@ -55,8 +55,8 @@ class TransactionStatusRpcRequestTest(AbstractTestCase):
     async def test_transaction_no_short_id(self):
         transaction_hash = helpers.generate_object_hash()
         transaction_contents = helpers.generate_bytearray(250)
-
-        self.node.get_tx_service().set_transaction_contents(transaction_hash, transaction_contents)
+        transaction_key = self.node.get_tx_service().get_transaction_key(transaction_hash)
+        self.node.get_tx_service().set_transaction_contents_by_key(transaction_key, transaction_contents)
 
         response = await self._process_request(
             {"transaction_hash": convert.bytes_to_hex(transaction_hash.binary)}
@@ -77,8 +77,9 @@ class TransactionStatusRpcRequestTest(AbstractTestCase):
         transaction_contents = helpers.generate_bytearray(250)
 
         tx_service = self.node.get_tx_service()
-        tx_service.set_transaction_contents(transaction_hash, transaction_contents)
-        tx_service.assign_short_id(transaction_hash, short_id)
+        transaction_key = tx_service.get_transaction_key(transaction_hash)
+        tx_service.set_transaction_contents_by_key(transaction_key, transaction_contents)
+        tx_service.assign_short_id_by_key(transaction_key, short_id)
 
         response = await self._process_request(
             {"transaction_hash": convert.bytes_to_hex(transaction_hash.binary)}
@@ -97,12 +98,13 @@ class TransactionStatusRpcRequestTest(AbstractTestCase):
         transaction_contents = helpers.generate_bytearray(250)
 
         tx_service = self.node.get_tx_service()
-        tx_service.set_transaction_contents(transaction_hash, transaction_contents)
-        tx_service.assign_short_id(transaction_hash, short_id_1)
+        transaction_key = tx_service.get_transaction_key(transaction_hash)
+        tx_service.set_transaction_contents_by_key(transaction_key, transaction_contents)
+        tx_service.assign_short_id_by_key(transaction_key, short_id_1)
 
         time.time = MagicMock(return_value=time.time() + 5)
         expected_assignment_time = datetime.datetime.fromtimestamp(time.time()).isoformat()
-        tx_service.assign_short_id(transaction_hash, short_id_2)
+        tx_service.assign_short_id_by_key(transaction_key, short_id_2)
 
         response = await self._process_request(
             {"transaction_hash": f"0x{convert.bytes_to_hex(transaction_hash.binary)}"}
@@ -120,8 +122,9 @@ class TransactionStatusRpcRequestTest(AbstractTestCase):
         transaction_hash_object = Sha256Hash(convert.hex_to_bytes(transaction_hash_normal))
 
         tx_service = self.node.get_tx_service()
-        tx_service.set_transaction_contents(
-            transaction_hash_object, helpers.generate_bytearray(250)
+        transaction_key = tx_service.get_transaction_key(transaction_hash_object)
+        tx_service.set_transaction_contents_by_key(
+            transaction_key, helpers.generate_bytearray(250)
         )
 
         response_normal = await self._process_request(

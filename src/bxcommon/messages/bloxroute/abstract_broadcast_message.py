@@ -1,6 +1,6 @@
 import struct
 from abc import ABC
-from typing import Optional
+from typing import Optional, Union
 
 from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
@@ -23,7 +23,7 @@ class AbstractBroadcastMessage(AbstractBloxrouteMessage, ABC):
         message_hash: Optional[Sha256Hash] = None,
         network_num: Optional[int] = None,
         source_id: Optional[str] = None,
-        buf: Optional[bytearray] = None
+        buf: Optional[Union[bytearray, memoryview]] = None
     ):
         if buf is None:
             self.buf = bytearray(self.HEADER_LENGTH + self.PAYLOAD_LENGTH)

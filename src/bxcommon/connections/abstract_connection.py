@@ -109,6 +109,8 @@ class AbstractConnection(Generic[Node]):
         self._debug_message_tracker = defaultdict(int)
         self._last_debug_message_log_time = time.time()
 
+        self.processing_message_index = 0
+
         self.peer_model: Optional[OutboundPeerModel] = None
 
         self._is_authenticated = False
@@ -288,6 +290,8 @@ class AbstractConnection(Generic[Node]):
         messages_processed = defaultdict(int)
         total_bytes_processed = 0
 
+        self.processing_message_index = 0
+
         while True:
             input_buffer_len_before = self.inputbuf.length
             is_full_msg = False
@@ -438,6 +442,8 @@ class AbstractConnection(Generic[Node]):
                     return
             else:
                 self.num_bad_messages = 0
+
+            self.processing_message_index += 1
 
         performance_utils.log_operation_duration(msg_handling_logger,
                                                  "Message handlers",

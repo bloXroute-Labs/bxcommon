@@ -1,33 +1,40 @@
+import argparse
 import asyncio
 import os
 import socket
 import sys
 import uuid
-from argparse import Namespace
 from contextlib import closing
-from typing import Optional, TypeVar, Type, TYPE_CHECKING, List
+from typing import Optional, TypeVar, Type, TYPE_CHECKING, List, Dict
 
 from mock import MagicMock
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
+from bxcommon.messages.abstract_block_message import AbstractBlockMessage
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsData
 from bxcommon.models.authenticated_peer_info import AuthenticatedPeerInfo
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
+from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.test_utils.mocks.mock_node import MockNode
 from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnection
-from bxcommon.utils import config, crypto, convert
+from bxcommon.utils import config, crypto, convert, cli
 from bxcommon.utils.buffers.input_buffer import InputBuffer
 from bxcommon.common_opts import CommonOpts
 from bxcommon.utils.object_hash import Sha256Hash
-from bxcommon.utils.proxy import task_pool_proxy
-from bxutils.logging.log_format import LogFormat
+
+try:
+    from bxcommon.utils.proxy import task_pool_proxy
+    use_extensions = True
+    # pylint: disable=broad-except
+except Exception:
+    use_extensions = False
 from bxutils.logging.log_level import LogLevel
-from bxutils import constants as utils_constants
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
@@ -193,7 +200,8 @@ def create_input_buffer_with_bytes(message_bytes):
 def set_extensions_parallelism(
     degree: int = constants.DEFAULT_THREAD_POOL_PARALLELISM_DEGREE,
 ) -> None:
-    task_pool_proxy.init(config.get_thread_pool_parallelism_degree(str(degree)))
+    if use_extensions:
+        task_pool_proxy.init(config.get_thread_pool_parallelism_degree(str(degree)))
 
 
 def blockchain_network(
@@ -244,6 +252,7 @@ def get_common_opts(
     sid_expire_time: int = 30,
     rpc: bool = False,
     transaction_validation: bool = True,
+    rpc_use_ssl: bool = False,
     **kwargs,
 ) -> CommonOpts:
     if node_id is None:
@@ -251,56 +260,56 @@ def get_common_opts(
     if outbound_peers is None:
         outbound_peers = []
 
-    opts = Namespace()
-    opts.__dict__ = {
-        "external_ip": external_ip,
-        "external_port": port,
-        "node_id": node_id,
-        "memory_stats_interval": 3600,
-        "dump_detailed_report_at_memory_usage": 100,
-        "dump_removed_short_ids": False,
-        "dump_removed_short_ids_path": "",
-        "transaction_pool_memory_limit": 200000000,
-        "track_detailed_sent_messages": True,
-        "use_extensions": constants.USE_EXTENSION_MODULES,
-        "import_extensions": constants.USE_EXTENSION_MODULES,
-        "tx_mem_pool_bucket_size": constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
-        "throughput_stats_interval": constants.THROUGHPUT_STATS_INTERVAL_S,
-        "info_stats_interval": constants.INFO_STATS_INTERVAL_S,
-        "sync_tx_service": True,
-        "source_version": "v1.0.0",
-        "non_ssl_port": 3000,
-        "enable_node_cache": True,
-        "rpc_port": rpc_port,
-        "rpc_host": constants.LOCALHOST,
-        "rpc_user": "",
-        "rpc_password": "",
-        "continent": continent,
-        "country": country,
-        "region": region,
-        "hostname": "bxlocal",
-        "sdn_url": f"{constants.LOCALHOST}:8080",
-        "log_level": LogLevel.DEBUG,
-        "log_format": LogFormat.PLAIN,
-        "log_fluentd_queue_size": 1000,
-        "log_level_fluentd": LogLevel.DEBUG,
-        "log_level_stdout": LogLevel.TRACE,
-        "log_level_overrides": {},
-        "log_flush_immediately": True,
-        "log_fluentd_enable": False,
-        "log_fluentd_host": utils_constants.FLUENTD_HOST,
-        "enable_buffered_send": False,
-        "block_compression_debug": False,
-        "enable_tcp_quickack": True,
-        "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
-            str(parallelism_degree)
-        ),
-        "data_dir": config.get_default_data_path(),
-        "ca_cert_url": "https://certificates.blxrbdn.com/ca",
-        "private_ssl_base_url": "https://certificates.blxrbdn.com",
-        "rpc": rpc,
-        "transaction_validation": transaction_validation,
-    }
+    arg_parser = argparse.ArgumentParser(add_help=False)
+    cli.add_argument_parser_logging(arg_parser, default_log_level=LogLevel.DEBUG)
+    opts = arg_parser.parse_args([])
+    # opts = Namespace()
+    opts.__dict__.update(
+        {
+            "external_ip": external_ip,
+            "external_port": port,
+            "node_id": node_id,
+            "memory_stats_interval": 3600,
+            "dump_detailed_report_at_memory_usage": 100,
+            "dump_removed_short_ids": False,
+            "dump_removed_short_ids_path": "",
+            "transaction_pool_memory_limit": 200000000,
+            "track_detailed_sent_messages": True,
+            "use_extensions": constants.USE_EXTENSION_MODULES,
+            "import_extensions": constants.USE_EXTENSION_MODULES,
+            "tx_mem_pool_bucket_size": constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,
+            "throughput_stats_interval": constants.THROUGHPUT_STATS_INTERVAL_S,
+            "info_stats_interval": constants.INFO_STATS_INTERVAL_S,
+            "sync_tx_service": True,
+            "source_version": "v1.0.0",
+            "non_ssl_port": 3000,
+            "enable_node_cache": True,
+            "rpc_port": rpc_port,
+            "rpc_host": constants.LOCALHOST,
+            "rpc_user": "",
+            "rpc_password": "",
+            "rpc_use_ssl": rpc_use_ssl,
+            "rpc_ssl_base_url": "",
+            "continent": continent,
+            "country": country,
+            "region": region,
+            "hostname": "bxlocal",
+            "sdn_url": f"{constants.LOCALHOST}:8080",
+            "enable_buffered_send": False,
+            "block_compression_debug": False,
+            "enable_tcp_quickack": True,
+            "thread_pool_parallelism_degree": config.get_thread_pool_parallelism_degree(
+                str(parallelism_degree)
+            ),
+            "data_dir": config.get_default_data_path(),
+            "ca_cert_url": "https://certificates.blxrbdn.com/ca",
+            "private_ssl_base_url": "https://certificates.blxrbdn.com",
+            "rpc": rpc,
+            "transaction_validation": transaction_validation,
+            "using_private_ip_connection": False,
+        }
+    )
+
     for key, val in kwargs.items():
         opts.__dict__[key] = val
     common_opts = CommonOpts.from_opts(opts)
@@ -412,3 +421,83 @@ class AsyncMock:
 
     async def __call__(self, *args, **kwargs):
         return self.mock(*args, **kwargs)
+
+
+class TestBlockMessage(AbstractBlockMessage):
+    def __init__(self, previous_block: Sha256Hash, block_hash: Sha256Hash):
+        self.previous_block = previous_block
+        self._block_hash = block_hash
+        self._rawbytes = memoryview(
+            self.previous_block.binary + self._block_hash.binary
+        )
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, TestBlockMessage)
+            and other._block_hash == self._block_hash
+        )
+
+    @classmethod
+    def unpack(cls, buf):
+        pass
+
+    @classmethod
+    def validate_payload(cls, buf, unpacked_args):
+        pass
+
+    @classmethod
+    def initialize_class(cls, cls_type, buf, unpacked_args):
+        pass
+
+    def rawbytes(self) -> memoryview:
+        return self._rawbytes
+
+    def block_hash(self) -> Sha256Hash:
+        return self._block_hash
+
+    def prev_block_hash(self) -> Sha256Hash:
+        pass
+
+    def timestamp(self) -> int:
+        pass
+
+    def txns(self):
+        pass
+
+
+def create_block_message(
+    block_hash: Optional[Sha256Hash] = None,
+    previous_block_hash: Optional[Sha256Hash] = None,
+) -> AbstractBlockMessage:
+    if block_hash is None:
+        block_hash = Sha256Hash(generate_hash())
+    if previous_block_hash is None:
+        previous_block_hash = Sha256Hash(generate_hash())
+    return TestBlockMessage(previous_block_hash, block_hash)
+
+
+def add_stats_to_node_stats(
+    node_stats: Dict[IpEndpoint, BdnPerformanceStatsData],
+    ip: str,
+    port: int,
+    new_blocks_from_node: int,
+    new_blocks_from_bdn: int,
+    new_tx_from_node: int,
+    new_tx_from_bdn: int,
+    new_blocks_seen: int,
+    new_block_messages_from_node: int,
+    new_block_announcements_from_node: int,
+    tx_sent_to_node: int,
+    duplicate_tx_from_node: int
+) -> None:
+    new_node_stats = BdnPerformanceStatsData()
+    new_node_stats.new_blocks_received_from_blockchain_node = new_blocks_from_node
+    new_node_stats.new_blocks_received_from_bdn = new_blocks_from_bdn
+    new_node_stats.new_blocks_seen = new_blocks_seen
+    new_node_stats.new_block_messages_from_blockchain_node = new_block_messages_from_node
+    new_node_stats.new_block_announcements_from_blockchain_node = new_block_announcements_from_node
+    new_node_stats.new_tx_received_from_blockchain_node = new_tx_from_node
+    new_node_stats.new_tx_received_from_bdn = new_tx_from_bdn
+    new_node_stats.tx_sent_to_node = tx_sent_to_node
+    new_node_stats.duplicate_tx_from_node = duplicate_tx_from_node
+    node_stats[IpEndpoint(ip, port)] = new_node_stats

@@ -106,7 +106,7 @@ class ConnectionPool:
             if connection.network_num == network_num:
                 yield connection
 
-    def get_by_connection_types(self, connection_types: List[ConnectionType]) -> Iterator[AbstractConnection]:
+    def get_by_connection_types(self, connection_types: Iterable[ConnectionType]) -> Iterator[AbstractConnection]:
         # pyre-fixme [7]: Expected `List[AbstractConnection[typing.Any]]`
         #  but got `typing.Iterator[Variable[more_itertools.recipes._T]]`.
         return flatten(self._iter_by_connection_types(connection_types))

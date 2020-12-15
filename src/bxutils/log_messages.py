@@ -273,3 +273,25 @@ MSG_PROXY_REQUESTER_QUEUE_EMPTY_ON_RESPONSE = LogMessage(
     "Message proxy requester queue empty upon receiving response from remote blockchain "
     "node. Unable to forward response to blockchain node."
 )
+RPC_TRANSPORT_EXCEPTION = LogMessage(
+    "C-000053",
+    CONNECTION_PROBLEM_CATEGORY,
+    "Websocket disconnected due to transport layer exception: {}",
+)
+BAD_RPC_SUBSCRIBER = LogMessage(
+    "C-000054",
+    RPC_ERROR,
+    "Subscription message queue was completed filled up (size {}). "
+    "Closing subscription RPC handler and all related subscriptions: {}"
+)
+COULD_NOT_SERIALIZE_FEED_ENTRY = LogMessage(
+    "C-000055",
+    PROCESSING_FAILED_CATEGORY,
+    "Could not serialize feed entry. Skipping."
+)
+BAD_FEED_SUBSCRIBER = LogMessage(
+    "C-000056",
+    GENERAL_CATEGORY,
+    "Subscriber {} was not receiving messages and emptying its queue from "
+    "{}. Disconnecting.",
+)

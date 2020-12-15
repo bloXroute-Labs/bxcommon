@@ -14,15 +14,13 @@ logger = logging.get_logger(__name__)
 
 def log_compressed_block_debug_info(transaction_service: TransactionService,
                                     block_msg_bytes: Union[memoryview, bytearray]):
-    if not logger.isEnabledFor(LogLevel.DEBUG) or not transaction_service.node.opts.block_compression_debug:
-        return
+    if logger.isEnabledFor(LogLevel.TRACE) and transaction_service.node.opts.block_compression_debug:
+        network_num = transaction_service.network_num
+        protocol = transaction_service.node.opts.blockchain_networks[network_num].protocol
 
-    network_num = transaction_service.network_num
-    protocol = transaction_service.node.opts.blockchain_networks[network_num].protocol
-
-    # TODO implement in a better way
-    if protocol.lower() == "ethereum":
-        _log_compressed_block_debug_info_eth(transaction_service, block_msg_bytes)
+        # TODO implement in a better way
+        if protocol.lower() == "ethereum":
+            _log_compressed_block_debug_info_eth(transaction_service, block_msg_bytes)
 
 
 def log_can_decompress_block(node_type: NodeType,

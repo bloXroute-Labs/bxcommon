@@ -16,7 +16,6 @@ from bxcommon.messages.bloxroute.v6.tx_message_v6 import TxMessageV6
 from bxcommon.messages.versioning.abstract_message_converter import (
     AbstractMessageConverter,
 )
-from bxcommon.models.quota_type_model import QuotaType
 
 
 class _TxMessageConverterV6(AbstractMessageConverter):
@@ -37,7 +36,7 @@ class _TxMessageConverterV6(AbstractMessageConverter):
     _RIGHT_BREAKPOINT = (
         _BASE_LENGTH
         + constants.SID_LEN
-        + constants.QUOTA_FLAG_LEN
+        + constants.TRANSACTION_FLAG_LEN
         + constants.UL_INT_SIZE_IN_BYTES
     )
 
@@ -56,7 +55,7 @@ class _TxMessageConverterV6(AbstractMessageConverter):
         ]
         old_version_payload_len = (
             msg.payload_len()
-            - constants.QUOTA_FLAG_LEN
+            - constants.TRANSACTION_FLAG_LEN
             - constants.UL_INT_SIZE_IN_BYTES
         )
 
@@ -97,7 +96,7 @@ class _TxMessageConverterV6(AbstractMessageConverter):
         new_msg_class = self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING[msg_type]
         new_payload_len = (
             msg.payload_len()
-            + constants.QUOTA_FLAG_LEN
+            + constants.TRANSACTION_FLAG_LEN
             + constants.UL_INT_SIZE_IN_BYTES
         )
 
@@ -109,15 +108,15 @@ class _TxMessageConverterV6(AbstractMessageConverter):
         ]
 
         struct.pack_into(
-            "<B",
+            "<H",
             new_msg_bytes,
             self._LEFT_BREAKPOINT,
-            QuotaType.FREE_DAILY_QUOTA.value,
+            0,
         )
         struct.pack_into(
             "<L",
             new_msg_bytes,
-            self._LEFT_BREAKPOINT + constants.QUOTA_FLAG_LEN,
+            self._LEFT_BREAKPOINT + constants.TRANSACTION_FLAG_LEN,
             0,
         )
 

@@ -78,6 +78,7 @@ def run_node(
         third_party_loggers=third_party_loggers,
         fluent_log_level=opts.log_level_fluentd,
         stdout_log_level=opts.log_level_stdout,
+        fluentd_tag_suffix=node_type.name.lower()
     )
     if node_init_tasks is None:
         node_init_tasks = common_init_tasks.init_tasks
@@ -90,8 +91,7 @@ def run_node(
     config.log_pid(process_id_file_path)
     gc.callbacks.append(gc_logger.gc_callback)
     # we disable GC generation cleanup.
-    # if memory goes out of control we need to find why or
-    # use gc.collect() every 30 minutes.
+    # use gc.collect() if memory exceeds threshold
     gc.disable()
     try:
         if opts.use_extensions:
@@ -180,7 +180,8 @@ def _init_ssl_service(
     )
     node_ssl_service.blocking_load()
 
-    if node_ssl_service.has_valid_certificate(SSLCertificateType.PRIVATE):
+    if node_ssl_service.has_valid_certificate(SSLCertificateType.PRIVATE) \
+        and not node_ssl_service.should_renew_node_certificate():
         ssl_context = node_ssl_service.create_ssl_context(SSLCertificateType.PRIVATE)
     else:
         ssl_context = node_ssl_service.create_ssl_context(

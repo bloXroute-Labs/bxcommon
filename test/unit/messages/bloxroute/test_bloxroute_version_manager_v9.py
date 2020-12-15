@@ -1,3 +1,5 @@
+from unittest import skip
+
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
@@ -46,36 +48,16 @@ class BloxrouteVersionManagerV9Test(
         return 9
 
     def old_bdn_performance_stats_message(
-            self,
-            original_message: BdnPerformanceStatsMessage
+        self, original_message: BdnPerformanceStatsMessage
     ) -> BdnPerformanceStatsMessageV9:
-
+        _, single_node_stats = next(iter(original_message.node_stats().items()))
         return BdnPerformanceStatsMessageV9(
             original_message.interval_start_time(),
             original_message.interval_end_time(),
-            original_message.new_blocks_from_blockchain_node(),
-            original_message.new_blocks_from_bdn(),
-            original_message.new_tx_from_blockchain_node(),
-            original_message.new_tx_from_bdn()
-        )
-
-    def compare_bdn_performance_stats_current_to_old(
-            self,
-            converted_old_message: BdnPerformanceStatsMessageV9,
-            original_old_message: BdnPerformanceStatsMessageV9,
-    ):
-
-        self.assert_attributes_equal(
-            original_old_message,
-            converted_old_message,
-            [
-                "interval_start_time",
-                "interval_end_time",
-                "new_blocks_from_blockchain_node",
-                "new_blocks_from_bdn",
-                "new_tx_from_blockchain_node",
-                "new_tx_from_bdn",
-            ],
+            single_node_stats.new_blocks_received_from_blockchain_node,
+            single_node_stats.new_blocks_received_from_bdn,
+            single_node_stats.new_tx_received_from_blockchain_node,
+            single_node_stats.new_tx_received_from_bdn,
         )
 
     def compare_bdn_performance_stats_old_to_current(
@@ -83,19 +65,48 @@ class BloxrouteVersionManagerV9Test(
         converted_current_message: BdnPerformanceStatsMessage,
         original_current_message: BdnPerformanceStatsMessage,
     ):
-
         self.assert_attributes_equal(
             converted_current_message,
             original_current_message,
             [
                 "interval_start_time",
                 "interval_end_time",
-                "new_blocks_from_blockchain_node",
-                "new_blocks_from_bdn",
-                "new_tx_from_blockchain_node",
-                "new_tx_from_bdn",
             ],
         )
+        converted_node_stats = converted_current_message.node_stats()
+        converted_blockchain_peer_endpoint, converted_single_node_stats = converted_node_stats.popitem()
+        original_node_stats = original_current_message.node_stats()
+        original_blockchain_peer_endpoint, original_single_node_stats = original_node_stats.popitem()
+        self.assertEqual(
+            converted_single_node_stats.new_blocks_received_from_blockchain_node,
+            original_single_node_stats.new_blocks_received_from_blockchain_node
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_blocks_received_from_bdn,
+            original_single_node_stats.new_blocks_received_from_bdn
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_tx_received_from_blockchain_node,
+            original_single_node_stats.new_tx_received_from_blockchain_node
+        )
+        self.assertEqual(
+            converted_single_node_stats.new_tx_received_from_bdn,
+            original_single_node_stats.new_tx_received_from_bdn
+        )
+        self.assertEqual(0, converted_single_node_stats.new_blocks_seen)
+        self.assertEqual(0, converted_single_node_stats.new_block_messages_from_blockchain_node)
+        self.assertEqual(0, converted_single_node_stats.new_block_announcements_from_blockchain_node)
+        self.assertEqual(0, converted_current_message.memory_utilization())
+        self.assertEqual(0, converted_single_node_stats.tx_sent_to_node)
+        self.assertEqual(0, converted_single_node_stats.duplicate_tx_from_node)
 
     def old_pong_message(self, original_message: PongMessage) -> PongMessageV13:
         return PongMessageV13(original_message.nonce())
+
+    @skip
+    def test_tx_message(self):
+        pass
+
+    @skip
+    def test_txtxs_message(self):
+        pass

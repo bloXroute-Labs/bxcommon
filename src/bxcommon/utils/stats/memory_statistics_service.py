@@ -1,6 +1,6 @@
 import dataclasses
 import functools
-import gc
+import sys
 
 from dataclasses import dataclass
 from collections import defaultdict
@@ -33,7 +33,10 @@ class MemoryStatsIntervalData(StatsIntervalData):
 # pyre-fixme[24]: Type parameter `MemoryStatsIntervalData` violates constraints on
 #  `N` in generic type `ThreadedStatisticsService`.
 class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "AbstractNode"]):
-    def __init__(self, interval: int = 0) -> None:
+    def __init__(
+        self,
+        interval: int = 0
+    ) -> None:
         self.sizer_obj = Sizer()
         super(MemoryStatsService, self).__init__(
             "MemoryStats",
@@ -104,14 +107,13 @@ class MemoryStatsService(ThreadedStatisticsService[MemoryStatsIntervalData, "Abs
 
         return payload
 
-    def flush_info(self) -> int:
+    def flush_info(self, threshold: int = sys.maxsize) -> int:
         node = self.node
         assert node is not None
-        node.dump_memory_usage()
-        # temporary - force gc every 30 minutes.
-        # should be removed once we find and eliminate circular references.
-        gc.collect()
-        return super(MemoryStatsService, self).flush_info()
+        total_memory = memory_utils.get_app_memory_usage()
+        node.dump_memory_usage(total_memory, threshold)
+
+        return super(MemoryStatsService, self).flush_info(threshold)
 
     def increment_mem_stats(
         self,

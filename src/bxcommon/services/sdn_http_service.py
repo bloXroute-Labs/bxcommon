@@ -139,6 +139,10 @@ def submit_peer_connection_event(
     )
 
 
+def submit_gateway_switching_relays_event(node_id: str) -> None:
+    submit_node_event(NodeEventModel(node_id=node_id, event_type=NodeEventType.SWITCHING_RELAYS))
+
+
 def submit_gateway_inbound_connection(node_id: str, peer_id: str) -> None:
     http_service.post_json(SdnRoutes.gateway_inbound_connection.format(node_id), peer_id)
 

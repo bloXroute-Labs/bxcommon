@@ -16,10 +16,15 @@ from bxcommon.test_utils.mocks.mock_socket_connection import MockSocketConnectio
 from bxcommon.utils.object_hash import Sha256Hash
 
 
-class TestBroadcastService(BroadcastService[AbstractBroadcastMessage, AbstractConnection]):
-
-    def should_broadcast_to_connection(self, message: AbstractBroadcastMessage, connection: AbstractConnection) \
-            -> bool:
+class TestBroadcastService(
+    BroadcastService[AbstractBroadcastMessage, AbstractConnection, BroadcastOptions]
+):
+    def should_broadcast_to_connection(
+        self,
+        message: AbstractBroadcastMessage,
+        connection: AbstractConnection,
+        options: BroadcastOptions
+    ) -> bool:
         return connection.network_num in [constants.ALL_NETWORK_NUM, message.network_num()]
 
 

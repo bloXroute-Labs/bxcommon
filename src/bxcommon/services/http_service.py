@@ -92,7 +92,7 @@ def _http_request(method: str, endpoint: str, **kwargs) -> Optional[JT]:
         ),
         "ssl_context": _ssl_context,
     }
-    if _ssl_context is not None:
+    if _ssl_context is not None and url.startswith("https"):
         pm_args["assert_hostname"] = False
     http_pool_manager: PoolManager = PoolManager(**pm_args)
     try:

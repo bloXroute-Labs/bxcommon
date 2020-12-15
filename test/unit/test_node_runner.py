@@ -1,4 +1,5 @@
 import argparse
+import os
 
 from argparse import Namespace
 from typing import Optional
@@ -161,3 +162,19 @@ class TestNodeRunner(AbstractTestCase):
         )
         self.assertEqual(self.opts.blockchain_networks, blockchain_networks)
         self.assertEqual(self.event_loop_mock.run_count, 1)
+
+    def test_switch_to_cert_with_account(self):
+        node_ssl_service = node_runner._init_ssl_service(
+            NodeType.EXTERNAL_GATEWAY,
+            self.opts.ca_cert_url,
+            self.opts.private_ssl_base_url,
+            self.opts.data_dir
+        )
+        node_ssl_service_with_account = node_runner._init_ssl_service(
+            NodeType.EXTERNAL_GATEWAY,
+            self.opts.ca_cert_url,
+            os.path.join(self.opts.private_ssl_base_url, "external_gateway_account_foo"),
+            self.opts.data_dir
+        )
+        self.assertTrue(node_ssl_service.should_renew_node_certificate())
+        self.assertTrue(node_ssl_service_with_account.should_renew_node_certificate())

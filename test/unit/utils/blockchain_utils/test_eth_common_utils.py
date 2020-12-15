@@ -1,10 +1,11 @@
 import unittest
 
-import rlp
+import blxr_rlp as rlp
 
 from bxcommon.messages.eth.serializers.block_header import BlockHeader
 from bxcommon.test_utils import helpers
-from bxcommon.utils.blockchain_utils.eth import eth_common_utils, eth_common_constants
+from bxcommon.utils.blockchain_utils.eth import eth_common_utils, eth_common_constants, transaction_validation_utils
+from bxcommon.utils.object_hash import Sha256Hash
 
 
 class TestEthCommonUtils(unittest.TestCase):
@@ -51,3 +52,8 @@ class TestEthCommonUtils(unittest.TestCase):
         block_header_bytes = rlp.encode(block_header, BlockHeader)
         return memoryview(block_header_bytes)
 
+    def test_parse_tranasction(self):
+        RAW_TX_HASH = "f86b01847735940082520894a2f6090c0483d6e6ac90a9c23d42e461fee2ac5188016147191f13b0008025a0784537f9801331b707ceedd5388d318d86b0bb43c6f5b32b30c9df960f596b05a042fe22aa47f2ae80cbb2c9272df2f8975c96a8a99020d8ac19d4d4b0e0b58219"
+        transaction = transaction_validation_utils.parse_transaction(bytearray.fromhex(RAW_TX_HASH))
+        self.assertIsNotNone(transaction)
+        self.assertEqual(transaction.hash(), Sha256Hash.from_string("ffd59870844e5411f9e4043e654146b054bdcabe726a4bc4bd716049bfa54a69"))

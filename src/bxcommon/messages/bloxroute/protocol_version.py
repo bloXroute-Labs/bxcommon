@@ -1,10 +1,24 @@
-PROTOCOL_VERSION = 15
+PROTOCOL_VERSION = 19
 
+BDN_PERFORMANCE_IGNORE_SEEN = 18
+BDN_PERFORMANCE_MULTI_NODE = 17
 BDN_PERFORMANCE_NEW_BLOCK = 15
 
-RELAY_BLOCK_CAN_SEND_TXS_MESSAGE = 12
 RELAY_BLOCK_CAN_SEND_COMPRESSED_BLOCK_TXS_MESSAGE = 13
+RELAY_BLOCK_CAN_SEND_TXS_MESSAGE = 12
 
+# PROTOCOL_VERSION 19 (11/18/2020)
+# add tx_sent_to_node and duplicate_tx_from_node to BDN performance message
+#
+# PROTOCOL_VERSION 18 (11/16/2020)
+# support additional transaction flag
+#
+# PROTOCOL_VERSION 17 (10/27/2020)
+# support multi-node BDN performance message
+#
+# PROTOCOL_VERSION 16 (10/15/2020)
+# add transaction flag to TxMessage
+#
 # PROTOCOL_VERSION 15 (9/22/2020)
 # add new_block_messages and new_block_announcements to BDN performance messages
 #

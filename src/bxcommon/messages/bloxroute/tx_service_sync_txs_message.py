@@ -78,5 +78,7 @@ class TxServiceSyncTxsMessage(AbstractBloxrouteMessage):
         struct.pack_into("<LL", self.buf, off, self._network_num, tx_count)
         off += UL_INT_SIZE_IN_BYTES + UL_SHORT_SIZE_IN_BYTES
         self.buf.extend(
-            txs_serializer.serialize_txs_content_short_ids_into_bytes(self._txs_content_short_ids, self.network_num())
+            txs_serializer.serialize_txs_content_short_ids_into_bytes(
+                self._txs_content_short_ids, self.network_num()
+            )
         )

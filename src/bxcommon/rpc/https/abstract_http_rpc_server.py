@@ -1,20 +1,26 @@
 import asyncio
 import base64
+import os
+import ssl
+from ssl import Purpose
 from abc import abstractmethod
 from asyncio import Future
-from typing import Callable, Awaitable, Optional, TYPE_CHECKING, TypeVar, Generic
+from typing import Callable, Awaitable, Optional, TYPE_CHECKING, TypeVar, Generic, List
 from aiohttp import web
 from aiohttp.abc import StreamResponse
-from aiohttp.web import Application, Request, Response, AppRunner, TCPSite
+from aiohttp.web import Application, Request, Response, AppRunner, TCPSite, WebSocketResponse
 from aiohttp.web_exceptions import HTTPClientError, HTTPBadRequest, HTTPInternalServerError
 from aiohttp.web_exceptions import HTTPUnauthorized
 
+from bxcommon import constants
 from bxcommon.rpc import rpc_constants
+from bxcommon.rpc.abstract_ws_rpc_handler import AbstractWsRpcHandler
 from bxcommon.rpc.https.http_rpc_handler import HttpRpcHandler
 from bxcommon.rpc.https.request_formatter import RequestFormatter
 from bxcommon.rpc.https.response_formatter import ResponseFormatter
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.rpc_constants import ContentType
+from bxcommon.rpc.ws.ws_connection import WsConnection
 
 from bxcommon.rpc.rpc_errors import RpcError, RpcParseError, RpcMethodNotFound, \
     RpcInvalidParams, RpcAccountIdError
@@ -38,12 +44,51 @@ async def request_middleware(
     request_formatter = RequestFormatter(request)
     logger.trace("Handling RPC request: {}.", request_formatter)
     response = await handler(request)
-    logger.trace(
-        "Finished handling request: {}, returning response: {}.",
-        request_formatter,
-        ResponseFormatter(response),
-    )
+    if isinstance(response, Response):
+        logger.trace(
+            "Finished handling request: {}, returning response: {}.",
+            request_formatter,
+            ResponseFormatter(response),
+        )
+    else:
+        logger.trace(
+            "Finished handling web scoket: {}.",
+            request_formatter,
+        )
+
     return response
+
+
+def format_http_error(
+    client_error: HTTPClientError, content_type: ContentType
+) -> HTTPClientError:
+    err_msg = client_error.text
+    code = client_error.status_code
+    response_json = {
+        "result": None,
+        "error": err_msg,
+        "code": code,
+        "message": err_msg,
+    }
+    client_error.content_type = content_type.value
+    client_error.text = json_encoder.to_json(response_json)
+    return client_error
+
+
+def format_rpc_error(
+    rpc_error: RpcError, status_code: int, content_type: ContentType
+) -> Response:
+    if content_type == ContentType.PLAIN:
+        return web.json_response(
+            JsonRpcResponse(rpc_error.id, error=rpc_error).to_jsons(),
+            status=status_code,
+            content_type=ContentType.PLAIN.value
+        )
+    else:
+        return web.json_response(
+            text=JsonRpcResponse(rpc_error.id, error=rpc_error).to_jsons(),
+            status=status_code,
+        )
 
 
 class AbstractHttpRpcServer(Generic[Node]):
@@ -58,12 +103,20 @@ class AbstractHttpRpcServer(Generic[Node]):
     _stop_waiter: Future
     _started: bool
     _encoded_auth: Optional[str]
+    _ws_connections: List[WsConnection] = []
 
-    def __init__(self, node: Node) -> None:
+    def __init__(
+        self,
+        node: Node,
+    ) -> None:
         self.node = node
         self._app = Application(middlewares=[request_middleware])
         self._app.add_routes(
             [web.post("/", self.handle_request), web.get("/", self.handle_get_request)]
+        )
+        self._app.add_routes(
+            [web.post("/ws", self.handle_ws_request),
+             web.get("/ws", self.handle_ws_request)]
         )
         self._runner = AppRunner(self._app)
         self._site = None
@@ -72,6 +125,8 @@ class AbstractHttpRpcServer(Generic[Node]):
         self._stop_waiter = asyncio.get_event_loop().create_future()
         self._started = False
         self._encoded_auth = None
+        self._ws_connections: List[WsConnection] = []
+
         rpc_user = self.node.opts.rpc_user
         if rpc_user:
             rpc_password = self.node.opts.rpc_password
@@ -85,6 +140,10 @@ class AbstractHttpRpcServer(Generic[Node]):
 
     @abstractmethod
     def request_handler(self) -> HttpRpcHandler:
+        pass
+
+    @abstractmethod
+    def request_ws_handler(self) -> Optional[AbstractWsRpcHandler]:
         pass
 
     def status(self) -> bool:
@@ -108,6 +167,10 @@ class AbstractHttpRpcServer(Generic[Node]):
 
     async def stop(self) -> None:
         self._stop_requested = True
+        if self._started:
+            await asyncio.gather(
+                *(connection.close() for connection in self._ws_connections)
+            )
         await self._stop_waiter
         await self._runner.cleanup()
         self._started = False
@@ -118,19 +181,19 @@ class AbstractHttpRpcServer(Generic[Node]):
             self.authenticate_request(request)
             return await self._handler.handle_request(request)
         except HTTPClientError as e:
-            return self._format_http_error(e)
+            return format_http_error(e, self._handler.content_type)
         except RpcAccountIdError as e:
-            return self._format_rpc_error(e, HTTPUnauthorized.status_code)
+            return format_rpc_error(e, HTTPUnauthorized.status_code, self._handler.content_type)
         except (RpcParseError, RpcMethodNotFound, RpcInvalidParams) as e:
-            return self._format_rpc_error(e, HTTPBadRequest.status_code)
+            return format_rpc_error(e, HTTPBadRequest.status_code, self._handler.content_type)
         except RpcError as e:
-            return self._format_rpc_error(e, HTTPInternalServerError.status_code)
+            return format_rpc_error(e, HTTPInternalServerError.status_code, self._handler.content_type)
 
     async def handle_get_request(self, request: Request) -> Response:
         try:
             self.authenticate_request(request)
         except HTTPUnauthorized as e:
-            return self._format_http_error(e)
+            return format_http_error(e, self._handler.content_type)
         else:
             response_dict = {
                 "result": {
@@ -146,39 +209,54 @@ class AbstractHttpRpcServer(Generic[Node]):
             json_response = JsonRpcResponse.from_json(response_dict)
             return web.json_response(json_response.to_jsons(), dumps=json_encoder.to_json)
 
+    async def handle_ws_request(self, request: Request) -> WebSocketResponse:
+        try:
+            self.authenticate_request(request)
+        except RpcError as e:
+            websocket_response = web.WebSocketResponse()
+            await websocket_response.prepare(request)
+            error_message = e.data
+            assert error_message is not None
+            # WebSockets close event code 1008: Policy Violation.
+            await websocket_response.close(
+                code=1008, message=bytes(error_message.encode(constants.DEFAULT_TEXT_ENCODING))
+            )
+            return websocket_response
+        else:
+            ws_response = web.WebSocketResponse()
+            websocket_handler = self.request_ws_handler()
+            assert websocket_handler is not None
+            ws_connection = WsConnection(
+                ws_response,
+                # pyre-fixme[6]: Expected `str` but got `BoundMethod`
+                request.path,
+                websocket_handler
+            )
+            self._ws_connections.append(ws_connection)
+            websocket_response = await ws_connection.handle(request)
+            self._ws_connections.remove(ws_connection)
+
+            return websocket_response
+
     async def _start(self) -> None:
         self._started = True
         await self._runner.setup()
         opts = self.node.opts
 
         # TODO: add ssl certificate
-        site = TCPSite(self._runner, opts.rpc_host, opts.rpc_port)
+        ssl_context = None
+        if opts.rpc_use_ssl:
+            ssl_context = ssl.create_default_context(
+                Purpose.CLIENT_AUTH,
+                cafile=os.path.join(opts.rpc_ssl_base_url, "ca_bundle.pem")
+            )
+            ssl_context.load_cert_chain(
+                certfile=os.path.join(opts.rpc_ssl_base_url, "cert.pem"),
+                keyfile=os.path.join(opts.rpc_ssl_base_url, "key.pem")
+            )
+            ssl_context.check_hostname = False
+        logger.info("Starting listening on RPC {}:{} SSL:{}",
+                    opts.rpc_host, opts.rpc_port, opts.rpc_use_ssl)
+        site = TCPSite(self._runner, opts.rpc_host, opts.rpc_port, ssl_context=ssl_context)
         self._site = site
         await site.start()
-
-    def _format_http_error(self, client_error: HTTPClientError) -> HTTPClientError:
-        err_msg = client_error.text
-        code = client_error.status_code
-        response_json = {
-            "result": None,
-            "error": err_msg,
-            "code": code,
-            "message": err_msg,
-        }
-
-        client_error.content_type = self._handler.content_type.value
-        client_error.text = json_encoder.to_json(response_json)
-        return client_error
-
-    def _format_rpc_error(self, rpc_error: RpcError, status_code: int) -> Response:
-        if self._handler.content_type == ContentType.PLAIN:
-            return web.json_response(
-                JsonRpcResponse(rpc_error.id, error=rpc_error).to_jsons(),
-                status=status_code,
-                content_type=ContentType.PLAIN.value
-            )
-        else:
-            return web.json_response(
-                text=JsonRpcResponse(rpc_error.id, error=rpc_error).to_jsons(),
-                status=status_code,
-            )

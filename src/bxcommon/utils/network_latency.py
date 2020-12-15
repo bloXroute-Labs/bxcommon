@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
@@ -10,12 +10,13 @@ logger = logging.get_logger(__name__)
 
 
 def get_best_relays_by_ping_latency_one_per_country(
-    relays: List[OutboundPeerModel], countries_count: int
+    relays: List[OutboundPeerModel], countries_count: int, current_relays: Optional[Set[OutboundPeerModel]] = None
 ) -> List[OutboundPeerModel]:
     """
     get best relay by pinging each relay and check its latency calculate with its inbound peers
     :param relays: list of relays
     :param countries_count: number of countries to return best relay for (one per country)
+    :param current_relays: (for gateway use only) set of relays that gateway is currently connected to
     :return:
     """
     if len(relays) == 1:
@@ -27,7 +28,7 @@ def get_best_relays_by_ping_latency_one_per_country(
     best_relays_by_latency = _get_best_relay_latencies_one_per_country(sorted_ping_latencies, relays, countries_count)
     logger.trace("Best relays by latency by country ({}): {}", countries_count, best_relays_by_latency)
 
-    # if the absolute between fastest relay and recommended relay latency is less than RELAY_LATENCY_THRESHOLD_MS,
+    # if the absolute between fastest relay and recommended relay latency is less than NODE_LATENCY_THRESHOLD_MS,
     # select api's relay
     first_recommended_relay_latency = _get_node_latency_from_list(relays_ping_latency, relays[0].node_id)
     if (
@@ -37,6 +38,15 @@ def get_best_relays_by_ping_latency_one_per_country(
         best_relay_node = relays[0]
     else:
         best_relay_node = best_relays_by_latency[0].node
+
+    # for gateways only
+    if current_relays is not None and len(current_relays) == 1 and best_relay_node not in current_relays:
+        current_relay = next(iter(current_relays))
+        if current_relay in relays:
+            current_relay_latency = _get_node_latency_from_list(relays_ping_latency, current_relay.node_id)
+            best_relay_node_latency = _get_node_latency_from_list(relays_ping_latency, best_relay_node.node_id)
+            if current_relay_latency - best_relay_node_latency < constants.GATEWAY_SWAP_RELAYS_LATENCY_THRESHOLD_MS:
+                best_relay_node = current_relay
 
     logger.info("Latency results for potential relays: [{}]",
                 ", ".join([f"{relay_latency.node.ip} with {_format_latency(relay_latency.latency)}" for relay_latency in

@@ -1,3 +1,4 @@
+import argparse
 import os
 import unittest
 from typing import Optional
@@ -5,9 +6,11 @@ from typing import Optional
 from mock import MagicMock
 from prometheus_client import REGISTRY
 
+from bxcommon import node_runner
 from bxcommon.models.node_type import NodeType
 from bxcommon.services import http_service
 from bxcommon.test_utils import helpers
+from bxcommon.utils import cli
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxutils.common import url_helper
 from bxutils.logging import log_config
@@ -37,11 +40,23 @@ class AbstractTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        log_config.create_logger(None)
-        log_config.set_level([LogRecordType.Config.value], LogLevel.WARNING)
-        log_config.set_level(
-            ["bxcommon", "bxgateway", "bxrelay", "bxgateway_internal"], LogLevel.DEBUG
+        arg_parser = argparse.ArgumentParser(add_help=False)
+        cli.add_argument_parser_logging(arg_parser, default_log_level=LogLevel.DEBUG)
+        opts = arg_parser.parse_args(args=[])
+        log_config.setup_logging(
+            opts.log_format,
+            opts.log_level,
+            default_logger_names=["bxcommon", "bxgateway", "bxrelay", "bxgateway_internal"],
+            log_level_overrides=opts.log_level_overrides,
+            enable_fluent_logger=opts.log_fluentd_enable,
+            fluentd_host=opts.log_fluentd_host,
+            fluentd_queue_size=opts.log_fluentd_queue_size,
+            third_party_loggers=node_runner.THIRD_PARTY_LOGGERS,
+            fluent_log_level=opts.log_level_fluentd,
+            stdout_log_level=opts.log_level_stdout,
         )
+        log_config.set_level([LogRecordType.Config.value], LogLevel.WARNING)
+
         http_service.get_json = MagicMock()
         http_service.post_json = MagicMock()
         http_service.patch_json = MagicMock()
@@ -117,3 +132,15 @@ class AbstractTestCase(unittest.TestCase):
 
         node_ssl_service.blocking_load()
         return node_ssl_service
+
+    def assert_almost_equal(
+        self,
+        expected_value: float,
+        actual_value: float,
+        allowed_error: float = 0.001
+    ):
+        self.assertTrue(
+            abs(expected_value - actual_value) <= allowed_error,
+            msg=f"Expected {expected_value}, but "
+                f"{actual_value} was more than {allowed_error} away."
+        )

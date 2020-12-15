@@ -1,3 +1,4 @@
+import base64
 import ipaddress
 import sys
 import dataclasses
@@ -24,6 +25,19 @@ from bxcommon import constants
 
 
 logger = logging.get_logger(__name__)
+
+
+@dataclass()
+class SourceFeedOpts:
+    source_feed_ip: str
+    source_feed_port: int
+    source_feed_rpc_user: str
+    source_feed_rpc_password: str
+
+    def get_source_feed_auth(self) -> str:
+        return base64.b64encode(
+            f"{self.source_feed_rpc_user}:{self.source_feed_rpc_password}".encode("utf-8")
+        ).decode("utf-8")
 
 
 @dataclass
@@ -71,6 +85,8 @@ class CommonOpts:
     rpc_host: str
     rpc_user: str
     rpc_password: str
+    rpc_use_ssl: bool
+    rpc_ssl_base_url: str
 
     # set by node runner
     blockchain_networks: Dict[int, BlockchainNetworkModel]
@@ -80,6 +96,7 @@ class CommonOpts:
     node_type: NodeType
     logger_names: Optional[Iterable[str]]
     third_party_loggers: Optional[List[LoggerConfig]]
+    using_private_ip_connection: bool
 
     # set after node runner
     has_fully_updated_tx_service: bool
@@ -111,6 +128,8 @@ class CommonOpts:
         opts.os_version = constants.OS_VERSION
         opts.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
         opts.enable_tcp_quickack = True
+        opts.using_private_ip_connection = False
+
         return opts
 
     @classmethod

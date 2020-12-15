@@ -15,7 +15,7 @@ from bxcommon.models.node_type import NodeType
 from bxcommon.services import tx_sync_service_helpers
 from bxcommon.services.transaction_service import TransactionCacheKeyType
 from bxcommon.utils.object_hash import Sha256Hash
-from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.utils import performance_utils
 
 if TYPE_CHECKING:
@@ -52,12 +52,12 @@ class TxSyncService:
             if item.content_length > 0:
                 sync_metrics["tx_content_count"] += 1
 
-            for short_id, quota_type in zip(
-                item.short_ids, item.quota_types
+            for short_id, transaction_flag in zip(
+                item.short_ids, item.transaction_flag_types
             ):
                 self.node.sync_short_id_buckets[network_num].incr_short_id(short_id)
-                if QuotaType.PAID_DAILY_QUOTA in quota_type:
-                    tx_service.set_short_id_quota_type(short_id, quota_type)
+                if TransactionFlag.PAID_TX in transaction_flag:
+                    tx_service.set_short_id_transaction_type(short_id, transaction_flag)
 
         self.conn.log_debug(
             "TxSync processed msg from {} network {}, msgs: {}, transactions: {}, content: {}",
@@ -73,6 +73,8 @@ class TxSyncService:
         sending transaction service sync request
         """
         self.node.last_sync_message_received_by_network[network_num] = time.time()
+        self.node.sync_short_id_buckets.pop(network_num, None)
+        self.node.sync_metrics.pop(network_num, None)
         self.conn.enqueue_msg(TxServiceSyncReqMessage(network_num))
 
         if self.node.check_sync_relay_connections_alarm_id:

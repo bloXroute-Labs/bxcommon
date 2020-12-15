@@ -7,7 +7,6 @@ from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxr
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.utils import crypto
 from bxcommon.utils.object_hash import Sha256Hash
-from bxutils.logging.log_level import LogLevel
 
 
 class GetCompressedBlockTxsMessage(AbstractBloxrouteMessage):
@@ -51,9 +50,6 @@ class GetCompressedBlockTxsMessage(AbstractBloxrouteMessage):
         self._network_num = None
         self._block_hash = None
         self._short_ids = None
-
-    def log_level(self):
-        return LogLevel.DEBUG
 
     def get_short_ids(self) -> List[int]:
         if self._short_ids is None:

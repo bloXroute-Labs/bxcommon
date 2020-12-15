@@ -18,8 +18,8 @@ class MemoryUtilsTest(AbstractTestCase):
         memory_usage = memory_utils.get_app_memory_usage()
 
         # verify that memory usage is reported in MB.
-        # Expected to me less than 100 MB but greater than 1 MB
-        self.assertLess(memory_usage, 100 * 1024 * 1024)
+        # Expected to me less than 200 MB but greater than 1 MB
+        self.assertLess(memory_usage, 200 * 1024 * 1024)
         self.assertGreater(memory_usage, 1 * 1024 * 1024)
 
     def test_get_object_size(self):

@@ -36,6 +36,7 @@ class ExpiringDict(Generic[KT, VT]):
 
     def __delitem__(self, key: KT):
         del self.contents[key]
+        self._expiration_queue.remove(key)
 
     def __getitem__(self, item: KT) -> VT:
         return self.contents[item]

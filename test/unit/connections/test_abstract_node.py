@@ -1,26 +1,25 @@
 import time
 from typing import Optional, List
+
 from mock import patch, MagicMock
 
-from bxcommon.models.node_type import NodeType
-from bxcommon.test_utils.helpers import async_test
-from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
-from bxcommon.network.ip_endpoint import IpEndpoint
-from bxcommon.network.peer_info import ConnectionPeerInfo
-from bxcommon.services.broadcast_service import BroadcastService
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import MAX_CONNECT_RETRIES
+from bxcommon.models.node_type import NodeType
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
-from bxcommon.network.socket_connection_state import SocketConnectionState
+from bxcommon.network.ip_endpoint import IpEndpoint
+from bxcommon.network.peer_info import ConnectionPeerInfo
+from bxcommon.network.socket_connection_state import SocketConnectionStates
 from bxcommon.services import sdn_http_service
+from bxcommon.services.broadcast_service import BroadcastService
 from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
+from bxcommon.test_utils.helpers import async_test
 from bxcommon.test_utils.mocks.mock_connection import MockConnection
-from bxcommon.utils import memory_utils
-
+from bxcommon.test_utils.mocks.mock_node_ssl_service import MockNodeSSLService
 from bxutils.services.node_ssl_service import NodeSSLService
 
 
@@ -62,6 +61,9 @@ class TestNode(AbstractNode):
         pass
 
     def check_sync_relay_connections(self, conn: MockConnection) -> int:
+        pass
+
+    def init_memory_stats_logging(self):
         pass
 
 
@@ -270,41 +272,27 @@ class AbstractNodeTest(AbstractTestCase):
 
     @patch("bxcommon.connections.abstract_node.memory_logger")
     def test_dump_memory_usage(self, logger_mock):
-        # set to dump memory at 10 MB
-        self.node.next_report_mem_usage_bytes = 10 * 1024 * 1024
-
-        # current memory usage is 5 MB
-        memory_utils.get_app_memory_usage = MagicMock(return_value=5 * 1024 * 1024)
-
-        self.node.dump_memory_usage()
+        # current memory usage is 0.7GB
+        self.node.dump_memory_usage(1024 * 1024 * 1024 * 0.7, constants.GC_HIGH_MEMORY_THRESHOLD)
         # expect that memory details are not logged
-        self.assertEqual(10 * 1024 * 1024, self.node.next_report_mem_usage_bytes)
         logger_mock.assert_not_called()
 
-        # current memory usage goes up to 11 MB
-        memory_utils.get_app_memory_usage = MagicMock(return_value=11 * 1024 * 1024)
-
-        self.node.dump_memory_usage()
-        # expect that memory details are logged
-        self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
-                         self.node.next_report_mem_usage_bytes)
+        # current memory usage goes up to 1.9GB
+        self.node.dump_memory_usage(1024 * 1024 * 1024 * 1.9, constants.GC_HIGH_MEMORY_THRESHOLD)
+        # expect that memory details are logged once
         logger_mock.debug.assert_called_once()
 
-        # current memory usage goes up to 15 MB
-        memory_utils.get_app_memory_usage = MagicMock(return_value=15 * 1024 * 1024)
-
-        self.node.dump_memory_usage()
+        # current memory usage reduce to 1.3GB
+        self.node.dump_memory_usage(1024 * 1024 * 1024 * 1.3, constants.GC_HIGH_MEMORY_THRESHOLD)
         # expect that memory details are not logged again
-        self.assertEqual(11 * 1024 * 1024 + constants.MEMORY_USAGE_INCREASE_FOR_NEXT_REPORT_BYTES,
-                         self.node.next_report_mem_usage_bytes)
         logger_mock.debug.assert_called_once()
 
     def _assert_socket_connected(self):
-        self.assertFalse(SocketConnectionState.MARK_FOR_CLOSE in self.socket_connection.state)
+        self.assertFalse(SocketConnectionStates.MARK_FOR_CLOSE in self.socket_connection.state)
 
     def _assert_socket_disconnected(self, should_retry: bool):
-        self.assertTrue(SocketConnectionState.MARK_FOR_CLOSE in self.socket_connection.state)
+        self.assertTrue(SocketConnectionStates.MARK_FOR_CLOSE in self.socket_connection.state)
         if should_retry:
-            self.assertFalse(SocketConnectionState.DO_NOT_RETRY in self.socket_connection.state)
+            self.assertFalse(SocketConnectionStates.DO_NOT_RETRY in self.socket_connection.state)
         else:
-            self.assertTrue(SocketConnectionState.DO_NOT_RETRY in self.socket_connection.state)
+            self.assertTrue(SocketConnectionStates.DO_NOT_RETRY in self.socket_connection.state)

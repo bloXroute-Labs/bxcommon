@@ -53,6 +53,11 @@ class OutboundPeerModel:
             constants.TRANSACTION_STREAMER_ATTRIBUTE_NAME, False
         )
 
+    def using_private_ip(self) -> bool:
+        return self.attributes.get(
+            constants.PRIVATE_IP_ATTRIBUTE_NAME, False
+        )
+
     def __str__(self):
         return (
             f"({self.node_type}, {self.ip}, {self.port}, {self.node_id}, "

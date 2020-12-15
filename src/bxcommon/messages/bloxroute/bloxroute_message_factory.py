@@ -23,6 +23,7 @@ from bxcommon.messages.bloxroute.key_message import KeyMessage
 from bxcommon.messages.bloxroute.notification_message import NotificationMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
+from bxcommon.messages.bloxroute.routing_update_message import RoutingUpdateMessage
 from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
 from bxcommon.messages.bloxroute.tx_contents_message import TxContentsMessage
 from bxcommon.messages.bloxroute.tx_message import TxMessage
@@ -74,7 +75,8 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessage,
         BloxrouteMessageType.REFRESH_BLOCKCHAIN_NETWORK: RefreshBlockchainNetworkMessage,
         BloxrouteMessageType.GET_COMPRESSED_BLOCK_TXS: GetCompressedBlockTxsMessage,
-        BloxrouteMessageType.COMPRESSED_BLOCK_TXS: CompressedBlockTxsMessage
+        BloxrouteMessageType.COMPRESSED_BLOCK_TXS: CompressedBlockTxsMessage,
+        BloxrouteMessageType.ROUTING_UPDATE: RoutingUpdateMessage,
     }
 
     def __init__(self) -> None:
