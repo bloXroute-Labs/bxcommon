@@ -2,7 +2,6 @@ from unittest import skip
 
 from bxcommon import constants
 from bxcommon.messages.bloxroute.ack_message import AckMessage
-from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.get_txs_message import GetTxsMessage
@@ -17,7 +16,6 @@ from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import
 from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
-from bxcommon.messages.bloxroute.v14.bdn_performance_stats_message_v14 import BdnPerformanceStatsMessageV14
 from bxcommon.messages.bloxroute.v15.tx_service_sync_txs_message_v15 import TxServiceSyncTxsMessageV15
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v15.tx_message_v15 import TxMessageV15
@@ -114,8 +112,8 @@ class BloxrouteVersionManagerV15Test(
             ],
         )
         self.assertEqual(
-            original_current_message.transaction_flag(),
-            converted_current_message.transaction_flag()
+            original_current_message.transaction_flag().get_quota_type(),
+            converted_current_message.transaction_flag().get_quota_type()
         )
 
     def compare_txtxs_current_to_old(

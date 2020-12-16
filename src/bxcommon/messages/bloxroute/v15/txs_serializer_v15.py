@@ -3,6 +3,7 @@ from typing import NamedTuple, Optional, List, Union
 
 from bxcommon import constants
 from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.utils.crypto import SHA256_HASH_LEN
 from bxcommon.utils.object_hash import Sha256Hash
 from bxutils import logging
@@ -136,7 +137,7 @@ def deserialize_txs_content_short_ids_from_buffer(
             offset += constants.SID_LEN
         for _ in range(short_ids_count):
             short_id_flag, = struct.unpack_from("<B", buffer, offset)
-            short_id_flags.append(QuotaType(short_id_flag))
+            short_id_flags.append(TransactionFlag(short_id_flag).get_quota_type())
             offset += constants.QUOTA_FLAG_LEN
         txs_content_short_ids.append(TxContentShortIdsV15(tx_hash, tx_content, short_ids, short_id_flags))
 

@@ -5,6 +5,7 @@ from bxcommon import constants
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.utils.object_hash import Sha256Hash
 
 
@@ -60,7 +61,7 @@ class TxMessageV7(AbstractBroadcastMessage):
                   constants.CONTROL_FLAGS_LEN
 
             tx_quota_type_flag, = struct.unpack_from("<B", self.buf, off)
-            self._tx_quota_type = QuotaType(tx_quota_type_flag)
+            self._tx_quota_type = TransactionFlag(tx_quota_type_flag).get_quota_type()
         assert self._tx_quota_type is not None
         # pyre-fixme[7]: Expected `QuotaType` but got `None`.
         return self._tx_quota_type
