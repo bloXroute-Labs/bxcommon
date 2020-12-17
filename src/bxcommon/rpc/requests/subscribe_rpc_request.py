@@ -66,7 +66,6 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
             self.validate_params_service_details()
             self.validate_params_include_fields()
             self.validate_params_filters()
-            self.node.on_new_subscriber_request()
             assert self.feed_name != ""
         except RpcError as e:
             logger.debug({"msg": "Failed to validate subscribe request", "params": self.params, **e.to_json()})
