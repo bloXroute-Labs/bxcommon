@@ -1,7 +1,7 @@
 import asyncio
 from abc import abstractmethod, ABCMeta
-from asyncio import Future
-from typing import Optional, Union, List, Any, Dict, Tuple, Callable, TypeVar
+from asyncio import Future, Task
+from typing import Optional, Union, List, Any, Dict, Tuple, Callable, TypeVar, Coroutine
 
 import websockets
 
@@ -31,10 +31,12 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         uri: str,
         retry_connection: bool = False,
         queue_limit: int = constants.WS_PROVIDER_MAX_QUEUE_SIZE,
-        headers: Optional[Dict] = None
+        headers: Optional[Dict] = None,
+        retry_callback: Optional[Callable[["AbstractWsProvider"], Coroutine[None, None, None]]] = None
     ):
         self.uri = uri
         self.retry_connection = retry_connection
+        self.retry_callback = retry_callback
 
         self.ws: Optional[websockets.WebSocketClientProtocol] = None
         self.listener_task: Optional[Future] = None
@@ -161,10 +163,12 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         callback: Callable[[SubscriptionNotification], None],
         channel: str,
         options: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    ) -> Task:
         if options is None:
             options = {}
-        asyncio.create_task(self._handle_subscribe_callback(callback, channel, options))
+        return asyncio.create_task(
+            self._handle_subscribe_callback(callback, channel, options)
+        )
 
     async def _handle_subscribe_callback(
         self,
@@ -294,7 +298,11 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         await self.connect()
 
         if self.ws is not None:
-            logger.debug("Websockets connection was re-established.")
+            logger.info("Websockets connection was re-established.")
+
+            retry_callback = self.retry_callback
+            if retry_callback:
+                await retry_callback(self)
 
     async def close(self) -> None:
         logger.trace("Closing websockets provider")
