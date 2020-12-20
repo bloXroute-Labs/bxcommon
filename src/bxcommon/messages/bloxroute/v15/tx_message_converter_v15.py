@@ -1,13 +1,12 @@
-import struct
+from typing import cast
 
-from bxcommon import constants
 from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
-from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
-from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.v15.tx_message_v15 import TxMessageV15
 from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
+from bxcommon.models.quota_type_model import QuotaType
+from bxcommon.models.transaction_flag import TransactionFlag
 
 from bxutils import logging
 
@@ -23,25 +22,6 @@ class _TxMessageConverterV15(AbstractMessageConverter):
         BloxrouteMessageType.TRANSACTION: TxMessage
     }
 
-    _BASE_LENGTH = (
-        AbstractBroadcastMessage.HEADER_LENGTH
-        + AbstractBroadcastMessage.PAYLOAD_LENGTH
-        - constants.CONTROL_FLAGS_LEN
-    )
-
-    _LEFT_BREAKPOINT = (
-        _BASE_LENGTH
-        + constants.SID_LEN
-        + constants.QUOTA_FLAG_LEN
-    )
-    _RIGHT_BREAKPOINT = (
-        _BASE_LENGTH
-        + constants.SID_LEN
-        + constants.TRANSACTION_FLAG_LEN
-    )
-
-    _OLD_MSG_SIZE = _LEFT_BREAKPOINT + constants.UL_INT_SIZE_IN_BYTES
-
     def convert_to_older_version(
         self, msg: AbstractInternalMessage
     ) -> AbstractInternalMessage:
@@ -53,27 +33,24 @@ class _TxMessageConverterV15(AbstractMessageConverter):
                 f"message type to v15: {msg_type}"
             )
 
-        old_version_msg_class = self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING[
-            msg_type
-        ]
+        msg = cast(TxMessage, msg)
 
-        old_version_payload_len = (
-            msg.payload_len()
-            - constants.QUOTA_FLAG_LEN
-        )
+        tx_hash = msg.tx_hash()
+        network_num = msg.network_num()
+        source_id = msg.source_id()
+        short_id = msg.short_id()
+        tx_val = msg.tx_val()
+        quota_type = msg.quota_type()
+        ts = msg.timestamp()
 
-        old_version_msg_bytes = bytearray(
-            self._LEFT_BREAKPOINT
-            + len(msg.rawbytes()[self._RIGHT_BREAKPOINT :])
-        )
-
-        old_version_msg_bytes[: self._LEFT_BREAKPOINT] = msg.rawbytes()[:self._LEFT_BREAKPOINT]
-        old_version_msg_bytes[self._LEFT_BREAKPOINT:] = msg.rawbytes()[self._RIGHT_BREAKPOINT:]
-
-        return AbstractBloxrouteMessage.initialize_class(
-            old_version_msg_class,
-            old_version_msg_bytes,
-            (msg_type, old_version_payload_len),
+        return TxMessageV15(
+            message_hash=tx_hash,
+            network_num=network_num,
+            source_id=source_id,
+            short_id=short_id,
+            tx_val=tx_val,
+            quota_type=quota_type,
+            timestamp=ts
         )
 
     def convert_from_older_version(
@@ -87,24 +64,29 @@ class _TxMessageConverterV15(AbstractMessageConverter):
                 f"v15: {msg_type}"
             )
 
-        new_msg_class = self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING[msg_type]
-        new_payload_len = msg.payload_len() + constants.QUOTA_FLAG_LEN
+        msg = cast(TxMessageV15, msg)
 
-        new_msg_bytes = bytearray(
-            AbstractBloxrouteMessage.HEADER_LENGTH + new_payload_len
-        )
-        new_msg_bytes[: self._LEFT_BREAKPOINT] = msg.rawbytes()[:self._LEFT_BREAKPOINT]
+        tx_hash = msg.tx_hash()
+        network_num = msg.network_num()
+        source_id = msg.source_id()
+        short_id = msg.short_id()
+        tx_val = msg.tx_val()
+        quota_type = msg.quota_type()
+        ts = msg.timestamp()
 
-        struct.pack_into(
-            "<B",
-            new_msg_bytes,
-            self._LEFT_BREAKPOINT,
-            0,
-        )
-        new_msg_bytes[self._RIGHT_BREAKPOINT:] = msg.rawbytes()[self._LEFT_BREAKPOINT:]
+        if QuotaType.FREE_DAILY_QUOTA in quota_type:
+            tx_flag = TransactionFlag.NO_FLAGS
+        else:
+            tx_flag = TransactionFlag.PAID_TX
 
-        return AbstractBloxrouteMessage.initialize_class(
-            new_msg_class, new_msg_bytes, (msg_type, new_payload_len)
+        return TxMessage(
+            message_hash=tx_hash,
+            network_num=network_num,
+            source_id=source_id,
+            short_id=short_id,
+            tx_val=tx_val,
+            transaction_flag=tx_flag,
+            timestamp=ts
         )
 
     def convert_first_bytes_to_older_version(
