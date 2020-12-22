@@ -81,15 +81,18 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
                     logger.debug(
                         "Connection was rejected from websockets endpoint: {}. Attempts: {}. Retrying...",
                         self.uri,
-                        constants.WS_RECONNECT_TIMEOUTS[connection_attempts]
+                        connection_attempts
                     )
                     await asyncio.sleep(
                         constants.WS_RECONNECT_TIMEOUTS[connection_attempts]
                     )
                 else:
+                    logger.error(log_messages.WS_COULD_NOT_CONNECT_AFTER_RETRIES, self.uri, connection_attempts)
                     break
+            # pylint: disable=broad-except
+            except Exception as e:
+                logger.error(log_messages.WS_UNEXPECTED_ERROR, e)
             else:
-                logger.debug("Connected to websockets endpoint: {}", self.uri)
                 break
 
             connection_attempts += 1
@@ -98,6 +101,7 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
             logger.debug("Could not reconnect websocket. Exiting.")
             self.running = False
         else:
+            logger.debug("Connected to websockets endpoint: {}", self.uri)
             self.running = True
             self.ws_status_check = asyncio.create_task(self._ensure_websocket_alive())
             self.connected_event.set()

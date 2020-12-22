@@ -295,3 +295,13 @@ BAD_FEED_SUBSCRIBER = LogMessage(
     "Subscriber {} was not receiving messages and emptying its queue from "
     "{}. Disconnecting.",
 )
+WS_COULD_NOT_CONNECT_AFTER_RETRIES = LogMessage(
+    "C-000057",
+    CONNECTION_PROBLEM_CATEGORY,
+    "Could not connect to websockets server at {}. Connection timed out. Tried {} times.",
+)
+WS_UNEXPECTED_ERROR = LogMessage(
+    "C-000058",
+    CONNECTION_PROBLEM_CATEGORY,
+    "Unexpected logger connection error: {}. Retrying connection."
+)
