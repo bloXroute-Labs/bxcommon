@@ -278,12 +278,12 @@ class AbstractNodeTest(AbstractTestCase):
         logger_mock.assert_not_called()
 
         # current memory usage goes up to 1.9GB
-        self.node.dump_memory_usage(1024 * 1024 * 1024 * 1.9, constants.GC_HIGH_MEMORY_THRESHOLD)
+        self.node.dump_memory_usage(1024 * 1024 * 1024 * 4.1, constants.GC_HIGH_MEMORY_THRESHOLD)
         # expect that memory details are logged once
         logger_mock.debug.assert_called_once()
 
         # current memory usage reduce to 1.3GB
-        self.node.dump_memory_usage(1024 * 1024 * 1024 * 1.3, constants.GC_HIGH_MEMORY_THRESHOLD)
+        self.node.dump_memory_usage(1024 * 1024 * 1024 * 3.0, constants.GC_HIGH_MEMORY_THRESHOLD)
         # expect that memory details are not logged again
         logger_mock.debug.assert_called_once()
 
