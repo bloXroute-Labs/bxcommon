@@ -77,7 +77,7 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
                 if not self.retry_connection or not self.running:
                     logger.warning(log_messages.WS_COULD_NOT_CONNECT, self.uri)
                     raise e
-                if connection_attempts < len(constants.WS_RECONNECT_TIMEOUTS):
+                if self.retry_connection:
                     logger.debug(
                         "Connection was rejected from websockets endpoint: {}. Attempts: {}. Retrying...",
                         self.uri,
@@ -95,7 +95,7 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
             else:
                 break
 
-            connection_attempts += 1
+            connection_attempts = min(connection_attempts, len(constants.WS_RECONNECT_TIMEOUTS) - 1)
 
         if self.ws is None:
             logger.debug("Could not reconnect websocket. Exiting.")
