@@ -115,6 +115,7 @@ class AbstractConnection(Generic[Node]):
 
         self._is_authenticated = False
         self.account_id: Optional[str] = None
+        self.tier_name: Optional[str] = None
 
         self._close_waiter: Optional[Future] = None
         self.format_connection()
@@ -646,13 +647,14 @@ class AbstractConnection(Generic[Node]):
         if self.is_alive():
             raise ConnectionStateError("Connection is still alive after closed", self)
 
-    def set_account_id(self, account_id: Optional[str]):
+    def set_account_id(self, account_id: Optional[str], tier_name: str):
         if self._is_authenticated and account_id != self.account_id:
             raise ConnectionAuthenticationError(
                 f"Invalid account id {account_id} is different than connection account id: {self.account_id}")
 
         if not self._is_authenticated:
             self.account_id = account_id
+        self.tier_name = tier_name
 
     def get_backlog_size(self) -> int:
         output_buffer_backlog = self.outputbuf.length
