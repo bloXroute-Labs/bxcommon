@@ -48,6 +48,12 @@ class OutboundPeerModel:
 
         return None
 
+    def get_region(self) -> Optional[str]:
+        if constants.NODE_REGION_ATTRIBUTE_NAME in self.attributes:
+            return self.attributes[constants.NODE_REGION_ATTRIBUTE_NAME]
+
+        return None
+
     def is_transaction_streamer(self) -> bool:
         return self.attributes.get(
             constants.TRANSACTION_STREAMER_ATTRIBUTE_NAME, False

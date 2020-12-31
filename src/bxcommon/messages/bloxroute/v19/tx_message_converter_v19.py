@@ -6,7 +6,7 @@ from bxcommon.messages.versioning.abstract_message_converter import AbstractMess
 from bxcommon.models.transaction_flag import TransactionFlag
 
 
-class _TxMessageConverterV17(AbstractMessageConverter):
+class _TxMessageConverterV19(AbstractMessageConverter):
     def convert_from_older_version(
         self, msg: AbstractInternalMessage
     ) -> AbstractInternalMessage:
@@ -22,16 +22,11 @@ class _TxMessageConverterV17(AbstractMessageConverter):
         if msg_type != TxMessage.MESSAGE_TYPE:
             raise ValueError(
                 f"Tried to convert unexpected new "
-                f"message type to v17: {msg_type}"
+                f"message type to v19: {msg_type}"
             )
 
         msg = cast(TxMessage, msg)
         transaction_flag = msg.transaction_flag()
-
-        if TransactionFlag.CEN_ENABLED not in transaction_flag:
-            return msg
-
-        transaction_flag &= ~TransactionFlag.CEN_ENABLED
 
         if (
             TransactionFlag.LOCAL_REGION
@@ -40,8 +35,10 @@ class _TxMessageConverterV17(AbstractMessageConverter):
             or TransactionFlag.TBD_3
             or TransactionFlag.TBD_4
             or TransactionFlag.TBD_5
-        ) in transaction_flag:
-            transaction_flag &= ~TransactionFlag.LOCAL_REGION \
+        ) not in transaction_flag:
+            return msg
+
+        transaction_flag &= ~TransactionFlag.LOCAL_REGION \
                                 & ~TransactionFlag.TBD_1 \
                                 & ~TransactionFlag.TBD_2 \
                                 & ~TransactionFlag.TBD_3 \
@@ -85,4 +82,4 @@ class _TxMessageConverterV17(AbstractMessageConverter):
         return 0
 
 
-tx_message_converter_v17 = _TxMessageConverterV17()
+tx_message_converter_v19 = _TxMessageConverterV19()

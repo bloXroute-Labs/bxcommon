@@ -14,6 +14,15 @@ class TransactionFlag(SerializableFlag):
     # for professional/enterprise accounts only
     CEN_ENABLED = 16
 
+    LOCAL_REGION = 32
+
+    # adding more flags to avoid creating new converters
+    TBD_1 = 64
+    TBD_2 = 128
+    TBD_3 = 256
+    TBD_4 = 512
+    TBD_5 = 1024
+
     def get_quota_type(self) -> QuotaType:
         if TransactionFlag.PAID_TX in self:
             return QuotaType.PAID_DAILY_QUOTA

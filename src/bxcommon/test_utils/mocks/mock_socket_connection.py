@@ -9,14 +9,14 @@ from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 
 class MockSocketConnection(SocketConnectionProtocol):
     def __init__(
-            self,
-            file_no=1,
-            node=None,
-            default_socket_opts=None,
-            send_bytes=False,
-            ip_address: str = "127.0.0.1",
-            port: int = 8000,
-            is_ssl: bool = False
+        self,
+        file_no=1,
+        node=None,
+        default_socket_opts=None,
+        send_bytes=False,
+        ip_address: str = "127.0.0.1",
+        port: int = 8000,
+        is_ssl: bool = False
     ):
         super(MockSocketConnection, self).__init__(node, IpEndpoint(ip_address, port), is_ssl=is_ssl)
         self.transport = MagicMock()

@@ -31,7 +31,11 @@ class EthTransactionProxyFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
         super().__init__(self.NAME, network_num)
 
     def serialize(self, raw_message: EthRawTransaction) -> EthTransactionFeedEntry:
-        return EthTransactionFeedEntry(raw_message.tx_hash, raw_message.tx_contents)
+        return EthTransactionFeedEntry(
+            raw_message.tx_hash,
+            raw_message.tx_contents,
+            raw_message.local_region
+        )
 
     def should_publish_message_to_subscriber(
         self,

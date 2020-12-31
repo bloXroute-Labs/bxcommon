@@ -35,9 +35,10 @@ class EthPendingTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]
         "tx_contents.r",
         "tx_contents.s",
         "tx_contents.from",
+        "local_region",
     ]
     FILTERS = {"value", "from", "to"}
-    ALL_FIELDS = ["tx_hash", "tx_contents"]
+    ALL_FIELDS = ["tx_hash", "tx_contents", "local_region"]
 
     published_transactions: ExpiringSet[Sha256Hash]
 
@@ -70,7 +71,11 @@ class EthPendingTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]
         self.published_transactions.add(raw_message.tx_hash)
 
     def serialize(self, raw_message: EthRawTransaction) -> EthTransactionFeedEntry:
-        return EthTransactionFeedEntry(raw_message.tx_hash, raw_message.tx_contents)
+        return EthTransactionFeedEntry(
+            raw_message.tx_hash,
+            raw_message.tx_contents,
+            raw_message.local_region
+        )
 
     def any_subscribers_want_duplicates(self) -> bool:
         for subscriber in self.subscribers.values():

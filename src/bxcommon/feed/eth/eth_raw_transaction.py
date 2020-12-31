@@ -17,3 +17,4 @@ class EthRawTransaction(NamedTuple):
     tx_hash: Sha256Hash
     tx_contents: Union[memoryview, Dict[str, Any]]
     source: FeedSource
+    local_region: bool
