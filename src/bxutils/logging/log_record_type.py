@@ -52,3 +52,4 @@ class LogRecordType(Enum):
     TransactionFiltering = "transaction.filter"
     TxBlockchainStatusInfo = "stats.transaction.status"
     PrivateTransaction = "stats.cloudapi.private_transaction"
+    PaidTransaction = "stats.transaction.paid_transaction"
