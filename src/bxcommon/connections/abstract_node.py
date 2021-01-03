@@ -634,6 +634,9 @@ class AbstractNode:
         node_privileges = extensions_factory.get_node_privileges(cert)
         return AuthenticatedPeerInfo(connection_type, peer_id, account_id, node_privileges)
 
+    def _should_log_closed_connection(self, _connection: AbstractConnection) -> bool:
+        return True
+
     def _destroy_conn(self, conn: AbstractConnection):
         """
         Clean up the associated connection and update all data structures tracking it.
@@ -647,7 +650,9 @@ class AbstractNode:
 
         :param conn connection to destroy
         """
-        self.log_closed_connection(conn)
+
+        if self._should_log_closed_connection(conn):
+            self.log_closed_connection(conn)
 
         should_retry = SocketConnectionStates.DO_NOT_RETRY not in conn.socket_connection.state
 
