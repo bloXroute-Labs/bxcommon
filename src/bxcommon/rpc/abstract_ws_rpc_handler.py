@@ -82,6 +82,9 @@ class AbstractWsRpcHandler(AbstractRpcHandler["AbstractNode", WsRequest, str]):
     def serialize_response(self, response: JsonRpcResponse) -> str:
         return response.to_jsons(self.case)
 
+    def serialize_cached_subscription_message(self, message: BxJsonRpcRequest) -> bytes:
+        return self.node.serialized_message_cache.serialize_from_cache(message, self.case)
+
     async def get_next_subscribed_message(self) -> BxJsonRpcRequest:
         return await self.subscribed_messages.get()
 

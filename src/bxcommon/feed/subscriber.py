@@ -45,7 +45,7 @@ class Subscriber(Generic[T]):
         message = await self.messages.get()
         return message
 
-    def queue(self, message: T) -> None:
+    def queue(self, message: T) -> Union[T, Dict[str, Any]]:
         """
         Queues up a message, releasing all receiving listeners.
 
@@ -63,11 +63,29 @@ class Subscriber(Generic[T]):
                 filtered_message = filter_message(message.__dict__, include_fields)
 
             self.messages.put_nowait(filtered_message)
+            return filtered_message
         else:
             if hasattr(message, "__dict__"):
                 self.messages.put_nowait(message.__dict__)
+                return message.__dict__
             else:
                 self.messages.put_nowait(message)
+                return message
+
+    def fast_queue(self, message: Union[T, Dict[str, Any]]) -> None:
+        """
+        Queue a message, skipping include validation.
+
+        This method should be used judiciously, ensuring the expected content is
+        added. The goal is have objects with a common Python ID for later reference
+        when serializing.
+        """
+        self.messages.put_nowait(message)
+
+    def same_options(self, other: "Subscriber") -> bool:
+        self_includes = self.options.get("include", None)
+        other_includes = other.options.get("include", None)
+        return self_includes == other_includes
 
 
 def filter_message(message: Dict[str, Any], include_fields: List[str]) -> Dict[str, Any]:

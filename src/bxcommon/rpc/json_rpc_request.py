@@ -1,7 +1,8 @@
 import json
-from typing import List, Any, Union, Dict, Optional
+from typing import List, Any, Union, Dict, Optional, Tuple
 
 import humps
+import orjson
 
 from bxcommon.rpc import rpc_constants
 from bxcommon.rpc.rpc_errors import RpcMethodNotFound
@@ -54,6 +55,31 @@ class JsonRpcRequest:
     def to_jsons(self, case: Case = Case.SNAKE) -> str:
         json_dict = self.to_json(case)
         return json_encoder.to_json(json_dict)
+
+    def to_json_bytes(self, case: Case = Case.SNAKE) -> bytes:
+        json_dict = self.to_json(case)
+        return orjson.dumps(json_dict)
+
+    def to_json_bytes_split_serialization(self, case: Case) -> Tuple[bytes, str]:
+        """
+        This method should only be called for subscription messages.
+
+        No runtime checks are added for performance reasons, so please make sure
+        that other RPC request types don't trigger this.
+
+        Returns result serialized separately for caching later.
+        """
+        json_dict = self.to_json(case)
+        result = orjson.dumps(json_dict[rpc_constants.JSON_RPC_PARAMS]["result"]).decode("utf-8")
+        json_dict[rpc_constants.JSON_RPC_PARAMS]["result"] = result
+        return orjson.dumps(json_dict), result
+
+    def to_json_bytes_with_cached_result(self, case: Case, cached_result: str) -> bytes:
+        # noinspection PyTypeChecker
+        params = self.params
+        assert isinstance(params, dict)
+        params["result"] = cached_result
+        return self.to_json_bytes(case)
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "JsonRpcRequest":

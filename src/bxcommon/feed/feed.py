@@ -60,6 +60,7 @@ class Feed(Generic[T, S], metaclass=ABCMeta):
             return
 
         bad_subscribers = []
+        cached_subscription_items = {}
         for subscriber in self.subscribers.values():
             if not self.should_publish_message_to_subscriber(
                 subscriber, raw_message, serialized_message
@@ -67,7 +68,13 @@ class Feed(Generic[T, S], metaclass=ABCMeta):
                 continue
 
             try:
-                subscriber.queue(serialized_message)
+                for cached_subscriber, cached_message in cached_subscription_items.items():
+                    if subscriber.same_options(cached_subscriber):
+                        subscriber.fast_queue(cached_message)
+                        break
+                else:
+                    queued_message = subscriber.queue(serialized_message)
+                    cached_subscription_items[subscriber] = queued_message
             except QueueFull:
                 logger.error(
                     log_messages.BAD_FEED_SUBSCRIBER, subscriber.subscription_id, self

@@ -62,7 +62,9 @@ class WsConnection:
         websocket = self.ws
         while not websocket.closed:
             message = await self.ws_rpc_handler.get_next_subscribed_message()
-            await websocket.send_str(message.to_jsons(self.ws_rpc_handler.case))
+            await websocket.send_bytes(
+                self.ws_rpc_handler.serialize_cached_subscription_message(message)
+            )
 
     async def close(self) -> None:
         self.ws_rpc_handler.close()
