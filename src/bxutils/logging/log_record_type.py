@@ -36,6 +36,8 @@ class LogRecordType(Enum):
     ExecutionTimerInfo = "stats.execution.timer.info"
     TaskDuration = "stats.task_duration"
     NetworkContent = "network_content.stats"
+    NetworkContentTx = "network_content.tx.stats"
+    NetworkContentBlock = "network_content.block.stats"
     RoutingService = "routing.service"
     ConnectionHealth = "stats.connection_health"
     PerformanceTroubleshooting = "stats.performance.responsiveness"
