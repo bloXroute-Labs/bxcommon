@@ -5,7 +5,7 @@ from datetime import datetime, date
 from bxcommon.models.bdn_service_model_config_base import (
     BdnBasicServiceModel,
     BdnQuotaServiceModelConfigBase,
-    BdnFeedServiceModelConfigBase,
+    BdnFeedServiceModelConfigBase, BdnPrivateRelayServiceModelConfigBase,
 )
 from bxcommon import constants
 from bxcommon.rpc import rpc_constants
@@ -40,6 +40,7 @@ class AccountTemplate:
     new_pending_transaction_streaming: Optional[BdnFeedServiceModelConfigBase] = None
     transaction_state_feed: Optional[BdnFeedServiceModelConfigBase] = None
     on_block_feed: Optional[BdnBasicServiceModel] = None
+    private_relays: Optional[BdnPrivateRelayServiceModelConfigBase] = None
 
 
 @dataclass

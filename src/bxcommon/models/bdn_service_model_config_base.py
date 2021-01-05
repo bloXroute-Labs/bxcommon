@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict
 from dataclasses import dataclass
 from datetime import datetime, date
 
@@ -35,3 +35,22 @@ class BdnQuotaServiceModelConfigBase(BdnBasicServiceModel):
 @dataclass
 class BdnFeedServiceModelConfigBase(BdnBasicServiceModel):
     feed: Optional[FeedServiceModelBase] = None
+
+
+@dataclass
+class BdnPrivateRelayServiceModelConfigBase(BdnBasicServiceModel):
+    regions: Optional[Dict[str, str]] = None
+
+    def is_region_valid(self, region: str) -> bool:
+        if self.regions is not None:
+            regions = self.regions
+            assert regions is not None
+            region_expire_date_str = regions.get(region, constants.EPOCH_DATE)
+            try:
+                region_expire_date = date.fromisoformat(region_expire_date_str)
+            except (KeyError, ValueError):
+                return False
+
+            today = datetime.utcnow().date()
+            return region_expire_date >= today
+        return False

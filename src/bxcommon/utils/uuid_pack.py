@@ -13,7 +13,7 @@ def to_bytes(string_input):
     try:
         raw = uuid.UUID(string_input).bytes
     except ValueError as _e:
-        logger.debug("Invalid node ID: {}", string_input)
+        logger.trace("Invalid node ID: {}", string_input)
         return constants.EMPTY_SOURCE_ID
     return raw
 
