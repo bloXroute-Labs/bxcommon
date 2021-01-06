@@ -55,6 +55,10 @@ NEW_BLOCKS_FEED_NAME = "newBlocks"
 ETH_ON_BLOCK_FEED_NAME = "ethOnBlock"
 ETH_PENDING_TRANSACTION_FEED_NAME = "pendingTxs"
 TRANSACTION_STATUS_FEED_NAME = "transactionStatus"
+ETH_TRANSACTION_RECEIPTS_FEED_NAME = "ethTransactionReceipts"
+
+ETH_GET_TRANSACTION_RECEIPT_RPC_METHOD = "eth_getTransactionReceipt"
+ETH_RPC_INTERNAL_RESPONSE_ITEMS = {"jsonrpc", "id"}
 
 
 class ContentType(Enum):

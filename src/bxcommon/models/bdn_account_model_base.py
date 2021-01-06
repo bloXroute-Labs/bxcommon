@@ -40,6 +40,7 @@ class AccountTemplate:
     new_pending_transaction_streaming: Optional[BdnFeedServiceModelConfigBase] = None
     transaction_state_feed: Optional[BdnFeedServiceModelConfigBase] = None
     on_block_feed: Optional[BdnBasicServiceModel] = None
+    transaction_receipts_feed: Optional[BdnFeedServiceModelConfigBase] = None
     private_relays: Optional[BdnPrivateRelayServiceModelConfigBase] = None
 
 
@@ -55,6 +56,7 @@ class BdnAccountModelBase(AccountTemplate, AccountInfo):
 
         return expire_date >= today
 
+    # pylint: disable=too-many-return-statements
     def get_feed_service_config_by_name(
         self, feed_name: str
     ) -> Union[Optional[BdnFeedServiceModelConfigBase], Optional[BdnBasicServiceModel]]:
@@ -68,5 +70,7 @@ class BdnAccountModelBase(AccountTemplate, AccountInfo):
             return self.transaction_state_feed
         elif feed_name in {rpc_constants.ETH_ON_BLOCK_FEED_NAME}:
             return self.on_block_feed
+        elif feed_name in {rpc_constants.ETH_TRANSACTION_RECEIPTS_FEED_NAME}:
+            return self.transaction_receipts_feed
         else:
             return None
