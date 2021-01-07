@@ -62,6 +62,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self._nonce_to_network_num: Dict[int, int] = {}
         self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)
         self.tx_sync_service = TxSyncService(self)
+        self.inbound_peer_latency: float = time.time()
 
     def ping_message(self) -> AbstractMessage:
         nonce = nonce_generator.get_nonce()
@@ -179,6 +180,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
     def msg_ping(self, msg: PingMessage):
         nonce = msg.nonce()
         assumed_request_time = time.time() - nonce_generator.get_timestamp_from_nonce(nonce)
+        self.inbound_peer_latency = assumed_request_time
         hooks.add_measurement(self.peer_desc, MeasurementType.PING_INCOMING, assumed_request_time, self.peer_id)
 
         self.enqueue_msg(PongMessage(nonce=nonce, timestamp=nonce_generator.get_nonce()))
@@ -189,6 +191,8 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
         nonce = msg.nonce()
         timestamp = msg.timestamp()
+        if timestamp:
+            self.inbound_peer_latency = time.time() - nonce_generator.get_timestamp_from_nonce(timestamp)
         if nonce in self.ping_message_timestamps.contents:
             request_msg_timestamp = self.ping_message_timestamps.contents[nonce]
             request_response_time = time.time() - request_msg_timestamp
