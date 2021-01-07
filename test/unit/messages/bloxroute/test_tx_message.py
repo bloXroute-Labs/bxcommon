@@ -27,6 +27,9 @@ class TxMessageTest(AbstractTestCase):
         self.assertTrue(
             TransactionFlag.LOCAL_REGION in reserialized_message.transaction_flag()
         )
+        self.assertTrue(
+            TransactionFlag.TBD_2 in reserialized_message.transaction_flag()
+        )
 
     def _serialize_deserialize_message(
         self, tx_message: TxMessage

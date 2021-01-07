@@ -35,12 +35,12 @@ class _TxMessageConverterV17(AbstractMessageConverter):
 
         if (
             TransactionFlag.LOCAL_REGION
-            or TransactionFlag.TBD_1
-            or TransactionFlag.TBD_2
-            or TransactionFlag.TBD_3
-            or TransactionFlag.TBD_4
-            or TransactionFlag.TBD_5
-        ) in transaction_flag:
+            | TransactionFlag.TBD_1
+            | TransactionFlag.TBD_2
+            | TransactionFlag.TBD_3
+            | TransactionFlag.TBD_4
+            | TransactionFlag.TBD_5
+        ) & transaction_flag:
             transaction_flag &= ~TransactionFlag.LOCAL_REGION \
                                 & ~TransactionFlag.TBD_1 \
                                 & ~TransactionFlag.TBD_2 \

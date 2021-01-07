@@ -58,7 +58,6 @@ class BloxrouteVersionManagerV19Test(
             helpers.generate_bytearray(250),
             TransactionFlag.PAID_TX
             | TransactionFlag.CEN_ENABLED
-            | TransactionFlag.LOCAL_REGION
             | TransactionFlag.TBD_5,
             time.time(),
         )
@@ -67,5 +66,5 @@ class BloxrouteVersionManagerV19Test(
         self, converted_old_message: TxMessage, original_old_message: TxMessage,
     ):
         self.assertNotIn(
-            TransactionFlag.LOCAL_REGION, converted_old_message.transaction_flag()
+            TransactionFlag.TBD_5, converted_old_message.transaction_flag()
         )

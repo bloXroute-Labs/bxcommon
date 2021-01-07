@@ -124,7 +124,6 @@ class BloxrouteVersionManagerV16Test(
             helpers.generate_bytearray(250),
             TransactionFlag.PAID_TX
             | TransactionFlag.CEN_ENABLED
-            | TransactionFlag.LOCAL_REGION
             | TransactionFlag.TBD_3,
             time.time(),
             )
