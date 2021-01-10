@@ -1,5 +1,3 @@
-import time
-
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
@@ -17,19 +15,18 @@ from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyn
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v18.bdn_performance_stats_message_v18 import BdnPerformanceStatsMessageV18
-from bxcommon.models.transaction_flag import TransactionFlag
-from bxcommon.test_utils import helpers
+from bxcommon.messages.bloxroute.v20.tx_message_v20 import TxMessageV20
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
-class BloxrouteVersionManagerV19Test(
+class BloxrouteVersionManagerV20Test(
     AbstractBloxrouteVersionManagerTest[
         HelloMessage,
         AckMessage,
         PingMessage,
         PongMessage,
         BroadcastMessage,
-        TxMessage,
+        TxMessageV20,
         GetTxsMessage,
         TxsMessage,
         KeyMessage,
@@ -45,24 +42,53 @@ class BloxrouteVersionManagerV19Test(
 ):
 
     def version_to_test(self) -> int:
-        return 19
+        return 20
 
-    def tx_message(self) -> TxMessage:
-        return TxMessage(
-            helpers.generate_object_hash(),
-            self.NETWORK_NUMBER,
-            self.NODE_ID,
-            50,
-            helpers.generate_bytearray(250),
-            TransactionFlag.PAID_TX
-            | TransactionFlag.CEN_ENABLED
-            | TransactionFlag.TBD_5,
-            time.time(),
+    def old_tx_message(self, original_message: TxMessage) -> TxMessageV20:
+        return TxMessageV20(
+            original_message.message_hash(),
+            original_message.network_num(),
+            original_message.source_id(),
+            original_message.short_id(),
+            original_message.tx_val(),
+            original_message.transaction_flag(),
+            original_message.timestamp()
         )
 
     def compare_tx_current_to_old(
-        self, converted_old_message: TxMessage, original_old_message: TxMessage,
+        self,
+        converted_old_message: TxMessageV20,
+        original_old_message: TxMessageV20,
     ):
-        self.assertNotIn(
-            TransactionFlag.TBD_5, converted_old_message.transaction_flag()
+        self.assert_attributes_equal(
+            original_old_message,
+            converted_old_message,
+            [
+                "message_hash",
+                "tx_val",
+                "source_id",
+                "network_num",
+                "transaction_flag",
+                "timestamp",
+            ],
+        )
+
+    def compare_tx_old_to_current(
+        self,
+        converted_current_message: TxMessage,
+        original_current_message: TxMessage,
+    ):
+        self.assertEqual(
+            int(original_current_message.timestamp()), converted_current_message.timestamp()
+        )
+        self.assert_attributes_equal(
+            converted_current_message,
+            original_current_message,
+            [
+                "message_hash",
+                "tx_val",
+                "source_id",
+                "network_num",
+                "transaction_flag",
+            ],
         )

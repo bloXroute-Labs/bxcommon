@@ -105,7 +105,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                               TxMessage.MESSAGE_TYPE,
                                               SHA256_HASH_LEN + NETWORK_NUM_LEN + UL_INT_SIZE_IN_BYTES +
                                               TRANSACTION_FLAG_LEN + constants.NODE_ID_SIZE_IN_BYTES + len(blob) +
-                                              constants.UL_INT_SIZE_IN_BYTES +
+                                              constants.DOUBLE_SIZE_IN_BYTES +
                                               constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(KeyMessage(self.HASH, 1, self.NODE_ID,
                                                          bytearray(1 for _ in range(KEY_SIZE))),
@@ -468,17 +468,17 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         self.assertEqual(test_network_num, tx_message.network_num())
         self.assertEqual(tx_val, tx_message.tx_val())
         self.assertEqual(TransactionFlag.PAID_TX, tx_message.transaction_flag())
-        self.assertEqual(int(timestamp), tx_message.timestamp())
+        self.assertEqual(timestamp, tx_message.timestamp())
 
         new_timestamp = time.time() - 2
         expected_tx_message.set_timestamp(new_timestamp)
-        self.assertEqual(int(new_timestamp), expected_tx_message.timestamp())
+        self.assertEqual(new_timestamp, expected_tx_message.timestamp())
 
         regenerated_tx_message = self.create_message_successfully(
             expected_tx_message,
             TxMessage
         )
-        self.assertEqual(int(new_timestamp), regenerated_tx_message.timestamp())
+        self.assertEqual(new_timestamp, regenerated_tx_message.timestamp())
 
     def test_tx_bx_message_setting_attributes(self):
         contents = helpers.generate_bytes(250)
