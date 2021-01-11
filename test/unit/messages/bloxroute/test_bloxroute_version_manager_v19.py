@@ -10,7 +10,6 @@ from bxcommon.messages.bloxroute.notification_message import NotificationMessage
 from bxcommon.messages.bloxroute.ping_message import PingMessage
 from bxcommon.messages.bloxroute.pong_message import PongMessage
 from bxcommon.messages.bloxroute.transaction_cleanup_message import TransactionCleanupMessage
-from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import TxServiceSyncBlocksShortIdsMessage
 from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage

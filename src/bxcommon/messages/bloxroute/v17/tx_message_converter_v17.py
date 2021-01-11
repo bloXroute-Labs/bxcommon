@@ -61,27 +61,25 @@ class _TxMessageConverterV17(AbstractMessageConverter):
 
         msg = cast(TxMessage, msg)
         transaction_flag = msg.transaction_flag()
-        ts = int(msg.timestamp())
 
-        if TransactionFlag.CEN_ENABLED not in transaction_flag:
-            return msg
-
-        transaction_flag &= ~TransactionFlag.CEN_ENABLED
-
-        if (
-            TransactionFlag.LOCAL_REGION
+        if not (
+            TransactionFlag.CEN_ENABLED
+            | TransactionFlag.LOCAL_REGION
             | TransactionFlag.TBD_1
             | TransactionFlag.TBD_2
             | TransactionFlag.TBD_3
             | TransactionFlag.TBD_4
             | TransactionFlag.TBD_5
         ) & transaction_flag:
-            transaction_flag &= ~TransactionFlag.LOCAL_REGION \
-                                & ~TransactionFlag.TBD_1 \
-                                & ~TransactionFlag.TBD_2 \
-                                & ~TransactionFlag.TBD_3 \
-                                & ~TransactionFlag.TBD_4 \
-                                & ~TransactionFlag.TBD_5
+            return msg
+
+        transaction_flag &= ~TransactionFlag.CEN_ENABLED \
+                            & ~TransactionFlag.LOCAL_REGION \
+                            & ~TransactionFlag.TBD_1 \
+                            & ~TransactionFlag.TBD_2 \
+                            & ~TransactionFlag.TBD_3 \
+                            & ~TransactionFlag.TBD_4 \
+                            & ~TransactionFlag.TBD_5
 
         return TxMessageV17(
             msg.message_hash(),
@@ -90,7 +88,7 @@ class _TxMessageConverterV17(AbstractMessageConverter):
             msg.short_id(),
             msg.tx_val(),
             transaction_flag,
-            ts
+            int(msg.timestamp())
         )
 
     def convert_first_bytes_to_older_version(
