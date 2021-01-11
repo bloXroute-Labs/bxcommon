@@ -17,8 +17,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyn
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v18.bdn_performance_stats_message_v18 import BdnPerformanceStatsMessageV18
-from bxcommon.models.transaction_flag import TransactionFlag
-from bxcommon.test_utils import helpers
+from bxcommon.messages.bloxroute.v19.tx_message_v19 import TxMessageV19
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
@@ -29,7 +28,7 @@ class BloxrouteVersionManagerV19Test(
         PingMessage,
         PongMessage,
         BroadcastMessage,
-        TxMessage,
+        TxMessageV19,
         GetTxsMessage,
         TxsMessage,
         KeyMessage,
@@ -46,23 +45,3 @@ class BloxrouteVersionManagerV19Test(
 
     def version_to_test(self) -> int:
         return 19
-
-    def tx_message(self) -> TxMessage:
-        return TxMessage(
-            helpers.generate_object_hash(),
-            self.NETWORK_NUMBER,
-            self.NODE_ID,
-            50,
-            helpers.generate_bytearray(250),
-            TransactionFlag.PAID_TX
-            | TransactionFlag.CEN_ENABLED
-            | TransactionFlag.TBD_5,
-            time.time(),
-        )
-
-    def compare_tx_current_to_old(
-        self, converted_old_message: TxMessage, original_old_message: TxMessage,
-    ):
-        self.assertNotIn(
-            TransactionFlag.TBD_5, converted_old_message.transaction_flag()
-        )

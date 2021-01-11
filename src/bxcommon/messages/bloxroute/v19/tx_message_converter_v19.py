@@ -1,18 +1,52 @@
 from typing import cast
 
 from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
+from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.tx_message import TxMessage
+from bxcommon.messages.bloxroute.v19.tx_message_v19 import TxMessageV19
 from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 from bxcommon.models.transaction_flag import TransactionFlag
 
 
 class _TxMessageConverterV19(AbstractMessageConverter):
+    _MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING = {
+        BloxrouteMessageType.TRANSACTION: TxMessageV19
+    }
+
+    _MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING = {
+        BloxrouteMessageType.TRANSACTION: TxMessage
+    }
+
     def convert_from_older_version(
         self, msg: AbstractInternalMessage
     ) -> AbstractInternalMessage:
-        # message change is only in TransactionFlag attribute
-        # older versions will simply never has this attribute set and will not need changes
-        return msg
+        msg_type = msg.MESSAGE_TYPE
+
+        if msg_type not in self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING:
+            raise ValueError(
+                f"Tried to convert unexpected new "
+                f"message type to v19: {msg_type}"
+            )
+
+        msg = cast(TxMessageV19, msg)
+
+        tx_hash = msg.tx_hash()
+        network_num = msg.network_num()
+        source_id = msg.source_id()
+        short_id = msg.short_id()
+        tx_val = msg.tx_val()
+        transaction_flag = msg.transaction_flag()
+        ts = msg.timestamp()
+
+        return TxMessage(
+            message_hash=tx_hash,
+            network_num=network_num,
+            source_id=source_id,
+            short_id=short_id,
+            tx_val=tx_val,
+            transaction_flag=transaction_flag,
+            timestamp=ts
+        )
 
     def convert_to_older_version(
         self, msg: AbstractInternalMessage
@@ -45,14 +79,14 @@ class _TxMessageConverterV19(AbstractMessageConverter):
                                 & ~TransactionFlag.TBD_4 \
                                 & ~TransactionFlag.TBD_5
 
-        return TxMessage(
+        return TxMessageV19(
             msg.message_hash(),
             msg.network_num(),
             msg.source_id(),
             msg.short_id(),
             msg.tx_val(),
             transaction_flag,
-            msg.timestamp()
+            int(msg.timestamp())
         )
 
     def convert_first_bytes_to_older_version(

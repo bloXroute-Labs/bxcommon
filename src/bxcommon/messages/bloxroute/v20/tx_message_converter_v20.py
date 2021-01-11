@@ -20,37 +20,6 @@ class _TxMessageConverterV20(AbstractMessageConverter):
         BloxrouteMessageType.TRANSACTION: TxMessage
     }
 
-    def convert_to_older_version(
-        self, msg: AbstractInternalMessage
-    ) -> AbstractInternalMessage:
-        msg_type = msg.MESSAGE_TYPE
-
-        if msg_type not in self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING:
-            raise ValueError(
-                f"Tried to convert unexpected new "
-                f"message type to v20: {msg_type}"
-            )
-
-        msg = cast(TxMessage, msg)
-
-        tx_hash = msg.tx_hash()
-        network_num = msg.network_num()
-        source_id = msg.source_id()
-        short_id = msg.short_id()
-        tx_val = msg.tx_val()
-        transaction_flag = msg.transaction_flag()
-        ts = msg.timestamp()
-
-        return TxMessageV20(
-            message_hash=tx_hash,
-            network_num=network_num,
-            source_id=source_id,
-            short_id=short_id,
-            tx_val=tx_val,
-            transaction_flag=transaction_flag,
-            timestamp=ts
-        )
-
     def convert_from_older_version(
         self, msg: AbstractInternalMessage
     ) -> AbstractInternalMessage:
@@ -73,6 +42,37 @@ class _TxMessageConverterV20(AbstractMessageConverter):
         ts = msg.timestamp()
 
         return TxMessage(
+            message_hash=tx_hash,
+            network_num=network_num,
+            source_id=source_id,
+            short_id=short_id,
+            tx_val=tx_val,
+            transaction_flag=transaction_flag,
+            timestamp=ts
+        )
+
+    def convert_to_older_version(
+        self, msg: AbstractInternalMessage
+    ) -> AbstractInternalMessage:
+        msg_type = msg.MESSAGE_TYPE
+
+        if msg_type not in self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING:
+            raise ValueError(
+                f"Tried to convert unexpected new "
+                f"message type to v20: {msg_type}"
+            )
+
+        msg = cast(TxMessage, msg)
+
+        tx_hash = msg.tx_hash()
+        network_num = msg.network_num()
+        source_id = msg.source_id()
+        short_id = msg.short_id()
+        tx_val = msg.tx_val()
+        transaction_flag = msg.transaction_flag()
+        ts = msg.timestamp()
+
+        return TxMessageV20(
             message_hash=tx_hash,
             network_num=network_num,
             source_id=source_id,

@@ -8,7 +8,7 @@ from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxr
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.v18.bdn_performance_stats_message_v18 import BdnPerformanceStatsMessageV18
-from bxcommon.messages.bloxroute.v20.bloxroute_message_factory_v20 import bloxroute_message_factory_v20
+from bxcommon.messages.bloxroute.v19.bloxroute_message_factory_v19 import bloxroute_message_factory_v19
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -28,7 +28,7 @@ class BroadcastMessagePreview(NamedTuple):
 class _BloxrouteMessageFactoryV18(AbstractMessageFactory):
     _MESSAGE_TYPE_MAPPING = {
         # pylint: disable=protected-access
-        **bloxroute_message_factory_v20._MESSAGE_TYPE_MAPPING,
+        **bloxroute_message_factory_v19._MESSAGE_TYPE_MAPPING,
         BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV18,
     }
 
