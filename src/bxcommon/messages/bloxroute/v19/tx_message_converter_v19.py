@@ -17,6 +17,23 @@ class _TxMessageConverterV19(AbstractMessageConverter):
         BloxrouteMessageType.TRANSACTION: TxMessage
     }
 
+    UNKNOWN_TRANSACTION_FLAGS = (
+        TransactionFlag.LOCAL_REGION
+        | TransactionFlag.TBD_1
+        | TransactionFlag.TBD_2
+        | TransactionFlag.TBD_3
+        | TransactionFlag.TBD_4
+        | TransactionFlag.TBD_5
+    )
+    INVERTED_UNKNOWN_TRANSACTION_FLAGS = (
+        ~TransactionFlag.LOCAL_REGION
+        & ~TransactionFlag.TBD_1
+        & ~TransactionFlag.TBD_2
+        & ~TransactionFlag.TBD_3
+        & ~TransactionFlag.TBD_4
+        & ~TransactionFlag.TBD_5
+    )
+
     def convert_from_older_version(
         self, msg: AbstractInternalMessage
     ) -> AbstractInternalMessage:
@@ -62,20 +79,8 @@ class _TxMessageConverterV19(AbstractMessageConverter):
         msg = cast(TxMessage, msg)
         transaction_flag = msg.transaction_flag()
 
-        if (
-            TransactionFlag.LOCAL_REGION
-            | TransactionFlag.TBD_1
-            | TransactionFlag.TBD_2
-            | TransactionFlag.TBD_3
-            | TransactionFlag.TBD_4
-            | TransactionFlag.TBD_5
-        ) & transaction_flag:
-            transaction_flag &= ~TransactionFlag.LOCAL_REGION \
-                                    & ~TransactionFlag.TBD_1 \
-                                    & ~TransactionFlag.TBD_2 \
-                                    & ~TransactionFlag.TBD_3 \
-                                    & ~TransactionFlag.TBD_4 \
-                                    & ~TransactionFlag.TBD_5
+        if self.UNKNOWN_TRANSACTION_FLAGS & transaction_flag:
+            transaction_flag &= self.INVERTED_UNKNOWN_TRANSACTION_FLAGS
 
         return TxMessageV19(
             msg.message_hash(),
