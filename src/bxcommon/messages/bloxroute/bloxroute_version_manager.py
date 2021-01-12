@@ -24,9 +24,11 @@ from bxcommon.messages.bloxroute.v15.bloxroute_message_factory_v15 import bloxro
 from bxcommon.messages.bloxroute.v15.message_converter_factory_v15 import message_converter_factory_v15
 from bxcommon.messages.bloxroute.v16.bloxroute_message_factory_v16 import bloxroute_message_factory_v16
 from bxcommon.messages.bloxroute.v16.message_converter_factory_v16 import message_converter_factory_v16
+from bxcommon.messages.bloxroute.v17.bloxroute_message_factory_v17 import bloxroute_message_factory_v17
 from bxcommon.messages.bloxroute.v17.message_converter_factory_v17 import message_converter_factory_v17
 from bxcommon.messages.bloxroute.v18.message_converter_factory_v18 import message_converter_factory_v18
 from bxcommon.messages.bloxroute.v18.bloxroute_message_factory_v18 import bloxroute_message_factory_v18
+from bxcommon.messages.bloxroute.v19.bloxroute_message_factory_v19 import bloxroute_message_factory_v19
 from bxcommon.messages.bloxroute.v19.message_converter_factory_v19 import message_converter_factory_v19
 from bxcommon.messages.bloxroute.v20.message_converter_factory_v20 import message_converter_factory_v20
 from bxcommon.messages.bloxroute.v20.bloxroute_message_factory_v20 import bloxroute_message_factory_v20
@@ -66,9 +68,9 @@ class _BloxrouteVersionManager(AbstractVersionManager):
         14: bloxroute_message_factory_v14,
         15: bloxroute_message_factory_v15,
         16: bloxroute_message_factory_v16,
-        17: bloxroute_message_factory_v18,
+        17: bloxroute_message_factory_v17,
         18: bloxroute_message_factory_v18,
-        19: bloxroute_message_factory_v20,
+        19: bloxroute_message_factory_v19,
         20: bloxroute_message_factory_v20,
         21: bloxroute_message_factory
     }

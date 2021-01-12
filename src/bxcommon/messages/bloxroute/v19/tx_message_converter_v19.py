@@ -62,7 +62,7 @@ class _TxMessageConverterV19(AbstractMessageConverter):
         msg = cast(TxMessage, msg)
         transaction_flag = msg.transaction_flag()
 
-        if not (
+        if (
             TransactionFlag.LOCAL_REGION
             | TransactionFlag.TBD_1
             | TransactionFlag.TBD_2
@@ -70,14 +70,12 @@ class _TxMessageConverterV19(AbstractMessageConverter):
             | TransactionFlag.TBD_4
             | TransactionFlag.TBD_5
         ) & transaction_flag:
-            return msg
-
-        transaction_flag &= ~TransactionFlag.LOCAL_REGION \
-                                & ~TransactionFlag.TBD_1 \
-                                & ~TransactionFlag.TBD_2 \
-                                & ~TransactionFlag.TBD_3 \
-                                & ~TransactionFlag.TBD_4 \
-                                & ~TransactionFlag.TBD_5
+            transaction_flag &= ~TransactionFlag.LOCAL_REGION \
+                                    & ~TransactionFlag.TBD_1 \
+                                    & ~TransactionFlag.TBD_2 \
+                                    & ~TransactionFlag.TBD_3 \
+                                    & ~TransactionFlag.TBD_4 \
+                                    & ~TransactionFlag.TBD_5
 
         return TxMessageV19(
             msg.message_hash(),
