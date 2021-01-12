@@ -13,12 +13,12 @@ from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.utils.object_hash import Sha256Hash
 
 
-class TxMessage(AbstractBroadcastMessage):
+class TxMessageV17(AbstractBroadcastMessage):
     PAYLOAD_LENGTH = (
         AbstractBroadcastMessage.PAYLOAD_LENGTH
         + constants.SID_LEN
         + constants.TRANSACTION_FLAG_LEN
-        + constants.DOUBLE_SIZE_IN_BYTES
+        + constants.UL_INT_SIZE_IN_BYTES
     )
     MESSAGE_TYPE = BloxrouteMessageType.TRANSACTION
     EMPTY_TX_VAL = memoryview(bytes())
@@ -46,7 +46,7 @@ class TxMessage(AbstractBroadcastMessage):
                 AbstractBroadcastMessage.PAYLOAD_LENGTH
                 + constants.SID_LEN
                 + constants.TRANSACTION_FLAG_LEN
-                + constants.DOUBLE_SIZE_IN_BYTES
+                + constants.UL_INT_SIZE_IN_BYTES
                 + len(tx_val)
             )
         super().__init__(message_hash, network_num, source_id, buf)
@@ -67,8 +67,8 @@ class TxMessage(AbstractBroadcastMessage):
             struct.pack_into("<H", self.buf, off, transaction_flag.value)
             off += constants.TRANSACTION_FLAG_LEN
 
-            struct.pack_into("<d", self.buf, off, timestamp)
-            off += constants.DOUBLE_SIZE_IN_BYTES
+            struct.pack_into("<L", self.buf, off, int(timestamp))
+            off += constants.UL_INT_SIZE_IN_BYTES
 
             if tx_val is not None:
                 self.buf[off:off + len(tx_val)] = tx_val
@@ -127,7 +127,7 @@ class TxMessage(AbstractBroadcastMessage):
         self._transaction_flag = flag
         struct.pack_into("<H", self.buf, off, flag.value)
 
-    def timestamp(self) -> float:
+    def timestamp(self) -> int:
         if self._timestamp is None:
             off = (
                 self.HEADER_LENGTH
@@ -136,8 +136,8 @@ class TxMessage(AbstractBroadcastMessage):
                 + constants.TRANSACTION_FLAG_LEN
                 - constants.CONTROL_FLAGS_LEN
             )
-            (self._timestamp,) = struct.unpack_from("<d", self.buf, off)
-        # pyre-fixme[7]: Expected `float` but got `None`.
+            (self._timestamp,) = struct.unpack_from("<L", self.buf, off)
+        # pyre-fixme[7]: Expected `int` but got `None`.
         return self._timestamp
 
     def tx_val(self) -> memoryview:
@@ -150,7 +150,7 @@ class TxMessage(AbstractBroadcastMessage):
                     + AbstractBroadcastMessage.PAYLOAD_LENGTH
                     + constants.SID_LEN
                     + constants.TRANSACTION_FLAG_LEN
-                    + constants.DOUBLE_SIZE_IN_BYTES
+                    + constants.UL_INT_SIZE_IN_BYTES
                     - constants.CONTROL_FLAGS_LEN
                 )
                 self._tx_val = self._memoryview[
@@ -167,6 +167,7 @@ class TxMessage(AbstractBroadcastMessage):
         return self.tx_val() == self.EMPTY_TX_VAL
 
     def set_timestamp(self, timestamp: Union[float, int]):
+        timestamp = int(timestamp)
         self._timestamp = timestamp
         off = (
             self.HEADER_LENGTH
@@ -175,7 +176,7 @@ class TxMessage(AbstractBroadcastMessage):
             + constants.TRANSACTION_FLAG_LEN
             - constants.CONTROL_FLAGS_LEN
         )
-        struct.pack_into("<d", self.buf, off, timestamp)
+        struct.pack_into("<L", self.buf, off, timestamp)
 
     def clear_short_id(self):
         off = (
@@ -194,7 +195,7 @@ class TxMessage(AbstractBroadcastMessage):
             + constants.TRANSACTION_FLAG_LEN
             - constants.CONTROL_FLAGS_LEN
         )
-        struct.pack_into("<d", self.buf, off, constants.NULL_TX_TIMESTAMP)
+        struct.pack_into("<L", self.buf, off, constants.NULL_TX_TIMESTAMP)
         self._timestamp = constants.NULL_TX_TIMESTAMP
 
     def clear_protected_fields(self):

@@ -305,3 +305,8 @@ WS_UNEXPECTED_ERROR = LogMessage(
     CONNECTION_PROBLEM_CATEGORY,
     "Unexpected logger connection error: {}. Retrying connection."
 )
+WS_COULD_NOT_PROCESS_NOTIFICATION = LogMessage(
+    "C-000059",
+    PROCESSING_FAILED_CATEGORY,
+    "Unexpected error in feed callback: {}."
+)

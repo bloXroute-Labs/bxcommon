@@ -37,7 +37,7 @@ class _TxMessageConverterV6(AbstractMessageConverter):
         _BASE_LENGTH
         + constants.SID_LEN
         + constants.TRANSACTION_FLAG_LEN
-        + constants.UL_INT_SIZE_IN_BYTES
+        + constants.DOUBLE_SIZE_IN_BYTES
     )
 
     def convert_to_older_version(
@@ -56,7 +56,7 @@ class _TxMessageConverterV6(AbstractMessageConverter):
         old_version_payload_len = (
             msg.payload_len()
             - constants.TRANSACTION_FLAG_LEN
-            - constants.UL_INT_SIZE_IN_BYTES
+            - constants.DOUBLE_SIZE_IN_BYTES
         )
 
         old_version_msg_bytes = bytearray(
@@ -97,7 +97,7 @@ class _TxMessageConverterV6(AbstractMessageConverter):
         new_payload_len = (
             msg.payload_len()
             + constants.TRANSACTION_FLAG_LEN
-            + constants.UL_INT_SIZE_IN_BYTES
+            + constants.DOUBLE_SIZE_IN_BYTES
         )
 
         new_msg_bytes = bytearray(

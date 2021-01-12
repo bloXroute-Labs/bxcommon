@@ -112,8 +112,8 @@ class BloxrouteVersionManagerV15Test(
             ],
         )
         self.assertEqual(
-            original_current_message.transaction_flag().get_quota_type(),
-            converted_current_message.transaction_flag().get_quota_type()
+            original_current_message.transaction_flag(),
+            converted_current_message.transaction_flag()
         )
 
     def compare_txtxs_current_to_old(

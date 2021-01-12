@@ -3,20 +3,25 @@ from typing import Dict, Tuple, Any
 
 from mock import MagicMock
 
+from bxcommon.connections.connection_type import ConnectionType
+from bxcommon.models.authenticated_peer_info import AuthenticatedPeerInfo
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 
 
 class MockSocketConnection(SocketConnectionProtocol):
     def __init__(
-            self,
-            file_no=1,
-            node=None,
-            default_socket_opts=None,
-            send_bytes=False,
-            ip_address: str = "127.0.0.1",
-            port: int = 8000,
-            is_ssl: bool = False
+        self,
+        file_no=1,
+        node=None,
+        default_socket_opts=None,
+        send_bytes=False,
+        ip_address: str = "127.0.0.1",
+        port: int = 8000,
+        is_ssl: bool = False,
+        authenticated_peer_info: AuthenticatedPeerInfo = AuthenticatedPeerInfo(
+            ConnectionType.EXTERNAL_GATEWAY, "", ""
+        )
     ):
         super(MockSocketConnection, self).__init__(node, IpEndpoint(ip_address, port), is_ssl=is_ssl)
         self.transport = MagicMock()
@@ -34,6 +39,8 @@ class MockSocketConnection(SocketConnectionProtocol):
 
         self.transport.write = self.socket_instance_send
         self.transport.get_write_buffer_size = MagicMock(return_value=0)
+
+        self.authenticated_peer_info = authenticated_peer_info
 
     def fileno(self) -> int:
         return self.file_no

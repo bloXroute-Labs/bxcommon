@@ -3,14 +3,14 @@ from typing import cast
 from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
 from bxcommon.messages.bloxroute.tx_message import TxMessage
-from bxcommon.messages.bloxroute.v17.tx_message_v17 import TxMessageV17
+from bxcommon.messages.bloxroute.v19.tx_message_v19 import TxMessageV19
 from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 from bxcommon.models.transaction_flag import TransactionFlag
 
 
-class _TxMessageConverterV17(AbstractMessageConverter):
+class _TxMessageConverterV19(AbstractMessageConverter):
     _MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING = {
-        BloxrouteMessageType.TRANSACTION: TxMessageV17
+        BloxrouteMessageType.TRANSACTION: TxMessageV19
     }
 
     _MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING = {
@@ -42,10 +42,10 @@ class _TxMessageConverterV17(AbstractMessageConverter):
         if msg_type not in self._MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING:
             raise ValueError(
                 f"Tried to convert unexpected new "
-                f"message type to v17: {msg_type}"
+                f"message type to v19: {msg_type}"
             )
 
-        msg = cast(TxMessageV17, msg)
+        msg = cast(TxMessageV19, msg)
 
         tx_hash = msg.tx_hash()
         network_num = msg.network_num()
@@ -73,7 +73,7 @@ class _TxMessageConverterV17(AbstractMessageConverter):
         if msg_type != TxMessage.MESSAGE_TYPE:
             raise ValueError(
                 f"Tried to convert unexpected new "
-                f"message type to v17: {msg_type}"
+                f"message type to v19: {msg_type}"
             )
 
         msg = cast(TxMessage, msg)
@@ -82,7 +82,7 @@ class _TxMessageConverterV17(AbstractMessageConverter):
         if self.UNKNOWN_TRANSACTION_FLAGS & transaction_flag:
             transaction_flag &= self.INVERTED_UNKNOWN_TRANSACTION_FLAGS
 
-        return TxMessageV17(
+        return TxMessageV19(
             msg.message_hash(),
             msg.network_num(),
             msg.source_id(),
@@ -119,4 +119,4 @@ class _TxMessageConverterV17(AbstractMessageConverter):
         return 0
 
 
-tx_message_converter_v17 = _TxMessageConverterV17()
+tx_message_converter_v19 = _TxMessageConverterV19()

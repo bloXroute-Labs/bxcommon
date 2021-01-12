@@ -144,7 +144,7 @@ class AbstractBloxrouteVersionManagerTest(
             self.NODE_ID,
             50,
             helpers.generate_bytearray(250),
-            TransactionFlag.CEN_ENABLED | TransactionFlag.NONCE_TRACK | TransactionFlag.RE_PROPAGATE,
+            TransactionFlag.PAID_TX,
             time.time(),
         )
 

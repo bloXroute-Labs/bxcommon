@@ -30,9 +30,10 @@ class EthNewTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
         "tx_contents.r",
         "tx_contents.s",
         "tx_contents.from",
+        "local_region",
     ]
     FILTERS = {"value", "from", "to"}
-    ALL_FIELDS = ["tx_hash", "tx_contents"]
+    ALL_FIELDS = ["tx_hash", "tx_contents", "local_region"]
 
     def __init__(self, network_num: int = constants.ALL_NETWORK_NUM,) -> None:
         super().__init__(self.NAME, network_num)
@@ -50,7 +51,11 @@ class EthNewTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
         super().publish(raw_message)
 
     def serialize(self, raw_message: EthRawTransaction) -> EthTransactionFeedEntry:
-        return EthTransactionFeedEntry(raw_message.tx_hash, raw_message.tx_contents)
+        return EthTransactionFeedEntry(
+            raw_message.tx_hash,
+            raw_message.tx_contents,
+            raw_message.local_region
+        )
 
     def any_subscribers_want_item(self, raw_message: EthRawTransaction) -> bool:
         if raw_message.source == FeedSource.BLOCKCHAIN_SOCKET:

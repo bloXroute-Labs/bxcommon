@@ -122,6 +122,7 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         include = self.options.get("include", self.all_fields)
         if not isinstance(include, list):
             raise invalid_options
+        # check for empty list
         if not include:
             include = self.all_fields
 

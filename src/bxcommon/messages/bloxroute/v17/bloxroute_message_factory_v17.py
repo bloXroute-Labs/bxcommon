@@ -7,9 +7,8 @@ from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.abstract_broadcast_message import AbstractBroadcastMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-
-from bxcommon.messages.bloxroute.v16.bdn_performance_stats_message_v16 import BdnPerformanceStatsMessageV16
-from bxcommon.messages.bloxroute.v17.bloxroute_message_factory_v17 import bloxroute_message_factory_v17
+from bxcommon.messages.bloxroute.v17.tx_message_v17 import TxMessageV17
+from bxcommon.messages.bloxroute.v18.bloxroute_message_factory_v18 import bloxroute_message_factory_v18
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.utils import crypto, uuid_pack
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -26,15 +25,15 @@ class BroadcastMessagePreview(NamedTuple):
     payload_length: Optional[int]
 
 
-class _BloxrouteMessageFactoryV16(AbstractMessageFactory):
+class _BloxrouteMessageFactoryV17(AbstractMessageFactory):
     _MESSAGE_TYPE_MAPPING = {
         # pylint: disable=protected-access
-        **bloxroute_message_factory_v17._MESSAGE_TYPE_MAPPING,
-        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV16
+        **bloxroute_message_factory_v18._MESSAGE_TYPE_MAPPING,
+        BloxrouteMessageType.TRANSACTION: TxMessageV17,
     }
 
     def __init__(self) -> None:
-        super(_BloxrouteMessageFactoryV16, self).__init__(self._MESSAGE_TYPE_MAPPING)
+        super(_BloxrouteMessageFactoryV17, self).__init__(self._MESSAGE_TYPE_MAPPING)
 
     def get_base_message_type(self) -> Type[AbstractMessage]:
         return AbstractBloxrouteMessage
@@ -85,4 +84,4 @@ class _BloxrouteMessageFactoryV16(AbstractMessageFactory):
         return f"{self.__class__.__name__}; message_type_mapping: {self.message_type_mapping}"
 
 
-bloxroute_message_factory_v16 = _BloxrouteMessageFactoryV16()
+bloxroute_message_factory_v17 = _BloxrouteMessageFactoryV17()

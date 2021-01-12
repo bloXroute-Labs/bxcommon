@@ -46,7 +46,7 @@ class AbstractTestCase(unittest.TestCase):
         log_config.setup_logging(
             opts.log_format,
             opts.log_level,
-            default_logger_names=["bxcommon", "bxgateway", "bxrelay", "bxgateway_internal"],
+            default_logger_names=["bxcommon", "bxgateway", "bxrelay", "bxgateway_internal", "bxapi"],
             log_level_overrides=opts.log_level_overrides,
             enable_fluent_logger=opts.log_fluentd_enable,
             fluentd_host=opts.log_fluentd_host,

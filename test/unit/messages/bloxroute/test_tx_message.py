@@ -15,11 +15,20 @@ class TxMessageTest(AbstractTestCase):
             transaction_flag=TransactionFlag.PAID_TX
         )
         tx_message.set_transaction_flag(
-            TransactionFlag.PAID_TX | TransactionFlag.CEN_ENABLED
+            TransactionFlag.PAID_TX
+            | TransactionFlag.CEN_ENABLED
+            | TransactionFlag.LOCAL_REGION
+            | TransactionFlag.TBD_2
         )
         reserialized_message = self._serialize_deserialize_message(tx_message)
         self.assertTrue(
             TransactionFlag.CEN_ENABLED in reserialized_message.transaction_flag()
+        )
+        self.assertTrue(
+            TransactionFlag.LOCAL_REGION in reserialized_message.transaction_flag()
+        )
+        self.assertTrue(
+            TransactionFlag.TBD_2 in reserialized_message.transaction_flag()
         )
 
     def _serialize_deserialize_message(

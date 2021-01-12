@@ -13,8 +13,13 @@ logger = logging.get_logger(__name__)
 class EthTransactionFeedEntry:
     tx_hash: str
     tx_contents: Dict[str, Any]
+    local_region: bool
 
-    def __init__(self, tx_hash: Sha256Hash, tx_contents: Union[memoryview, Dict[str, Any]]) -> None:
+    def __init__(
+        self, tx_hash: Sha256Hash,
+        tx_contents: Union[memoryview, Dict[str, Any]],
+        local_region: bool
+    ) -> None:
         self.tx_hash = f"0x{str(tx_hash)}"
 
         try:
@@ -37,9 +42,12 @@ class EthTransactionFeedEntry:
             )
             raise e
 
+        self.local_region = local_region
+
     def __eq__(self, other) -> bool:
         return (
             isinstance(other, EthTransactionFeedEntry)
             and other.tx_hash == self.tx_hash
             and other.tx_contents == self.tx_contents
+            and other.local_region == self.local_region
         )

@@ -185,7 +185,11 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
             notification = await self.subscription_manager.get_next_subscription_notification_for_id(
                 subscription_id
             )
-            callback(notification)
+            try:
+                callback(notification)
+            # pylint: disable=broad-except
+            except Exception as e:
+                logger.exception(log_messages.WS_COULD_NOT_PROCESS_NOTIFICATION, e)
 
     async def receive(self) -> None:
         # TODO: preferably this would be an infinite loop that waits on

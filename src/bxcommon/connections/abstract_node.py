@@ -30,6 +30,7 @@ from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
 from bxcommon.services.threaded_request_service import ThreadedRequestService
 from bxcommon.services.transaction_service import TransactionService
+from bxcommon.storage.serialized_message_cache import SerializedMessageCache
 from bxcommon.utils import memory_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue, AlarmId
 from bxcommon.utils.blockchain_utils import bdn_tx_to_bx_tx
@@ -145,6 +146,8 @@ class AbstractNode:
         self._last_responsiveness_check_log_time = time.time()
         self._last_responsiveness_check_details = {}
         self.gc_logging_enabled = False
+        self.serialized_message_cache = SerializedMessageCache(self.alarm_queue)
+
         self.alarm_queue.register_alarm(constants.RESPONSIVENESS_CHECK_INTERVAL_S, self._responsiveness_check_log)
 
     def get_sdn_address(self):
@@ -634,6 +637,9 @@ class AbstractNode:
         node_privileges = extensions_factory.get_node_privileges(cert)
         return AuthenticatedPeerInfo(connection_type, peer_id, account_id, node_privileges)
 
+    def _should_log_closed_connection(self, _connection: AbstractConnection) -> bool:
+        return True
+
     def _destroy_conn(self, conn: AbstractConnection):
         """
         Clean up the associated connection and update all data structures tracking it.
@@ -647,7 +653,9 @@ class AbstractNode:
 
         :param conn connection to destroy
         """
-        self.log_closed_connection(conn)
+
+        if self._should_log_closed_connection(conn):
+            self.log_closed_connection(conn)
 
         should_retry = SocketConnectionStates.DO_NOT_RETRY not in conn.socket_connection.state
 

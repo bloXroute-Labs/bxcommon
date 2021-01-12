@@ -16,20 +16,24 @@ logger = logging.get_logger(__name__)
 class RawTransactionFeedEntry:
     tx_hash: str
     tx_contents: str
+    local_region: bool
 
     def __init__(
         self,
         tx_hash: Sha256Hash,
-        tx_contents: memoryview
+        tx_contents: memoryview,
+        local_region: bool
     ) -> None:
         self.tx_hash = str(tx_hash)
         self.tx_contents = convert.bytes_to_hex(tx_contents)
+        self.local_region = local_region
 
     def __eq__(self, other) -> bool:
         return (
             isinstance(other, RawTransactionFeedEntry)
             and other.tx_hash == self.tx_hash
             and other.tx_contents == self.tx_contents
+            and other.local_region == self.local_region
         )
 
 
@@ -37,11 +41,12 @@ class RawTransaction(NamedTuple):
     tx_hash: Sha256Hash
     tx_contents: memoryview
     source: FeedSource
+    local_region: bool
 
 
 class NewTransactionFeed(Feed[RawTransactionFeedEntry, RawTransaction]):
     NAME = rpc_constants.NEW_TRANSACTION_FEED_NAME
-    FIELDS = ["tx_hash", "tx_contents"]
+    FIELDS = ["tx_hash", "tx_contents", "local_region"]
     ALL_FIELDS = FIELDS
 
     def __init__(self, network_num: int = constants.ALL_NETWORK_NUM,) -> None:
@@ -59,7 +64,9 @@ class NewTransactionFeed(Feed[RawTransactionFeedEntry, RawTransaction]):
         return super().subscribe(options)
 
     def serialize(self, raw_message: RawTransaction) -> RawTransactionFeedEntry:
-        return RawTransactionFeedEntry(raw_message.tx_hash, raw_message.tx_contents)
+        return RawTransactionFeedEntry(
+            raw_message.tx_hash, raw_message.tx_contents, raw_message.local_region
+        )
 
     # pylint: disable=unused-argument
     def should_publish_message_to_subscriber(
