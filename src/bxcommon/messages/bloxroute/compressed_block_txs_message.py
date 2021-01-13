@@ -46,12 +46,7 @@ class CompressedBlockTxsMessage(AbstractBloxrouteMessage):
             assert block_hash is not None
             assert txs is not None
             buf = self._serialize(network_num, block_hash, txs)
-            super().__init__(self.MESSAGE_TYPE, len(buf) - self.HEADER_LENGTH, buf)
-        else:
-            self.buf = buf
-            self._memoryview = memoryview(self.buf)
-            self._payload_len = None
-            self._payload = None
+        super().__init__(self.MESSAGE_TYPE, len(buf) - self.HEADER_LENGTH, buf)
 
         self._txs = None
         self._txs_count = None

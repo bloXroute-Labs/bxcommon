@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import TypeVar, cast, Generic, List, Any
 
 from bxcommon import constants
-from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.bloxroute import protocol_version
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.ack_message import AckMessage
@@ -36,23 +35,23 @@ from bxcommon.test_utils import helpers
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.utils import nonce_generator
 
-M1 = TypeVar("M1", bound=AbstractMessage)
-M2 = TypeVar("M2", bound=AbstractMessage)
-M3 = TypeVar("M3", bound=AbstractMessage)
-M4 = TypeVar("M4", bound=AbstractMessage)
-M5 = TypeVar("M5", bound=AbstractMessage)
-M6 = TypeVar("M6", bound=AbstractMessage)
-M7 = TypeVar("M7", bound=AbstractMessage)
-M8 = TypeVar("M8", bound=AbstractMessage)
-M9 = TypeVar("M9", bound=AbstractMessage)
-M10 = TypeVar("M10", bound=AbstractMessage)
-M11 = TypeVar("M11", bound=AbstractMessage)
-M12 = TypeVar("M12", bound=AbstractMessage)
-M13 = TypeVar("M13", bound=AbstractMessage)
-M14 = TypeVar("M14", bound=AbstractMessage)
-M15 = TypeVar("M15", bound=AbstractMessage)
-M16 = TypeVar("M16", bound=AbstractMessage)
-M17 = TypeVar("M17", bound=AbstractMessage)
+M1 = TypeVar("M1", bound=AbstractBloxrouteMessage)
+M2 = TypeVar("M2", bound=AbstractBloxrouteMessage)
+M3 = TypeVar("M3", bound=AbstractBloxrouteMessage)
+M4 = TypeVar("M4", bound=AbstractBloxrouteMessage)
+M5 = TypeVar("M5", bound=AbstractBloxrouteMessage)
+M6 = TypeVar("M6", bound=AbstractBloxrouteMessage)
+M7 = TypeVar("M7", bound=AbstractBloxrouteMessage)
+M8 = TypeVar("M8", bound=AbstractBloxrouteMessage)
+M9 = TypeVar("M9", bound=AbstractBloxrouteMessage)
+M10 = TypeVar("M10", bound=AbstractBloxrouteMessage)
+M11 = TypeVar("M11", bound=AbstractBloxrouteMessage)
+M12 = TypeVar("M12", bound=AbstractBloxrouteMessage)
+M13 = TypeVar("M13", bound=AbstractBloxrouteMessage)
+M14 = TypeVar("M14", bound=AbstractBloxrouteMessage)
+M15 = TypeVar("M15", bound=AbstractBloxrouteMessage)
+M16 = TypeVar("M16", bound=AbstractBloxrouteMessage)
+M17 = TypeVar("M17", bound=AbstractBloxrouteMessage)
 
 
 # pylint: disable=too-many-public-methods
@@ -756,8 +755,8 @@ class AbstractBloxrouteVersionManagerTest(
 
     def assert_attributes_equal(
         self,
-        original_message: AbstractMessage,
-        converted_message: AbstractMessage,
+        original_message: AbstractBloxrouteMessage,
+        converted_message: AbstractBloxrouteMessage,
         attributes: List[str],
     ):
         for attribute in attributes:
@@ -769,7 +768,7 @@ class AbstractBloxrouteVersionManagerTest(
 
     # noinspection PyUnresolvedReferences
     def compare_current_to_old(
-        self, converted_old_message: AbstractMessage, original_old_message: AbstractMessage,
+        self, converted_old_message: AbstractBloxrouteMessage, original_old_message: AbstractBloxrouteMessage,
     ):
         """
         This method is run on every message comparison, when comparing
@@ -782,16 +781,13 @@ class AbstractBloxrouteVersionManagerTest(
             converted_old_message.rawbytes()[: constants.STARTING_SEQUENCE_BYTES_LEN],
         )
         self.assertEqual(
-            # pyre-fixme[16]: `AbstractMessage` has no attribute `msg_type`.
             original_old_message.msg_type(), converted_old_message.msg_type(),
         )
         self.assertEqual(
-            # pyre-fixme[16]: `AbstractMessage` has no attribute `payload_len`.
             original_old_message.payload_len(),
             converted_old_message.payload_len(),
         )
         self.assertEqual(
-            # pyre-fixme[16]: `AbstractMessage` has no attribute `get_control_flags`.
             original_old_message.get_control_flags(),
             converted_old_message.get_control_flags(),
         )
@@ -823,8 +819,8 @@ class AbstractBloxrouteVersionManagerTest(
         )
 
     def _convert_to_older_version(
-        self, current_version_message: AbstractMessage, old_version_message: AbstractMessage,
-    ) -> AbstractMessage:
+        self, current_version_message: AbstractBloxrouteMessage, old_version_message: AbstractBloxrouteMessage,
+    ) -> AbstractBloxrouteMessage:
         current_to_old_message = bloxroute_version_manager.convert_message_to_older_version(
             self.version_to_test(), current_version_message
         )
@@ -833,16 +829,16 @@ class AbstractBloxrouteVersionManagerTest(
 
     def _convert_to_current_version(
         self,
-        old_version_message: AbstractMessage,
+        old_version_message: AbstractBloxrouteMessage,
         current_version_message: AbstractBloxrouteMessage,
-    ) -> AbstractMessage:
+    ) -> AbstractBloxrouteMessage:
         old_to_current_message = bloxroute_version_manager.convert_message_from_older_version(
             self.version_to_test(), old_version_message
         )
         self.compare_old_to_current(old_to_current_message, current_version_message)
         return old_to_current_message
 
-    def _invoke_and_get(self, message: AbstractMessage, attribute: str) -> Any:
+    def _invoke_and_get(self, message: AbstractBloxrouteMessage, attribute: str) -> Any:
         if not hasattr(message, attribute):
             raise ValueError(f"{attribute} does not exist on object: {message}")
 

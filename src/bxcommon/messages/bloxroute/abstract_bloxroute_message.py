@@ -1,3 +1,4 @@
+from typing import Dict, Any
 from bxcommon import constants
 from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
 from bxcommon.messages.bloxroute.bloxroute_message_control_flags import BloxrouteMessageControlFlags
@@ -13,6 +14,8 @@ class AbstractBloxrouteMessage(AbstractInternalMessage):
     HEADER_LENGTH = constants.STARTING_SEQUENCE_BYTES_LEN + constants.BX_HDR_COMMON_OFF
     STARTING_BYTES_LEN = constants.STARTING_SEQUENCE_BYTES_LEN
 
+    converted_message: Dict[int, Any]
+
     def __init__(self, msg_type: bytes, payload_len: int, buf: bytearray) -> None:
 
         super().__init__(msg_type=msg_type, payload_len=payload_len, buf=buf)
@@ -21,6 +24,7 @@ class AbstractBloxrouteMessage(AbstractInternalMessage):
 
         # Control flag is set to TRUE by default
         self.set_control_flag(BloxrouteMessageControlFlags.VALID)
+        self.converted_message = {}
 
     def get_control_flags(self) -> int:
         """
