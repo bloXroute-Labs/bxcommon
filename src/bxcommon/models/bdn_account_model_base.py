@@ -39,7 +39,7 @@ class AccountTemplate:
     new_block_streaming: Optional[BdnFeedServiceModelConfigBase] = None
     new_pending_transaction_streaming: Optional[BdnFeedServiceModelConfigBase] = None
     transaction_state_feed: Optional[BdnFeedServiceModelConfigBase] = None
-    on_block_feed: Optional[BdnBasicServiceModel] = None
+    on_block_feed: Optional[BdnFeedServiceModelConfigBase] = None
     transaction_receipts_feed: Optional[BdnFeedServiceModelConfigBase] = None
     private_relays: Optional[BdnPrivateRelayServiceModelConfigBase] = None
 
