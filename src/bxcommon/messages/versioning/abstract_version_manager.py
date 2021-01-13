@@ -3,6 +3,8 @@ from abc import ABCMeta
 
 from bxcommon import constants
 from bxcommon.constants import VERSION_NUM_LEN
+from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
+from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.bloxroute.version_message import VersionMessage
 from bxcommon.messages.versioning.nonversion_message_error import NonVersionMessageError
 from bxcommon.utils.buffers.input_buffer import InputBuffer
@@ -42,7 +44,7 @@ class AbstractVersionManager:
 
         return self.protocol_to_factory_mapping[protocol_version]
 
-    def convert_message_to_older_version(self, convert_to_version, msg):
+    def convert_message_to_older_version(self, convert_to_version: int, msg: AbstractBloxrouteMessage):
         """
         Converts message from current version to provided version
 
@@ -59,8 +61,13 @@ class AbstractVersionManager:
         if convert_to_version not in self.protocol_to_converter_factory_mapping:
             raise ValueError("Conversion for version {} is not supported".format(convert_to_version))
 
-        msg_converter = self._get_message_converter(convert_to_version, msg.msg_type())
-        return msg_converter.convert_to_older_version(msg)
+        if isinstance(msg, TxMessage) and convert_to_version in msg.converted_message:
+            converted_msg = msg.converted_message[convert_to_version]
+        else:
+            msg_converter = self._get_message_converter(convert_to_version, msg.msg_type())
+            converted_msg = msg_converter.convert_to_older_version(msg)
+            msg.converted_message[convert_to_version] = converted_msg
+        return converted_msg
 
     def convert_message_from_older_version(self, convert_from_version, msg):
         """
