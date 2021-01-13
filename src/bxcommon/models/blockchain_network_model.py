@@ -50,3 +50,5 @@ class BlockchainNetworkModel:
     mempool_expected_transactions_count: int = 0
     send_compressed_txs_after_block: bool = False
     log_compressed_block_debug_info_on_relay: bool = True
+
+    enable_recording_tx_detection_time_location: bool = True
