@@ -12,8 +12,8 @@ from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
 class MockSocketConnection(SocketConnectionProtocol):
     def __init__(
         self,
-        file_no=1,
-        node=None,
+        file_no,
+        node,
         default_socket_opts=None,
         send_bytes=False,
         ip_address: str = "127.0.0.1",
@@ -21,14 +21,14 @@ class MockSocketConnection(SocketConnectionProtocol):
         is_ssl: bool = False,
         authenticated_peer_info: AuthenticatedPeerInfo = AuthenticatedPeerInfo(
             ConnectionType.EXTERNAL_GATEWAY, "", ""
-        )
+        ),
     ):
-        super(MockSocketConnection, self).__init__(node, IpEndpoint(ip_address, port), is_ssl=is_ssl)
+        super(MockSocketConnection, self).__init__(
+            node, IpEndpoint(ip_address, port), is_ssl=is_ssl
+        )
         self.transport = MagicMock()
         if default_socket_opts is None:
-            default_socket_opts = {
-                (socket.SOL_SOCKET, socket.SO_SNDBUF): 4096
-            }
+            default_socket_opts = {(socket.SOL_SOCKET, socket.SO_SNDBUF): 4096}
 
         self.file_no = file_no
         # TODO: temporary fix for some situations where, see https://bloxroute.atlassian.net/browse/BX-1153

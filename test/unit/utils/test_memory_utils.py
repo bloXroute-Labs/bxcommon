@@ -113,7 +113,8 @@ class MemoryUtilsTest(AbstractTestCase):
 
     def test_add_special_objects(self):
         node1 = MockNode(get_common_opts(1001, external_ip="128.128.128.128"))
-        conn1 = MockConnection(MockSocketConnection(1, ip_address="123.123.123.123", port=1000), node1)
+        conn1 = MockConnection(
+            MockSocketConnection(1, node1, ip_address="123.123.123.123", port=1000), node1)
         conn1.inputbuf.add_bytes(bytearray(b"0000" * 10))
         conn1.outputbuf.prepend_msgbytes(bytearray(b"1111" * 100))
         total_special_size, ids = memory_utils.get_special_size(conn1)
