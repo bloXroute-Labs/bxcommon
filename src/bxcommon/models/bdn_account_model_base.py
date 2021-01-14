@@ -42,7 +42,7 @@ class AccountTemplate:
     on_block_feed: Optional[BdnFeedServiceModelConfigBase] = None
     transaction_receipts_feed: Optional[BdnFeedServiceModelConfigBase] = None
     private_relays: Optional[BdnPrivateRelayServiceModelConfigBase] = None
-    private_transactions: Optional[BdnQuotaServiceModelConfigBase] = None
+    private_transaction: Optional[BdnQuotaServiceModelConfigBase] = None
 
 
 @dataclass
