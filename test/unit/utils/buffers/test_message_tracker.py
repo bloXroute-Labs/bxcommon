@@ -16,7 +16,7 @@ class MessageTrackerTest(AbstractTestCase):
             helpers.get_common_opts(1001, external_ip="128.128.128.128")
         )
         self.tracker = MessageTracker(
-            MockConnection(MockSocketConnection(), self.node)
+            MockConnection(MockSocketConnection(1, self.node), self.node)
         )
         self.output_buffer = OutputBuffer(enable_buffering=True)
 

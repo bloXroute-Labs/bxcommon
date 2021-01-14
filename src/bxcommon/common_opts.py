@@ -100,6 +100,7 @@ class CommonOpts:
 
     # set after node runner
     has_fully_updated_tx_service: bool
+    receive_buffer_size: int
 
     # hard coded configuration values
     stats_calculate_actual_size: bool
@@ -129,6 +130,7 @@ class CommonOpts:
         opts.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
         opts.enable_tcp_quickack = True
         opts.using_private_ip_connection = False
+        opts.receive_buffer_size = constants.RECV_BUFSIZE
 
         return opts
 

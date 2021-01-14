@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Optional
 
 from cryptography.x509 import Certificate
 
-from bxcommon import constants
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.network.socket_connection_state import SocketConnectionState, SocketConnectionStates
@@ -35,7 +34,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
     is_ssl: bool
     _node: "AbstractNode"
     _should_retry: bool
-    _receive_buf: bytearray = bytearray(constants.RECV_BUFSIZE)
+    _receive_buf: bytearray
 
     def __init__(
         self,
@@ -58,6 +57,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         self.is_ssl = is_ssl
         self._should_retry = self.direction == NetworkDirection.OUTBOUND
         self._initial_bytes = None
+        self._receive_buf = bytearray(node.opts.receive_buffer_size)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} <{self.endpoint}, {self.direction.name}>"
