@@ -42,7 +42,7 @@ from bxcommon.utils.stats.node_statistics_service import node_stats_service
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxcommon.utils.transaction_short_id_buckets import TransactionShortIdBuckets
-from bxutils import log_messages
+from bxutils import log_messages, utils
 from bxutils import logging
 from bxutils.exceptions.connection_authentication_error import \
     ConnectionAuthenticationError
@@ -732,9 +732,8 @@ class AbstractNode:
         """
         Returns Fibonnaci(n), where n is the number of retry attempts + 1, up to max of Fibonacci(8) == 13.
         """
-        golden_ratio = (1 + 5 ** .5) / 2
         sequence_number = min(self.num_retries_by_ip[(ip, port)] + 1, constants.MAX_CONNECT_TIMEOUT_INCREASE)
-        return int((golden_ratio ** sequence_number - (1 - golden_ratio) ** sequence_number) / 5 ** .5)
+        return utils.fibonacci(sequence_number)
 
     def _retry_init_client_socket(self, ip: str, port: int, connection_type: ConnectionType):
         self.num_retries_by_ip[(ip, port)] += 1
