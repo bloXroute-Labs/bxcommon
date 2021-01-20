@@ -3,10 +3,12 @@ from abc import ABCMeta
 from typing import Optional, Dict, cast
 
 from bxcommon import constants
-from bxcommon.connections.abstract_connection import AbstractConnection, Node
+from bxcommon.connections.abstract_connection import AbstractConnection, Node, \
+    ConnectionMessagePreview
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bloxroute_message_factory import bloxroute_message_factory
 from bxcommon.messages.bloxroute.bloxroute_message_validator import BloxrouteMessageValidator
@@ -42,8 +44,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.network_num = node.network_num
         self.version_manager = bloxroute_version_manager
 
-        # Setting default protocol version and message factory; override when hello message received
-        self.message_factory = bloxroute_message_factory
+        # Setting default protocol version; override when hello message received
         self.protocol_version = self.version_manager.CURRENT_PROTOCOL_VERSION
 
         self.pong_message = PongMessage()
@@ -63,6 +64,9 @@ class InternalNodeConnection(AbstractConnection[Node]):
         self.message_validator = BloxrouteMessageValidator(None, self.protocol_version)
         self.tx_sync_service = TxSyncService(self)
         self.inbound_peer_latency: float = time.time()
+
+    def connection_message_factory(self) -> AbstractMessageFactory:
+        return bloxroute_message_factory
 
     def ping_message(self) -> AbstractMessage:
         nonce = nonce_generator.get_nonce()
@@ -116,11 +120,11 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
         return True
 
-    def pre_process_msg(self):
+    def pre_process_msg(self) -> ConnectionMessagePreview:
         success = self.set_protocol_version_and_message_factory()
 
         if not success:
-            return False, None, None
+            return ConnectionMessagePreview(False, True, None, None)
 
         return super(InternalNodeConnection, self).pre_process_msg()
 
@@ -135,7 +139,7 @@ class InternalNodeConnection(AbstractConnection[Node]):
 
         super(InternalNodeConnection, self).enqueue_msg(versioned_message, prepend)
 
-    def pop_next_message(self, payload_len):
+    def pop_next_message(self, payload_len: int) -> AbstractMessage:
         msg = super(InternalNodeConnection, self).pop_next_message(payload_len)
 
         if msg is None or self.protocol_version >= self.version_manager.CURRENT_PROTOCOL_VERSION:

@@ -93,9 +93,11 @@ class _BloxrouteMessageFactory(AbstractMessageFactory):
         :param input_buffer
         :return: is full header, message hash, network number, source id, payload length
         """
-        # -1 for control flag length
-        broadcast_header_length = self.base_message_type.HEADER_LENGTH + AbstractBroadcastMessage.PAYLOAD_LENGTH - \
-                                  constants.CONTROL_FLAGS_LEN
+        broadcast_header_length = (
+            self.base_message_type.HEADER_LENGTH
+            + AbstractBroadcastMessage.PAYLOAD_LENGTH
+            - constants.CONTROL_FLAGS_LEN
+        )
         is_full_header = input_buffer.length >= broadcast_header_length
         if not is_full_header:
             return BroadcastMessagePreview(False, None, None, None, None, None, None)

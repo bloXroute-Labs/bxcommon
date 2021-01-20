@@ -3,7 +3,7 @@ import time
 from abc import ABCMeta, abstractmethod
 from asyncio import Future
 from collections import defaultdict
-from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Optional, Union
+from typing import ClassVar, Generic, TypeVar, TYPE_CHECKING, Optional, Union, NamedTuple
 
 from bxcommon import constants
 from bxcommon.connections.connection_state import ConnectionState
@@ -45,6 +45,13 @@ msg_handling_logger = logging.get_logger(LogRecordType.MessageHandlingTroublesho
 Node = TypeVar("Node", bound="AbstractNode")
 
 
+class ConnectionMessagePreview(NamedTuple):
+    is_full_message: bool
+    should_process_message: bool
+    msg_type: Optional[bytes]
+    payload_len: Optional[int]
+
+
 # pylint: disable=too-many-public-methods
 class AbstractConnection(Generic[Node]):
     __metaclass__ = ABCMeta
@@ -52,6 +59,7 @@ class AbstractConnection(Generic[Node]):
     CONNECTION_TYPE: ClassVar[ConnectionType] = ConnectionType.NONE
     node: Node
     message_tracker: Optional[MessageTracker]
+    message_factory: AbstractMessageFactory
     format_connection_desc: str
     connection_repr: str
 
@@ -89,7 +97,7 @@ class AbstractConnection(Generic[Node]):
 
         self.hello_messages = []
         self.header_size = 0
-        self.message_factory: Optional[AbstractMessageFactory] = None
+        self.message_factory = self.connection_message_factory()
         self.message_handlers = {}
 
         self.log_throughput = True
@@ -138,6 +146,10 @@ class AbstractConnection(Generic[Node]):
         This function may have side-effects; only call this if the ping message will
         be used.
         """
+
+    @abstractmethod
+    def connection_message_factory(self) -> AbstractMessageFactory:
+        pass
 
     def log_trace(self, message, *args, **kwargs):
         if logger.isEnabledFor(LogLevel.TRACE):
@@ -261,11 +273,12 @@ class AbstractConnection(Generic[Node]):
 
         self.socket_connection.send()
 
-    def pre_process_msg(self):
+    def pre_process_msg(self) -> ConnectionMessagePreview:
         is_full_msg, msg_type, payload_len = self.message_factory.get_message_header_preview_from_input_buffer(
-            self.inputbuf)
+            self.inputbuf
+        )
 
-        return is_full_msg, msg_type, payload_len
+        return ConnectionMessagePreview(is_full_msg, True, msg_type, payload_len)
 
     def process_msg_type(self, message_type, is_full_msg, payload_len):
         """
@@ -296,7 +309,7 @@ class AbstractConnection(Generic[Node]):
         while True:
             input_buffer_len_before = self.inputbuf.length
             is_full_msg = False
-            payload_len = 0
+            payload_len = None
             msg = None
             msg_type = None
 
@@ -305,9 +318,19 @@ class AbstractConnection(Generic[Node]):
                 if not self.is_alive():
                     return
 
-                is_full_msg, msg_type, payload_len = self.pre_process_msg()
+                is_full_msg, should_process, msg_type, payload_len = self.pre_process_msg()
 
-                self.message_validator.validate(is_full_msg, msg_type, self.header_size, payload_len, self.inputbuf)
+                if not should_process and is_full_msg:
+                    self.pop_next_bytes(payload_len)
+                    continue
+
+                self.message_validator.validate(
+                    is_full_msg,
+                    msg_type,
+                    self.header_size,
+                    payload_len,
+                    self.inputbuf
+                )
 
                 self.process_msg_type(msg_type, is_full_msg, payload_len)
 
@@ -324,21 +347,31 @@ class AbstractConnection(Generic[Node]):
                     continue
 
                 # Full messages must be one of the handshake messages if the connection isn't established yet.
-                if ConnectionState.ESTABLISHED not in self.state \
-                    and msg_type not in self.hello_messages:
+                if (
+                    ConnectionState.ESTABLISHED not in self.state
+                    and msg_type not in self.hello_messages
+                ):
                     self.log_warning(log_messages.UNEXPECTED_MESSAGE, msg_type)
                     self.mark_for_close()
                     return
 
                 if self.log_throughput:
-                    hooks.add_throughput_event(NetworkDirection.INBOUND, msg_type, len(msg.rawbytes()), self.peer_desc,
-                                               self.peer_id)
+                    hooks.add_throughput_event(
+                        NetworkDirection.INBOUND,
+                        msg_type,
+                        len(msg.rawbytes()),
+                        self.peer_desc,
+                        self.peer_id
+                    )
 
                 if not logger.isEnabledFor(msg.log_level()) and logger.isEnabledFor(LogLevel.INFO):
                     self._debug_message_tracker[msg_type] += 1
                 elif len(self._debug_message_tracker) > 0:
-                    self.log_debug("Processed the following messages types: {} over {:.2f} seconds.",
-                                   self._debug_message_tracker, time.time() - self._last_debug_message_log_time)
+                    self.log_debug(
+                        "Processed the following messages types: {} over {:.2f} seconds.",
+                        self._debug_message_tracker,
+                        time.time() - self._last_debug_message_log_time
+                    )
                     self._debug_message_tracker.clear()
                     self._last_debug_message_log_time = time.time()
 
@@ -349,11 +382,15 @@ class AbstractConnection(Generic[Node]):
 
                     handler_start = time.time()
                     msg_handler(msg)
-                    performance_utils.log_operation_duration(msg_handling_logger,
-                                                             "Single message handler",
-                                                             handler_start,
-                                                             constants.MSG_HANDLERS_CYCLE_DURATION_WARN_THRESHOLD_S,
-                                                             connection=self, handler=msg_handler, message=msg)
+                    performance_utils.log_operation_duration(
+                        msg_handling_logger,
+                        "Single message handler",
+                        handler_start,
+                        constants.MSG_HANDLERS_CYCLE_DURATION_WARN_THRESHOLD_S,
+                        connection=self,
+                        handler=msg_handler,
+                        message=msg
+                    )
                 messages_processed[msg_type] += 1
 
             # TODO: Investigate possible solutions to recover from PayloadLenError errors
@@ -364,14 +401,18 @@ class AbstractConnection(Generic[Node]):
 
             except MemoryError as e:
                 self.log_error(log_messages.OUT_OF_MEMORY, e, exc_info=True)
-                self.log_debug("Failed message bytes: {}",
-                               self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
+                self.log_debug(
+                    "Failed message bytes: {}",
+                    self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len)
+                )
                 raise
 
             except UnauthorizedMessageError as e:
                 self.log_error(log_messages.UNAUTHORIZED_MESSAGE, e.msg.MESSAGE_TYPE, self.peer_desc)
-                self.log_debug("Failed message bytes: {}",
-                               self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len))
+                self.log_debug(
+                    "Failed message bytes: {}",
+                    self._get_last_msg_bytes(msg, input_buffer_len_before, payload_len)
+                )
 
                 # give connection a chance to restore its state and get ready to process next message
                 self.clean_up_current_msg(payload_len, input_buffer_len_before == self.inputbuf.length)
@@ -455,19 +496,23 @@ class AbstractConnection(Generic[Node]):
         logger.trace("DONE PROCESSING from {}. Bytes processed: {}. Messages processed: {}. Duration: {}",
                      self, total_bytes_processed, messages_processed, stats_format.duration(duration_ms))
 
-
-    def pop_next_message(self, payload_len):
+    def pop_next_message(self, payload_len: int) -> AbstractMessage:
         """
-        Pop the next message off of the buffer given the message length.
-        Preserve invariant of self.inputbuf always containing the start of a valid message.
+        Pop the next full message off of the buffer given the message length.
+        Preserves invariant of self.inputbuf always containing the start of a
+        valid message. The caller of this function is responsible for ensuring
+        there is a valid message on the buffer.
 
         :param payload_len: length of payload
         :return: message object
         """
+        return self.message_factory.create_message_from_buffer(
+            self.pop_next_bytes(payload_len)
+        )
 
+    def pop_next_bytes(self, payload_len: int) -> Union[memoryview, bytearray, bytes]:
         msg_len = self.message_factory.base_message_type.HEADER_LENGTH + payload_len
-        msg_contents = self.inputbuf.remove_bytes(msg_len)
-        return self.message_factory.create_message_from_buffer(msg_contents)
+        return self.inputbuf.remove_bytes(msg_len)
 
     def advance_bytes_on_buffer(self, buf, bytes_written):
         hooks.add_throughput_event(NetworkDirection.OUTBOUND, None, bytes_written, self.peer_desc, self.peer_id)

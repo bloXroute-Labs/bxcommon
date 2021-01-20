@@ -21,6 +21,10 @@ class LimitedSizeSet(Generic[T]):
     def __contains__(self, item: T) -> bool:
         return item in self.contents
 
+    def __iter__(self):
+        for item in self.contents:
+            yield item
+
     def remove(self, value: T) -> None:
         """
         Deletion is fairly expensive. Generally, there is no need to delete
