@@ -74,3 +74,4 @@ class TransactionStatEventType:
     TX_FROM_BDN_IGNORE_LOW_GAS_PRICE = StatEventTypeSettings("TxFromBdnIgnoreLowGasPrice")
 
     TX_BLOCKCHAIN_STATUS = StatEventTypeSettings("TxBlockchainStatus")
+    TX_REUSE_SENDER_NONCE = StatEventTypeSettings("TxReuseSenderNonce")
