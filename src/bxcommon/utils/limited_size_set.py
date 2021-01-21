@@ -37,12 +37,12 @@ class LimitedSizeSet(Generic[T]):
         return len(self.contents)
 
     def add(self, value: T) -> None:
-        self._make_room_for_new_item()
-
         self.contents.add(value)
-        self._item_tracker.append(value)
+        if len(self.contents) != len(self._item_tracker):
+            self._make_room_for_new_item()
+            self._item_tracker.append(value)
 
     def _make_room_for_new_item(self) -> None:
-        while len(self._item_tracker) >= self._max_size:
+        while len(self.contents) > self._max_size:
             key = self._item_tracker.popleft()
             self.contents.remove(key)
