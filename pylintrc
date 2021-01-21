@@ -273,7 +273,7 @@ argument-name-hint=[a-z_][a-z0-9_]{2,35}$
 class-attribute-rgx=([A-Za-z_][A-Za-z0-9_]{1,45}|(__.*__))$
 
 # Naming hint for class attribute names
-class-attribute-name-hint=([A-Za-z_][A-Za-z0-9_]{1,45}|(__.*__))$
+class-attribute-name-hint=([A-Za-z_][A-Za-z0-9_]{1,55}|(__.*__))$
 
 # Regular expression matching correct inline iteration names
 inlinevar-rgx=[A-Za-z_][A-Za-z0-9_]*$
