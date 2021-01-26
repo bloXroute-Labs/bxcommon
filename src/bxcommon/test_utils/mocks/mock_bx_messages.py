@@ -7,6 +7,7 @@ from bxcommon.messages.bloxroute.bloxroute_version_manager import bloxroute_vers
 from bxcommon.messages.bloxroute.broadcast_message import BroadcastMessage
 from bxcommon.messages.bloxroute.hello_message import HelloMessage
 from bxcommon.messages.bloxroute.key_message import KeyMessage
+from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.models.broadcast_message_type import BroadcastMessageType
 from bxcommon.test_utils import helpers
 from bxcommon.utils import crypto
@@ -32,3 +33,17 @@ def broadcast_key_pair(short_ids=None, network_num=0):
                                          enc_broadcast_message_bytes)
     key_message = KeyMessage(broadcast_message_hash, network_num, "", key_bytes)
     return broadcast_message, key_message
+
+
+def tx_message(
+    network_num: int = 1,
+    source_id: str = "",
+    short_id: int = constants.NULL_TX_SID
+) -> TxMessage:
+    return TxMessage(
+        helpers.generate_object_hash(),
+        network_num,
+        source_id,
+        short_id,
+        helpers.generate_bytearray(250),
+    )

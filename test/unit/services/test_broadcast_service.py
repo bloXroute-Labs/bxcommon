@@ -38,7 +38,7 @@ class BroadcastServiceTest(AbstractTestCase):
                         connection_type=MockConnection.CONNECTION_TYPE) -> MockConnection:
         conn = MockConnection(MockSocketConnection(fileno, self.node, ip_address=LOCALHOST, port=port), self.node)
         conn.network_num = network_num
-        conn.state = ConnectionState.ESTABLISHED
+        conn.on_connection_established()
         conn.CONNECTION_TYPE = connection_type
 
         self.connection_pool.add(fileno, LOCALHOST, port, conn)

@@ -40,6 +40,7 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
 
         self.is_persistent = False
         self.state = ConnectionState.CONNECTING
+        self.established = False
 
         # Number of bad messages I've received in a row.
         self.num_bad_messages = 0
@@ -86,9 +87,7 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
         self,
         msg_bytes: Union[bytearray, memoryview],
         prepend: bool = False,
-        full_message: Optional[AbstractMessage] = None
     ):
-
         if not self.is_alive():
             return
 

@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABC
-from typing import Optional, List, Iterable, TypeVar, Generic
+from typing import Optional, List, Iterable, TypeVar, Generic, Tuple
 
 from bxcommon.connections.abstract_connection import AbstractConnection
 from bxcommon.connections.connection_pool import ConnectionPool
@@ -13,16 +13,16 @@ logger = logging.get_logger(__name__)
 class BroadcastOptions:
     broadcasting_connection: Optional[AbstractConnection]
     prepend_to_queue: bool
-    connection_types: Iterable[ConnectionType]
+    connection_types: Tuple[ConnectionType, ...]
 
     def __init__(
         self,
         broadcast_connection: Optional[AbstractConnection] = None,
         prepend_to_queue: bool = False,
-        connection_types: Optional[Iterable[ConnectionType]] = None
+        connection_types: Optional[Tuple[ConnectionType, ...]] = None
     ) -> None:
         if connection_types is None:
-            connection_types = []
+            connection_types = tuple()
 
         self.broadcasting_connection = broadcast_connection
         self.prepend_to_queue = prepend_to_queue

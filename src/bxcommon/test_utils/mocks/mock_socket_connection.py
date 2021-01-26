@@ -41,6 +41,7 @@ class MockSocketConnection(SocketConnectionProtocol):
         self.transport.get_write_buffer_size = MagicMock(return_value=0)
 
         self.authenticated_peer_info = authenticated_peer_info
+        self.initialized = True
 
     def fileno(self) -> int:
         return self.file_no

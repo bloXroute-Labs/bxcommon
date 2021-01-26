@@ -274,7 +274,6 @@ def get_common_opts(
             "dump_removed_short_ids": False,
             "dump_removed_short_ids_path": "",
             "transaction_pool_memory_limit": 200000000,
-            "track_detailed_sent_messages": True,
             "use_extensions": constants.USE_EXTENSION_MODULES,
             "import_extensions": constants.USE_EXTENSION_MODULES,
             "tx_mem_pool_bucket_size": constants.DEFAULT_TX_MEM_POOL_BUCKET_SIZE,

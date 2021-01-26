@@ -65,7 +65,6 @@ class CommonOpts:
     dump_removed_short_ids: bool
     dump_removed_short_ids_path: str
     enable_buffered_send: bool
-    track_detailed_sent_messages: bool
     use_extensions: bool
     import_extensions: bool
     thread_pool_parallelism_degree: int

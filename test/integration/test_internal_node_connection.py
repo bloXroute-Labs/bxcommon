@@ -16,7 +16,7 @@ class InternalNodeConnectionTest(AbstractTestCase):
 
     def setUp(self):
         self.connection = helpers.create_connection(InternalNodeConnection)
-        self.connection.state = self.connection.state | ConnectionState.ESTABLISHED
+        self.connection.on_connection_established()
         self.alarm_queue = AlarmQueue()
         self.connection.node.alarm_queue = self.alarm_queue
 

@@ -24,7 +24,6 @@ from bxcommon.utils import convert, performance_utils
 from bxcommon.utils import memory_utils
 from bxcommon.utils.alarm_queue import AlarmId
 from bxcommon.utils.buffers.input_buffer import InputBuffer
-from bxcommon.utils.buffers.message_tracker import MessageTracker
 from bxcommon.utils.buffers.output_buffer import OutputBuffer
 from bxcommon.utils.stats import hooks, stats_format
 from bxutils import log_messages
@@ -58,10 +57,12 @@ class AbstractConnection(Generic[Node]):
 
     CONNECTION_TYPE: ClassVar[ConnectionType] = ConnectionType.NONE
     node: Node
-    message_tracker: Optional[MessageTracker]
     message_factory: AbstractMessageFactory
     format_connection_desc: str
     connection_repr: str
+
+    # performance critical attribute, has been pulled out of connection state
+    established: bool
 
     def __init__(self, socket_connection: AbstractSocketConnectionProtocol, node: Node) -> None:
         self.socket_connection = socket_connection
@@ -78,15 +79,12 @@ class AbstractConnection(Generic[Node]):
         self.direction = self.socket_connection.direction
         self.from_me = self.direction == NetworkDirection.OUTBOUND
 
-        if node.opts.track_detailed_sent_messages:
-            self.message_tracker = MessageTracker(self)
-        else:
-            self.message_tracker = None
         self.outputbuf = OutputBuffer()
         self.inputbuf = InputBuffer()
         self.node = node
 
         self.state = ConnectionState.CONNECTING
+        self.established = False
 
         # Number of bad messages I've received in a row.
         self.num_bad_messages = 0
@@ -174,20 +172,28 @@ class AbstractConnection(Generic[Node]):
     def is_active(self) -> bool:
         """
         Indicates whether the connection is established and ready for normal messages.
+
+        This function is very frequently called. Avoid doing any sort of complex
+        operations, inline function calls, and avoid flags.
         """
-        return ConnectionState.ESTABLISHED in self.state and self.is_alive()
+        return self.established and self.socket_connection.alive
 
     def is_alive(self) -> bool:
         """
         Indicates whether the connection's socket is alive.
+
+        This function is very frequently called. Avoid doing any sort of complex
+        operations, inline function calls, and avoid flags.
         """
-        return self.socket_connection.is_alive()
+        return self.socket_connection.alive
 
     def on_connection_established(self):
         if not self.is_active():
             self.state |= ConnectionState.HELLO_RECVD
             self.state |= ConnectionState.HELLO_ACKD
             self.state |= ConnectionState.ESTABLISHED
+            self.established = True
+
             self.log_info("Connection established.")
 
             # Reset num_retries when a connection established in order to support resetting the Fibonnaci logic
@@ -222,11 +228,6 @@ class AbstractConnection(Generic[Node]):
     def advance_sent_bytes(self, bytes_sent):
         self.advance_bytes_on_buffer(self.outputbuf, bytes_sent)
 
-    def advance_bytes_written_to_socket(self, bytes_written: int):
-        message_tracker = self.message_tracker
-        if message_tracker:
-            message_tracker.advance_bytes(bytes_written)
-
     def enqueue_msg(self, msg: AbstractMessage, prepend: bool = False):
         """
         Enqueues the contents of a Message instance, msg, to our outputbuf and attempts to send it if the underlying
@@ -236,40 +237,33 @@ class AbstractConnection(Generic[Node]):
         :param prepend: if the message should be bumped to the front of the outputbuf
         """
         self._log_message(msg.log_level(), "Enqueued message: {}", msg)
+        self.enqueue_msg_bytes(msg.rawbytes(), prepend)
 
-        if self.message_tracker:
-            full_message = msg
-        else:
-            full_message = None
-        self.enqueue_msg_bytes(msg.rawbytes(), prepend, full_message)
-
-    def enqueue_msg_bytes(self, msg_bytes: Union[bytearray, memoryview], prepend: bool = False,
-                          full_message: Optional[AbstractMessage] = None):
+    def enqueue_msg_bytes(
+        self,
+        msg_bytes: Union[bytearray, memoryview],
+        prepend: bool = False,
+    ):
         """
         Enqueues the raw bytes of a message, msg_bytes, to our outputbuf and attempts to send it if the
         underlying socket has room in the send buffer.
 
+        This function is very frequently called. Avoid doing any sort of complex
+        operations, inline function calls, and avoid flags.
+
         :param msg_bytes: message bytes
         :param prepend: if the message should be bumped to the front of the outputbuf
-        :param full_message: full message for detailed logging
         """
 
-        if not self.is_alive():
+        if not self.socket_connection.alive:
             return
 
-        size = len(msg_bytes)
-        message_tracker = self.message_tracker
-
-        self.log_trace("Enqueued {} bytes.", size)
+        self.log_trace("Enqueued {} bytes.", len(msg_bytes))
 
         if prepend:
             self.outputbuf.prepend_msgbytes(msg_bytes)
-            if message_tracker:
-                message_tracker.prepend_message(len(msg_bytes), full_message)
         else:
             self.outputbuf.enqueue_msgbytes(msg_bytes)
-            if message_tracker:
-                message_tracker.append_message(len(msg_bytes), full_message)
 
         self.socket_connection.send()
 
@@ -315,7 +309,7 @@ class AbstractConnection(Generic[Node]):
 
             try:
                 # abort message processing if connection has been closed
-                if not self.is_alive():
+                if not self.socket_connection.alive:
                     return
 
                 is_full_msg, should_process, msg_type, payload_len = self.pre_process_msg()
@@ -348,8 +342,7 @@ class AbstractConnection(Generic[Node]):
 
                 # Full messages must be one of the handshake messages if the connection isn't established yet.
                 if (
-                    ConnectionState.ESTABLISHED not in self.state
-                    and msg_type not in self.hello_messages
+                    not self.established and msg_type not in self.hello_messages
                 ):
                     self.log_warning(log_messages.UNEXPECTED_MESSAGE, msg_type)
                     self.mark_for_close()

@@ -32,9 +32,14 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
     can_send: bool
     state: SocketConnectionState
     is_ssl: bool
+
     _node: "AbstractNode"
     _should_retry: bool
     _receive_buf: bytearray
+
+    # performance critical attributes, have been pulled out of state
+    alive: bool
+    initialized: bool
 
     def __init__(
         self,
@@ -59,6 +64,9 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
         self._initial_bytes = None
         self._receive_buf = bytearray(node.opts.receive_buffer_size)
 
+        self.alive = True
+        self.initialized = False
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} <{self.endpoint}, {self.direction.name}>"
 
@@ -77,17 +85,16 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
                 *transport.get_extra_info("peername")
             )
             logger.debug("[{}] - accepted connection.", self)
+
         self._node.on_connection_added(self)
-        self.state = SocketConnectionStates.INITIALIZED
+        self.initialized = True
         self.can_send = True
         self.send()
         logger.debug("[{}] - connection established successfully.", self)
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
-        mark_connection_for_close = (
-            SocketConnectionStates.MARK_FOR_CLOSE not in self.state
-        )
-        self.state |= SocketConnectionStates.MARK_FOR_CLOSE
+        mark_for_close = self.alive
+        self.alive = False
         if not self._should_retry:
             self.state |= SocketConnectionStates.DO_NOT_RETRY
         if exc is not None:
@@ -103,7 +110,7 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
                 self,
                 self._should_retry,
             )
-        self._node.on_connection_closed(self.file_no, mark_connection_for_close)
+        self._node.on_connection_closed(self.file_no, mark_for_close)
 
     def pause_writing(self) -> None:
         self.can_send = False
@@ -145,7 +152,6 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             )
             transport.write(data)
             conn.advance_sent_bytes(bytes_to_send)
-            conn.advance_bytes_written_to_socket(bytes_to_send)
             total_bytes_sent += bytes_to_send
 
         if total_bytes_sent:
@@ -178,18 +184,16 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             conn.peer_desc,
             conn.peer_id
         )
-        conn.advance_bytes_written_to_socket(bytes_to_send)
-
         logger.trace("[{}] - sent {} bytes", self, len_bytes_to_sent)
 
     def pause_reading(self) -> None:
-        if self.is_alive():
+        if self.alive:
             assert self.transport is not None, "Connection is broken!"
             self.state |= SocketConnectionStates.HALT_RECEIVE
             logger.debug("[{}] - paused reading.", self)
 
     def resume_reading(self) -> None:
-        if self.is_alive():
+        if self.alive:
             assert self.transport is not None, "Connection is broken!"
             # pylint bug
             # pylint: disable=invalid-unary-operand-type
@@ -197,9 +201,10 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             logger.debug("[{}] - resumed reading.", self)
 
     def mark_for_close(self, should_retry: bool = True) -> None:
-        if SocketConnectionStates.MARK_FOR_CLOSE in self.state:
+        if not self.alive:
             return
-        self.state |= SocketConnectionStates.MARK_FOR_CLOSE
+
+        self.alive = False
         self._should_retry = should_retry
 
         transport = self.transport
@@ -211,21 +216,21 @@ class AbstractSocketConnectionProtocol(BaseProtocol):
             "[{}] - marked for close, retrying: {}.", self, should_retry
         )
 
-    def is_alive(self) -> bool:
-        return SocketConnectionStates.MARK_FOR_CLOSE not in self.state
-
     def is_receivable(self) -> bool:
         return (
-            self.is_alive()
+            self.alive
             and SocketConnectionStates.HALT_RECEIVE not in self.state
         )
 
     def is_sendable(self) -> bool:
-        return (
-            self.is_alive()
-            and SocketConnectionStates.INITIALIZED in self.state
-            and self.can_send
-        )
+        """
+        Returns if the socket has room on the buffer and can be sent to.
+
+        This function is very frequently called. Avoid doing any sort of complex
+        operations, inline function calls, and avoid flags.
+        :return:
+        """
+        return self.alive and self.initialized and self.can_send
 
     def get_peer_certificate(self) -> Certificate:
         assert self.transport is not None, "Connection is broken!"

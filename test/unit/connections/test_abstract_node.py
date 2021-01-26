@@ -183,7 +183,7 @@ class AbstractNodeTest(AbstractTestCase):
         self.assertIsNone(self.node.dequeue_connection_requests())
 
     def test_connection_timeout_established(self):
-        self.connection.state = ConnectionState.ESTABLISHED
+        self.connection.on_connection_established()
         self.assertEqual(0, self.node._connection_timeout(self.connection))
         self._assert_socket_connected()
 
@@ -288,10 +288,10 @@ class AbstractNodeTest(AbstractTestCase):
         logger_mock.debug.assert_called_once()
 
     def _assert_socket_connected(self):
-        self.assertFalse(SocketConnectionStates.MARK_FOR_CLOSE in self.socket_connection.state)
+        self.assertTrue(self.socket_connection.alive)
 
     def _assert_socket_disconnected(self, should_retry: bool):
-        self.assertTrue(SocketConnectionStates.MARK_FOR_CLOSE in self.socket_connection.state)
+        self.assertFalse(self.socket_connection.alive)
         if should_retry:
             self.assertFalse(SocketConnectionStates.DO_NOT_RETRY in self.socket_connection.state)
         else:
