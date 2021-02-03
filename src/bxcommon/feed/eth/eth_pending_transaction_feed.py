@@ -37,7 +37,7 @@ class EthPendingTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]
         "tx_contents.from",
         "local_region",
     ]
-    FILTERS = {"value", "from", "to", "gas_price"}
+    FILTERS = {"value", "from", "to", "gas_price", "method_id"}
     ALL_FIELDS = ["tx_hash", "tx_contents", "local_region"]
 
     published_transactions: ExpiringSet[Sha256Hash]
@@ -107,6 +107,7 @@ class EthPendingTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]
                 "to": eth_filter_handlers.reformat_address(contents["to"]),
                 "from": eth_filter_handlers.reformat_address(contents["from"]),
                 "gas_price": eth_filter_handlers.reformat_gas_price(contents["gas_price"]),
+                "method_id": eth_filter_handlers.reformat_input_to_method_id(contents["input"]),
             }
             should_publish = subscriber.validator(state)
             logger_filters.trace("should publish: {}", should_publish)

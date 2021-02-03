@@ -57,6 +57,7 @@ class EthTransactionProxyFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
                 "to": eth_filter_handlers.reformat_address(contents["to"]),
                 "from": eth_filter_handlers.reformat_address(contents["from"]),
                 "gas_price": eth_filter_handlers.reformat_gas_price(contents["gas_price"]),
+                "method_id": eth_filter_handlers.reformat_input_to_method_id(contents["input"]),
             }
             should_publish = subscriber.validator(state)
             logger_filters.trace("should publish: {}", should_publish)
