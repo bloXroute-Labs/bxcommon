@@ -32,3 +32,11 @@ class LimitedSizeSetTest(AbstractTestCase):
 
         for i in range(7, 11):
             self.assertIn(i, self.sut)
+
+    def test_set_handles_duplicate_items(self):
+        for i in range(0, 5):
+            self.sut.add(i)
+
+        self.sut.add(4)
+        self.assertEqual(5, len(self.sut))
+        self.assertIn(0, self.sut)

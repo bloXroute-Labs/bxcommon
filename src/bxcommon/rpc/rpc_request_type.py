@@ -27,3 +27,4 @@ class RpcRequestType(SerializeableEnum):
     START_TRANSACTION_FEE_BUMP = 22
     STOP_TRANSACTION_FEE_BUMP = 23
     BLXR_TX_FEE_BUMP = 24
+    NETWORK_TX_FEE_UPDATE = 25

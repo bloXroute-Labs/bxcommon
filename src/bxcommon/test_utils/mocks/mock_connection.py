@@ -5,6 +5,7 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.constants import PING_INTERVAL_S
 from bxcommon.messages.abstract_message import AbstractMessage
+from bxcommon.messages.abstract_message_factory import AbstractMessageFactory
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.network_direction import NetworkDirection
 from bxcommon.utils import memory_utils
@@ -39,6 +40,7 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
 
         self.is_persistent = False
         self.state = ConnectionState.CONNECTING
+        self.established = False
 
         # Number of bad messages I've received in a row.
         self.num_bad_messages = 0
@@ -54,6 +56,9 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
     def __repr__(self):
         return f"MockConnection<file_no: {self.file_no}, address: ({self.peer_ip}, {self.peer_port}), " \
             f"network_num: {self.network_num}>"
+
+    def connection_message_factory(self) -> AbstractMessageFactory:
+        pass
 
     def ping_message(self) -> AbstractMessage:
         pass
@@ -82,9 +87,7 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
         self,
         msg_bytes: Union[bytearray, memoryview],
         prepend: bool = False,
-        full_message: Optional[AbstractMessage] = None
     ):
-
         if not self.is_alive():
             return
 

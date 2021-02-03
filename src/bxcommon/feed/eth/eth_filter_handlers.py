@@ -14,3 +14,7 @@ def reformat_address(address: str) -> str:
     if address == "0x":
         return "0x0000000000000000000000000000000000000000"
     return address.lower()
+
+
+def reformat_gas_price(value: str) -> int:
+    return int(value, 0)

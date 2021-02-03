@@ -17,6 +17,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyn
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v18.bdn_performance_stats_message_v18 import BdnPerformanceStatsMessageV18, \
     BdnPerformanceStatsDataV18
+from bxcommon.messages.bloxroute.v19.tx_message_v19 import TxMessageV19
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
 
@@ -27,7 +28,7 @@ class BloxrouteVersionManagerV18Test(
         PingMessage,
         PongMessage,
         BroadcastMessage,
-        TxMessage,
+        TxMessageV19,
         GetTxsMessage,
         TxsMessage,
         KeyMessage,
@@ -44,6 +45,37 @@ class BloxrouteVersionManagerV18Test(
 
     def version_to_test(self) -> int:
         return 18
+
+    def old_tx_message(self, original_message: TxMessage) -> TxMessageV19:
+        return TxMessageV19(
+            original_message.message_hash(),
+            original_message.network_num(),
+            original_message.source_id(),
+            original_message.short_id(),
+            original_message.tx_val(),
+            original_message.transaction_flag(),
+            int(original_message.timestamp()),
+        )
+
+    def compare_tx_old_to_current(
+        self,
+        converted_current_message: TxMessage,
+        original_current_message: TxMessage,
+    ):
+        self.assertEqual(
+            int(original_current_message.timestamp()), converted_current_message.timestamp()
+        )
+        self.assert_attributes_equal(
+            converted_current_message,
+            original_current_message,
+            [
+                "message_hash",
+                "tx_val",
+                "source_id",
+                "network_num",
+                "transaction_flag",
+            ],
+        )
 
     def old_bdn_performance_stats_message(
         self, original_message: BdnPerformanceStatsMessage

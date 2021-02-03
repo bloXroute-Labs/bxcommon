@@ -8,7 +8,6 @@ class SocketConnectionState(Flag):
 class SocketConnectionStates(FlagCollection):
     CONNECTING = SocketConnectionState()
     INITIALIZED = SocketConnectionState()
-    MARK_FOR_CLOSE = SocketConnectionState()
     DO_NOT_RETRY = SocketConnectionState()
     HALT_RECEIVE = SocketConnectionState()
 

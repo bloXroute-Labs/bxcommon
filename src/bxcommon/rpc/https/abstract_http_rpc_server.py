@@ -194,6 +194,12 @@ class AbstractHttpRpcServer(Generic[Node]):
             self.authenticate_request(request)
         except HTTPUnauthorized as e:
             return format_http_error(e, self._handler.content_type)
+        except RpcAccountIdError as e:
+            return format_rpc_error(
+                e,
+                HTTPUnauthorized.status_code,
+                self._handler.content_type
+            )
         else:
             response_dict = {
                 "result": {

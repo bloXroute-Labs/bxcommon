@@ -1,7 +1,7 @@
 import functools
 from collections import defaultdict
 from itertools import chain
-from typing import Iterable, Iterator
+from typing import Iterable
 from typing import List, Dict, Optional, Tuple, ClassVar
 import time
 from more_itertools import flatten
@@ -34,7 +34,6 @@ class ConnectionPool:
     """
     INITIAL_FILENO: ClassVar[int] = 100
 
-    by_fileno: List[Optional[AbstractConnection]]
     by_ipport: Dict[Tuple[str, int], AbstractConnection]
     by_connection_type: Dict[ConnectionType, List[AbstractConnection]]
     by_node_id: Dict[str, AbstractConnection]
@@ -42,7 +41,6 @@ class ConnectionPool:
     count_conn_by_ip: Dict[str, int]
 
     def __init__(self) -> None:
-        # pyre-fixme[8]: Attribute has type `List[Optional[AbstractConnection[typing.Any]]]` used as type `List[None]`.
         self.by_fileno = [None] * ConnectionPool.INITIAL_FILENO
         self.by_ipport = {}
         self.by_connection_type = defaultdict(list)
@@ -102,16 +100,20 @@ class ConnectionPool:
         return (ip, port) in self.by_ipport
 
     def get_connection_by_network_num(self, network_num: int) -> Iterable[AbstractConnection]:
-        for connection in self.get_by_connection_types([ConnectionType.GATEWAY]):
+        for connection in self.get_by_connection_types((ConnectionType.GATEWAY,)):
             if connection.network_num == network_num:
                 yield connection
 
-    def get_by_connection_types(self, connection_types: Iterable[ConnectionType]) -> Iterator[AbstractConnection]:
+    def get_by_connection_types(
+        self, connection_types: Tuple[ConnectionType, ...]
+    ) -> List[AbstractConnection]:
         # pyre-fixme [7]: Expected `List[AbstractConnection[typing.Any]]`
         #  but got `typing.Iterator[Variable[more_itertools.recipes._T]]`.
         return flatten(self._iter_by_connection_types(connection_types))
 
-    def _iter_by_connection_types(self, connection_types: List[ConnectionType]) -> Iterable[AbstractConnection]:
+    def _iter_by_connection_types(
+        self, connection_types: Tuple[ConnectionType, ...]
+    ) -> Iterable[AbstractConnection]:
         for connection_type, connections in self.by_connection_type.items():
             if any(connection_type & matching_type for matching_type in connection_types):
                 # pyre-fixme[7]: Expected `Iterable[AbstractConnection[typing.Any]]`
@@ -310,4 +312,4 @@ class ConnectionPool:
         )
 
     def _get_number_of_connections(self, connection_type: ConnectionType) -> int:
-        return len(list(self.get_by_connection_types([connection_type])))
+        return len(list(self.get_by_connection_types((connection_type,))))

@@ -42,7 +42,7 @@ from bxcommon.utils.stats.node_statistics_service import node_stats_service
 from bxcommon.utils.stats.throughput_service import throughput_statistics
 from bxcommon.utils.stats.transaction_statistics_service import tx_stats
 from bxcommon.utils.transaction_short_id_buckets import TransactionShortIdBuckets
-from bxutils import log_messages
+from bxutils import log_messages, utils
 from bxutils import logging
 from bxutils.exceptions.connection_authentication_error import \
     ConnectionAuthenticationError
@@ -286,7 +286,7 @@ class AbstractNode:
         logger.info("Failed to connect to: {}, {}.", peer_info, error)
 
     def log_closed_connection(self, connection: AbstractConnection):
-        if ConnectionState.ESTABLISHED not in connection.state:
+        if not connection.established:
             logger.info("Failed to connect to: {}.", connection)
         else:
             logger.info("Closed connection: {}", connection)
@@ -390,18 +390,6 @@ class AbstractNode:
 
         conn.advance_sent_bytes(bytes_sent)
 
-    def on_bytes_written_to_socket(self, file_no: int, bytes_written: int) -> None:
-        conn = self.connection_pool.get_by_fileno(file_no)
-
-        if conn is None:
-            logger.debug(
-                "Bytes written call for connection not in pool: {}",
-                file_no
-            )
-            return
-
-        conn.advance_bytes_written_to_socket(bytes_written)
-
     def fire_alarms(self) -> float:
         time_to_next = self.alarm_queue.fire_ready_alarms()
         if time_to_next is not None:
@@ -441,13 +429,13 @@ class AbstractNode:
         msg: AbstractMessage,
         broadcasting_conn: Optional[AbstractConnection] = None,
         prepend_to_queue: bool = False,
-        connection_types: Optional[List[ConnectionType]] = None
+        connection_types: Optional[Tuple[ConnectionType, ...]] = None
     ) -> List[AbstractConnection]:
         """
         Broadcasts message msg to connections of the specified type except requester.
         """
         if connection_types is None:
-            connection_types = [ConnectionType.RELAY_ALL]
+            connection_types = (ConnectionType.RELAY_ALL,)
         options = BroadcastOptions(broadcasting_conn, prepend_to_queue, connection_types)
         connections = self.broadcast_service.broadcast(msg, options)
         return connections
@@ -705,7 +693,7 @@ class AbstractNode:
 
         logger.trace("Checking connection status: {}", conn)
 
-        if ConnectionState.ESTABLISHED in conn.state:
+        if conn.established:
             logger.trace("Connection is still established: {}", conn)
             self.num_retries_by_ip[(conn.peer_ip, conn.peer_port)] = 0
             return constants.CANCEL_ALARMS
@@ -732,9 +720,8 @@ class AbstractNode:
         """
         Returns Fibonnaci(n), where n is the number of retry attempts + 1, up to max of Fibonacci(8) == 13.
         """
-        golden_ratio = (1 + 5 ** .5) / 2
         sequence_number = min(self.num_retries_by_ip[(ip, port)] + 1, constants.MAX_CONNECT_TIMEOUT_INCREASE)
-        return int((golden_ratio ** sequence_number - (1 - golden_ratio) ** sequence_number) / 5 ** .5)
+        return utils.fibonacci(sequence_number)
 
     def _retry_init_client_socket(self, ip: str, port: int, connection_type: ConnectionType):
         self.num_retries_by_ip[(ip, port)] += 1

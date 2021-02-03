@@ -8,7 +8,10 @@ class ConnectionState(SerializableFlag):
     INITIALIZED = auto()
     HELLO_RECVD = auto()
     HELLO_ACKD = auto()
+
+    # avoid all future usages of ConnectionState.ESTABLISHED
     ESTABLISHED = auto()
+
     CUT_THROUGH_SOURCE = auto()
     CUT_THROUGH_SINK = auto()
     ULTRA_SLOW = auto()

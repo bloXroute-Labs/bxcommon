@@ -16,6 +16,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyn
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
 from bxcommon.messages.bloxroute.txs_message import TxsMessage
 from bxcommon.messages.bloxroute.v16.bdn_performance_stats_message_v16 import BdnPerformanceStatsMessageV16
+from bxcommon.messages.bloxroute.v17.tx_message_v17 import TxMessageV17
 from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.test_utils.abstract_bloxroute_version_manager_test import AbstractBloxrouteVersionManagerTest
 
@@ -27,7 +28,7 @@ class BloxrouteVersionManagerV17Test(
         PingMessage,
         PongMessage,
         BroadcastMessage,
-        TxMessage,
+        TxMessageV17,
         GetTxsMessage,
         TxsMessage,
         KeyMessage,
@@ -44,6 +45,37 @@ class BloxrouteVersionManagerV17Test(
 
     def version_to_test(self) -> int:
         return 17
+
+    def old_tx_message(self, original_message: TxMessage) -> TxMessageV17:
+        return TxMessageV17(
+            original_message.message_hash(),
+            original_message.network_num(),
+            original_message.source_id(),
+            original_message.short_id(),
+            original_message.tx_val(),
+            original_message.transaction_flag(),
+            int(original_message.timestamp()),
+        )
+
+    def compare_tx_old_to_current(
+        self,
+        converted_current_message: TxMessage,
+        original_current_message: TxMessage,
+    ):
+        self.assertEqual(
+            int(original_current_message.timestamp()), converted_current_message.timestamp()
+        )
+        self.assert_attributes_equal(
+            converted_current_message,
+            original_current_message,
+            [
+                "message_hash",
+                "tx_val",
+                "source_id",
+                "network_num",
+                "transaction_flag",
+            ],
+        )
 
     def compare_tx_current_to_old(
         self, converted_old_message: TxMessage, original_old_message: TxMessage,

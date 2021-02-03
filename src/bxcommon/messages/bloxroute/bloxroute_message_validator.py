@@ -15,18 +15,27 @@ from bxcommon.utils.buffers.input_buffer import InputBuffer
 class BloxrouteMessageValidator(AbstractMessageValidator):
     FIRST_VALIDATING_VERSION = 4
 
-    def __init__(self, size_validation_settings: Optional[MessageSizeValidationSettings],
-                 connection_protocol_version: int):
+    def __init__(
+        self,
+        size_validation_settings: Optional[MessageSizeValidationSettings],
+        connection_protocol_version: int
+    ):
         self._size_validation_settings: Optional[MessageSizeValidationSettings] = size_validation_settings
         self._connection_protocol_version: int = connection_protocol_version
 
-    def validate(self, is_full_msg: bool, msg_type: str, header_len: int, payload_len: int,
-                 input_buffer: InputBuffer) -> None:
+    def validate(
+        self,
+        is_full_msg: bool,
+        msg_type: Optional[bytes],
+        header_len: int,
+        payload_len: Optional[int],
+        input_buffer: InputBuffer
+    ) -> None:
         """
         Validates message payload length.
         Throws MessageValidationError is message is not valid
 
-        :param is_full: indicates if the full message is available on input buffer
+        :param is_full_msg: indicates if the full message is available on input buffer
         :param msg_type: message type
         :param header_len: message header length
         :param payload_len: message payload length
@@ -47,22 +56,25 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
         if input_buffer.length < constants.STARTING_SEQUENCE_BYTES_LEN:
             return
 
-        if input_buffer[:constants.STARTING_SEQUENCE_BYTES_LEN] != constants.STARTING_SEQUENCE_BYTES:
+        starting_sequence_bytes = input_buffer[:constants.STARTING_SEQUENCE_BYTES_LEN]
+        if starting_sequence_bytes != constants.STARTING_SEQUENCE_BYTES:
             raise MessageValidationError(
-                "Expected message to begin with starting sequence but received first bytes '{}'"
-                    .format(convert.bytes_to_hex(input_buffer[:constants.STARTING_SEQUENCE_BYTES_LEN])))
+                f"Expected message to begin with starting sequence "
+                f"but received first bytes "
+                f"'{convert.bytes_to_hex(starting_sequence_bytes)}'"
+            )
 
-    def _validate_payload_length(self, msg_type: str, payload_len: int) -> None:
+    def _validate_payload_length(self, msg_type: Optional[bytes], payload_len: Optional[int]) -> None:
         if msg_type is None or payload_len is None:
             return
 
         if msg_type == BloxrouteMessageType.TRANSACTION:
-            assert self._size_validation_settings is not None
-            # pyre-fixme[16]: `Optional` has no attribute `max_tx_size_bytes`.
-            if payload_len > self._size_validation_settings.max_tx_size_bytes:
+            size_validation_settings = self._size_validation_settings
+            assert size_validation_settings is not None
+            if payload_len > size_validation_settings.max_tx_size_bytes:
                 raise MessageValidationError(
                     f"Transaction message size exceeds expected max size. "
-                    f"Expected: {self._size_validation_settings.max_tx_size_bytes}. "
+                    f"Expected: {size_validation_settings.max_tx_size_bytes}. "
                     f"Actual: {payload_len}."
                 )
 
@@ -74,12 +86,12 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
             BloxrouteMessageType.TRANSACTION_CLEANUP,
             BloxrouteMessageType.BLOCK_CONFIRMATION,
         }:
-            assert self._size_validation_settings is not None
-            # pyre-fixme[16]: `Optional` has no attribute `max_block_size_bytes`.
-            if payload_len > self._size_validation_settings.max_block_size_bytes:
+            size_validation_settings = self._size_validation_settings
+            assert size_validation_settings is not None
+            if payload_len > size_validation_settings.max_block_size_bytes:
                 raise MessageValidationError(
                     f"{msg_type} message size exceeds expected max size. "
-                    f"Expected: {self._size_validation_settings.max_block_size_bytes}. "
+                    f"Expected: {size_validation_settings.max_block_size_bytes}. "
                     f"Actual: {payload_len}."
                 )
 
@@ -90,11 +102,17 @@ class BloxrouteMessageValidator(AbstractMessageValidator):
                 f"Actual: {payload_len}."
             )
 
-    def _validate_control_flags(self, is_full: bool, header_len: int, payload_len: int,
-                                input_buffer: InputBuffer) -> None:
+    def _validate_control_flags(
+        self,
+        is_full: bool,
+        header_len: int,
+        payload_len: Optional[int],
+        input_buffer: InputBuffer
+    ) -> None:
         if not is_full:
             return
 
+        assert payload_len is not None
         if input_buffer.length < header_len + payload_len:
             raise MessageValidationError(
                 f"Not enough bytes in the input buffer to get control flags. "

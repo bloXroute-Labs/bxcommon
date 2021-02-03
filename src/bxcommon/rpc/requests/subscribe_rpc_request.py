@@ -1,11 +1,11 @@
 import fnmatch
-from typing import TYPE_CHECKING, Callable, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, Any, List, Optional
 
 from bxcommon.feed.feed import FeedKey
 from bxcommon.feed.feed_manager import FeedManager
 from bxcommon.feed.subscriber import Subscriber
 from bxcommon.models.bdn_account_model_base import BdnAccountModelBase
-from bxcommon.models.bdn_service_model_config_base import BdnFeedServiceModelConfigBase, BdnBasicServiceModel
+from bxcommon.models.bdn_service_model_config_base import BdnFeedServiceModelConfigBase
 from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 from bxcommon.rpc.requests.abstract_rpc_request import AbstractRpcRequest
@@ -53,7 +53,7 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         self.available_fields = []
         self.all_fields = []
         self.account_details = account_details
-        self.service_model: Union[Optional[BdnFeedServiceModelConfigBase], Optional[BdnBasicServiceModel]] = None
+        self.service_model: Optional[BdnFeedServiceModelConfigBase] = None
 
         super().__init__(request, node)
 

@@ -77,7 +77,7 @@ class AbstractConnectionTest(AbstractTestCase):
             b"hello": self.connection.msg_hello,
             b"pong": mock_pong
         }
-        self.connection.state = ConnectionState.ESTABLISHED
+        self.connection.on_connection_established()
         self.connection.inputbuf.add_bytes(HelloMessage(protocol_version=1, network_num=2).rawbytes())
         self.connection.inputbuf.add_bytes(PongMessage().rawbytes())
 
@@ -91,7 +91,7 @@ class AbstractConnectionTest(AbstractTestCase):
             b"ack": lambda _msg: self.connection.mark_for_close(),
             b"pong": mock_pong
         }
-        self.connection.state = ConnectionState.ESTABLISHED
+        self.connection.on_connection_established()
         self.connection.inputbuf.add_bytes(HelloMessage(protocol_version=1, network_num=2).rawbytes())
         self.connection.inputbuf.add_bytes(AckMessage().rawbytes())
         self.connection.inputbuf.add_bytes(PongMessage().rawbytes())

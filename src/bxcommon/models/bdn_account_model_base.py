@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional
 from datetime import datetime, date
 
 from bxcommon.models.bdn_service_model_config_base import (
@@ -39,9 +39,10 @@ class AccountTemplate:
     new_block_streaming: Optional[BdnFeedServiceModelConfigBase] = None
     new_pending_transaction_streaming: Optional[BdnFeedServiceModelConfigBase] = None
     transaction_state_feed: Optional[BdnFeedServiceModelConfigBase] = None
-    on_block_feed: Optional[BdnBasicServiceModel] = None
+    on_block_feed: Optional[BdnFeedServiceModelConfigBase] = None
     transaction_receipts_feed: Optional[BdnFeedServiceModelConfigBase] = None
     private_relays: Optional[BdnPrivateRelayServiceModelConfigBase] = None
+    private_transaction: Optional[BdnQuotaServiceModelConfigBase] = None
 
 
 @dataclass
@@ -59,7 +60,7 @@ class BdnAccountModelBase(AccountTemplate, AccountInfo):
     # pylint: disable=too-many-return-statements
     def get_feed_service_config_by_name(
         self, feed_name: str
-    ) -> Union[Optional[BdnFeedServiceModelConfigBase], Optional[BdnBasicServiceModel]]:
+    ) -> Optional[BdnFeedServiceModelConfigBase]:
         if feed_name in {rpc_constants.NEW_TRANSACTION_FEED_NAME}:
             return self.new_transaction_streaming
         elif feed_name in {rpc_constants.ETH_PENDING_TRANSACTION_FEED_NAME}:
