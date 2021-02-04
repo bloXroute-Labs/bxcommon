@@ -316,8 +316,12 @@ class AbstractNode:
                 if rem_conn:
                     rem_conn.mark_for_close(False)
 
-        # Connect to peers not in our known pool
-        for peer in outbound_peer_models:
+        # Connect to peers not in our known pool or in opts.outbound_peers
+        new_peer_models = set()
+        new_peer_models.update(old_peers)
+        new_peer_models.update(outbound_peer_models)
+        new_peer_models.difference_update(remove_peers)
+        for peer in new_peer_models:
             peer_ip = peer.ip
             peer_port = peer.port
             if self.should_connect_to_new_outbound_peer(peer):
@@ -328,7 +332,7 @@ class AbstractNode:
                         self.NODE_TYPE, peer.node_type
                     )
                 )
-        self.outbound_peers = outbound_peer_models
+        self.outbound_peers = new_peer_models
 
     def on_updated_node_model(self, new_node_model: NodeModel):
         """
