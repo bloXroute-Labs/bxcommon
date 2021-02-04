@@ -98,13 +98,8 @@ class Transaction(rlp.Serializable):
         else:
             input_data = f"0x{input_data}"
 
-        signature = crypto_utils.encode_signature(self.v, self.r, self.s)
-        from_key = crypto_utils.recover_public_key(
-            self.get_unsigned(), signature, eth_common_utils.keccak_hash
-        )
-        from_address = crypto_utils.public_key_to_address(from_key)
         serialized_output = {
-            "from": convert.bytes_to_hex_string_format(from_address),
+            "from": self.get_from_address(),
             "gas": hex(self.start_gas),
             "gas_price": hex(self.gas_price),
             "hash": f"0x{str(message_hash)}",
@@ -121,6 +116,14 @@ class Transaction(rlp.Serializable):
             serialized_output["to"] = convert.bytes_to_hex_string_format(to)
 
         return serialized_output
+
+    def get_from_address(self) -> str:
+        signature = crypto_utils.encode_signature(self.v, self.r, self.s)
+        from_key = crypto_utils.recover_public_key(
+            self.get_unsigned(), signature, eth_common_utils.keccak_hash
+        )
+        from_address = crypto_utils.public_key_to_address(from_key)
+        return convert.bytes_to_hex_string_format(from_address)
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "Transaction":
