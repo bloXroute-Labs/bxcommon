@@ -6,13 +6,15 @@ from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.utils.blockchain_utils.eth import eth_common_constants, rlp_utils
 from bxcommon.utils.object_hash import Sha256Hash
+from bxcommon import constants
 
 
 def raw_tx_to_bx_tx(
     tx_bytes: Union[bytearray, memoryview],
     tx_start_index: int,
     network_num: int,
-    transaction_flag: Optional[TransactionFlag] = None
+    transaction_flag: Optional[TransactionFlag] = None,
+    account_id: str = constants.DECODED_EMPTY_ACCOUNT_ID
 ) -> Tuple[TxMessage, int, int]:
     if isinstance(tx_bytes, bytearray):
         tx_bytes = memoryview(tx_bytes)
@@ -24,7 +26,8 @@ def raw_tx_to_bx_tx(
         message_hash=msg_hash,
         network_num=network_num,
         tx_val=tx_bytes,
-        transaction_flag=transaction_flag
+        transaction_flag=transaction_flag,
+        account_id=account_id
     )
     return bx_tx, tx_item_length, tx_item_start
 
