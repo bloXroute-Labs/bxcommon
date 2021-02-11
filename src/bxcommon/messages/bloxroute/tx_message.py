@@ -33,9 +33,11 @@ class TxMessage(AbstractBroadcastMessage):
         tx_val: Union[bytearray, bytes, memoryview, None] = None,
         transaction_flag: Optional[TransactionFlag] = None,
         timestamp: Union[int, float] = constants.NULL_TX_TIMESTAMP,
-        account_id: str = constants.DECODED_EMPTY_ACCOUNT_ID,
+        account_id: Optional[str] = None,
         buf: Optional[Union[bytearray, memoryview]] = None,
     ):
+        if account_id is None:
+            account_id = constants.DECODED_EMPTY_ACCOUNT_ID
         self._short_id = None
         self._tx_val: Optional[memoryview] = None
         self._transaction_flag = None
