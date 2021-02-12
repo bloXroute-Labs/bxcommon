@@ -193,19 +193,9 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
             raise invalid_filters
         logger_filters.debug("Validating filters")
         try:
-            filters, keys = self.feed_manager.validate_feed_filters(self.feed_key, filters)
+            filters = self.feed_manager.validate_feed_filters(self.feed_key, filters)
         except Exception:
             raise invalid_filters
-        # for key in filters, if not in valid_filters, raise
-        for key in keys:
-            if key not in valid_filters:
-                raise RpcInvalidParams(
-                    self.request_id,
-                    f"{key} is not a valid filter. "
-                    'Valid format/filters: {"include": '
-                    f"{valid_filters}"
-                    "}.",
-                )
         return filters
 
 

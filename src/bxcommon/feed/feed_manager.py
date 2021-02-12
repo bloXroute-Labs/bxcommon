@@ -1,4 +1,4 @@
-from typing import Dict, Optional, List, Any, Set, TYPE_CHECKING, Tuple
+from typing import Dict, Optional, List, Any, Set, TYPE_CHECKING
 
 from bxutils import logging
 
@@ -77,5 +77,5 @@ class FeedManager:
     def get_valid_feed_filters(self, feed_key: FeedKey) -> Set[str]:
         return self.feeds[feed_key].FILTERS
 
-    def validate_feed_filters(self, feed_key: FeedKey, filters: str) -> Tuple[str, List[str]]:
+    def validate_feed_filters(self, feed_key: FeedKey, filters: str) -> str:
         return self.feeds[feed_key].validate_filters(filters)

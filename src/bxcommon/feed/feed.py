@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABCMeta
 from asyncio import QueueFull
 
-from typing import TypeVar, Generic, List, Dict, Optional, Any, Set, NamedTuple, Tuple
+from typing import TypeVar, Generic, List, Dict, Optional, Any, Set, NamedTuple
 
 from bxcommon import log_messages, constants
 from bxcommon.feed.subscriber import Subscriber
@@ -104,8 +104,7 @@ class Feed(Generic[T, S], metaclass=ABCMeta):
     ) -> bool:
         return True
 
-    def validate_filters(self, filters: str) -> Tuple[str, List[str]]:
+    def validate_filters(self, filters: str) -> str:
         filter_parsing.get_validator(filters)
-        keys = filter_parsing.get_keys(filters)
-        logger.debug("Returning filters {} with keys {}", filters, keys)
-        return filters, keys
+        logger.debug("Returning filters {}", filters)
+        return filters
