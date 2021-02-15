@@ -41,28 +41,61 @@ def update_http_ssl_context(ssl_context: Optional[SSLContext] = None):
 
 
 def post_json(endpoint: str, payload=None) -> Optional[JT]:
-    return _http_request("POST", endpoint, body=json_encoder.to_json(payload),
-                         headers=constants.HTTP_HEADERS)
+    return _http_request(
+        "POST",
+        endpoint,
+        False,
+        body=json_encoder.to_json(payload),
+        headers=constants.HTTP_HEADERS
+    )
 
 
 def patch_json(endpoint: str, payload=None) -> Optional[JT]:
-    return _http_request("PATCH", endpoint, body=json_encoder.to_json(payload),
-                         headers=constants.HTTP_HEADERS)
+    return _http_request(
+        "PATCH",
+        endpoint,
+        False,
+        body=json_encoder.to_json(payload),
+        headers=constants.HTTP_HEADERS
+    )
 
 
 def delete_json(endpoint: str, payload=None) -> Optional[JT]:
-    return _http_request("DELETE", endpoint, body=json_encoder.to_json(payload),
-                         headers=constants.HTTP_HEADERS)
+    return _http_request(
+        "DELETE",
+        endpoint,
+        False,
+        body=json_encoder.to_json(payload),
+        headers=constants.HTTP_HEADERS
+    )
 
 
 def get_json(endpoint: str) -> Optional[JT]:
-    return _http_request("GET", endpoint,
-                         headers=constants.HTTP_HEADERS)
+    return _http_request(
+        "GET",
+        endpoint,
+        False,
+        headers=constants.HTTP_HEADERS
+    )
+
+
+def get_json_raising_timeout(endpoint: str) -> Optional[JT]:
+    return _http_request(
+        "GET",
+        endpoint,
+        True,
+        headers=constants.HTTP_HEADERS
+    )
 
 
 def get_json_with_payload(endpoint: str, payload=None) -> Optional[JT]:
-    return _http_request("GET", endpoint, body=json_encoder.to_json(payload),
-                         headers=constants.HTTP_HEADERS)
+    return _http_request(
+        "GET",
+        endpoint,
+        False,
+        body=json_encoder.to_json(payload),
+        headers=constants.HTTP_HEADERS
+    )
 
 
 def build_url(endpoint: str) -> str:
@@ -76,7 +109,9 @@ def raise_for_status(res: HTTPResponse) -> None:
         raise HTTPError(f"{res.status}:{res.reason}")
 
 
-def _http_request(method: str, endpoint: str, **kwargs) -> Optional[JT]:
+def _http_request(
+    method: str, endpoint: str, handle_timeout: bool, **kwargs
+) -> Optional[JT]:
     url = build_url(endpoint)
     parsed_url = parse_url(url)
     pm_args = {
@@ -106,6 +141,10 @@ def _http_request(method: str, endpoint: str, **kwargs) -> Optional[JT]:
         raise_for_status(response)
     except MaxRetryError as e:
         logger.info("{} to {} failed due to: {}.", method, url, e)
+        return None
+    except TimeoutError:
+        if handle_timeout:
+            raise TimeoutError
         return None
     except Exception as e:  # pylint: disable=broad-except
         logger.error(log_messages.HTTP_REQUEST_RETURNED_ERROR, method, url, e)
