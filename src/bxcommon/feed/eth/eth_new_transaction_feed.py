@@ -91,6 +91,6 @@ class EthNewTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
                 "gas_price": eth_filter_handlers.reformat_gas_price(contents["gas_price"]),
                 "method_id": eth_filter_handlers.reformat_input_to_method_id(contents["input"]),
             }
-            should_publish = subscriber.validator(state)
+            should_publish = subscriber.validate(state)
             logger_filters.trace("should publish: {}", should_publish)
         return should_publish

@@ -1,7 +1,7 @@
 import asyncio
 import uuid
 import dataclasses
-from typing import Generic, TypeVar, Union, Dict, Any, List
+from typing import Generic, TypeVar, Union, Dict, Any, List, Callable
 
 from bxcommon import constants
 from bxcommon.feed import filter_parsing
@@ -27,6 +27,8 @@ class Subscriber(Generic[T]):
     messages: "asyncio.Queue[Union[T, Dict[str, Any]]]"
     options: Dict[str, Any]
     filters: str
+    validator: Callable[[Dict], bool]
+    should_exit: bool
 
     def __init__(self, options: Dict[str, Any]) -> None:
         self.options = options
@@ -35,6 +37,7 @@ class Subscriber(Generic[T]):
         filters = options.get("filters", None)
         self.filters = filters if filters else ""
         self.validator = filter_parsing.get_validator(self.filters)
+        self.should_exit = False
 
     async def receive(self) -> Union[T, Dict[str, Any]]:
         """
@@ -86,6 +89,14 @@ class Subscriber(Generic[T]):
         self_includes = self.options.get("include", None)
         other_includes = other.options.get("include", None)
         return self_includes == other_includes
+
+    def validate(self, state: Dict[str, Any]) -> bool:
+        should_publish = False
+        try:
+            should_publish = self.validator(state)
+        except TypeError:
+            self.should_exit = True
+        return should_publish
 
 
 def filter_message(message: Dict[str, Any], include_fields: List[str]) -> Dict[str, Any]:
