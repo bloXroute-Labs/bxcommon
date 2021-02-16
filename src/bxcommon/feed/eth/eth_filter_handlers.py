@@ -18,3 +18,9 @@ def reformat_address(address: str) -> str:
 
 def reformat_gas_price(value: str) -> int:
     return int(value, 0)
+
+
+def reformat_input_to_method_id(input_field: str) -> str:
+    if len(input_field) >= 10:
+        return input_field[2:10]
+    return ""

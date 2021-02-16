@@ -121,10 +121,10 @@ class AbstractNodeTest(AbstractTestCase):
                                     OutboundPeerModel("222.222.222.222", 2000, node_type=NodeType.GATEWAY),
                                     OutboundPeerModel(self.ip, self.port, node_type=NodeType.GATEWAY)]
 
-        outbound_peer_models = [OutboundPeerModel("111.111.111.111", 1000, node_type=NodeType.GATEWAY)]
+        outbound_peer_models = {OutboundPeerModel("111.111.111.111", 1000, node_type=NodeType.GATEWAY)}
         self.node.on_updated_peers(outbound_peer_models)
 
-        self.assertEqual(outbound_peer_models, self.node.outbound_peers)
+        self.assertEqual(outbound_peer_models.union(self.node.opts.outbound_peers), self.node.outbound_peers)
         self._assert_socket_disconnected(False)
 
     def test_on_bytes_received(self):

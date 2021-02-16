@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABCMeta
 from asyncio import QueueFull
 
-from typing import TypeVar, Generic, List, Dict, Optional, Any, Set, NamedTuple
+from typing import TypeVar, Generic, List, Dict, Optional, Any, Set, NamedTuple, Tuple
 
 from bxcommon import log_messages, constants
 from bxcommon.feed.subscriber import Subscriber
@@ -62,6 +62,12 @@ class Feed(Generic[T, S], metaclass=ABCMeta):
         bad_subscribers = []
         cached_subscription_items = {}
         for subscriber in self.subscribers.values():
+            if subscriber.should_exit:
+                logger.error(
+                    log_messages.BAD_FEED_SUBSCRIBER_SHOULD_EXIT, subscriber.subscription_id, self
+                )
+                bad_subscribers.append(subscriber)
+                continue
             if not self.should_publish_message_to_subscriber(
                 subscriber, raw_message, serialized_message
             ):
@@ -104,7 +110,8 @@ class Feed(Generic[T, S], metaclass=ABCMeta):
     ) -> bool:
         return True
 
-    def validate_filters(self, filters: str) -> str:
+    def validate_filters(self, filters: str) -> Tuple[str, List[str]]:
         filter_parsing.get_validator(filters)
-        logger.debug("Returning filters {}", filters)
-        return filters
+        keys = filter_parsing.get_keys(filters)
+        logger.debug("Returning filters {} with keys {}", filters, keys)
+        return filters, keys

@@ -18,3 +18,9 @@ COULD_NOT_DESERIALIZE_TRANSACTION = LogMessage(
     PROCESSING_FAILED_CATEGORY,
     "Could not deserialize transaction in transaction service to Ethereum payload: {}, body: {}. Error: {}",
 )
+BAD_FEED_SUBSCRIBER_SHOULD_EXIT = LogMessage(
+    "C-000070",
+    GENERAL_CATEGORY,
+    "Subscriber {} was not filtering messages correctly from "
+    "{}. Disconnecting.",
+)

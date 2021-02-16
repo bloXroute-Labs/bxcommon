@@ -32,7 +32,7 @@ class EthNewTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
         "tx_contents.from",
         "local_region",
     ]
-    FILTERS = {"value", "from", "to", "gas_price"}
+    FILTERS = {"value", "from", "to", "gas_price", "method_id"}
     ALL_FIELDS = ["tx_hash", "tx_contents", "local_region"]
 
     def __init__(self, network_num: int = constants.ALL_NETWORK_NUM,) -> None:
@@ -89,7 +89,8 @@ class EthNewTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
                 "to": eth_filter_handlers.reformat_address(contents["to"]),
                 "from": eth_filter_handlers.reformat_address(contents["from"]),
                 "gas_price": eth_filter_handlers.reformat_gas_price(contents["gas_price"]),
+                "method_id": eth_filter_handlers.reformat_input_to_method_id(contents["input"]),
             }
-            should_publish = subscriber.validator(state)
+            should_publish = subscriber.validate(state)
             logger_filters.trace("should publish: {}", should_publish)
         return should_publish
