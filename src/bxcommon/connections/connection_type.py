@@ -16,6 +16,7 @@ class ConnectionType(SerializableFlag):
     CROSS_RELAY = auto()
     INTERNAL_GATEWAY = auto()
     GATEWAY = INTERNAL_GATEWAY | EXTERNAL_GATEWAY
+    RELAY_PROXY = auto()
 
     def __str__(self):
         return str(self.name)

@@ -36,7 +36,7 @@ NODE_TO_CONNECTION_TYPE: Dict[NodeType, Dict[NodeType, ConnectionType]] = {
         NodeType.EXTERNAL_GATEWAY: ConnectionType.EXTERNAL_GATEWAY,
         NodeType.RELAY_TRANSACTION: ConnectionType.CROSS_RELAY,
         NodeType.RELAY_BLOCK: ConnectionType.RELAY_BLOCK,
-        NodeType.RELAY_PROXY: ConnectionType.RELAY_BLOCK,
+        NodeType.RELAY_PROXY: ConnectionType.RELAY_PROXY,
         NodeType.RELAY: ConnectionType.RELAY_ALL,
         NodeType.API_SOCKET: ConnectionType.SDN
     },
@@ -45,7 +45,7 @@ NODE_TO_CONNECTION_TYPE: Dict[NodeType, Dict[NodeType, ConnectionType]] = {
         NodeType.INTERNAL_GATEWAY: ConnectionType.INTERNAL_GATEWAY,
         NodeType.EXTERNAL_GATEWAY: ConnectionType.EXTERNAL_GATEWAY,
         NodeType.RELAY_TRANSACTION: ConnectionType.RELAY_TRANSACTION,
-        NodeType.RELAY_PROXY: ConnectionType.RELAY_TRANSACTION,
+        NodeType.RELAY_PROXY: ConnectionType.RELAY_PROXY,
         NodeType.RELAY_BLOCK: ConnectionType.CROSS_RELAY,
         NodeType.RELAY: ConnectionType.RELAY_ALL,
         NodeType.API_SOCKET: ConnectionType.SDN
@@ -55,7 +55,7 @@ NODE_TO_CONNECTION_TYPE: Dict[NodeType, Dict[NodeType, ConnectionType]] = {
         NodeType.INTERNAL_GATEWAY: ConnectionType.INTERNAL_GATEWAY,
         NodeType.EXTERNAL_GATEWAY: ConnectionType.EXTERNAL_GATEWAY,
         NodeType.RELAY: ConnectionType.RELAY_ALL,
-        NodeType.RELAY_PROXY: ConnectionType.RELAY_ALL,
+        NodeType.RELAY_PROXY: ConnectionType.RELAY_PROXY,
         NodeType.API_SOCKET: ConnectionType.SDN,
     },
 }
