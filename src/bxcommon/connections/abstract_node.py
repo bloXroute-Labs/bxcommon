@@ -224,7 +224,7 @@ class AbstractNode:
             ConnectionPeerInfo(socket_connection.endpoint, AbstractConnection.CONNECTION_TYPE)
         )
         ip, port = socket_connection.endpoint
-        peer_info = None
+        peer_info: Optional[AuthenticatedPeerInfo] = None
         if socket_connection.is_ssl:
             try:
                 peer_info = self._get_socket_peer_info(

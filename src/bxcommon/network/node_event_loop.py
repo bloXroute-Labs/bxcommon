@@ -6,7 +6,7 @@ import sys
 from asyncio import CancelledError, Future
 from asyncio.events import AbstractServer
 from ssl import SSLContext
-from typing import Iterator, List, Coroutine, Generator, Callable, Awaitable, Optional
+from typing import Iterator, List, Coroutine, Generator, Callable, Awaitable, Optional, Union
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
@@ -14,10 +14,12 @@ from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import HighMemoryError
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
+from bxcommon.network.dummy_socket_connection_protocol import DummySocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
 from bxcommon.network.socket_connection_protocol_py36 import SocketConnectionProtocolPy36
 from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
+from bxcommon.utils.expiring_dict import ExpiringDict
 from bxutils import logging, constants as utils_constants
 
 logger = logging.get_logger(__name__)
@@ -48,6 +50,12 @@ class NodeEventLoop:
         loop.add_signal_handler(signal.SIGTERM, self.stop)
         loop.add_signal_handler(signal.SIGINT, self.stop)
         loop.add_signal_handler(signal.SIGSEGV, self.stop)
+
+        self.connected_peers = ExpiringDict(
+            self._node.alarm_queue,
+            constants.THROTTLE_RECONNECT_TIME_S,
+            name="throttle_reconnect"
+        )
 
     async def run(self) -> None:
         try:
@@ -202,8 +210,12 @@ class NodeEventLoop:
             timeout = min(timeout, constants.MAX_EVENT_LOOP_TIMEOUT)
         await asyncio.sleep(timeout)
 
-    def _protocol_factory(self, endpoint: IpEndpoint, is_server: bool = False,
-                          is_ssl: Optional[bool] = None) -> AbstractSocketConnectionProtocol:
+    def _protocol_factory(
+        self,
+        endpoint: IpEndpoint,
+        is_server: bool = False,
+        is_ssl: Optional[bool] = None
+    ) -> Union[AbstractSocketConnectionProtocol, DummySocketConnectionProtocol]:
         if is_server:
             target_endpoint = None
         else:
@@ -214,6 +226,22 @@ class NodeEventLoop:
         else:
             from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
             protocol_cls = SocketConnectionProtocol
+
+        # Check for throttle
+        throttle_key = endpoint.ip_address
+        reconnect_count = 1
+        if throttle_key in self.connected_peers:
+            reconnect_count = self.connected_peers[throttle_key] + 1
+        self.connected_peers.add(throttle_key, reconnect_count)
+
+        if reconnect_count >= constants.MAX_HIGH_RECONNECT_ATTEMPTS_ALLOWED:
+            logger.debug(
+                "Node: {}, tries to reconnect for {} for the last {} minutes",
+                throttle_key,
+                reconnect_count,
+                constants.THROTTLE_RECONNECT_TIME_S
+            )
+            protocol_cls = DummySocketConnectionProtocol
 
         if is_ssl is None:
             is_ssl = endpoint.port in utils_constants.SSL_PORT_RANGE
