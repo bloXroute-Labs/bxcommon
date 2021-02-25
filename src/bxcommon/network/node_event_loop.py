@@ -2,22 +2,19 @@ import asyncio
 import functools
 import signal
 import socket
-import sys
 from asyncio import CancelledError, Future
 from asyncio.events import AbstractServer
 from ssl import SSLContext
-from typing import Iterator, List, Coroutine, Generator, Callable, Awaitable, Optional, Union
+from typing import Iterator, List, Coroutine, Generator, Callable, Awaitable, Optional
 
 from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import HighMemoryError
-from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
-from bxcommon.network.dummy_socket_connection_protocol import DummySocketConnectionProtocol
+from bxcommon.network.base_socket_connection_protocol import BaseSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
-from bxcommon.network.socket_connection_protocol_py36 import SocketConnectionProtocolPy36
 from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
 from bxcommon.utils.expiring_dict import ExpiringDict
 from bxutils import logging, constants as utils_constants
@@ -215,35 +212,13 @@ class NodeEventLoop:
         endpoint: IpEndpoint,
         is_server: bool = False,
         is_ssl: Optional[bool] = None
-    ) -> Union[AbstractSocketConnectionProtocol, DummySocketConnectionProtocol]:
+    ) -> BaseSocketConnectionProtocol:
         if is_server:
             target_endpoint = None
         else:
             target_endpoint = endpoint
 
-        if sys.version.startswith("3.6."):
-            protocol_cls = SocketConnectionProtocolPy36
-        else:
-            from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
-            protocol_cls = SocketConnectionProtocol
-
-        # Check for throttle
-        throttle_key = endpoint.ip_address
-        reconnect_count = 1
-        if throttle_key in self.connected_peers:
-            reconnect_count = self.connected_peers[throttle_key] + 1
-        self.connected_peers.add(throttle_key, reconnect_count)
-
-        if reconnect_count >= constants.MAX_HIGH_RECONNECT_ATTEMPTS_ALLOWED:
-            logger.debug(
-                "Node: {}, tries to reconnect for {} for the last {} minutes",
-                throttle_key,
-                reconnect_count,
-                constants.THROTTLE_RECONNECT_TIME_S
-            )
-            protocol_cls = DummySocketConnectionProtocol
-
         if is_ssl is None:
             is_ssl = endpoint.port in utils_constants.SSL_PORT_RANGE
 
-        return protocol_cls(self._node, target_endpoint, is_ssl=is_ssl)
+        return BaseSocketConnectionProtocol(self._node, target_endpoint, is_ssl=is_ssl)
