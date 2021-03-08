@@ -35,7 +35,7 @@ def _register_node(opts: CommonOpts, node_ssl_service: NodeSSLService) -> NodeMo
         cache_info = node_cache.read(opts)
         if not cache_info or not cache_info.node_model:
             logger.fatal(
-                "Unable to reach the SDN and no local cache information was found. Unable to start the gateway"
+                "Unable to reach the SDN and no local cache information was found. Unable to start the node"
             )
             sys.exit(1)
         node_model = cache_info.node_model

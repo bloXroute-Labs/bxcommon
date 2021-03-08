@@ -4,9 +4,10 @@
 import json
 import os
 from dataclasses import dataclass
-from typing import List, Optional, TYPE_CHECKING, Union, Dict
+from typing import List, Optional, TYPE_CHECKING, Union, Dict, Any
 from argparse import Namespace
 
+from bxcommon.models.bdn_account_model_base import BdnAccountModelBase
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_peer_info import BlockchainPeerInfo
 from bxcommon.models.node_model import NodeModel
@@ -30,12 +31,14 @@ class CacheNetworkInfo:
     blockchain_networks: Dict[int, BlockchainNetworkModel]
     blockchain_peers: List[BlockchainPeerInfo]
     node_model: NodeModel
+    accounts: Dict[str, Union[BdnAccountModelBase, Any]]
 
 
 def update_cache_file(
     opts: "CommonOpts",
     potential_relay_peers: Optional[List[OutboundPeerModel]] = None,
-    blockchain_peers: Optional[List[BlockchainPeerInfo]] = None
+    blockchain_peers: Optional[List[BlockchainPeerInfo]] = None,
+    accounts: Optional[Dict[str, Optional[BdnAccountModelBase]]] = None
 ) -> None:
     data = read(opts)
     node_model = model_loader.load_model(NodeModel, opts.__dict__)
@@ -45,7 +48,8 @@ def update_cache_file(
             relay_peers=potential_relay_peers,
             blockchain_networks=opts.blockchain_networks,
             blockchain_peers=blockchain_peers,
-            node_model=node_model
+            node_model=node_model,
+            accounts=accounts
         )
     else:
         data.blockchain_networks = opts.blockchain_networks
@@ -54,6 +58,11 @@ def update_cache_file(
             data.relay_peers = potential_relay_peers
         if blockchain_peers is not None:
             data.blockchain_peers = blockchain_peers
+        if accounts is not None:
+            if data.accounts:
+                data.accounts.update(accounts)
+            else:
+                data.accounts = accounts
 
     try:
         cookie_file_path = config.get_data_file(opts.cookie_file_path)

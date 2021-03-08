@@ -146,14 +146,18 @@ class CommonOpts:
     def validate_external_ip(self) -> None:
         parsed_sdn_url = parse.urlparse(self.sdn_url)
         sdn_host = parsed_sdn_url.netloc.split(":")[0]
-        sdn_ip = ipaddress.ip_address(ip_resolver.blocking_resolve_ip(sdn_host))
-        if not sdn_ip.is_private and self.external_ip and ipaddress.ip_address(self.external_ip).is_private:
-            logger.fatal(
-                "The specified external IP ({}) is a known private IP address. Try omitting this argument",
-                self.external_ip,
-                exc_info=False
-            )
-            sys.exit(1)
+        try:
+            sdn_ip = ipaddress.ip_address(ip_resolver.blocking_resolve_ip(sdn_host))
+            if not sdn_ip.is_private and self.external_ip and ipaddress.ip_address(self.external_ip).is_private:
+                logger.fatal(
+                    "The specified external IP ({}) is a known private IP address. Try omitting this argument",
+                    self.external_ip,
+                    exc_info=False
+                )
+                sys.exit(1)
+        # pylint: disable=broad-except
+        except Exception:
+            logger.debug("SDN might be offline, skipping validate external ip")
 
     def validate_network_opts(self) -> None:
         pass
