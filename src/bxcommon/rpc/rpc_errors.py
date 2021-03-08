@@ -18,6 +18,7 @@ class RpcErrorCode(Enum):
     TIMED_OUT = -32002
     ACCOUNT_ID_ERROR = -32003
     UNKNOWN = -32004
+    WS_CONNECTIONS_EXCEEDED = -32005
 
 
 ERROR_MESSAGE_MAPPINGS = {
@@ -30,6 +31,7 @@ ERROR_MESSAGE_MAPPINGS = {
     RpcErrorCode.TIMED_OUT: "Timeout error",
     RpcErrorCode.ACCOUNT_ID_ERROR: "Invalid Account ID",
     RpcErrorCode.UNKNOWN: "Invalid result from BDN",
+    RpcErrorCode.WS_CONNECTIONS_EXCEEDED: "Ws connections exceeded",
 }
 
 
@@ -121,3 +123,10 @@ class RpcAccountIdError(RpcError):
 class RpcUnknownError(RpcError):
     def __init__(self, request_id: Optional[str], data: Optional[Any] = None) -> None:
         super().__init__(RpcErrorCode.UNKNOWN, request_id, data)
+
+
+class RpcWsConnectionExceededError(RpcError):
+    def __init__(
+        self, request_id: Optional[str] = None, data: Optional[Any] = None
+    ) -> None:
+        super().__init__(RpcErrorCode.WS_CONNECTIONS_EXCEEDED, request_id, data)
