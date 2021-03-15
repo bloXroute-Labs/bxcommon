@@ -1,3 +1,5 @@
+from unittest import skip
+
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
@@ -145,8 +147,10 @@ class BloxrouteVersionManagerV6Test(
     def old_pong_message(self, original_message: PongMessage) -> PongMessageV13:
         return PongMessageV13(original_message.nonce())
 
+    @skip
     def test_bdn_performance_stats_message(self):
         pass
 
+    @skip
     def test_broadcast_message(self):
         pass

@@ -1,6 +1,4 @@
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.messages.bloxroute.v18.bdn_performance_stats_message_converter_v18 import \
-    bdn_performance_stats_message_converter_v18
 from bxcommon.messages.bloxroute.v19.tx_message_converter_v19 import tx_message_converter_v19
 from bxcommon.messages.bloxroute.v20.message_converter_factory_v20 import message_converter_factory_v20
 from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
@@ -12,7 +10,6 @@ class _MessageConverterFactoryV19(AbstractMessageConverterFactory):
         # pylint: disable=protected-access
         **message_converter_factory_v20._MESSAGE_CONVERTER_MAPPING,
         BloxrouteMessageType.TRANSACTION: tx_message_converter_v19,
-        BloxrouteMessageType.BDN_PERFORMANCE_STATS: bdn_performance_stats_message_converter_v18,
     }
 
     def get_message_converter(self, msg_type):

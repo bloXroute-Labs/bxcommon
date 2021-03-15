@@ -34,8 +34,6 @@ class BdnPerformanceStatsData:
     tx_sent_to_node: int = 0
     duplicate_tx_from_node: int = 0
 
-    account_id: str = constants.DECODED_EMPTY_ACCOUNT_ID
-
 
 class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
     """
@@ -113,20 +111,14 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
         start_time: datetime,
         end_time: datetime,
         memory_utilization_mb: int,
-        node_stats: Dict[IpEndpoint, BdnPerformanceStatsData],
+        node_stats: Dict[IpEndpoint, BdnPerformanceStatsData]
     ):
-        stats_serialized_length = (
-            constants.UL_SHORT_SIZE_IN_BYTES
-            + len(node_stats)
-            * (
-                constants.IP_ADDR_SIZE_IN_BYTES
-                + constants.UL_SHORT_SIZE_IN_BYTES
-                + (2 * constants.UL_SHORT_SIZE_IN_BYTES)
-                + (7 * constants.UL_INT_SIZE_IN_BYTES)
-                + constants.ACCOUNT_ID_SIZE_IN_BYTES
-            )
+        stats_serialized_length = constants.UL_SHORT_SIZE_IN_BYTES + len(node_stats) * (
+            constants.IP_ADDR_SIZE_IN_BYTES +
+            constants.UL_SHORT_SIZE_IN_BYTES +
+            (2 * constants.UL_SHORT_SIZE_IN_BYTES) +
+            (7 * constants.UL_INT_SIZE_IN_BYTES)
         )
-
         msg_size = (
             self.node_stats_offset
             + stats_serialized_length
@@ -179,12 +171,6 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
             struct.pack_into("<I", buf, off, node_stat.duplicate_tx_from_node)
             off += constants.UL_INT_SIZE_IN_BYTES
 
-            account_id = node_stat.account_id
-            if account_id is None:
-                account_id = constants.DECODED_EMPTY_ACCOUNT_ID
-            struct.pack_into("<36s", buf, off, account_id.encode(constants.DEFAULT_TEXT_ENCODING))
-            off += constants.ACCOUNT_ID_SIZE_IN_BYTES
-
         return buf
 
     def _unpack(self) -> None:
@@ -224,13 +210,6 @@ class BdnPerformanceStatsMessage(AbstractBloxrouteMessage):
             off += constants.UL_INT_SIZE_IN_BYTES
             single_node_stats.duplicate_tx_from_node, = struct.unpack_from("<I", buf, off)
             off += constants.UL_INT_SIZE_IN_BYTES
-            account_id = struct.unpack_from(
-                "<36s", buf, off
-            )[0].rstrip(constants.MSG_NULL_BYTE).decode(constants.DEFAULT_TEXT_ENCODING)
-            if account_id == "":
-                account_id = constants.DECODED_EMPTY_ACCOUNT_ID
-            single_node_stats.account_id = account_id
-            off += constants.ACCOUNT_ID_SIZE_IN_BYTES
             node_stats[IpEndpoint(ip, port)] = single_node_stats
         self._node_stats = node_stats
 

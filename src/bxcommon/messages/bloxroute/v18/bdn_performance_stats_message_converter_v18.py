@@ -61,8 +61,7 @@ class _BdnPerformanceStatsMessageConverterV18(AbstractMessageConverter):
     )
     _NEW_MESSAGE_NODE_STATS_LEN = (
         _OLD_MESSAGE_NODE_STATS_LEN +
-        (2 * constants.UL_INT_SIZE_IN_BYTES) +
-        constants.ACCOUNT_ID_SIZE_IN_BYTES
+        (2 * constants.UL_INT_SIZE_IN_BYTES)
     )
     _NODE_STATS_LENGTH_DIFFERENCE = _NEW_MESSAGE_NODE_STATS_LEN - _OLD_MESSAGE_NODE_STATS_LEN
 
@@ -104,8 +103,6 @@ class _BdnPerformanceStatsMessageConverterV18(AbstractMessageConverter):
             new_msg_off += constants.UL_INT_SIZE_IN_BYTES
             struct.pack_into("<I", new_msg_bytes, new_msg_off, default_new_stats)
             new_msg_off += constants.UL_INT_SIZE_IN_BYTES
-            struct.pack_into("<36s", new_msg_bytes, new_msg_off, constants.EMPTY_ACCOUNT_ID)
-            new_msg_off += constants.ACCOUNT_ID_SIZE_IN_BYTES
 
         new_msg_bytes[new_msg_off:] = msg.rawbytes()[old_msg_off:]
 

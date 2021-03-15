@@ -103,7 +103,7 @@ class AbstractHttpRpcServer(Generic[Node]):
     _stop_requested: bool
     _stop_waiter: Future
     _started: bool
-    encoded_auth: Optional[str]
+    _encoded_auth: Optional[str]
     _ws_connections: Dict[str, List[WsConnection]] = defaultdict(list)
 
     def __init__(
@@ -125,13 +125,13 @@ class AbstractHttpRpcServer(Generic[Node]):
         self._stop_requested = False
         self._stop_waiter = asyncio.get_event_loop().create_future()
         self._started = False
-        self.encoded_auth = None
+        self._encoded_auth = None
         self._ws_connections: Dict[str, List[WsConnection]] = defaultdict(list)
 
         rpc_user = self.node.opts.rpc_user
         if rpc_user:
             rpc_password = self.node.opts.rpc_password
-            self.encoded_auth = base64.b64encode(
+            self._encoded_auth = base64.b64encode(
                 f"{rpc_user}:{rpc_password}".encode("utf-8")
             ).decode("utf-8")
 

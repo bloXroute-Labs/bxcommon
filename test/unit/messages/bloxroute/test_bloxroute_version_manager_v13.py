@@ -1,4 +1,5 @@
-from bxcommon import constants
+from unittest import skip
+
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
@@ -105,10 +106,12 @@ class BloxrouteVersionManagerV13Test(
         self.assertEqual(0, converted_single_node_stats.new_block_announcements_from_blockchain_node)
         self.assertEqual(0, converted_single_node_stats.tx_sent_to_node)
         self.assertEqual(0, converted_single_node_stats.duplicate_tx_from_node)
-        self.assertEqual(constants.DECODED_EMPTY_ACCOUNT_ID, converted_single_node_stats.account_id)
 
+
+    @skip
     def test_tx_message(self):
         pass
 
+    @skip
     def test_txtxs_message(self):
         pass
