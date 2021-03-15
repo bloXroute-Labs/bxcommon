@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.network.ip_endpoint import IpEndpoint
@@ -9,6 +9,7 @@ class ConnectionPeerInfo(NamedTuple):
     endpoint: IpEndpoint
     connection_type: ConnectionType
     transport_protocol: int = TransportLayerProtocol.TCP
+    account_id: Optional[str] = None
 
     def __repr__(self) -> str:
         return f"{self.endpoint} [{self.connection_type.name}]"

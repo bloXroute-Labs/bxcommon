@@ -130,14 +130,20 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                len(tx.contents) for tx in txs) + constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(TxsMessage(txs), TxsMessage.MESSAGE_TYPE, expected_length)
 
-        expected_length = (2 * constants.DOUBLE_SIZE_IN_BYTES) + (5 * constants.UL_SHORT_SIZE_IN_BYTES) + \
-                          (7 * constants.UL_INT_SIZE_IN_BYTES) + constants.IP_ADDR_SIZE_IN_BYTES + \
-                          constants.CONTROL_FLAGS_LEN
+        expected_length = (
+            (2 * constants.DOUBLE_SIZE_IN_BYTES)
+            + (5 * constants.UL_SHORT_SIZE_IN_BYTES)
+            + (7 * constants.UL_INT_SIZE_IN_BYTES)
+            + constants.ACCOUNT_ID_SIZE_IN_BYTES
+            + constants.IP_ADDR_SIZE_IN_BYTES
+            + constants.CONTROL_FLAGS_LEN
+        )
+
         node_stats = {}
         helpers.add_stats_to_node_stats(
             node_stats,
             "127.0.0.1", 8001,
-            200, 300, 400, 500, 600, 700, 800, 100, 50
+            200, 300, 400, 500, 600, 700, 800, 100, 50, "account-id"
         )
         self.get_message_preview_successfully(
             BdnPerformanceStatsMessage(
@@ -148,31 +154,38 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         )
 
         # multi node bdn stats message
-        expected_length = (constants.CONTROL_FLAGS_LEN +
-                           (2 * constants.DOUBLE_SIZE_IN_BYTES) +       # start/end time
-                           constants.UL_SHORT_SIZE_IN_BYTES +           # memory
-                           constants.UL_SHORT_SIZE_IN_BYTES +           # num blockchain peers
-                           (3 *                                         # num blockchain peers
-                            (constants.IP_ADDR_SIZE_IN_BYTES +          # ip
-                            constants.UL_SHORT_SIZE_IN_BYTES +          # port
-                            (2 * constants.UL_SHORT_SIZE_IN_BYTES) +    # original block stats
-                            (7 * constants.UL_INT_SIZE_IN_BYTES))))     # rest of stats
+        expected_length = (
+            constants.CONTROL_FLAGS_LEN +
+            (2 * constants.DOUBLE_SIZE_IN_BYTES) +       # start/end time
+            constants.UL_SHORT_SIZE_IN_BYTES +           # memory
+            constants.UL_SHORT_SIZE_IN_BYTES +           # num blockchain peers
+            (
+                3 *                                         # num blockchain peers
+                (
+                    constants.IP_ADDR_SIZE_IN_BYTES +          # ip
+                    constants.UL_SHORT_SIZE_IN_BYTES +          # port
+                    (2 * constants.UL_SHORT_SIZE_IN_BYTES) +    # original block stats
+                    (7 * constants.UL_INT_SIZE_IN_BYTES) +      # rest of stats
+                    constants.ACCOUNT_ID_SIZE_IN_BYTES
+                )
+            )
+        )
 
         node_stats = {}
         helpers.add_stats_to_node_stats(
             node_stats,
             "127.0.0.1", 8001,
-            200, 300, 400, 500, 600, 700, 800, 100, 50
+            200, 300, 400, 500, 600, 700, 800, 100, 50, "account-id"
         )
         helpers.add_stats_to_node_stats(
             node_stats,
             "127.0.0.2", 8002,
-            200, 300, 400, 500, 600, 700, 800, 100, 50
+            200, 300, 400, 500, 600, 700, 800, 100, 50, "account-id"
         )
         helpers.add_stats_to_node_stats(
             node_stats,
             "127.0.0.3", 8003,
-            200, 300, 400, 500, 600, 700, 800, 100, 50
+            200, 300, 400, 500, 600, 700, 800, 100, 50, "account-id"
         )
         self.get_message_preview_successfully(
             BdnPerformanceStatsMessage(
@@ -548,6 +561,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         node_1_bdn_stats.new_block_announcements_from_blockchain_node = 1000
         node_1_bdn_stats.tx_sent_to_node = 1100
         node_1_bdn_stats.duplicate_tx_from_node = 600
+        node_1_bdn_stats.account_id = "account-id"
         end_time = datetime.utcnow()
 
         node_stats = {}
@@ -589,6 +603,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         )
         self.assertEqual(node_1_bdn_stats.tx_sent_to_node, stats.tx_sent_to_node)
         self.assertEqual(node_1_bdn_stats.duplicate_tx_from_node, stats.duplicate_tx_from_node)
+        self.assertEqual(node_1_bdn_stats.account_id, stats.account_id)
         self.assertEqual(node_1_ip, ip_endpoint.ip_address)
         self.assertEqual(node_1_port, ip_endpoint.port)
 
@@ -607,6 +622,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         node_1_bdn_stats.new_block_announcements_from_blockchain_node = 900
         node_1_bdn_stats.tx_sent_to_node = 1100
         node_1_bdn_stats.duplicate_tx_from_node = 600
+        node_1_bdn_stats.account_id = "account-id1"
         end_time = datetime.utcnow()
         node_1_ip = "127.0.0.1"
         node_1_port = 8001
@@ -621,6 +637,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         node_2_bdn_stats.new_block_announcements_from_blockchain_node = 1000
         node_2_bdn_stats.tx_sent_to_node = 1200
         node_2_bdn_stats.duplicate_tx_from_node = 500
+        node_2_bdn_stats.account_id = "account-id2"
         node_2_ip = "127.0.0.2"
         node_2_port = 8002
 
@@ -661,6 +678,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         )
         self.assertEqual(node_1_bdn_stats.tx_sent_to_node, stats.tx_sent_to_node)
         self.assertEqual(node_1_bdn_stats.duplicate_tx_from_node, stats.duplicate_tx_from_node)
+        self.assertEqual(node_1_bdn_stats.account_id, stats.account_id)
 
         stats = bdn_stats_msg.node_stats()[IpEndpoint(node_2_ip, node_2_port)]
         self.assertEqual(
@@ -684,6 +702,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         )
         self.assertEqual(node_2_bdn_stats.tx_sent_to_node, stats.tx_sent_to_node)
         self.assertEqual(node_2_bdn_stats.duplicate_tx_from_node, stats.duplicate_tx_from_node)
+        self.assertEqual(node_2_bdn_stats.account_id, stats.account_id)
 
     def test_routing_message(self):
         origin_node_id = helpers.generate_node_id()

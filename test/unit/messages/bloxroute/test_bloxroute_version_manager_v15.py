@@ -1,5 +1,3 @@
-from unittest import skip
-
 from bxcommon import constants
 from bxcommon.messages.bloxroute.ack_message import AckMessage
 from bxcommon.messages.bloxroute.block_confirmation_message import BlockConfirmationMessage
@@ -157,6 +155,5 @@ class BloxrouteVersionManagerV15Test(
                 converted.short_id_flags,
             )
 
-    @skip
     def test_bdn_performance_stats_message(self):
         pass

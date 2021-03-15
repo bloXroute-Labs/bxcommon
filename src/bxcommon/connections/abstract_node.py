@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod
 from asyncio import Future
 from collections import defaultdict, Counter
 from ssl import SSLContext
-from typing import List, Optional, Tuple, Dict, NamedTuple, Union, Set
+from typing import List, Optional, Tuple, Dict, NamedTuple, Union, Set, TYPE_CHECKING
 
 import gc
 
@@ -52,6 +52,10 @@ from bxutils.services.node_ssl_service import NodeSSLService
 from bxutils.ssl.extensions import extensions_factory
 from bxutils.ssl.ssl_certificate_type import SSLCertificateType
 
+if TYPE_CHECKING:
+    # noinspection PyUnresolvedReferences
+    # pylint: disable=ungrouped-imports,cyclic-import
+    from bxcommon.rpc.https.abstract_http_rpc_server import AbstractHttpRpcServer
 
 logger = logging.get_logger(__name__)
 memory_logger = logging.get_logger(LogRecordType.BxMemory, __name__)
@@ -154,6 +158,7 @@ class AbstractNode:
         self.serialized_message_cache = SerializedMessageCache(self.alarm_queue)
 
         self.alarm_queue.register_alarm(constants.RESPONSIVENESS_CHECK_INTERVAL_S, self._responsiveness_check_log)
+        self.rpc_server: Optional["AbstractHttpRpcServer"] = None
 
     def get_sdn_address(self):
         """
@@ -456,11 +461,17 @@ class AbstractNode:
         connections = self.broadcast_service.broadcast(msg, options)
         return connections
 
-    def enqueue_connection(self, ip: str, port: int, connection_type: ConnectionType):
+    def enqueue_connection(
+        self,
+        ip: str,
+        port: int,
+        connection_type: ConnectionType,
+        account_id: Optional[str] = None
+    ):
         """
         Queues a connection up for the event loop to open a socket for.
         """
-        peer_info = ConnectionPeerInfo(IpEndpoint(ip, port), connection_type)
+        peer_info = ConnectionPeerInfo(IpEndpoint(ip, port), connection_type, account_id=account_id)
         if peer_info in self.pending_connection_attempts:
             logger.debug("Not adding {}, waiting until connection attempt to complete", peer_info)
         else:

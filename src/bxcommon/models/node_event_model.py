@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from bxcommon.models.serializeable_enum import SerializeableEnum
+from bxcommon import constants
 
 
 class NodeEventType(SerializeableEnum):
@@ -23,6 +24,7 @@ class NodeEventType(SerializeableEnum):
     TX_SERVICE_NOT_SYNCED = "TX_SERVICE_NOT_SYNCED"
     SWITCHING_RELAYS = "SWITCHING_RELAYS"
 
+
 @dataclass
 class NodeEventModel:
     # What event happened in a node.
@@ -37,6 +39,7 @@ class NodeEventModel:
     timestamp: str = None
     # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     event_id: str = None
+    account_id: str = constants.DECODED_EMPTY_ACCOUNT_ID
     # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     payload: str = None
 

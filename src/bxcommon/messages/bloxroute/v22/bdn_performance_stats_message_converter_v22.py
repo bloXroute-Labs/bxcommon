@@ -5,14 +5,14 @@ from bxcommon.messages.abstract_internal_message import AbstractInternalMessage
 from bxcommon.messages.bloxroute.abstract_bloxroute_message import AbstractBloxrouteMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsMessage
 from bxcommon.messages.bloxroute.bloxroute_message_type import BloxrouteMessageType
-from bxcommon.messages.bloxroute.v18.bdn_performance_stats_message_v18 import \
-    BdnPerformanceStatsMessageV18
+from bxcommon.messages.bloxroute.v22.bdn_performance_stats_message_v22 import \
+    BdnPerformanceStatsMessageV22
 from bxcommon.messages.versioning.abstract_message_converter import AbstractMessageConverter
 
 
-class _BdnPerformanceStatsMessageConverterV18(AbstractMessageConverter):
+class _BdnPerformanceStatsMessageConverterV22(AbstractMessageConverter):
     _MSG_TYPE_TO_OLD_MSG_CLASS_MAPPING = {
-        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV18
+        BloxrouteMessageType.BDN_PERFORMANCE_STATS: BdnPerformanceStatsMessageV22
     }
 
     _MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING = {
@@ -44,7 +44,7 @@ class _BdnPerformanceStatsMessageConverterV18(AbstractMessageConverter):
     _FIRST_NODE_STATS_BREAKPOINT = (
         _NUM_BLOCKCHAIN_PEERS_BREAKPOINT +
         (2 * constants.UL_SHORT_SIZE_IN_BYTES) +
-        (5 * constants.UL_INT_SIZE_IN_BYTES)
+        (7 * constants.UL_INT_SIZE_IN_BYTES)
     )
     _NODE_STATS_LENGTH = _FIRST_NODE_STATS_BREAKPOINT - _NUM_BLOCKCHAIN_PEERS_BREAKPOINT
 
@@ -56,12 +56,11 @@ class _BdnPerformanceStatsMessageConverterV18(AbstractMessageConverter):
 
     _OLD_MESSAGE_NODE_STATS_LEN = (
         constants.IP_ADDR_SIZE_IN_BYTES + constants.UL_SHORT_SIZE_IN_BYTES +
-        (5 * constants.UL_INT_SIZE_IN_BYTES) +
+        (7 * constants.UL_INT_SIZE_IN_BYTES) +
         (2 * constants.UL_SHORT_SIZE_IN_BYTES)
     )
     _NEW_MESSAGE_NODE_STATS_LEN = (
         _OLD_MESSAGE_NODE_STATS_LEN +
-        (2 * constants.UL_INT_SIZE_IN_BYTES) +
         constants.ACCOUNT_ID_SIZE_IN_BYTES
     )
     _NODE_STATS_LENGTH_DIFFERENCE = _NEW_MESSAGE_NODE_STATS_LEN - _OLD_MESSAGE_NODE_STATS_LEN
@@ -73,7 +72,7 @@ class _BdnPerformanceStatsMessageConverterV18(AbstractMessageConverter):
 
         if msg_type not in self._MSG_TYPE_TO_NEW_MSG_CLASS_MAPPING:
             raise ValueError(
-                f"Tried to convert unexpected old message type from v18: {msg_type}"
+                f"Tried to convert unexpected old message type from v22: {msg_type}"
             )
         if len(msg.rawbytes()) == self._MESSAGE_LEN_WITHOUT_NODE_STATS:
             # per Endpoint Stats is not available
@@ -93,17 +92,12 @@ class _BdnPerformanceStatsMessageConverterV18(AbstractMessageConverter):
         new_msg_bytes[:self._NUM_BLOCKCHAIN_PEERS_BREAKPOINT] = msg.rawbytes()[:self._NUM_BLOCKCHAIN_PEERS_BREAKPOINT]
         new_msg_off = self._NUM_BLOCKCHAIN_PEERS_BREAKPOINT
         old_msg_off = self._NUM_BLOCKCHAIN_PEERS_BREAKPOINT
-        default_new_stats = 0
         for _ in range(num_blockchain_peers):
             new_msg_bytes[new_msg_off:new_msg_off + self._OLD_MESSAGE_NODE_STATS_LEN] = \
                 msg.rawbytes()[old_msg_off:old_msg_off + self._OLD_MESSAGE_NODE_STATS_LEN]
             new_msg_off += self._OLD_MESSAGE_NODE_STATS_LEN
             old_msg_off += self._OLD_MESSAGE_NODE_STATS_LEN
 
-            struct.pack_into("<I", new_msg_bytes, new_msg_off, default_new_stats)
-            new_msg_off += constants.UL_INT_SIZE_IN_BYTES
-            struct.pack_into("<I", new_msg_bytes, new_msg_off, default_new_stats)
-            new_msg_off += constants.UL_INT_SIZE_IN_BYTES
             struct.pack_into("<36s", new_msg_bytes, new_msg_off, constants.EMPTY_ACCOUNT_ID)
             new_msg_off += constants.ACCOUNT_ID_SIZE_IN_BYTES
 
@@ -149,4 +143,4 @@ class _BdnPerformanceStatsMessageConverterV18(AbstractMessageConverter):
         raise NotImplementedError
 
 
-bdn_performance_stats_message_converter_v18 = _BdnPerformanceStatsMessageConverterV18()
+bdn_performance_stats_message_converter_v22 = _BdnPerformanceStatsMessageConverterV22()

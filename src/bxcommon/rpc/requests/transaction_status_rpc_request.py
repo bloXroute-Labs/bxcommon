@@ -32,7 +32,7 @@ class TransactionStatusRpcRequest(AbstractRpcRequest[Node]):
                 self.request_id,
                 "Params request field is either missing or not a dictionary type."
             )
-
+        self.authenticate_request()
         if TRANSACTION_HASH_KEY not in params:
             raise RpcInvalidParams(
                 self.request_id,
