@@ -4,11 +4,15 @@ from typing import Optional, TYPE_CHECKING
 
 import typing
 
+from cryptography.x509 import Certificate
+
 from bxcommon import constants
 from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.socket_connection_protocol_py36 import SocketConnectionProtocolPy36
 from bxutils import logging
+from bxutils.ssl import ssl_certificate_factory
+from bxutils.ssl.extensions import extensions_factory
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
@@ -50,15 +54,23 @@ class BaseSocketConnectionProtocol(BaseProtocol):
         assert endpoint is not None
 
         if self._is_server:
-            attempts = self._node.report_connection_attempt(endpoint.ip_address)
+            try:
+                cert = self.get_peer_certificate(transport)
+                key = extensions_factory.get_node_id(cert)
+                if key is None:
+                    key = endpoint.ip_address
+            except TypeError:
+                key = endpoint.ip_address
+            attempts = self._node.report_connection_attempt(key)
             if attempts >= constants.MAX_HIGH_RECONNECT_ATTEMPTS_ALLOWED:
                 logger.debug(
-                    "Rejecting connection attempt from {}. Too many attempts: {}",
+                    "Rejecting connection attempt from {} / {}. Too many attempts: {}",
                     self._endpoint,
+                    key,
                     attempts
                 )
-                transport.abort()
-                return
+                # transport.abort()
+                # return
 
         if sys.version.startswith("3.6."):
             protocol_cls = SocketConnectionProtocolPy36
@@ -116,3 +128,10 @@ class BaseSocketConnectionProtocol(BaseProtocol):
         if delegate_protocol is not None:
             # pyre-ignore ok, only unbuffered delegate will have this
             delegate_protocol.data_received(data)
+
+    def get_peer_certificate(self, transport: Transport) -> Certificate:
+        assert transport is not None, "Connection is broken!"
+        try:
+            return ssl_certificate_factory.get_transport_cert(transport)
+        except ValueError as e:
+            raise TypeError("Socket is not SSL type!") from e
