@@ -13,13 +13,12 @@ from bxcommon.models.transaction_flag import TransactionFlag
 from bxcommon.utils.object_hash import Sha256Hash
 
 
-class TxMessage(AbstractBroadcastMessage):
+class TxMessageV21(AbstractBroadcastMessage):
     PAYLOAD_LENGTH = (
         AbstractBroadcastMessage.PAYLOAD_LENGTH
         + constants.SID_LEN
         + constants.TRANSACTION_FLAG_LEN
         + constants.DOUBLE_SIZE_IN_BYTES
-        + constants.ACCOUNT_ID_SIZE_IN_BYTES
     )
     MESSAGE_TYPE = BloxrouteMessageType.TRANSACTION
     EMPTY_TX_VAL = memoryview(bytes())
@@ -33,21 +32,23 @@ class TxMessage(AbstractBroadcastMessage):
         tx_val: Union[bytearray, bytes, memoryview, None] = None,
         transaction_flag: Optional[TransactionFlag] = None,
         timestamp: Union[int, float] = constants.NULL_TX_TIMESTAMP,
-        account_id: Optional[str] = None,
         buf: Optional[Union[bytearray, memoryview]] = None,
     ):
-        if account_id is None:
-            account_id = constants.DECODED_EMPTY_ACCOUNT_ID
         self._short_id = None
         self._tx_val: Optional[memoryview] = None
         self._transaction_flag = None
         self._timestamp = None
-        self._account_id: str = constants.DECODED_EMPTY_ACCOUNT_ID
 
         # override payload length for variable length message
         if tx_val is not None:
             # pylint: disable=invalid-name
-            self.PAYLOAD_LENGTH += len(tx_val)
+            self.PAYLOAD_LENGTH = (
+                AbstractBroadcastMessage.PAYLOAD_LENGTH
+                + constants.SID_LEN
+                + constants.TRANSACTION_FLAG_LEN
+                + constants.DOUBLE_SIZE_IN_BYTES
+                + len(tx_val)
+            )
         super().__init__(message_hash, network_num, source_id, buf)
 
         if buf is None:
@@ -69,9 +70,6 @@ class TxMessage(AbstractBroadcastMessage):
             struct.pack_into("<d", self.buf, off, timestamp)
             off += constants.DOUBLE_SIZE_IN_BYTES
 
-            struct.pack_into("<36s", self.buf, off, account_id.encode(constants.DEFAULT_TEXT_ENCODING))
-            off += constants.ACCOUNT_ID_SIZE_IN_BYTES
-
             if tx_val is not None:
                 self.buf[off:off + len(tx_val)] = tx_val
 
@@ -84,8 +82,7 @@ class TxMessage(AbstractBroadcastMessage):
             f"compact: {self.is_compact()}, "
             f"source_id: {self.source_id_as_str()}, "
             f"transaction_flag: {self.transaction_flag()}, "
-            f"timestamp: {self.timestamp()}, "
-            f"account_id: {self.account_id()}"
+            f"timestamp: {self.timestamp()}"
             f">"
         )
 
@@ -143,21 +140,6 @@ class TxMessage(AbstractBroadcastMessage):
         # pyre-fixme[7]: Expected `float` but got `None`.
         return self._timestamp
 
-    def account_id(self) -> str:
-        off = (
-            self.HEADER_LENGTH
-            + AbstractBroadcastMessage.PAYLOAD_LENGTH
-            + constants.SID_LEN
-            + constants.TRANSACTION_FLAG_LEN
-            + constants.DOUBLE_SIZE_IN_BYTES
-            - constants.CONTROL_FLAGS_LEN
-        )
-        self._account_id = struct.unpack_from(
-            "<36s", self.buf, off
-        )[0].rstrip(constants.MSG_NULL_BYTE).decode(constants.DEFAULT_TEXT_ENCODING)
-
-        return self._account_id
-
     def tx_val(self) -> memoryview:
         if self._tx_val is None:
             if self.payload_len() == 0:
@@ -169,11 +151,10 @@ class TxMessage(AbstractBroadcastMessage):
                     + constants.SID_LEN
                     + constants.TRANSACTION_FLAG_LEN
                     + constants.DOUBLE_SIZE_IN_BYTES
-                    + constants.ACCOUNT_ID_SIZE_IN_BYTES
                     - constants.CONTROL_FLAGS_LEN
                 )
                 self._tx_val = self._memoryview[
-                    off: self.HEADER_LENGTH
+                    off : self.HEADER_LENGTH
                     + self.payload_len()
                     - constants.CONTROL_FLAGS_LEN
                 ]

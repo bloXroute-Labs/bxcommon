@@ -244,6 +244,9 @@ class InternalNodeConnection(AbstractConnection[Node]):
     def is_relay_connection(self):
         return self.CONNECTION_TYPE in ConnectionType.RELAY_ALL
 
+    def is_proxy_connection(self) -> bool:
+        return self.CONNECTION_TYPE in ConnectionType.RELAY_PROXY
+
     def update_tx_sync_complete(self, network_num: int):
         if network_num in self.sync_ping_latencies:
             del self.sync_ping_latencies[network_num]

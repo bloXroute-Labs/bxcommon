@@ -46,4 +46,5 @@ def tx_message(
         source_id,
         short_id,
         helpers.generate_bytearray(250),
+        account_id=helpers.generate_object_hash().to_string()
     )

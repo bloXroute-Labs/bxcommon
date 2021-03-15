@@ -2,7 +2,6 @@ import asyncio
 import functools
 import signal
 import socket
-import sys
 from asyncio import CancelledError, Future
 from asyncio.events import AbstractServer
 from ssl import SSLContext
@@ -13,11 +12,11 @@ from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
 from bxcommon.exceptions import HighMemoryError
-from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketConnectionProtocol
+from bxcommon.network.base_socket_connection_protocol import BaseSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
-from bxcommon.network.socket_connection_protocol_py36 import SocketConnectionProtocolPy36
 from bxcommon.network.transport_layer_protocol import TransportLayerProtocol
+from bxcommon.utils.expiring_dict import ExpiringDict
 from bxutils import logging, constants as utils_constants
 
 logger = logging.get_logger(__name__)
@@ -48,6 +47,12 @@ class NodeEventLoop:
         loop.add_signal_handler(signal.SIGTERM, self.stop)
         loop.add_signal_handler(signal.SIGINT, self.stop)
         loop.add_signal_handler(signal.SIGSEGV, self.stop)
+
+        self.connected_peers = ExpiringDict(
+            self._node.alarm_queue,
+            constants.THROTTLE_RECONNECT_TIME_S,
+            name="throttle_reconnect"
+        )
 
     async def run(self) -> None:
         try:
@@ -202,20 +207,18 @@ class NodeEventLoop:
             timeout = min(timeout, constants.MAX_EVENT_LOOP_TIMEOUT)
         await asyncio.sleep(timeout)
 
-    def _protocol_factory(self, endpoint: IpEndpoint, is_server: bool = False,
-                          is_ssl: Optional[bool] = None) -> AbstractSocketConnectionProtocol:
+    def _protocol_factory(
+        self,
+        endpoint: IpEndpoint,
+        is_server: bool = False,
+        is_ssl: Optional[bool] = None
+    ) -> BaseSocketConnectionProtocol:
         if is_server:
             target_endpoint = None
         else:
             target_endpoint = endpoint
 
-        if sys.version.startswith("3.6."):
-            protocol_cls = SocketConnectionProtocolPy36
-        else:
-            from bxcommon.network.socket_connection_protocol import SocketConnectionProtocol
-            protocol_cls = SocketConnectionProtocol
-
         if is_ssl is None:
             is_ssl = endpoint.port in utils_constants.SSL_PORT_RANGE
 
-        return protocol_cls(self._node, target_endpoint, is_ssl=is_ssl)
+        return BaseSocketConnectionProtocol(self._node, target_endpoint, is_ssl=is_ssl)

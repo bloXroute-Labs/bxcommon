@@ -103,8 +103,16 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         else:
             logger.debug("Connected to websockets endpoint: {}", self.uri)
             self.running = True
+            ws_status_check = self.ws_status_check
+            if ws_status_check is not None and not ws_status_check.done():
+                ws_status_check.cancel()
             self.ws_status_check = asyncio.create_task(self._ensure_websocket_alive())
+
             self.connected_event.set()
+
+            listener_task = self.listener_task
+            if listener_task is not None and not listener_task.done():
+                listener_task.cancel()
             self.listener_task = asyncio.create_task(self.receive())
 
     async def connect_websocket(self) -> websockets.WebSocketClientProtocol:
@@ -288,17 +296,16 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
 
         self.connected_event.clear()
 
-        listener = self.listener_task
-        assert listener is not None
-        listener.cancel()
-
         if not self.retry_connection:
+            listener = self.listener_task
+            assert listener is not None
+            listener.cancel()
             logger.debug("Websockets connection was broken. Closing...")
             self.running = False
             await self.close()
         elif self.running:
             logger.debug("Websockets connection was broken, reconnecting...")
-            await self.reconnect()
+            asyncio.create_task(self.reconnect())
 
     async def reconnect(self) -> None:
         await asyncio.sleep(constants.WS_MIN_RECONNECT_TIMEOUT_S)

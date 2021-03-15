@@ -2,10 +2,11 @@ import asyncio
 import base64
 import os
 import ssl
+from collections import defaultdict
 from ssl import Purpose
 from abc import abstractmethod
 from asyncio import Future
-from typing import Callable, Awaitable, Optional, TYPE_CHECKING, TypeVar, Generic, List
+from typing import Callable, Awaitable, Optional, TYPE_CHECKING, TypeVar, Generic, List, Dict, cast
 from aiohttp import web
 from aiohttp.abc import StreamResponse
 from aiohttp.web import Application, Request, Response, AppRunner, TCPSite, WebSocketResponse
@@ -103,7 +104,7 @@ class AbstractHttpRpcServer(Generic[Node]):
     _stop_waiter: Future
     _started: bool
     _encoded_auth: Optional[str]
-    _ws_connections: List[WsConnection] = []
+    _ws_connections: Dict[str, List[WsConnection]] = defaultdict(list)
 
     def __init__(
         self,
@@ -125,7 +126,7 @@ class AbstractHttpRpcServer(Generic[Node]):
         self._stop_waiter = asyncio.get_event_loop().create_future()
         self._started = False
         self._encoded_auth = None
-        self._ws_connections: List[WsConnection] = []
+        self._ws_connections: Dict[str, List[WsConnection]] = defaultdict(list)
 
         rpc_user = self.node.opts.rpc_user
         if rpc_user:
@@ -169,7 +170,7 @@ class AbstractHttpRpcServer(Generic[Node]):
         self._stop_requested = True
         if self._started:
             await asyncio.gather(
-                *(connection.close() for connection in self._ws_connections)
+                *(connection.close() for ip, connections in self._ws_connections.items() for connection in connections)
             )
         await self._stop_waiter
         await self._runner.cleanup()
@@ -232,15 +233,19 @@ class AbstractHttpRpcServer(Generic[Node]):
             ws_response = web.WebSocketResponse()
             websocket_handler = self.request_ws_handler()
             assert websocket_handler is not None
+            path = cast(str, request.path)
             ws_connection = WsConnection(
                 ws_response,
-                # pyre-fixme[6]: Expected `str` but got `BoundMethod`
-                request.path,
+                path,
                 websocket_handler
             )
-            self._ws_connections.append(ws_connection)
+            # casting for pyre check tests
+            remote_ip = cast(str, request.remote)
+            if remote_ip is None:
+                remote_ip = rpc_constants.DEFAULT_RPC_HOST
+            self._ws_connections[remote_ip].append(ws_connection)
             websocket_response = await ws_connection.handle(request)
-            self._ws_connections.remove(ws_connection)
+            self._ws_connections[remote_ip].remove(ws_connection)
 
             return websocket_response
 

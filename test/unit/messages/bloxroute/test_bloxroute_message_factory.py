@@ -58,6 +58,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
         crypto.double_sha256(b"123") + NETWORK_NUM_BYTEARRAY +
         bytearray(BROADCAST_TYPE.value.encode(constants.DEFAULT_TEXT_ENCODING)), 0
     )
+    ACCOUNT_ID = "123456"
 
     def get_message_factory(self):
         return bloxroute_message_factory
@@ -105,7 +106,7 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
                                               TxMessage.MESSAGE_TYPE,
                                               SHA256_HASH_LEN + NETWORK_NUM_LEN + UL_INT_SIZE_IN_BYTES +
                                               TRANSACTION_FLAG_LEN + constants.NODE_ID_SIZE_IN_BYTES + len(blob) +
-                                              constants.DOUBLE_SIZE_IN_BYTES +
+                                              constants.DOUBLE_SIZE_IN_BYTES + constants.ACCOUNT_ID_SIZE_IN_BYTES +
                                               constants.CONTROL_FLAGS_LEN)
         self.get_message_preview_successfully(KeyMessage(self.HASH, 1, self.NODE_ID,
                                                          bytearray(1 for _ in range(KEY_SIZE))),
@@ -456,7 +457,8 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
             short_id=sid,
             tx_val=tx_val,
             transaction_flag=TransactionFlag.PAID_TX,
-            timestamp=timestamp
+            timestamp=timestamp,
+            account_id=self.ACCOUNT_ID
         )
 
         tx_message = self.create_message_successfully(
@@ -490,7 +492,8 @@ class BloxrouteMessageFactory(MessageFactoryTestCase):
             short_id=2,
             tx_val=contents,
             transaction_flag=TransactionFlag.PAID_TX,
-            timestamp=timestamp
+            timestamp=timestamp,
+            account_id=self.ACCOUNT_ID
         )
         tx_message.clear_protected_fields()
 

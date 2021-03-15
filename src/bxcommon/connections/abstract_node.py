@@ -35,6 +35,7 @@ from bxcommon.utils import memory_utils, convert, performance_utils
 from bxcommon.utils.alarm_queue import AlarmQueue, AlarmId
 from bxcommon.utils.blockchain_utils import bdn_tx_to_bx_tx
 from bxcommon.common_opts import CommonOpts
+from bxcommon.utils.expiring_dict import ExpiringDict
 from bxcommon.utils.stats.block_statistics_service import block_stats
 from bxcommon.utils.stats.memory_statistics_service import memory_statistics
 from bxcommon.utils.stats.node_info_service import node_info_statistics
@@ -74,6 +75,8 @@ class AbstractNode:
         node_ssl_service: NodeSSLService,
         connection_pool: Optional[ConnectionPool] = None
     ):
+        # Event handling queue for delayed events
+        self.alarm_queue = AlarmQueue()
         self.node_ssl_service = node_ssl_service
         logger.debug("Initializing node of type: {}", self.NODE_TYPE)
         self.server_endpoints = [
@@ -86,6 +89,11 @@ class AbstractNode:
         self.opts: CommonOpts = opts
         self.pending_connection_requests: Set[ConnectionPeerInfo] = set()
         self.pending_connection_attempts: Set[ConnectionPeerInfo] = set()
+        self.recent_connections: ExpiringDict[str, int] = ExpiringDict(
+            self.alarm_queue,
+            constants.THROTTLE_RECONNECT_TIME_S,
+            name="recent_connections"
+        )
         self.outbound_peers: Set[OutboundPeerModel] = opts.outbound_peers.copy()
 
         if connection_pool is not None:
@@ -97,9 +105,6 @@ class AbstractNode:
         self.should_restart_on_high_memory = False
 
         self.num_retries_by_ip: Dict[Tuple[str, int], int] = defaultdict(int)
-
-        # Event handling queue for delayed events
-        self.alarm_queue = AlarmQueue()
 
         self.init_node_status_logging()
         self.init_throughput_logging()
@@ -207,6 +212,13 @@ class AbstractNode:
     ) -> None:
         pass
 
+    def report_connection_attempt(self, ip_address: str) -> int:
+        if ip_address in self.recent_connections:
+            self.recent_connections[ip_address] += 1
+        else:
+            self.recent_connections.add(ip_address, 1)
+        return self.recent_connections[ip_address]
+
     def connection_exists(
         self,
         ip: str,
@@ -224,7 +236,7 @@ class AbstractNode:
             ConnectionPeerInfo(socket_connection.endpoint, AbstractConnection.CONNECTION_TYPE)
         )
         ip, port = socket_connection.endpoint
-        peer_info = None
+        peer_info: Optional[AuthenticatedPeerInfo] = None
         if socket_connection.is_ssl:
             try:
                 peer_info = self._get_socket_peer_info(

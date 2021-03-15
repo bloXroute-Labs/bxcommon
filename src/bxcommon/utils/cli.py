@@ -366,9 +366,14 @@ def _get_blockchain_network_info(opts) -> BlockchainNetworkModel:
                 blockchain_network.network.lower() == opts.blockchain_network.lower():
             return blockchain_network
 
-    if opts.blockchain_networks:
+    blockchain_networks = opts.blockchain_networks
+    cache_network_info = node_cache.read(opts)
+    if not blockchain_networks and cache_network_info:
+        blockchain_networks = cache_network_info.blockchain_networks
+
+    if blockchain_networks:
         all_networks_names = "\n".join(
-            map(lambda n: "{} - {}".format(n.protocol, n.network), opts.blockchain_networks.values())
+            map(lambda n: "{} - {}".format(n.protocol, n.network), blockchain_networks.values())
         )
         error_msg = "Network number does not exist for blockchain protocol {} and network {}.\nValid options:\n{}" \
             .format(opts.blockchain_protocol, opts.blockchain_network, all_networks_names)

@@ -15,6 +15,8 @@ class NodeType(SerializableFlag):
     RELAY_BLOCK = enum.auto()
     RELAY = RELAY_TRANSACTION | RELAY_BLOCK
     RELAY_TYPE = RELAY  # use RELAY_TYPE for abstract relay, use RELAY for `non split` relay
+    RELAY_PROXY = enum.auto()
+    RELAY_GROUP = RELAY | RELAY_PROXY
     API = enum.auto()
     API_SOCKET = enum.auto()
     BLOXROUTE_CLOUD_API = enum.auto()
