@@ -243,9 +243,15 @@ class AbstractHttpRpcServer(Generic[Node]):
             remote_ip = cast(str, request.remote)
             if remote_ip is None:
                 remote_ip = rpc_constants.DEFAULT_RPC_HOST
-            self._ws_connections[remote_ip].append(ws_connection)
-            websocket_response = await ws_connection.handle(request)
-            self._ws_connections[remote_ip].remove(ws_connection)
+            # this coroutine may close by the http server. use try/finally
+            # to force cleanup
+            try:
+                self._ws_connections[remote_ip].append(ws_connection)
+                websocket_response = await ws_connection.handle(request)
+            finally:
+                await ws_connection.close()
+                self._ws_connections[remote_ip].remove(ws_connection)
+                logger.debug("websocket connection for {} closed and removed", remote_ip)
 
             return websocket_response
 
