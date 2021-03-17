@@ -36,13 +36,9 @@ class WsConnection:
         self.publish_handler = publish_handler
         self.alive_handler = alive_handler
 
-        _, pending = await asyncio.wait(
+        await asyncio.wait(
             [request_handler, publish_handler, alive_handler], return_when=asyncio.FIRST_COMPLETED
         )
-        for task in pending:
-            task.cancel()
-
-        await self.close()
         return self.ws
 
     async def handle_request(self, request: Request) -> None:
