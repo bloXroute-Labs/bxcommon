@@ -46,5 +46,6 @@ class KeepAliveMessage(AbstractBloxrouteMessage):
         if self._nonce is None:
             self.__unpack()
         nonce = self._nonce
-        assert nonce is not None
+        if nonce is None:
+            return 0
         return nonce

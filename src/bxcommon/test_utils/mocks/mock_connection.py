@@ -52,6 +52,7 @@ class MockConnection(AbstractConnection, SpecialMemoryProperties):
         self.enqueued_messages = []
         self.node_privileges = "general"
         self.subscribed_broadcasts = [BroadcastMessageType.BLOCK]
+        self.ping_alarm_id = None
 
     def __repr__(self):
         return f"MockConnection<file_no: {self.file_no}, address: ({self.peer_ip}, {self.peer_port}), " \

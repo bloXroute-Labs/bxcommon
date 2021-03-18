@@ -185,6 +185,8 @@ class AbstractConnection(Generic[Node]):
         This function is very frequently called. Avoid doing any sort of complex
         operations, inline function calls, and avoid flags.
         """
+        if self.socket_connection is None:
+            return False
         return self.socket_connection.alive
 
     def on_connection_established(self):
@@ -519,9 +521,7 @@ class AbstractConnection(Generic[Node]):
         Schedules ping on the connection. Multiple calls of this method will
         override the existing alarm.
         """
-        existing_alarm = self.ping_alarm_id
-        if existing_alarm:
-            self.node.alarm_queue.unregister_alarm(existing_alarm)
+        self._unschedule_pings()
 
         if self.can_send_pings:
             self.ping_alarm_id = self.node.alarm_queue.register_alarm(
@@ -600,6 +600,9 @@ class AbstractConnection(Generic[Node]):
         """
         if self._close_waiter is not None:
             self._close_waiter.set_result(True)
+        self._unschedule_pings()
+        self.node = None
+        self.socket_connection = None
 
     def clean_up_current_msg(self, payload_len: int, msg_is_in_input_buffer: bool) -> None:
         """
@@ -705,6 +708,12 @@ class AbstractConnection(Generic[Node]):
             self.peer_desc, self.CONNECTION_TYPE.format_short()
         )
         self.connection_repr = repr(self)
+
+    def _unschedule_pings(self) -> None:
+        existing_alarm = self.ping_alarm_id
+        if existing_alarm:
+            self.node.alarm_queue.unregister_alarm(existing_alarm)
+            self.ping_alarm_id = None
 
     def _pong_msg_timeout(self) -> None:
         if self.is_alive():
