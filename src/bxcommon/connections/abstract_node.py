@@ -664,11 +664,12 @@ class AbstractNode:
         should_retry = SocketConnectionStates.DO_NOT_RETRY not in conn.socket_connection.state
 
         logger.debug("Breaking connection to {}. Attempting retry: {}", conn, should_retry)
-        conn.dispose()
+
         self.connection_pool.delete(conn)
         self.handle_connection_closed(
             should_retry, ConnectionPeerInfo(conn.endpoint, conn.CONNECTION_TYPE), conn.state
         )
+        conn.dispose()
 
     def _initialize_connection(
         self, socket_connection: AbstractSocketConnectionProtocol

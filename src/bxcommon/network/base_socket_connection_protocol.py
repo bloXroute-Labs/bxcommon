@@ -88,6 +88,7 @@ class BaseSocketConnectionProtocol(BaseProtocol):
         delegate_protocol = self._delegate_protocol
         if delegate_protocol is not None:
             delegate_protocol.connection_lost(exc)
+        self._delegate_protocol = None
 
     def pause_writing(self) -> None:
         delegate_protocol = self._delegate_protocol

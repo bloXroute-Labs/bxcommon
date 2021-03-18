@@ -480,3 +480,6 @@ class TxSyncService:
 
         logger.debug({"type": "TxSyncMetrics", "data": sync_data})
         self.node.on_fully_updated_tx_service()
+
+    def dispose(self):
+        self.conn = None
