@@ -57,8 +57,8 @@ class BaseSocketConnectionProtocol(BaseProtocol):
                     self._endpoint,
                     attempts
                 )
-                transport.abort()
-                return
+                # transport.abort()
+                # return
 
         if sys.version.startswith("3.6."):
             protocol_cls = SocketConnectionProtocolPy36
