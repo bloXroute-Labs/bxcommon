@@ -176,7 +176,7 @@ class AbstractConnection(Generic[Node]):
         This function is very frequently called. Avoid doing any sort of complex
         operations, inline function calls, and avoid flags.
         """
-        return self.established and self.socket_connection.alive
+        return self.established and self.socket_connection is not None and self.socket_connection.alive
 
     def is_alive(self) -> bool:
         """
