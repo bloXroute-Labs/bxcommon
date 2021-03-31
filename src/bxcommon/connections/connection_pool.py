@@ -100,7 +100,9 @@ class ConnectionPool:
         return (ip, port) in self.by_ipport
 
     def get_connection_by_network_num(self, network_num: int) -> Iterable[AbstractConnection]:
-        for connection in self.get_by_connection_types((ConnectionType.GATEWAY,)):
+        for connection in self.get_by_connection_types(
+            (ConnectionType.GATEWAY, ConnectionType.RELAY_PROXY)
+        ):
             if connection.network_num == network_num:
                 yield connection
 
