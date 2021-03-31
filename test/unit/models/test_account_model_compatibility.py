@@ -21,7 +21,6 @@ class BdnOldAccountModelBase:
     expire_date: str = constants.EPOCH_DATE
     tx_free: Optional[BdnServiceModelConfigBase] = None
     tx_paid: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
-    block_paid: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
     cloud_api: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
     new_transaction_streaming: BdnServiceModelConfigBase = BdnServiceModelConfigBase()
     blockchain_protocol: Optional[str] = None
@@ -47,7 +46,6 @@ class TestAccountModelCompatibility(AbstractTestCase):
             "fake_name",
             "fake_cert",
             tx_paid=BdnQuotaServiceModelConfigBase(),
-            block_paid=BdnQuotaServiceModelConfigBase(),
             cloud_api=BdnBasicServiceModel(),
             new_transaction_streaming=BdnFeedServiceModelConfigBase(
                 expire_date=str(date.today() + timedelta(days=100)),
@@ -69,7 +67,6 @@ class TestAccountModelCompatibility(AbstractTestCase):
             "fake_name",
             "fake_cert",
             tx_paid=BdnQuotaServiceModelConfigBase(),
-            block_paid=BdnQuotaServiceModelConfigBase(),
             cloud_api=BdnFeedServiceModelConfigBase(
                 expire_date=str(date.today() + timedelta(days=100)),
             ),
@@ -92,7 +89,6 @@ class TestAccountModelCompatibility(AbstractTestCase):
                 expire_date=str(date.today() + timedelta(days=100)),
                 msg_quota=BdnServiceModelBase(limit=100)
             ),
-            block_paid=BdnQuotaServiceModelConfigBase(),
             cloud_api=BdnFeedServiceModelConfigBase(),
             new_transaction_streaming=BdnFeedServiceModelConfigBase()
         )
