@@ -16,8 +16,9 @@ class TransactionFlag(SerializableFlag):
 
     LOCAL_REGION = 32
 
+    PRIVATE_TX = 64
+
     # adding more flags to avoid creating new converters
-    TBD_1 = 64
     TBD_2 = 128
     TBD_3 = 256
     TBD_4 = 512

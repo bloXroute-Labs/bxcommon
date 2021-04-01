@@ -43,6 +43,7 @@ class AccountTemplate:
     transaction_receipts_feed: Optional[BdnFeedServiceModelConfigBase] = None
     private_relays: Optional[BdnPrivateRelayServiceModelConfigBase] = None
     private_transaction: Optional[BdnQuotaServiceModelConfigBase] = None
+    private_transaction_fee: Optional[BdnQuotaServiceModelConfigBase] = None
 
 
 @dataclass
