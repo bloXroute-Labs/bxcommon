@@ -33,6 +33,7 @@ class AccountTemplate:
     # Service Model is enabled/disabled according to the service expiry date, default disabled
     tx_free: Optional[BdnQuotaServiceModelConfigBase] = None
     tx_paid: Optional[BdnQuotaServiceModelConfigBase] = None
+    block_paid: Optional[BdnQuotaServiceModelConfigBase] = None
     cloud_api: Optional[BdnBasicServiceModel] = None
     new_transaction_streaming: Optional[BdnFeedServiceModelConfigBase] = None
     new_block_streaming: Optional[BdnFeedServiceModelConfigBase] = None
