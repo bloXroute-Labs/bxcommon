@@ -55,3 +55,4 @@ class LogRecordType(Enum):
     PaidTransaction = "stats.transaction.paid_transaction"
     TxDetectionTimeLocation = "stats.transaction.tx_detection_time_location"
     TransactionMonitoring = "stats.transaction.monitoring"
+    MEVBundleTransaction = "stats.transaction.mev_bundle"
