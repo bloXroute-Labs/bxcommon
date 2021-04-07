@@ -25,6 +25,7 @@ class AccountInfo:
     blockchain_protocol: Optional[str] = None
     blockchain_network: Optional[str] = None
     tier_name: Optional[str] = None
+    is_miner: Optional[bool] = None
 
 
 @dataclass
