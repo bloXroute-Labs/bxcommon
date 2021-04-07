@@ -52,6 +52,10 @@ class DecryptionError(Exception):
     pass
 
 
+class FeedSubscriptionTimeoutError(Exception):
+    pass
+
+
 class ConnectionStateError(Exception):
     def __init__(self, msg: str, conn: "AbstractConnection") -> None:
         super().__init__(msg)

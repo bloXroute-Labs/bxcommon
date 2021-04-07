@@ -249,6 +249,16 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         )
         return await self._wait_for_ws_message(task)
 
+    async def get_next_subscription_notification_by_id_timeout(
+        self, subscription_id: str
+    ) -> SubscriptionNotification:
+        task = asyncio.create_task(
+            self.subscription_manager.get_next_subscription_notification_for_id(
+                subscription_id
+            )
+        )
+        return await self._wait_for_ws_message(task, timeout=constants.WAIT_FOR_SUBSCRIPTION_TIMEOUT)
+
     async def get_next_subscription_notification_by_id(
         self, subscription_id: str
     ) -> SubscriptionNotification:
@@ -263,7 +273,9 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         task = asyncio.create_task(self.response_messages.get_by_request_id(request_id))
         return await self._wait_for_ws_message(task)
 
-    async def _wait_for_ws_message(self, ws_waiter_task: "Future[T]") -> T:
+    async def _wait_for_ws_message(
+        self, ws_waiter_task: "Future[T]", timeout: Optional[int] = None
+    ) -> T:
         if not self.connected_event.is_set():
             ws_waiter_task.cancel()
             raise WsException("Cannot wait for a message on a broken socket.")
@@ -272,7 +284,7 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         assert ws_status_check is not None
 
         await asyncio.wait(
-            [ws_waiter_task, ws_status_check], return_when=asyncio.FIRST_COMPLETED
+            [ws_waiter_task, ws_status_check], return_when=asyncio.FIRST_COMPLETED, timeout=timeout
         )
 
         if ws_waiter_task.done():
