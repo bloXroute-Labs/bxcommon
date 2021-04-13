@@ -144,18 +144,18 @@ class TxMessage(AbstractBroadcastMessage):
         return self._timestamp
 
     def account_id(self) -> str:
-        off = (
-            self.HEADER_LENGTH
-            + AbstractBroadcastMessage.PAYLOAD_LENGTH
-            + constants.SID_LEN
-            + constants.TRANSACTION_FLAG_LEN
-            + constants.DOUBLE_SIZE_IN_BYTES
-            - constants.CONTROL_FLAGS_LEN
-        )
-        self._account_id = struct.unpack_from(
-            "<36s", self.buf, off
-        )[0].rstrip(constants.MSG_NULL_BYTE).decode(constants.DEFAULT_TEXT_ENCODING)
-
+        if self._account_id == constants.DECODED_EMPTY_ACCOUNT_ID:
+            off = (
+                self.HEADER_LENGTH
+                + AbstractBroadcastMessage.PAYLOAD_LENGTH
+                + constants.SID_LEN
+                + constants.TRANSACTION_FLAG_LEN
+                + constants.DOUBLE_SIZE_IN_BYTES
+                - constants.CONTROL_FLAGS_LEN
+            )
+            self._account_id = struct.unpack_from(
+                "<36s", self.buf, off
+            )[0].rstrip(constants.MSG_NULL_BYTE).decode(constants.DEFAULT_TEXT_ENCODING)
         return self._account_id
 
     def tx_val(self) -> memoryview:

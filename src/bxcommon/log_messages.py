@@ -1,4 +1,4 @@
-from bxutils.log_message_categories import PROCESSING_FAILED_CATEGORY, GENERAL_CATEGORY
+from bxutils.log_message_categories import PROCESSING_FAILED_CATEGORY, GENERAL_CATEGORY, EXCEPTION_OR_CANCELLATION
 from bxutils.logging_messages_utils import LogMessage
 
 COULD_NOT_SERIALIZE_FEED_ENTRY = LogMessage(
@@ -23,4 +23,9 @@ BAD_FEED_SUBSCRIBER_SHOULD_EXIT = LogMessage(
     GENERAL_CATEGORY,
     "Subscriber {} was not filtering messages correctly from "
     "{}. Disconnecting.",
+)
+CONNECTION_DOES_NOT_EXIST = LogMessage(
+    "C-000071",
+    EXCEPTION_OR_CANCELLATION,
+    "Connection doesn't exist, cancelling {} "
 )

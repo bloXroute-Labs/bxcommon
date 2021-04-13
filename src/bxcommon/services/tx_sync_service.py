@@ -11,6 +11,7 @@ from bxcommon.messages.bloxroute.tx_service_sync_blocks_short_ids_message import
 from bxcommon.messages.bloxroute.tx_service_sync_complete_message import TxServiceSyncCompleteMessage
 from bxcommon.messages.bloxroute.tx_service_sync_req_message import TxServiceSyncReqMessage
 from bxcommon.messages.bloxroute.tx_service_sync_txs_message import TxServiceSyncTxsMessage
+from bxcommon import log_messages
 from bxcommon.models.node_type import NodeType
 from bxcommon.services import tx_sync_service_helpers
 from bxcommon.services.transaction_service import TransactionCacheKeyType
@@ -337,7 +338,9 @@ class TxSyncService:
     ) -> None:
         if network_num in self._sync_alarms:
             del self._sync_alarms[network_num]
-
+        if not self.conn:
+            logger.warning(log_messages.CONNECTION_DOES_NOT_EXIST, "sync alarm (send_tx_service_sync_txs_from_buffer)")
+            return
         if not self.conn.is_active():
             self.conn.log_info(
                 "TxSync on network {}, sent {} transactions, and {} messages, took {:.3f}s. "
