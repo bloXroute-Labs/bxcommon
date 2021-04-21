@@ -74,7 +74,7 @@ class EthBlockValidator(AbstractBlockValidator):
         return BlockParameters(block_hash, number, difficulty, mix_hash, nonce)
 
     def _get_block_hash(self, block_header_bytes: Union[bytearray, memoryview]) -> Sha256Hash:
-        raw_hash = eth_common_utils.keccak_hash(block_header_bytes)
+        raw_hash = eth_common_utils.keccak_hash(memoryview(block_header_bytes))
         return Sha256Hash(raw_hash)
 
     def _validate_block_number(self, block_parameters: BlockParameters, last_confirmed_block_number: int) -> bool:

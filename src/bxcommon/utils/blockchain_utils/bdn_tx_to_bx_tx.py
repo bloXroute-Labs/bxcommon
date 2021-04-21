@@ -68,7 +68,7 @@ def eth_bdn_tx_to_bx_tx(
 ) -> TxMessage:
     if isinstance(raw_tx, bytes):
         raw_tx = bytearray(raw_tx)
-    bx_tx, tx_item_length, tx_item_start = eth_common_utils.raw_tx_to_bx_tx(
+    bx_tx, _, tx_item_length, tx_item_start = eth_common_utils.raw_tx_to_bx_tx(
         raw_tx, 0, network_num, transaction_flag, account_id
     )
     if tx_item_length + tx_item_start != len(raw_tx):

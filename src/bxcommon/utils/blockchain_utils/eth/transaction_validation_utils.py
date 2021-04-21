@@ -1,7 +1,5 @@
 from typing import Optional, Union
 
-import blxr_rlp as rlp
-
 from bxcommon.utils.blockchain_utils.eth import crypto_utils
 from bxcommon.utils.blockchain_utils.eth.eth_common_utils import keccak_hash
 from bxcommon.messages.eth.serializers.transaction import Transaction
@@ -15,10 +13,10 @@ def verify_eth_transaction_signature(transaction: Transaction) -> bool:
     :return: if signature matches public key
     """
     try:
-        signature = crypto_utils.encode_signature(transaction.v, transaction.r, transaction.s)
+        signature = transaction.signature()
         unsigned_msg = transaction.get_unsigned()
         public_key = crypto_utils.recover_public_key(unsigned_msg, signature, keccak_hash)
-        return crypto_utils.verify_signature(public_key, signature, keccak_hash(unsigned_msg))
+        return crypto_utils.verify_signature(public_key, signature, keccak_hash(memoryview(unsigned_msg)))
     # pylint: disable=broad-except
     except Exception:
         return False
@@ -31,9 +29,7 @@ def parse_transaction(tx_bytes: memoryview) -> Optional[Transaction]:
     """
 
     try:
-        payload = rlp.decode(bytearray(tx_bytes), strict=False)
-        return Transaction.deserialize(payload)
-
+        return Transaction.deserialize(tx_bytes)
     # pylint: disable=broad-except
     except Exception:
         return None

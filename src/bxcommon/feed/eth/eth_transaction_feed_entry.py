@@ -1,7 +1,5 @@
 from typing import Dict, Any, Union
 
-import blxr_rlp as rlp
-
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon import log_messages
 from bxcommon.messages.eth.serializers.transaction import Transaction
@@ -18,14 +16,13 @@ class EthTransactionFeedEntry:
     def __init__(
         self, tx_hash: Sha256Hash,
         tx_contents: Union[memoryview, Dict[str, Any]],
-        local_region: bool
+        local_region: bool,
     ) -> None:
         self.tx_hash = f"0x{str(tx_hash)}"
 
         try:
             if isinstance(tx_contents, memoryview):
-                # parse transaction from memoryview
-                transaction = rlp.decode(tx_contents.tobytes(), Transaction)
+                transaction = Transaction.deserialize(tx_contents)
                 self.tx_contents = transaction.to_json()
             else:
                 # normalize json from source

@@ -40,9 +40,10 @@ class BlockHeader(rlp.Serializable):
     def get_field_value(self, field_name) -> Any:
         return getattr(self, field_name, None)
 
-    def hash(self) -> bytearray:
+    def hash(self):
         """The binary block hash"""
-        return eth_common_utils.keccak_hash(rlp.encode(self))
+        hash_bytes = eth_common_utils.keccak_hash(rlp.encode(self))
+        return Sha256Hash(hash_bytes)
 
     def hash_object(self) -> Sha256Hash:
         return Sha256Hash(eth_common_utils.keccak_hash(rlp.encode(self)))

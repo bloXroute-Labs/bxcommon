@@ -196,7 +196,12 @@ def get_list_items_bytes(
     offset = 0
 
     while offset < len(list_bytes):
-        _, item_len, item_start = consume_length_prefix(list_bytes, offset)
+        item_type, item_len, item_start = consume_length_prefix(list_bytes, offset)
+
+        # important for transaction encoding, when RLP representation can
+        # be either a rather opaque string or a proper RLP tuple
+        if item_type == str:
+            remove_items_length_prefix = True
 
         item_bytes = list_bytes[offset:item_start + item_len]
         if remove_items_length_prefix:

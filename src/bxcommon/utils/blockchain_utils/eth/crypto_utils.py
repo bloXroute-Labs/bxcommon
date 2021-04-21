@@ -81,7 +81,7 @@ def verify_signature(pubkey, signature, message):
     return public_key.format(compressed=False) == b"\04" + pubkey
 
 
-def encode_signature(tx_v, tx_r, tx_s) -> bytes:
+def encode_signature(tx_v: int, tx_r: int, tx_s: int) -> bytes:
     """
     Calculates byte representation of ECC signature from parameters
     :param tx_v:
@@ -89,9 +89,6 @@ def encode_signature(tx_v, tx_r, tx_s) -> bytes:
     :param tx_s:
     :return: bytes of ECC signature
     """
-    if not isinstance(tx_v, int):
-        raise ValueError("v is expected to be int")
-
     if tx_v > eth_common_constants.EIP155_CHAIN_ID_OFFSET:
         if tx_v % 2 == 0:
             tx_v = 28
@@ -101,9 +98,14 @@ def encode_signature(tx_v, tx_r, tx_s) -> bytes:
     if tx_v not in (27, 28):
         raise ValueError("v is expected to be int or long in range (27, 28)")
 
+    return encode_signature_y_parity(tx_v - 27, tx_r, tx_s)
+
+
+def encode_signature_y_parity(y_parity: int, tx_r: int, tx_s: int) -> bytes:
+    v_bytes = rlp_utils.ascii_chr(y_parity)
     # pyre-fixme[16]: Module `bitcoin` has no attribute `encode`.
     # pyre-fixme[16]: Module `bitcoin` has no attribute `encode`.
-    v_bytes, r_bytes, s_bytes = rlp_utils.ascii_chr(tx_v - 27), bitcoin.encode(tx_r, 256), bitcoin.encode(tx_s, 256)
+    r_bytes, s_bytes = bitcoin.encode(tx_r, 256), bitcoin.encode(tx_s, 256)
     return _left_0_pad_32(r_bytes) + _left_0_pad_32(s_bytes) + v_bytes
 
 
@@ -247,4 +249,4 @@ def _left_0_pad_32(input_bytes):
 
 
 def public_key_to_address(public_key_bytes: bytes) -> bytes:
-    return eth_common_utils.keccak_hash(public_key_bytes)[-20:]
+    return eth_common_utils.keccak_hash(memoryview(public_key_bytes))[-20:]
