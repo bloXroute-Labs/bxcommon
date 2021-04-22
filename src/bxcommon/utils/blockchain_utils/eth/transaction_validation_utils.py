@@ -43,10 +43,8 @@ def parse_transaction(tx_bytes: memoryview) -> Optional[Transaction]:
     :param tx_bytes: transaction bytes
     :return: if transaction successfully parsed returns None else transaction
     """
-
-    tx_bytes = normalize_typed_transaction(tx_bytes)
-
     try:
+        tx_bytes = normalize_typed_transaction(tx_bytes)
         return rlp.decode(tx_bytes.tobytes(), Transaction)
     # pylint: disable=broad-except
     except Exception:
