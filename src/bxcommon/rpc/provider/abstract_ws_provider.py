@@ -7,7 +7,7 @@ import websockets
 
 from bxcommon.rpc.json_rpc_request import JsonRpcRequest
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
-from bxcommon.rpc.rpc_errors import RpcError
+from bxcommon.rpc.rpc_errors import RpcError, RpcTimedOut
 from bxcommon import constants
 from bxcommon.rpc.provider.abstract_provider import AbstractProvider, SubscriptionNotification
 from bxcommon.rpc.provider.response_queue import ResponseQueue
@@ -162,6 +162,8 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         logger.trace("Sending message to websocket: {}", serialized_request)
         await ws.send(serialized_request)
         response = await self.get_rpc_response(request_id)
+        if response is None:
+            raise RpcTimedOut(None, "Please try again.")
         error = response.error
         if error:
             logger.error(

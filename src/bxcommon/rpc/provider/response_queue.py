@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict
+from typing import Dict, Optional
 
 from bxcommon.rpc.json_rpc_response import JsonRpcResponse
 
@@ -28,7 +28,7 @@ class ResponseQueue:
         if request_id in self.message_notifiers:
             self.message_notifiers[request_id].set()
 
-    async def get_by_request_id(self, request_id: str) -> JsonRpcResponse:
+    async def get_by_request_id(self, request_id: str) -> Optional[JsonRpcResponse]:
         if request_id in self.message_by_request_id:
             message = self.message_by_request_id[request_id]
             if self.only_once:
@@ -43,7 +43,8 @@ class ResponseQueue:
 
         await event.wait()
 
-        assert request_id in self.message_by_request_id
+        if request_id not in self.message_by_request_id:
+            return None
         message = self.message_by_request_id[request_id]
 
         if self.only_once:
