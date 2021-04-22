@@ -37,6 +37,7 @@ class AccessedAddress(rlp.Serializable):
             ],
         )
 
+
 # pyre-fixme[13]: Attribute `data` is never initialized.
 # pyre-fixme[13]: Attribute `gas_price` is never initialized.
 # pyre-fixme[13]: Attribute `nonce` is never initialized.
@@ -209,10 +210,22 @@ class Transaction(rlp.Serializable):
         """
         if "gas_price" in payload:
             payload["gasPrice"] = payload["gas_price"]
+        if "access_list" in payload:
+            payload["accessList"] = payload["access_list"]
+        if "chain_id" in payload:
+            payload["chainId"] = payload["chain_id"]
+
         for item in ["nonce", "gasPrice", "gas", "value", "v", "r", "s"]:
             value = payload[item]
             if isinstance(value, int):
                 payload[item] = hex(value)
+
+        for item in ["accessList", "chainId"]:
+            if item in payload:
+                value = payload[item]
+                if isinstance(value, int):
+                    payload[item] = hex(value)
+
         return cls.from_json(payload)
 
 

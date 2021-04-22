@@ -1,9 +1,12 @@
 from typing import Dict, Any, Union
 
+from bxcommon.utils.blockchain_utils.eth import transaction_validation_utils
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon import log_messages
 from bxcommon.messages.eth.serializers.transaction import Transaction
 from bxutils import logging
+
+import blxr_rlp as rlp
 
 logger = logging.get_logger(__name__)
 
@@ -22,7 +25,9 @@ class EthTransactionFeedEntry:
 
         try:
             if isinstance(tx_contents, memoryview):
-                transaction = Transaction.deserialize(tx_contents)
+                transaction = transaction_validation_utils.parse_transaction(tx_contents)
+                if transaction is None:
+                    raise Exception("could not parse transaction from bytes")
                 self.tx_contents = transaction.to_json()
             else:
                 # normalize json from source

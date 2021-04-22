@@ -9,6 +9,8 @@ from bxcommon.utils.blockchain_utils.eth import eth_common_constants, rlp_utils
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon import constants
 
+import blxr_rlp as rlp
+
 
 def raw_tx_to_bx_tx(
     tx_bytes: Union[bytearray, memoryview],
@@ -22,7 +24,10 @@ def raw_tx_to_bx_tx(
     tx_item_type, tx_item_length, tx_item_start = rlp_utils.consume_length_prefix(tx_bytes, tx_start_index)
     tx_bytes = tx_bytes[tx_start_index:tx_item_start + tx_item_length]
 
-    tx_hash_bytes = keccak_hash(tx_bytes)
+    if tx_item_type == str:
+        tx_hash_bytes = keccak_hash(rlp.decode(tx_bytes.tobytes()))
+    else:
+        tx_hash_bytes = keccak_hash(tx_bytes)
     msg_hash = Sha256Hash(tx_hash_bytes)
     bx_tx = TxMessage(
         message_hash=msg_hash,

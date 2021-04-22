@@ -1,9 +1,11 @@
 from typing import Optional, Union
 
-from bxcommon.utils.blockchain_utils.eth import crypto_utils
+from bxcommon.utils.blockchain_utils.eth import crypto_utils, rlp_utils
 from bxcommon.utils.blockchain_utils.eth.eth_common_utils import keccak_hash
 from bxcommon.messages.eth.serializers.transaction import Transaction
 from bxcommon.models.tx_validation_status import TxValidationStatus
+
+import blxr_rlp as rlp
 
 
 def verify_eth_transaction_signature(transaction: Transaction) -> bool:
@@ -22,14 +24,30 @@ def verify_eth_transaction_signature(transaction: Transaction) -> bool:
         return False
 
 
+def normalize_typed_transaction(tx_bytes: memoryview) -> memoryview:
+    """
+    RLP could be either [transaction_type][encoded transaction], or
+    RLP([transaction_type][encoded transaction]). The first form cannot be
+    `rlp.decode`d, as it will only return the transaction type or throw an
+    exception if strict=True. Force it to be of the second type.
+    """
+    item_type, item_length, item_start = rlp_utils.consume_length_prefix(memoryview(tx_bytes), 0)
+    if item_type == str and item_length == 1:
+        tx_bytes = rlp.encode(tx_bytes)
+
+    return tx_bytes
+
+
 def parse_transaction(tx_bytes: memoryview) -> Optional[Transaction]:
     """
     :param tx_bytes: transaction bytes
     :return: if transaction successfully parsed returns None else transaction
     """
 
+    tx_bytes = normalize_typed_transaction(tx_bytes)
+
     try:
-        return Transaction.deserialize(tx_bytes)
+        return rlp.decode(tx_bytes.tobytes(), Transaction)
     # pylint: disable=broad-except
     except Exception:
         return None
@@ -45,11 +63,13 @@ def validate_transaction(
     :param min_tx_network_fee: int
     :return:
     """
-    if isinstance(tx_bytes, bytearray):
-        tx_bytes = memoryview(tx_bytes)
+    tx_bytes = normalize_typed_transaction(tx_bytes)
 
-    transaction = parse_transaction(tx_bytes)
-    if transaction:
+    if isinstance(tx_bytes, memoryview):
+        tx_bytes = bytearray(tx_bytes)
+
+    try:
+        transaction = rlp.decode(tx_bytes, Transaction)
         if verify_eth_transaction_signature(transaction):
             if transaction.gas_price >= min_tx_network_fee:
                 return TxValidationStatus.VALID_TX
@@ -57,5 +77,5 @@ def validate_transaction(
                 return TxValidationStatus.LOW_FEE
         else:
             return TxValidationStatus.INVALID_SIGNATURE
-
-    return TxValidationStatus.INVALID_FORMAT
+    except rlp.DecodingError:
+        return TxValidationStatus.INVALID_FORMAT
