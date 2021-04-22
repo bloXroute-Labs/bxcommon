@@ -31,9 +31,9 @@ def normalize_typed_transaction(tx_bytes: memoryview) -> memoryview:
     `rlp.decode`d, as it will only return the transaction type or throw an
     exception if strict=True. Force it to be of the second type.
     """
-    item_type, item_length, item_start = rlp_utils.consume_length_prefix(memoryview(tx_bytes), 0)
+    item_type, item_length, item_start = rlp_utils.consume_length_prefix(tx_bytes, 0)
     if item_type == str and item_length == 1:
-        tx_bytes = rlp.encode(tx_bytes)
+        tx_bytes = memoryview(rlp.encode(tx_bytes.tobytes()))
 
     return tx_bytes
 
@@ -63,7 +63,7 @@ def validate_transaction(
     :param min_tx_network_fee: int
     :return:
     """
-    tx_bytes = normalize_typed_transaction(tx_bytes)
+    tx_bytes = normalize_typed_transaction(memoryview(tx_bytes))
 
     if isinstance(tx_bytes, memoryview):
         tx_bytes = bytearray(tx_bytes)
