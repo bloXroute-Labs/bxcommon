@@ -549,7 +549,8 @@ class AbstractConnection(Generic[Node]):
             self.peer_id = msg.node_id()
 
         # This should only be necessary for pre1.6 connections.
-        if self.peer_id in self.node.connection_pool.by_node_id:
+        if self.peer_id in self.node.connection_pool.by_node_id and \
+                self.socket_connection.endpoint.ip_address[0:3] != "172":
             existing_connection = self.node.connection_pool.get_by_node_id(
                 self.peer_id
             )
