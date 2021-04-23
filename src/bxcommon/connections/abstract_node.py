@@ -247,7 +247,8 @@ class AbstractNode:
                 socket_connection.mark_for_close(should_retry=False)
                 return None
 
-            if self.connection_exists(ip, port, peer_info.peer_id):
+            if self.connection_exists(ip, port, peer_info.peer_id)\
+                    and peer_info.connection_type != ConnectionType.RELAY_PROXY:
                 logger.debug(
                     "Duplicate connection attempted to: {}:{} (peer id: {}). "
                     "Dropping.",

@@ -12,7 +12,8 @@ class TxBlockchainStatus(SerializableFlag):
     MINED = auto()
     CONFIRMED = auto()
     DROPPED = auto()
-    REPLACED = auto()
+    SPEEDUP = auto()
+    CANCELED = auto()
 
     def __str__(self) -> str:
         # pylint: disable=using-constant-test
