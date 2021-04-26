@@ -6,7 +6,6 @@ class BlockchainProtocol(Enum):
     BITCOINCASH = "bitcoincash"
     ETHEREUM = "ethereum"
     ONTOLOGY = "ontology"
-    BSC = "BSC"
 
     def __eq__(self, other) -> bool:
         return self is other or str(self) == str(other)
