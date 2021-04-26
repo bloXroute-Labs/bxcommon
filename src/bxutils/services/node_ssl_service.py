@@ -87,8 +87,10 @@ class NodeSSLService:
                     self._store_key(key, key_file_info)
         if not self.has_valid_certificate(SSLCertificateType.CA):
             raise RuntimeError("Failed to load CA certificate.")
-        elif not self.has_valid_certificate(SSLCertificateType.REGISTRATION_ONLY) and not \
-                self.has_valid_certificate(SSLCertificateType.PRIVATE):
+        if (
+            not self.has_valid_certificate(SSLCertificateType.REGISTRATION_ONLY)
+            and not self.has_valid_certificate(SSLCertificateType.PRIVATE)
+        ):
             raise RuntimeError("Failed to load node certificate.")
 
         logger.info("{} is successfully loaded.", self)

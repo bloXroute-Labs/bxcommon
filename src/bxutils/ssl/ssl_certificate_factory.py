@@ -1,7 +1,6 @@
 import functools
 import os
 import ssl
-import typing
 import urllib.request
 import urllib.response
 from asyncio import Transport
@@ -19,8 +18,10 @@ from cryptography.x509 import Certificate, CertificateSigningRequest, \
     CertificateSigningRequestBuilder, SubjectAlternativeName, ExtensionNotFound, \
     CertificateBuilder, AuthorityKeyIdentifier
 from cryptography.x509.extensions import KeyUsage, UnrecognizedExtension, BasicConstraints
+
+# pylint: disable=no-name-in-module
 # pyre-fixme[21]: Could not find `loop`.
-from uvloop.loop import TCPTransport  
+from uvloop.loop import TCPTransport
 
 from bxutils import constants
 from bxutils.ssl import ssl_serializer

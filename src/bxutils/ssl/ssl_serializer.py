@@ -37,4 +37,3 @@ def deserialize_cert(cert: Union[str, bytes]) -> Certificate:
 
 def deserialize_key(key: Union[str, bytes]) -> EllipticCurvePrivateKeyWithSerialization:
     return serialization.load_pem_private_key(to_binary(key), None, backends.default_backend())
-

@@ -59,32 +59,32 @@ def gc_callback(phase: str, info: Dict[str, Any]):
 def print_path(path):
     for i, step in enumerate(path):
         # next "wraps around"
-        next = path[(i + 1) % len(path)]
+        next_path = path[(i + 1) % len(path)]
 
         sys.stdout.write("   %s -- " % str(type(step)))
         if isinstance(step, dict):
             for key, val in step.items():
-                if val is next:
+                if val is next_path:
                     sys.stdout.write("[%s]" % repr(key))
                     break
-                if key is next:
+                if key is next_path:
                     sys.stdout.write("[key] = %s" % repr(val))
                     break
         elif isinstance(step, list):
-            sys.stdout.write("[%d]" % step.index(next))
+            sys.stdout.write("[%d]" % step.index(next_path))
         elif isinstance(step, tuple):
-            sys.stdout.write("[%d]" % list(step).index(next))
+            sys.stdout.write("[%d]" % list(step).index(next_path))
         else:
             sys.stdout.write(repr(step))
         sys.stdout.write(" ->\n")
     sys.stdout.write("\n")
 
 
-def recurse(objs, obj, start, all, current_path):
+def recurse(objs, obj, start, all_ids, current_path):
     # if show_progress:
     #     outstream.write("%d\r" % len(all))
 
-    all[id(obj)] = None
+    all_ids[id(obj)] = None
 
     referents = gc.get_referents(obj)
     for referent in referents:
@@ -100,5 +100,5 @@ def recurse(objs, obj, start, all, current_path):
             continue
 
         # We haven't seen this object before, so recurse
-        elif id(referent) not in all:
-            recurse(objs, referent, start, all, current_path + [obj])
+        elif id(referent) not in all_ids:
+            recurse(objs, referent, start, all_ids, current_path + [obj])

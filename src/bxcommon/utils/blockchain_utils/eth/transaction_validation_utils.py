@@ -1,11 +1,10 @@
 from typing import Optional, Union
+import blxr_rlp as rlp
 
 from bxcommon.utils.blockchain_utils.eth import crypto_utils, rlp_utils
 from bxcommon.utils.blockchain_utils.eth.eth_common_utils import keccak_hash
 from bxcommon.messages.eth.serializers.transaction import Transaction
 from bxcommon.models.tx_validation_status import TxValidationStatus
-
-import blxr_rlp as rlp
 
 
 def verify_eth_transaction_signature(transaction: Transaction) -> bool:
@@ -31,7 +30,7 @@ def normalize_typed_transaction(tx_bytes: memoryview) -> memoryview:
     `rlp.decode`d, as it will only return the transaction type or throw an
     exception if strict=True. Force it to be of the second type.
     """
-    item_type, item_length, item_start = rlp_utils.consume_length_prefix(tx_bytes, 0)
+    item_type, item_length, _item_start = rlp_utils.consume_length_prefix(tx_bytes, 0)
     if item_type == str and item_length == 1:
         tx_bytes = memoryview(rlp.encode(tx_bytes.tobytes()))
 
@@ -61,10 +60,7 @@ def validate_transaction(
     :param min_tx_network_fee: int
     :return:
     """
-    tx_bytes = normalize_typed_transaction(memoryview(tx_bytes))
-
-    if isinstance(tx_bytes, memoryview):
-        tx_bytes = bytearray(tx_bytes)
+    tx_bytes = bytearray(normalize_typed_transaction(memoryview(tx_bytes)))
 
     try:
         transaction = rlp.decode(tx_bytes, Transaction)

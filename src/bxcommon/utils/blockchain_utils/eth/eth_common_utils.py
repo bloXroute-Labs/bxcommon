@@ -1,6 +1,6 @@
 from typing import Union, Tuple, Optional, Type
-
 from Crypto.Hash import keccak
+import blxr_rlp as rlp
 
 from bxcommon.messages.bloxroute.tx_message import TxMessage
 from bxcommon.messages.eth.serializers.transaction_type import EthTransactionType
@@ -9,7 +9,6 @@ from bxcommon.utils.blockchain_utils.eth import eth_common_constants, rlp_utils
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon import constants
 
-import blxr_rlp as rlp
 
 
 def raw_tx_to_bx_tx(
@@ -51,7 +50,7 @@ def tx_type(tx_bytes: memoryview, tx_start_index: int) -> Tuple[EthTransactionTy
         tx_start_index += 1
         try:
             transaction_type = EthTransactionType(first_byte)
-        except Exception:
+        except ValueError:
             pass
     return transaction_type, tx_bytes[tx_start_index:]
 

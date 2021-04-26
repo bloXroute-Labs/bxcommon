@@ -10,8 +10,6 @@ from bxcommon.utils.object_hash import Sha256Hash
 from bxutils import utils
 
 
-# pyre-fixme[13]: Attribute `address` is never initialized.
-# pyre-fixme[13]: Attribute `storage_keys` is never initialized.
 class AccessedAddress(rlp.Serializable):
     fields = [
         (
@@ -23,6 +21,12 @@ class AccessedAddress(rlp.Serializable):
 
     address: bytearray
     storage_keys: List[bytearray]
+
+    def __init__(self, *args, **kwargs):
+        self.address = bytearray()
+        self.storage_keys = []
+
+        super().__init__(*args, **kwargs)
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "AccessedAddress":
@@ -38,15 +42,6 @@ class AccessedAddress(rlp.Serializable):
         )
 
 
-# pyre-fixme[13]: Attribute `data` is never initialized.
-# pyre-fixme[13]: Attribute `gas_price` is never initialized.
-# pyre-fixme[13]: Attribute `nonce` is never initialized.
-# pyre-fixme[13]: Attribute `r` is never initialized.
-# pyre-fixme[13]: Attribute `s` is never initialized.
-# pyre-fixme[13]: Attribute `start_gas` is never initialized.
-# pyre-fixme[13]: Attribute `to` is never initialized.
-# pyre-fixme[13]: Attribute `v` is never initialized.
-# pyre-fixme[13]: Attribute `value` is never initialized.
 class Transaction(rlp.Serializable):
     """
     Some notes on the Berlin implementation details:
@@ -71,16 +66,21 @@ class Transaction(rlp.Serializable):
 
     transaction_type: EthTransactionType = EthTransactionType.LEGACY
 
-    nonce: int
-    gas_price: int
-    start_gas: int
-    to: Optional[bytearray]
-    value: int
+    nonce: int = 0
+    gas_price: int = 0
+    start_gas: int = 0
+    to: Optional[bytearray] = None
+    value: int = 0
     data: bytearray
-    v: int
-    r: int
-    s: int
+    v: int = 0  # pylint: disable=invalid-name
+    r: int = 0  # pylint: disable=invalid-name
+    s: int = 0  # pylint: disable=invalid-name
 
+    def __init__(self, *args, **kwargs):
+        self.data = bytearray()
+        super().__init__(*args, **kwargs)
+
+    # pylint: disable=arguments-differ
     @classmethod
     def serialize(cls, obj, type_parsed: bool = False, **kwargs):
         if type_parsed:
@@ -91,6 +91,7 @@ class Transaction(rlp.Serializable):
         else:
             return obj.__class__.serialize(obj, type_parsed=True, **kwargs)
 
+    # pylint: disable=arguments-differ
     @classmethod
     def deserialize(cls, serial, type_parsed: bool = False, **extra_kwargs):
         if type_parsed:
@@ -128,9 +129,9 @@ class Transaction(rlp.Serializable):
 
     def chain_id(self) -> int:
         if self.v % 2 == 0:
-            v = self.v - 1
+            v = self.v - 1  # pylint: disable=invalid-name
         else:
-            v = self.v
+            v = self.v  # pylint: disable=invalid-name
         return (v - eth_common_constants.EIP155_CHAIN_ID_OFFSET) // 2
 
     def signature(self) -> bytes:
@@ -288,8 +289,6 @@ class LegacyTransaction(Transaction):
         )
 
 
-# pyre-fixme[13]: Attribute `_chain_id` is never initialized.
-# pyre-fixme[13]: Attribute `access_list` is never initialized.
 class AccessListTransaction(Transaction):
     transaction_type: EthTransactionType = EthTransactionType.ACCESS_LIST
 
@@ -307,8 +306,12 @@ class AccessListTransaction(Transaction):
         ("s", rlp.sedes.big_endian_int),
     ]
 
-    _chain_id: int
+    _chain_id: int = 0
     access_list: List[AccessedAddress]
+
+    def __init__(self, *args, **kwargs):
+        self.access_list = []
+        super().__init__(*args, **kwargs)
 
     def hash(self):
         hash_bytes = eth_common_utils.keccak_hash(Transaction.serialize(self))

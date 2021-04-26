@@ -7,7 +7,6 @@ from bxcommon.utils.blockchain_utils.eth import eth_common_utils, eth_common_con
 from bxcommon.utils.object_hash import Sha256Hash
 
 
-# pyre-fixme[13]: Attribute `number` is never initialized.
 class BlockHeader(rlp.Serializable):
     FIXED_LENGTH_FIELD_OFFSET = 2 * eth_common_constants.BLOCK_HASH_LEN + eth_common_constants.ADDRESS_LEN + \
                                 3 * eth_common_constants.MERKLE_ROOT_LEN + eth_common_constants.BLOOM_LEN + 9
@@ -30,9 +29,34 @@ class BlockHeader(rlp.Serializable):
         ("nonce", rlp.sedes.binary)
     ]
 
-    number: int
-    difficulty: int
     prev_hash: bytearray
+    uncles_hash: bytearray
+    coinbase: bytearray
+    state_root: bytearray
+    tx_list_root: bytearray
+    receipts_root: bytearray
+    bloom: int = 0
+    difficulty: int = 0
+    number: int = 0
+    gas_limit: int = 0
+    gas_used: int = 0
+    timestamp: int = 0
+    extra_data: bytearray
+    mix_hash: bytearray
+    nonce: bytearray
+
+    def __init__(self, *args, **kwargs):
+        self.prev_hash = bytearray()
+        self.uncles_hash = bytearray()
+        self.coinbase = bytearray()
+        self.state_root = bytearray()
+        self.tx_list_root = bytearray()
+        self.receipts_root = bytearray()
+        self.extra_data = bytearray()
+        self.mix_hash = bytearray()
+        self.nonce = bytearray()
+
+        super().__init__(*args, **kwargs)
 
     def __repr__(self) -> str:
         return f"EthBlockHeader<{self.hash_object()}>"
