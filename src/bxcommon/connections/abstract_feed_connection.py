@@ -37,26 +37,31 @@ class AbstractFeedConnection(Generic[T], metaclass=ABCMeta):
             retry_callback=self._subscribe_to_feeds
         )
         self.feeds_process: Dict[str, Callable[[SubscriptionNotification], None]] = {}
-        self.subscription_task: Optional[Task] = None
+        self.subscription_tasks: Dict[str, Task] = {}
 
     async def subscribe_feeds(self) -> None:
         await self.ws_client.initialize()
         await self._subscribe_to_feeds(self.ws_client)
 
     async def _subscribe_to_feeds(self, ws_client: AbstractWsProvider) -> None:
-        subscription_task = self.subscription_task
-        if subscription_task is not None:
-            subscription_task.cancel()
-
         for feed_name, process in self.feeds_process.items():
-            logger.debug("FeedConnection subscribed to feed {} from source {}", feed_name, self.feed_ip)
-            self.subscription_task = ws_client.subscribe_with_callback(process, feed_name)
+            if feed_name in self.subscription_tasks:
+                if self.subscription_tasks[feed_name].done():
+                    logger.debug("FeedConnection resubscribed to feed {} from source {}", feed_name, self.feed_ip)
+                    self.subscription_tasks[feed_name] = ws_client.subscribe_with_callback(process, feed_name)
+            else:
+                logger.debug("FeedConnection subscribed to feed {} from source {}", feed_name, self.feed_ip)
+                self.subscription_tasks[feed_name] = ws_client.subscribe_with_callback(process, feed_name)
 
     async def revive(self) -> None:
         if self.ws_client.ws is None or not self.ws_client.running:
             logger.info("Attempting to revive websockets source feed...")
-            await self.ws_client.reconnect()
-            await self.subscribe_feeds()
+            await self.ws_client.connected_event.wait()
+
+        if self.ws_client.ws is None or not self.ws_client.running:
+            await self._subscribe_to_feeds(self.ws_client)
 
     async def stop(self) -> None:
+        for _, task in self.subscription_tasks.items():
+            task.cancel()
         await self.ws_client.close()
