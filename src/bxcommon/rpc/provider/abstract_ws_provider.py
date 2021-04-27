@@ -193,7 +193,7 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         options: Dict[str, Any],
     ) -> None:
         subscription_id = await self.subscribe(channel, options)
-        while self.running:
+        while self.running and subscription_id in self.subscription_manager.subscription_notifications_by_id:
             notification = await self.subscription_manager.get_next_subscription_notification_for_id(
                 subscription_id
             )
@@ -326,6 +326,8 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
             for task in self.tasks:
                 task.cancel()
             self.tasks.clear()
+
+            self.subscription_manager.subscription_notifications_by_id.clear()
             asyncio.create_task(self.reconnect())
 
     async def reconnect(self) -> None:
