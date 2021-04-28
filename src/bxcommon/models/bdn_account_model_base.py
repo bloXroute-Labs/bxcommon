@@ -45,6 +45,7 @@ class AccountTemplate:
     private_relays: Optional[BdnPrivateRelayServiceModelConfigBase] = None
     private_transaction: Optional[BdnQuotaServiceModelConfigBase] = None
     private_transaction_fee: Optional[BdnQuotaServiceModelConfigBase] = None
+    light_gateway: Optional[BdnBasicServiceModel] = None
 
 
 @dataclass
