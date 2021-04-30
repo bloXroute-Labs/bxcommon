@@ -6,8 +6,6 @@ from bxcommon import log_messages
 from bxcommon.messages.eth.serializers.transaction import Transaction
 from bxutils import logging
 
-import blxr_rlp as rlp
-
 logger = logging.get_logger(__name__)
 
 

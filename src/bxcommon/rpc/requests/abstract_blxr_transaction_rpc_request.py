@@ -16,7 +16,9 @@ class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node]):
     help = {
         "params": f"[Required - {rpc_constants.TRANSACTION_PARAMS_KEY}: [transaction payload in hex string format]]. "
         f"Optional - {SYNCHRONOUS}: [True (wait for response from the relay - default), "
-        "False (don't wait for response)].",
+        "False (don't wait for response)]."
+        f"{rpc_constants.BLOCKCHAIN_PROTOCOL_PARAMS_KEY}: [by default: `Ethereum`] "
+        f"{rpc_constants.BLOCKCHAIN_NETWORK_PARAMS_KEY}: [by default: `Mainnet`], ",
         "description": "send transaction to the bloXroute BDN"
     }
 

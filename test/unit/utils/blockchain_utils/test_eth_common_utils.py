@@ -23,7 +23,7 @@ class TestEthCommonUtils(unittest.TestCase):
         )
         self.assertEqual(
             225600000000,
-            eth_common_utils.raw_tx_gas_price(memoryview(eth_fixtures.ACCESS_LIST_TRANSACTION), 0)
+            eth_common_utils.raw_tx_gas_price(memoryview(eth_fixtures.ACL_TRANSACTION), 0)
         )
 
     def test_block_header_number_and_difficulty(self):

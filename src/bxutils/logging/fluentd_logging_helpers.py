@@ -1,8 +1,8 @@
 import logging
+import sys
 from io import BytesIO
 
 import msgpack
-import sys
 
 from bxutils import constants
 from bxutils import log_messages
@@ -24,7 +24,7 @@ def overflow_handler_ignore(_pending_records_buffer):
 
 overflow_handler_map = {
     OverflowHandlerType.Ignore: overflow_handler_ignore,
-    OverflowHandlerType.Print: overflow_handler_print
+    OverflowHandlerType.Print: overflow_handler_print,
 }
 
 overflow_handler = overflow_handler_map[constants.FLUENTD_OVERFLOW_HANDLER]

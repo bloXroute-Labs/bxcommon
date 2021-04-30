@@ -374,6 +374,15 @@ def get_common_opts(
                 final_tx_confirmations_count,
                 block_confirmations_count,
             ),
+            10: blockchain_network(
+                "Ethereum",
+                "BSC-Mainnet",
+                10,
+                5,
+                5,
+                24,
+                block_confirmations_count,
+            ),
         },
         "blockchain_network_num": blockchain_network_num,
     })

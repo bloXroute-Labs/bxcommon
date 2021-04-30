@@ -8,17 +8,22 @@ from typing import Optional, List, Dict, Union, Iterable
 
 from bxutils import constants
 from bxutils import log_messages
-from bxutils.logging.formatters import JSONFormatter, CustomFormatter, FluentJSONFormatter, AbstractFormatter
+from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 from bxutils.logging import log_level, LoggerConfig
+from bxutils.logging.formatters import (
+    JSONFormatter,
+    CustomFormatter,
+    FluentJSONFormatter,
+    AbstractFormatter,
+)
 from bxutils.logging.handler_type import HandlerType
 from bxutils.logging.log_format import LogFormat
 from bxutils.logging.log_level import LogLevel
-from bxutils.encoding.json_encoder import EnhancedJSONEncoder
 
 try:
     # TODO: remove try catch clause once the dependencies are installed
-    import msgpack
     from aiofluent.handler import FluentHandler
+    # pylint: disable=ungrouped-imports
     from bxutils.logging.fluentd_logging_helpers import overflow_handler
 except ImportError:
     FluentHandler = None
@@ -34,15 +39,19 @@ def _get_handler_file(folder_path: str) -> FileHandler:
         os.makedirs(folder_path)
     filename = os.path.join(
         folder_path,
-        "{}{}.log".format(time.strftime("%Y-%m-%d-%H:%M:%S+0000-", time.gmtime()), str(os.getpid()))
+        "{}{}.log".format(
+            time.strftime("%Y-%m-%d-%H:%M:%S+0000-", time.gmtime()), str(os.getpid())
+        ),
     )
     return FileHandler(filename)
 
 
-def _get_handler_fluentd(fluentd_host: Optional[str],
-                         fluentd_tag_suffix: Optional[str],
-                         max_queue_size: int,
-                         loop: Optional[AbstractEventLoop] = None):
+def _get_handler_fluentd(
+    fluentd_host: Optional[str],
+    fluentd_tag_suffix: Optional[str],
+    max_queue_size: int,
+    loop: Optional[AbstractEventLoop] = None,
+):
     assert fluentd_host is not None, "fluentd host name is missing"
     assert FluentHandler is not None, "fluentd handler is not installed"
 
@@ -63,20 +72,26 @@ def _get_handler_fluentd(fluentd_host: Optional[str],
         max_queue_size=max_queue_size,
         log_unhandled_exceptions=True,
         loop=loop,
-        packer_kwargs={"default": EnhancedJSONEncoder().default}
+        packer_kwargs={"default": EnhancedJSONEncoder().default},
     )
 
 
-def _get_formatter(log_format: LogFormat, root_log_level: LogLevel, style: str, handler_type: HandlerType):
+def _get_formatter(
+    log_format: LogFormat, root_log_level: LogLevel, style: str, handler_type: HandlerType
+):
     if log_format == LogFormat.PLAIN:
         if root_log_level <= LogLevel.DEBUG:
-            formatter = CustomFormatter(fmt=constants.DEBUG_LOG_FORMAT_PATTERN,
-                                        datefmt=constants.PLAIN_LOG_DATE_FORMAT_PATTERN,
-                                        style=style)
+            formatter = CustomFormatter(
+                fmt=constants.DEBUG_LOG_FORMAT_PATTERN,
+                datefmt=constants.PLAIN_LOG_DATE_FORMAT_PATTERN,
+                style=style,
+            )
         else:
-            formatter = CustomFormatter(fmt=constants.INFO_LOG_FORMAT_PATTERN,
-                                        datefmt=constants.PLAIN_LOG_DATE_FORMAT_PATTERN,
-                                        style=style)
+            formatter = CustomFormatter(
+                fmt=constants.INFO_LOG_FORMAT_PATTERN,
+                datefmt=constants.PLAIN_LOG_DATE_FORMAT_PATTERN,
+                style=style,
+            )
     elif handler_type == HandlerType.Fluent:
         formatter = FluentJSONFormatter(style=style)
     elif log_format == LogFormat.JSON:
@@ -87,18 +102,18 @@ def _get_formatter(log_format: LogFormat, root_log_level: LogLevel, style: str, 
 
 
 def create_logger(
-        global_logger_name: Optional[str],
-        root_log_level: LogLevel = constants.DEFAULT_LOG_LEVEL,
-        log_format: LogFormat = constants.DEFAULT_LOG_FORMAT,
-        handler_type: HandlerType = HandlerType.Stream,
-        flush_handlers: bool = True,
-        folder_path: Optional[str] = None,
-        style: str = "{",
-        fluentd_host: Optional[str] = None,
-        fluentd_tag_suffix: Optional[str] = None,
-        max_queue_size=constants.FLUENTD_LOGGER_MAX_QUEUE_SIZE,
-        handler_log_level: Optional[LogLevel] = None,
-        loop: Optional[AbstractEventLoop] = None
+    global_logger_name: Optional[str],
+    root_log_level: LogLevel = constants.DEFAULT_LOG_LEVEL,
+    log_format: LogFormat = constants.DEFAULT_LOG_FORMAT,
+    handler_type: HandlerType = HandlerType.Stream,
+    flush_handlers: bool = True,
+    folder_path: Optional[str] = None,
+    style: str = "{",
+    fluentd_host: Optional[str] = None,
+    fluentd_tag_suffix: Optional[str] = None,
+    max_queue_size=constants.FLUENTD_LOGGER_MAX_QUEUE_SIZE,
+    handler_log_level: Optional[LogLevel] = None,
+    loop: Optional[AbstractEventLoop] = None,
 ) -> None:
     """
     Installs a log configuration under the provided name.
@@ -172,53 +187,63 @@ def set_instance(instance: str) -> None:
 
 
 def str_to_log_options(value: str) -> Dict[str, LogLevel]:
-    d = {}
+    options = {}
     pairs = value.split(",")
     for pair in pairs:
         name, level = pair.split("=", 1)
-        d[name] = log_level.from_string(level)
-    return d
+        options[name] = log_level.from_string(level)
+    return options
 
 
 def setup_logging(
-        log_format: LogFormat,
-        default_log_level: LogLevel,
-        default_logger_names: Iterable[str],
-        log_level_overrides: Dict[str, LogLevel],
-        root_log_level: LogLevel = LogLevel.WARNING,
-        root_log_style: str = "{",
-        enable_fluent_logger: bool = False,
-        fluentd_host: Optional[str] = None,
-        fluentd_queue_size: int = constants.FLUENTD_LOGGER_MAX_QUEUE_SIZE,
-        fluentd_tag_suffix: Optional[str] = None,
-        third_party_loggers: Optional[List[LoggerConfig]] = None,
-        fluent_log_level: Optional[LogLevel] = None,
-        stdout_log_level: Optional[LogLevel] = None,
-        loop: Optional[AbstractEventLoop] = None
-        ) -> None:
+    log_format: LogFormat,
+    default_log_level: LogLevel,
+    default_logger_names: Iterable[str],
+    log_level_overrides: Dict[str, LogLevel],
+    root_log_level: LogLevel = LogLevel.WARNING,
+    root_log_style: str = "{",
+    enable_fluent_logger: bool = False,
+    fluentd_host: Optional[str] = None,
+    fluentd_queue_size: int = constants.FLUENTD_LOGGER_MAX_QUEUE_SIZE,
+    fluentd_tag_suffix: Optional[str] = None,
+    third_party_loggers: Optional[List[LoggerConfig]] = None,
+    fluent_log_level: Optional[LogLevel] = None,
+    stdout_log_level: Optional[LogLevel] = None,
+    loop: Optional[AbstractEventLoop] = None,
+) -> None:
     loggers_config = [LoggerConfig(None, root_log_style, root_log_level)]
     if third_party_loggers is not None:
         loggers_config.extend(third_party_loggers)
 
     for logger_config in loggers_config:
-        if logger_config.log_handler_type is None or logger_config.log_handler_type == HandlerType.Stream:
+        if (
+            logger_config.log_handler_type is None
+            or logger_config.log_handler_type == HandlerType.Stream
+        ):
             create_logger(
                 logger_config.name,
                 # pyre-fixme[6]: Expected `LogLevel` for 2nd param but got
                 #  `Optional[LogLevel]`.
-                root_log_level=logger_config.log_level if logger_config.log_level is not None else default_log_level,
+                root_log_level=logger_config.log_level
+                if logger_config.log_level is not None
+                else default_log_level,
                 log_format=log_format,
                 style=logger_config.style,
                 handler_type=HandlerType.Stream,
-                handler_log_level=stdout_log_level
+                handler_log_level=stdout_log_level,
             )
-        if enable_fluent_logger and LoggerConfig.log_handler_type is None \
-                or LoggerConfig.log_handler_type == HandlerType.Fluent:
+        if (
+            enable_fluent_logger
+            and LoggerConfig.log_handler_type is None
+            or LoggerConfig.log_handler_type == HandlerType.Fluent
+        ):
             create_logger(
                 logger_config.name,
                 # pyre-fixme[6]: Expected `LogLevel` for 2nd param but got
                 #  `Optional[LogLevel]`.
-                root_log_level=logger_config.log_level if logger_config.log_level is not None else default_log_level,
+                root_log_level=logger_config.log_level
+                if logger_config.log_level is not None
+                else default_log_level,
                 log_format=LogFormat.JSON,
                 style=logger_config.style,
                 handler_type=HandlerType.Fluent,
@@ -227,7 +252,7 @@ def setup_logging(
                 max_queue_size=fluentd_queue_size,
                 fluentd_tag_suffix=fluentd_tag_suffix,
                 handler_log_level=fluent_log_level,
-                loop=loop
+                loop=loop,
             )
         elif enable_fluent_logger:
             print("Cannot Init fluentd logger")

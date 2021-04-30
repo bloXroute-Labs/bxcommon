@@ -45,7 +45,7 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
 
         self.subscription_manager = SubscriptionManager(queue_limit)
         self.response_messages = ResponseQueue()
-
+        self.tasks: List[Task] = []
         self.running = False
         self.current_request_id = 1
         if headers:
@@ -180,9 +180,11 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
     ) -> Task:
         if options is None:
             options = {}
-        return asyncio.create_task(
+        subscribe_task = asyncio.create_task(
             self._handle_subscribe_callback(callback, channel, options)
         )
+        self.tasks.append(subscribe_task)
+        return subscribe_task
 
     async def _handle_subscribe_callback(
         self,
@@ -191,7 +193,7 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         options: Dict[str, Any],
     ) -> None:
         subscription_id = await self.subscribe(channel, options)
-        while self.running:
+        while self.running and subscription_id in self.subscription_manager.subscription_notifications_by_id:
             notification = await self.subscription_manager.get_next_subscription_notification_for_id(
                 subscription_id
             )
@@ -300,13 +302,15 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
 
     async def _ensure_websocket_alive(self) -> None:
         ws = self.ws
-        assert ws is not None
-        await ws.wait_closed()
+        if ws is None:
+            await asyncio.sleep(constants.WS_MIN_RECONNECT_TIMEOUT_S)
+        else:
+            await ws.wait_closed()
 
-        if ws.transfer_data_exc:
-            logger.error(
-                log_messages.RPC_TRANSPORT_EXCEPTION, ws.transfer_data_exc
-            )
+            if ws.transfer_data_exc:
+                logger.error(
+                    log_messages.RPC_TRANSPORT_EXCEPTION, ws.transfer_data_exc
+                )
 
         self.connected_event.clear()
 
@@ -319,6 +323,11 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
             await self.close()
         elif self.running:
             logger.debug("Websockets connection was broken, reconnecting...")
+            for task in self.tasks:
+                task.cancel()
+            self.tasks.clear()
+
+            self.subscription_manager.subscription_notifications_by_id.clear()
             asyncio.create_task(self.reconnect())
 
     async def reconnect(self) -> None:

@@ -92,4 +92,3 @@ def create_storage_info(
             )
         )
     )
-

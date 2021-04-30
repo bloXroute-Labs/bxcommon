@@ -7,10 +7,7 @@ from bxcommon.messages.eth.serializers.transaction import Transaction
 
 
 # pyre-fixme[13]: Attribute `header` is never initialized.
-# pyre-fixme[13]: Attribute `transactions` is never initialized.
-# pyre-fixme[13]: Attribute `uncles` is never initialized.
 class Block(rlp.Serializable):
-
     fields = [
         ("header", BlockHeader),
         ("transactions", rlp.sedes.CountableList(Transaction)),
@@ -20,6 +17,12 @@ class Block(rlp.Serializable):
     header: BlockHeader
     transactions: List[Transaction]
     uncles: List[BlockHeader]
+
+    def __init__(self, *args, **kwargs):
+        self.transactions = []
+        self.uncles = []
+
+        super().__init__(*args, **kwargs)
 
     def to_json(self) -> Dict[str, Any]:
         """

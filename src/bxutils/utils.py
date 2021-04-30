@@ -10,7 +10,10 @@ R = TypeVar("R")
 
 
 def fibonacci(sequence_number: int) -> int:
-    return int((constants.FIBONACCI_GOLDEN_RATIO ** sequence_number - (1 - constants.FIBONACCI_GOLDEN_RATIO) ** sequence_number) / 5 ** .5)
+    return int(
+        (constants.FIBONACCI_GOLDEN_RATIO ** sequence_number -
+         (1 - constants.FIBONACCI_GOLDEN_RATIO) ** sequence_number) / 5 ** .5
+    )
 
 
 def optional_map(val: Optional[T], mapper: Callable[[T], R]) -> Optional[R]:

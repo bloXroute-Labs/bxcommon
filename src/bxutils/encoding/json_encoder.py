@@ -18,9 +18,9 @@ class Case(Enum):
     CAMEL = 2
 
 
-def is_iterable_no_collection(o):
-    return isinstance(o, SPECIAL_ITERABLE_TYPES) or \
-           (isinstance(o, Iterable) and not isinstance(o, Collection))
+def is_iterable_no_collection(obj):
+    return isinstance(obj, SPECIAL_ITERABLE_TYPES) or \
+           (isinstance(obj, Iterable) and not isinstance(obj, Collection))
 
 
 def to_json(obj: Any, remove_nulls: bool = False) -> str:
@@ -46,48 +46,51 @@ def load_json_from_file(json_file_path: str) -> Optional[Union[list, dict]]:
             with open(json_file_path) as json_file:
                 node_json = json.load(json_file)
         except ValueError as e:
-            logger.debug("Failed to parse json: %s", e)
+            logger.debug("Failed to parse json: {}", e)
         except OSError as e:
-            logger.debug("Failed trying to check for a json file: %s", e)
+            logger.debug("Failed trying to check for a json file: {}", e)
     else:
-        raise ValueError("Could not locate json file: %s", json_file_path)
+        raise ValueError(f"Could not locate json file: {json_file_path}")
 
     return node_json
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
-    def default(self, o: Any) -> Any:
-        if is_iterable_no_collection(o):
-            o = list(o)
-        elif isinstance(o, (bytearray, memoryview)):
-            o = bytes(o)
-        if isinstance(o, Enum):
-            return str(o)
-        if hasattr(o, "__dict__"):
-            if isinstance(o.__dict__, dict):
-                return o.__dict__
+    # pylint: disable=method-hidden,too-many-return-statements,arguments-differ
+    # pyre-fixme[14]: `default` overrides method defined in `JSONEncoder`
+    #  inconsistently.
+    def default(self, obj: Any) -> Any:
+        if is_iterable_no_collection(obj):
+            obj = list(obj)
+        elif isinstance(obj, (bytearray, memoryview)):
+            obj = bytes(obj)
+        if isinstance(obj, Enum):
+            return str(obj)
+        if hasattr(obj, "__dict__"):
+            if isinstance(obj.__dict__, dict):
+                return obj.__dict__
             else:
-                return str(o)
-        if isinstance(o, (date, datetime, time)):
-            return o.isoformat()
-        if isinstance(o, bytes):
+                return str(obj)
+        if isinstance(obj, (date, datetime, time)):
+            return obj.isoformat()
+        if isinstance(obj, bytes):
             try:
-                return o.decode("utf-8")
+                return obj.decode("utf-8")
             except UnicodeDecodeError:
-                return str(o)
-        if hasattr(o, "hexdigest"):
-            return o.hexdigest()
-        if hasattr(o, "hex_string"):
-            return o.hex_string()
-        if istraceback(o):
-            return "".join(traceback.format_tb(o)).strip()
-        return o
+                return str(obj)
+        if hasattr(obj, "hexdigest"):
+            return obj.hexdigest()
+        if hasattr(obj, "hex_string"):
+            return obj.hex_string()
+        if istraceback(obj):
+            return "".join(traceback.format_tb(obj)).strip()
+        return obj
 
     def _encode(self, obj):
         obj = self.default(obj)
         if isinstance(obj, dict):
             return {self.default(self._encode(k)): self._encode(v) for k, v in obj.items()}
-        elif isinstance(obj, list) or isinstance(obj, set):
+        elif isinstance(obj, (list, set)):
             return [self._encode(l) for l in obj]
         else:
             return obj

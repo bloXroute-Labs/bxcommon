@@ -25,7 +25,10 @@ logger_filters = logging.get_logger(LogRecordType.TransactionFiltering, __name__
 class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
     help = {
         "params":
-        '[feed_name, {"include": [field_1, field_2], "duplicates": false, "include_from_blockchain": true}].\n'
+        '[feed_name, '
+        '{'
+        '"include": [field_1, field_2], "duplicates": false, "include_from_blockchain": true, '
+        '"blockchain_network": "Mainnet", "blockchain_protocol: "Ethereum"}].\n'
         "Available feeds: newTxs, pendingTxs, newBlocks, ethOnBlock\n"
         "Available fields for transaction feeds: tx_hash, tx_contents (default: all)\n"
         "Available fields for block feed: hash, block (default: all)\n"
