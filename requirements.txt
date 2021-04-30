@@ -5,7 +5,7 @@ dataclasses==0.6
 uvloop==0.14.0
 cryptography==2.8
 pycryptodome==3.9.1
-urllib3==1.25.7
+urllib3==1.25.8
 python-status==1.0.1
 aiohttp==3.7.3
 prometheus_client==0.7.1
