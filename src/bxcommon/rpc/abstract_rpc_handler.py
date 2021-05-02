@@ -44,6 +44,7 @@ class AbstractRpcHandler(Generic[Node, Req, Res]):
 
         # request can be many types, not all of them have "headers"
         headers = getattr(request, "headers", None)
+        account_cache_key = ""
         if headers and rpc_constants.AUTHORIZATION_HEADER_KEY in headers:
             request_auth_key = headers[rpc_constants.AUTHORIZATION_HEADER_KEY]
             account_cache_key = base64.b64decode(request_auth_key).decode(constants.DEFAULT_TEXT_ENCODING)
@@ -58,7 +59,7 @@ class AbstractRpcHandler(Generic[Node, Req, Res]):
             raise e
         except Exception as e:
             logger.exception(
-                log_messages.INTERNAL_ERROR_HANDLING_RPC_REQUEST, e, rpc_request
+                log_messages.INTERNAL_ERROR_HANDLING_RPC_REQUEST, e, rpc_request, account_cache_key
             )
             raise RpcInternalError(rpc_request.id, "Please contact bloXroute support.")
 
