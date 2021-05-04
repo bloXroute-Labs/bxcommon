@@ -216,7 +216,7 @@ RPC_COULD_NOT_PARSE_TRANSACTION = LogMessage(
 INTERNAL_ERROR_HANDLING_RPC_REQUEST = LogMessage(
     "C-000042",
     RPC_ERROR,
-    "Internal error {} while handling request {}"
+    "Internal error {} while handling request {} from {}"
 )
 BDN_ACCOUNT_INFORMATION_TIMEOUT = LogMessage(
     "C-000043",
