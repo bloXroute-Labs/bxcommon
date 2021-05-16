@@ -101,7 +101,7 @@ class AbstractWsRpcHandler(AbstractRpcHandler["AbstractNode", WsRequest, str]):
                 }
             )
             if self.subscribed_messages.full():
-                logger.warning(
+                logger.info(
                     log_messages.BAD_RPC_SUBSCRIBER,
                     self.subscribed_messages.qsize(),
                     list(self.subscriptions.keys())
