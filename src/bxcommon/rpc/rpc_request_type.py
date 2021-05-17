@@ -34,3 +34,4 @@ class RpcRequestType(SerializeableEnum):
     METAMASK_PRIVATE_TX = 29
     SIMULATE_ARB_ONLY_BUNDLE = 30
     SUBMIT_ARB_ONLY_BUNDLE = 31
+    BLXR_INFO = 32
