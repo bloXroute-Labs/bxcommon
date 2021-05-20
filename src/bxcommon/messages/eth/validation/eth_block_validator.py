@@ -99,7 +99,9 @@ class EthBlockValidator(AbstractBlockValidator):
         max_difficulty_change = int(
             last_confirmed_block_difficulty / 100 * eth_common_constants.MAX_DIFFICULTY_CHANGE_PERCENT
         )
-        valid = last_confirmed_block_difficulty - block_difficulty < max_difficulty_change
+
+        valid = last_confirmed_block_difficulty - block_difficulty <= max_difficulty_change
+        valid = valid or abs(block_difficulty - last_confirmed_block_difficulty) <= 1
         if not valid:
             logger.debug(
                 "Block {} is invalid. Block difficulty {} is significantly lower than "
