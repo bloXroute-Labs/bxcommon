@@ -1,6 +1,7 @@
 import fnmatch
 from typing import TYPE_CHECKING, Callable, Any, List, Optional
 
+from bxcommon import constants
 from bxcommon.feed.feed import FeedKey
 from bxcommon.feed.feed_manager import FeedManager
 from bxcommon.feed.subscriber import Subscriber
@@ -89,6 +90,8 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
                 "Subscribe RPC request params must be a list of length 2.",
             )
         feed_name, options = params
+        if self.feed_network == constants.ALL_NETWORK_NUM:
+            self.feed_network = self.node.network_num
         self.feed_name = feed_name
         self.feed_key = FeedKey(self.feed_name, self.feed_network)
 
