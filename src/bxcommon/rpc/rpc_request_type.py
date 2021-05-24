@@ -35,3 +35,4 @@ class RpcRequestType(SerializeableEnum):
     SIMULATE_ARB_ONLY_BUNDLE = 30
     SUBMIT_ARB_ONLY_BUNDLE = 31
     BLXR_INFO = 32
+    BACKRUN_PRIVATE_TX = 33
