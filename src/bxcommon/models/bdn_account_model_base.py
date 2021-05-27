@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 from datetime import datetime, date
 
@@ -13,6 +14,14 @@ from bxutils import logging
 
 logger = logging.get_logger(__name__)
 OPTIONAL_ACCOUNT_SERVICES = {"tx_free"}
+
+
+class Tiers(Enum):
+    INTRODUCTORY = "Introductory"
+    DEVELOPER = "Developer"
+    PROFESSIONAL = "Professional"
+    ENTERPRISE = "Enterprise"
+    ENTERPRISE_ELITE = "EnterpriseElite"
 
 
 @dataclass

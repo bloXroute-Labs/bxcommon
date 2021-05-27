@@ -75,6 +75,8 @@ def is_greater_or_eq_version(version1: str, version2: str) -> bool:
     :param version2: version number ex) "v1.61.12"
     :return: True if version1 >= version2 else False
     """
+    if version1 is None or version2 is None:
+        return True
     v1_list = [int(x) for x in version1.strip("v").split(".")]
     v2_list = [int(x) for x in version2.strip("v").split(".")]
     for i in range(min(len(v1_list), len(v2_list))):
