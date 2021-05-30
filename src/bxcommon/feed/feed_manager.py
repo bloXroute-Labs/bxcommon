@@ -38,7 +38,7 @@ class FeedManager:
         if feed_key in self.feeds:
             subscriber = self.feeds[feed_key].subscribe(options)
             logger.debug(
-                "Creating new subscriber ({}) to {}", subscriber.subscription_id, feed_key.name
+                "Creating new subscriber ({}) to {}", subscriber.subscription_id, feed_key
             )
             self._node.reevaluate_transaction_streamer_connection()
             account_id = options.get("account_id", None)
@@ -67,7 +67,7 @@ class FeedManager:
             logger.debug(
                 "Unsubscribing subscriber ({}) from {}",
                 subscriber.subscription_id,
-                feed_key.name,
+                feed_key,
             )
 
             # Subtract the feed from the account counting
