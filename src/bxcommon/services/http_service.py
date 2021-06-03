@@ -2,8 +2,8 @@ import json
 from ssl import SSLContext
 from typing import Optional, Dict, Any, Union, List
 
-import status
 import ast
+import status
 from urllib3 import Retry, HTTPResponse
 from urllib3.exceptions import HTTPError, MaxRetryError
 from urllib3.poolmanager import PoolManager

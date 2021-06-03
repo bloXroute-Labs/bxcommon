@@ -53,7 +53,7 @@ jobs:
       - restore_cache: # restores saved dependency cache
           key: bxextensions-{{ checksum "~/ws/bxextensions_tmp_file" }}
       - restore_cache: # restores saved dependency cache
-          key: "bxcommon-{{ checksum \"bxcommon/requirements.txt\" }}-\
+          key: "bxcommonv2-{{ checksum \"bxcommon/requirements.txt\" }}-\
             {{ checksum \"bxcommon/requirements-dev.txt\" }}-\
             {{ checksum \"bxcommon/requirements-optional.txt\" }}"
       - run: # install and activate virtual environment with pip
@@ -71,7 +71,7 @@ jobs:
             cd bxextensions
             python build_extensions.py
       - save_cache: # special step to save dependency cache
-          key: "bxcommon-{{ checksum \"bxcommon/requirements.txt\" }}-\
+          key: "bxcommonv2-{{ checksum \"bxcommon/requirements.txt\" }}-\
             {{ checksum \"bxcommon/requirements-dev.txt\" }}-\
             {{ checksum \"bxcommon/requirements-optional.txt\" }}"
           paths:
