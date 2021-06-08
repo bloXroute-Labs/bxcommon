@@ -10,58 +10,14 @@ from bxcommon.test_utils.abstract_test_case import AbstractTestCase
 from bxcommon.test_utils.helpers import async_test
 from bxcommon.rpc.provider.abstract_ws_provider import AbstractWsProvider, WsException
 from bxcommon import constants
-
-
-class TestWebSocket(websockets.WebSocketClientProtocol):
-    def __init__(self):
-        self.alive_event = asyncio.Event()
-        self.send_messages = []
-        self.recv_messages: 'asyncio.Queue[websockets.Data]' = asyncio.Queue()
-        self.transfer_data_exc = None
-
-    async def wait_closed(self) -> None:
-        await self.alive_event.wait()
-
-    async def close(self, code: int = 1000, reason: str = "") -> None:
-        self.alive_event.set()
-
-    async def send(
-        self,
-        message: Union[websockets.Data, Iterable[websockets.Data], AsyncIterable[websockets.Data]],
-    ) -> None:
-        self.send_messages.append(message)
-
-    async def recv(self) -> websockets.Data:
-        return await self.recv_messages.get()
-
-
-class TestWsProvider(AbstractWsProvider):
-    def __init__(self, uri: str):
-        super().__init__(uri)
-        self.fail_connect = False
-
-    async def subscribe(self, channel: str, options: Optional[Dict[str, Any]] = None) -> str:
-        pass
-
-    async def unsubscribe(self, subscription_id: str) -> Tuple[bool, Optional[RpcError]]:
-        pass
-
-    async def connect_websocket(self) -> websockets.WebSocketClientProtocol:
-        if self.fail_connect:
-            raise ConnectionRefusedError
-        else:
-            return TestWebSocket()
-
-    # just for autocompletion
-    def get_test_websocket(self) -> Optional[TestWebSocket]:
-        return self.ws
+from bxcommon.test_utils.mocks.mock_ws_client import MockWsProvider
 
 
 class AbstractWsProviderTest(AbstractTestCase):
 
     @async_test
     async def setUp(self) -> None:
-        self.provider = TestWsProvider("ws://")
+        self.provider = MockWsProvider("ws://")
 
     @async_test
     async def test_startup(self):
@@ -84,6 +40,26 @@ class AbstractWsProviderTest(AbstractTestCase):
 
         emitted_message = await self.provider.get_rpc_response("1")
         self.assertEqual(rpc_message, emitted_message)
+
+    @async_test
+    async def test_send_receive_messages_same_id(self):
+        await self.provider.initialize()
+
+        rpc_message = JsonRpcResponse("1", "foo")
+
+        task1 = asyncio.create_task(self.provider.get_rpc_response("1"))
+        task2 = asyncio.create_task(self.provider.get_rpc_response("1"))
+        # Add a sleep to have both tasks waiting on the same response
+        await asyncio.sleep(0.1)
+        # Add the response 
+        await self.provider.get_test_websocket().recv_messages.put(
+            rpc_message.to_jsons()
+        )
+        await asyncio.wait(
+            [task1, task2], return_when=asyncio.ALL_COMPLETED
+        )
+        self.assertIsNotNone(task1.result())
+        self.assertIsNone(task2.result())
 
     @async_test
     async def test_disconnect_on_start(self):
