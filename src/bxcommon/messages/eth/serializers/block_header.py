@@ -25,8 +25,8 @@ class BlockHeader(rlp.Serializable):
         ("gas_used", rlp.sedes.big_endian_int),
         ("timestamp", rlp.sedes.big_endian_int),
         ("extra_data", rlp.sedes.binary),
-        ("mix_hash", rlp.sedes.binary),
-        ("nonce", rlp.sedes.binary)
+        ("mix_hash", rlp.sedes.Binary.fixed_length(eth_common_constants.BLOCK_HASH_LEN)),
+        ("nonce", rlp.sedes.Binary.fixed_length(eth_common_constants.BLOCK_NONCE_LEN))
     ]
 
     prev_hash: bytearray

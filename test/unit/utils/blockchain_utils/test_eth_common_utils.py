@@ -49,7 +49,7 @@ class TestEthCommonUtils(unittest.TestCase):
             1601410624,
             helpers.generate_bytes(100),
             helpers.generate_bytes(eth_common_constants.BLOCK_HASH_LEN),
-            helpers.generate_bytes(12345),
+            int(12345).to_bytes(eth_common_constants.BLOCK_NONCE_LEN, byteorder="big")
         )
         block_header_bytes = rlp.encode(block_header, BlockHeader)
         return memoryview(block_header_bytes)
