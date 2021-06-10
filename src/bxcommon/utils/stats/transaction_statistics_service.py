@@ -87,7 +87,7 @@ class _TransactionStatisticsService(StatisticsEventService):
             return False
 
         last_bytes_value, = struct.unpack_from(
-            "<H",
+            ">H",
             tx_hash_bytes, len(tx_hash_bytes) - constants.TAIL_BYTE_COUNT
         )
         log_tx_stat_probability_value = float(last_bytes_value) * 100 / constants.MAX_TAIL_BYTE_VALUE
