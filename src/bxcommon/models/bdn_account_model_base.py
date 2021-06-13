@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from functools import total_ordering
 from typing import Optional
 from datetime import datetime, date
 
@@ -16,12 +17,44 @@ logger = logging.get_logger(__name__)
 OPTIONAL_ACCOUNT_SERVICES = {"tx_free"}
 
 
+@total_ordering
 class Tiers(Enum):
     INTRODUCTORY = "Introductory"
     DEVELOPER = "Developer"
     PROFESSIONAL = "Professional"
     ENTERPRISE = "Enterprise"
     ENTERPRISE_ELITE = "EnterpriseElite"
+
+    def __eq__(self, other):
+        if not isinstance(other, Tiers):
+            return NotImplemented
+
+        # pylint: disable=comparison-with-callable
+        return self.value == other.value
+
+    def __hash__(self):
+        return id(self)
+
+    def __lt__(self, other):
+        if not isinstance(other, Tiers):
+            return NotImplemented
+
+        order = [
+            Tiers.INTRODUCTORY,
+            Tiers.DEVELOPER,
+            Tiers.PROFESSIONAL,
+            Tiers.ENTERPRISE,
+            Tiers.ENTERPRISE_ELITE
+        ]
+
+        return order.index(self) < order.index(other)
+
+    @classmethod
+    def from_string(cls, value: str) -> Optional["Tiers"]:
+        try:
+            return Tiers(value)
+        except ValueError:
+            return None
 
 
 @dataclass
