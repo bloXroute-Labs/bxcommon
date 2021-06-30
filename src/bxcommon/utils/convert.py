@@ -20,7 +20,8 @@ NODE_TO_CONNECTION_TYPE: Dict[NodeType, Dict[NodeType, ConnectionType]] = {
         NodeType.EXTERNAL_GATEWAY: ConnectionType.EXTERNAL_GATEWAY,
         NodeType.RELAY_TRANSACTION: ConnectionType.RELAY_TRANSACTION,
         NodeType.RELAY_BLOCK: ConnectionType.RELAY_BLOCK,
-        NodeType.RELAY: ConnectionType.RELAY_ALL
+        NodeType.RELAY: ConnectionType.RELAY_ALL,
+        NodeType.RELAY_PROXY: ConnectionType.RELAY_ALL,
     },
     NodeType.EXTERNAL_GATEWAY: {
         NodeType.GATEWAY: ConnectionType.GATEWAY,
@@ -28,7 +29,8 @@ NODE_TO_CONNECTION_TYPE: Dict[NodeType, Dict[NodeType, ConnectionType]] = {
         NodeType.EXTERNAL_GATEWAY: ConnectionType.EXTERNAL_GATEWAY,
         NodeType.RELAY_TRANSACTION: ConnectionType.RELAY_TRANSACTION,
         NodeType.RELAY_BLOCK: ConnectionType.RELAY_BLOCK,
-        NodeType.RELAY: ConnectionType.RELAY_ALL
+        NodeType.RELAY: ConnectionType.RELAY_ALL,
+        NodeType.RELAY_PROXY: ConnectionType.RELAY_ALL,
     },
     NodeType.RELAY_BLOCK: {
         NodeType.GATEWAY: ConnectionType.GATEWAY,

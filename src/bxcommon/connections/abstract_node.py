@@ -338,11 +338,11 @@ class AbstractNode:
             peer_ip = peer.ip
             peer_port = peer.port
             if self.should_connect_to_new_outbound_peer(peer):
+                node_type = self.NODE_TYPE
+                assert node_type is not None
                 self.enqueue_connection(
                     peer_ip, peer_port, convert.peer_node_to_connection_type(
-                        # pyre-fixme[6]: Expected `NodeType` for 1st param but got
-                        #  `Optional[NodeType]`.
-                        self.NODE_TYPE, peer.node_type
+                        node_type, peer.node_type
                     )
                 )
         self.outbound_peers = new_peer_models
