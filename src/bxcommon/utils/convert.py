@@ -10,8 +10,8 @@ NODE_TO_CONNECTION_TYPE: Dict[NodeType, Dict[NodeType, ConnectionType]] = {
         NodeType.GATEWAY: ConnectionType.GATEWAY,
         NodeType.INTERNAL_GATEWAY: ConnectionType.GATEWAY,
         NodeType.EXTERNAL_GATEWAY: ConnectionType.GATEWAY,
-        NodeType.RELAY_TRANSACTION: ConnectionType.RELAY_TRANSACTION,
-        NodeType.RELAY_BLOCK: ConnectionType.RELAY_BLOCK,
+        NodeType.RELAY_TRANSACTION: ConnectionType.RELAY_ALL,
+        NodeType.RELAY_BLOCK: ConnectionType.RELAY_ALL,
         NodeType.RELAY: ConnectionType.RELAY_ALL
     },
     NodeType.INTERNAL_GATEWAY: {
