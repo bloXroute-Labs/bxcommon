@@ -57,5 +57,5 @@ class BlockchainNetworkModel:
     allowed_time_reuse_sender_nonce: float = 0.0
     allowed_gas_price_change_reuse_sender_nonce: float = 1.1
     enable_tx_trace: bool = False
-    inject_poa: bool = True
+    inject_poa: bool = False
     allowed_from_tier: str = Tiers.DEVELOPER.value

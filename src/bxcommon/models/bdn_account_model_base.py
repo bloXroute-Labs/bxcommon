@@ -49,6 +49,12 @@ class Tiers(Enum):
 
         return order.index(self) < order.index(other)
 
+    def __gt__(self, other):
+        return not self.__lt__(other)
+
+    def __ge__(self, other):
+        return self.__gt__(other) or self.__eq__(other)
+
     @classmethod
     def from_string(cls, value: str) -> Optional["Tiers"]:
         try:

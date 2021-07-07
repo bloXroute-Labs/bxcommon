@@ -15,6 +15,7 @@ from bxcommon.messages.abstract_block_message import AbstractBlockMessage
 from bxcommon.messages.abstract_message import AbstractMessage
 from bxcommon.messages.bloxroute.bdn_performance_stats_message import BdnPerformanceStatsData
 from bxcommon.models.authenticated_peer_info import AuthenticatedPeerInfo
+from bxcommon.models.bdn_account_model_base import Tiers
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_model import BlockchainNetworkModel
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
@@ -382,6 +383,7 @@ def get_common_opts(
                 5,
                 24,
                 block_confirmations_count,
+                allowed_from_tier=Tiers.ENTERPRISE
             ),
         },
         "blockchain_network_num": blockchain_network_num,
