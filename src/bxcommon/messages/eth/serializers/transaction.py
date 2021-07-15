@@ -116,6 +116,10 @@ class Transaction(rlp.Serializable):
                 return LegacyTransaction.deserialize(payload, type_parsed=True, **extra_kwargs)
             elif transaction_type == EthTransactionType.ACCESS_LIST:
                 return AccessListTransaction.deserialize(payload, type_parsed=True, **extra_kwargs)
+            elif transaction_type == EthTransactionType.DYNAMIC_FEE:
+                return DynamicFeeTransaction.deserialize(payload, type_parsed=True, **extra_kwargs)
+            else:
+                raise ValueError(f"Unexpected transaction type: {transaction_type}")
         raise ValueError(f"Unexpected serial type: {type(serial)}")
 
     def hash(self) -> Sha256Hash:
@@ -139,6 +143,9 @@ class Transaction(rlp.Serializable):
 
     def get_unsigned(self) -> bytes:
         pass
+
+    def adjusted_gas_price(self) -> int:
+        return self.gas_price
 
     def to_json(self) -> Dict[str, Any]:
         """
@@ -215,6 +222,10 @@ class Transaction(rlp.Serializable):
             payload["accessList"] = payload["access_list"]
         if "chain_id" in payload:
             payload["chainId"] = payload["chain_id"]
+        if "max_priority_fee_per_gas" in payload:
+            payload["maxPriorityFeePerGas"] = payload["max_priority_fee_per_gas"]
+        if "max_fee_per_gas" in payload:
+            payload["maxFeePerGas"] = payload["max_fee_per_gas"]
 
         for item in ["nonce", "gasPrice", "gas", "value", "v", "r", "s"]:
             value = payload[item]
@@ -328,7 +339,7 @@ class AccessListTransaction(Transaction):
         """
 
         parts = rlp.decode(Transaction.serialize(self)[1:])
-        return EthTransactionType.ACCESS_LIST.encode_rlp() + rlp.encode(parts[:-3])
+        return self.transaction_type.encode_rlp() + rlp.encode(parts[:-3])
 
     def signature(self) -> bytes:
         return crypto_utils.encode_signature_y_parity(self.v, self.r, self.s)
@@ -373,3 +384,70 @@ class AccessListTransaction(Transaction):
             int(payload["r"], 16),
             int(payload["s"], 16),
         )
+
+
+class DynamicFeeTransaction(AccessListTransaction):
+    transaction_type: EthTransactionType = EthTransactionType.DYNAMIC_FEE
+
+    fields = [
+        ("_chain_id", rlp.sedes.big_endian_int),
+        ("nonce", rlp.sedes.big_endian_int),
+        ("max_priority_fee_per_gas", rlp.sedes.big_endian_int),
+        ("max_fee_per_gas", rlp.sedes.big_endian_int),
+        ("start_gas", rlp.sedes.big_endian_int),
+        ("to", rlp.sedes.Binary.fixed_length(eth_common_constants.ADDRESS_LEN, allow_empty=True)),
+        ("value", rlp.sedes.big_endian_int),
+        ("data", rlp.sedes.binary),
+        ("access_list", rlp.sedes.CountableList(AccessedAddress)),
+        ("v", rlp.sedes.big_endian_int),
+        ("r", rlp.sedes.big_endian_int),
+        ("s", rlp.sedes.big_endian_int),
+    ]
+
+    max_priority_fee_per_gas: int = 0
+    max_fee_per_gas: int = 0
+
+    def adjusted_gas_price(self) -> int:
+        return self.max_priority_fee_per_gas + self.max_fee_per_gas
+
+    def to_json(self) -> Dict[str, Any]:
+        serialized_transaction = super().to_json()
+
+        # remove field that's no longer part of the transaction
+        serialized_transaction.pop("gas_price", None)
+
+        serialized_transaction.update(
+            {
+                "max_priority_fee_per_gas": hex(self.max_priority_fee_per_gas),
+                "max_fee_per_gas": hex(self.max_fee_per_gas)
+            }
+        )
+
+        return serialized_transaction
+
+    @classmethod
+    def from_json(cls, payload: Dict[str, Any]) -> "Transaction":
+        return DynamicFeeTransaction(
+            int(payload["chainId"], 16),
+            int(payload["nonce"], 16),
+            int(payload["maxPriorityFeePerGas"], 16),
+            int(payload["maxFeePerGas"], 16),
+            int(payload["gas"], 16),
+            utils.or_else(
+                utils.optional_map(payload["to"], lambda to: convert.hex_to_bytes(to[2:])), bytes()
+            ),
+            int(payload["value"], 16),
+            convert.hex_to_bytes(payload["input"][2:]),
+            [
+                AccessedAddress.from_json(accessed_address)
+                for accessed_address in payload["accessList"]
+            ],
+            int(payload["v"], 16),
+            int(payload["r"], 16),
+            int(payload["s"], 16),
+        )
+
+
+# pylint: disable=protected-access
+# RLP hack to allow proper inheritance in sequential calls
+DynamicFeeTransaction._sedes = rlp.sedes.List(sedes for _, sedes in DynamicFeeTransaction.fields)

@@ -63,9 +63,9 @@ def validate_transaction(
     tx_bytes = bytearray(normalize_typed_transaction(memoryview(tx_bytes)))
 
     try:
-        transaction = rlp.decode(tx_bytes, Transaction)
+        transaction: Transaction = rlp.decode(tx_bytes, Transaction)
         if verify_eth_transaction_signature(transaction):
-            if transaction.gas_price >= min_tx_network_fee:
+            if transaction.adjusted_gas_price() >= min_tx_network_fee:
                 return TxValidationStatus.VALID_TX
             else:
                 return TxValidationStatus.LOW_FEE
