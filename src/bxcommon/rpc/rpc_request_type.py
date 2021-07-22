@@ -36,3 +36,5 @@ class RpcRequestType(SerializeableEnum):
     SUBMIT_ARB_ONLY_BUNDLE = 31
     BLXR_INFO = 32
     BACKRUN_PRIVATE_TX = 33
+    ADD_MEV_CREDIT = 34
+    GET_MEV_CREDIT = 35
