@@ -57,6 +57,9 @@ class EthTransactionProxyFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
                 "to": eth_filter_handlers.reformat_address(contents["to"]),
                 "from": eth_filter_handlers.reformat_address(contents["from"]),
                 "gas_price": eth_filter_handlers.reformat_gas_price(contents["gas_price"]),
+                "max_priority_fee_per_gas": eth_filter_handlers.reformat_gas_price(
+                    contents["max_priority_fee_per_gas"]),
+                "max_fee_per_gas": eth_filter_handlers.reformat_gas_price(contents["max_fee_per_gas"]),
                 "method_id": eth_filter_handlers.reformat_input_to_method_id(contents["input"]),
             }
             should_publish = subscriber.validate(state)

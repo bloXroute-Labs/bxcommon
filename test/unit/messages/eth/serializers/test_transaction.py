@@ -196,7 +196,7 @@ class TransactionTest(AbstractTestCase):
         self.assertEqual("0x2", transaction_json["type"])
         self.assertEqual("0xf", transaction_json["max_priority_fee_per_gas"])
         self.assertEqual("0x1f", transaction_json["max_fee_per_gas"])
-        self.assertNotIn("gas_price", transaction_json)
+        self.assertIn("gas_price", transaction_json)
 
     def test_empty_to_serializes(self):
         sample_transactions = dict(eth_fixtures.LEGACY_TRANSACTION_JSON_FROM_WS)

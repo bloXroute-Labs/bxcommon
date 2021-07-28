@@ -29,6 +29,8 @@ class EthPendingTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]
         "tx_contents.gas_price",
         "tx_contents.gas",
         "tx_contents.to",
+        "tx_contents.max_priority_fee_per_gas",
+        "tx_contents.max_fee_per_gas",
         "tx_contents.value",
         "tx_contents.input",
         "tx_contents.v",
@@ -37,7 +39,7 @@ class EthPendingTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]
         "tx_contents.from",
         "local_region",
     ]
-    FILTERS = {"value", "from", "to", "gas_price", "method_id"}
+    FILTERS = {"value", "from", "to", "gas_price", "method_id", "max_priority_fee_per_gas", "max_fee_per_gas"}
     ALL_FIELDS = ["tx_hash", "tx_contents", "local_region"]
 
     published_transactions: ExpiringSet[Sha256Hash]
@@ -107,6 +109,9 @@ class EthPendingTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]
                 "to": eth_filter_handlers.reformat_address(contents["to"]),
                 "from": eth_filter_handlers.reformat_address(contents["from"]),
                 "gas_price": eth_filter_handlers.reformat_gas_price(contents["gas_price"]),
+                "max_priority_fee_per_gas": eth_filter_handlers.reformat_gas_price(
+                    contents["max_priority_fee_per_gas"]),
+                "max_fee_per_gas": eth_filter_handlers.reformat_gas_price(contents["max_fee_per_gas"]),
                 "method_id": eth_filter_handlers.reformat_input_to_method_id(contents["input"]),
             }
             should_publish = subscriber.validate(state)
