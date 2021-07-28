@@ -1,4 +1,3 @@
-from bxcommon.messages.bloxroute.v13.message_converter_factory_v13 import message_converter_factory_v13
 from bxcommon.messages.versioning.abstract_version_converter_factory import AbstractMessageConverterFactory
 from bxcommon.messages.versioning.no_changes_message_converter import no_changes_message_converter
 

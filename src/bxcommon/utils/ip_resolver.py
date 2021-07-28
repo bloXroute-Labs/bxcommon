@@ -52,16 +52,15 @@ def get_node_public_ip() -> Optional[str]:
     """
     try:
         http = urllib3.PoolManager()
-        result = http.request("GET", constants.PUBLIC_IP_ADDR_RESOLVER)
-        if result is not None:
-            decoded = result.data.decode("utf-8")
-            public_ip_addr = re.findall(constants.PUBLIC_IP_ADDR_REGEX, decoded)
-            if public_ip_addr:
-                return public_ip_addr[0]
-
-            raise ConnectionError(
-                f"Unable to parse IP from response - response was [{decoded}]"
-            )
+        for _ in range(3):
+            result = http.request("GET", constants.PUBLIC_IP_ADDR_RESOLVER)
+            if result is not None:
+                decoded = result.data.decode("utf-8")
+                public_ip_addr = re.findall(constants.PUBLIC_IP_ADDR_REGEX, decoded)
+                if public_ip_addr:
+                    return public_ip_addr[0]
+                else:
+                    logger.debug("Unable to parse IP from response - response was {0}", decoded)
 
         raise ConnectionError("Unable to parse IP from response - no response was returned")
 
