@@ -51,7 +51,7 @@ class TestBlock(AbstractTestCase):
             "0x77b19baa4de67e45a7b26e4a220bccdbb6731885aa9927064e239ca232023215", legacy_tx["hash"]
         )
         self.assertEqual("0x0", legacy_tx["type"])
-        self.assertEqual("", legacy_tx["access_list"])
+        self.assertNotIn("access_list", legacy_tx)
 
         acl_tx = block_json["transactions"][1]
         self.assertEqual(

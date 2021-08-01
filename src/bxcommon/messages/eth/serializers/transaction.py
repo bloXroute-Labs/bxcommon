@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Collection
 
 import blxr_rlp as rlp
 
@@ -68,8 +68,6 @@ class Transaction(rlp.Serializable):
 
     nonce: int = 0
     gas_price: int = 0
-    max_priority_fee_per_gas: int = 0
-    max_fee_per_gas: int = 0
     start_gas: int = 0
     to: Optional[bytearray] = None
     value: int = 0
@@ -146,8 +144,14 @@ class Transaction(rlp.Serializable):
     def get_unsigned(self) -> bytes:
         pass
 
-    def adjusted_gas_price(self) -> int:
+    def adjusted_gas_price(self, _base_fee: Optional[int] = None) -> int:
         return self.gas_price
+
+    def gas_prices(self) -> Collection[int]:
+        """
+        Returns a compatible struct for checking all fees have increased for transaction replacement.
+        """
+        return self.gas_price, self.gas_price
 
     def to_json(self) -> Dict[str, Any]:
         """
@@ -187,14 +191,6 @@ class Transaction(rlp.Serializable):
         to = self.to
         if to is not None:
             serialized_output["to"] = convert.bytes_to_hex_string_format(to)
-
-        serialized_output.update(
-            {
-                "max_priority_fee_per_gas": hex(self.gas_price),
-                "max_fee_per_gas": hex(self.gas_price),
-                "access_list": ""
-            }
-        )
 
         return serialized_output
 
@@ -297,7 +293,7 @@ class LegacyTransaction(Transaction):
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "Transaction":
-        legacy_tx = LegacyTransaction(
+        return LegacyTransaction(
             int(payload["nonce"], 16),
             int(payload["gasPrice"], 16),
             int(payload["gas"], 16),
@@ -310,10 +306,6 @@ class LegacyTransaction(Transaction):
             int(payload["r"], 16),
             int(payload["s"], 16),
         )
-
-        legacy_tx.max_fee_per_gas = int(payload["gasPrice"], 16)
-        legacy_tx.max_priority_fee_per_gas = int(payload["gasPrice"], 16)
-        return legacy_tx
 
 
 class AccessListTransaction(Transaction):
@@ -335,8 +327,6 @@ class AccessListTransaction(Transaction):
 
     _chain_id: int = 0
     access_list: List[AccessedAddress]
-    max_priority_fee_per_gas: int = 0
-    max_fee_per_gas: int = 0
 
     def __init__(self, *args, **kwargs):
         self.access_list = []
@@ -382,8 +372,6 @@ class AccessListTransaction(Transaction):
         serialized_transaction.update(
             {
                 "access_list": accessed_addresses,
-                "max_priority_fee_per_gas": hex(self.gas_price),
-                "max_fee_per_gas": hex(self.gas_price)
             }
         )
 
@@ -391,7 +379,7 @@ class AccessListTransaction(Transaction):
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "Transaction":
-        access_list_tx = AccessListTransaction(
+        return AccessListTransaction(
             int(payload["chainId"], 16),
             int(payload["nonce"], 16),
             int(payload["gasPrice"], 16),
@@ -409,10 +397,6 @@ class AccessListTransaction(Transaction):
             int(payload["r"], 16),
             int(payload["s"], 16),
         )
-
-        access_list_tx.max_priority_fee_per_gas = int(payload["gasPrice"], 16)
-        access_list_tx.max_fee_per_gas = int(payload["gasPrice"], 16)
-        return access_list_tx
 
 
 class DynamicFeeTransaction(AccessListTransaction):
@@ -435,19 +419,32 @@ class DynamicFeeTransaction(AccessListTransaction):
 
     max_priority_fee_per_gas: int = 0
     max_fee_per_gas: int = 0
-    gas_price: int = 0
 
-    def adjusted_gas_price(self) -> int:
-        return self.max_fee_per_gas
+    def adjusted_gas_price(self, base_fee: Optional[int] = None) -> int:
+        """
+        Actual gas price, with base fee taken into account. In cases where the base fee is not
+        available, only the max_fee_per_gas will be used, though this should not be treated as
+        completely accurate.
+
+        see https://ethereum.org/en/developers/docs/gas/#gas-price-london-update
+        """
+        if base_fee is None:
+            return self.max_fee_per_gas
+
+        remainder = self.max_fee_per_gas - base_fee
+        tip = min(remainder, self.max_priority_fee_per_gas)
+        return base_fee + tip
+
+    def gas_prices(self) -> Collection[int]:
+        return self.max_fee_per_gas, self.max_priority_fee_per_gas
 
     def to_json(self) -> Dict[str, Any]:
         serialized_transaction = super().to_json()
-
         serialized_transaction.update(
             {
+                "gas_price": None,
                 "max_priority_fee_per_gas": hex(self.max_priority_fee_per_gas),
                 "max_fee_per_gas": hex(self.max_fee_per_gas),
-                "gas_price": hex(self.max_fee_per_gas)
             }
         )
 
