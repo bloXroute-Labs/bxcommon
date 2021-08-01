@@ -92,7 +92,7 @@ class FeedManager:
     def get_feed_fields(self, feed_key: FeedKey) -> List[str]:
         return self.feeds[feed_key].FIELDS
 
-    def get_feed(self, feed_key: FeedKey) -> Optional[Feed]:
+    def get_feed(self, feed_key: FeedKey):
         return self.feeds.get(feed_key)
 
     def get_feed_keys(self, network_num: int = 0) -> List[FeedKey]:
