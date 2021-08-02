@@ -26,6 +26,7 @@ class EthTransactionProxyFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
         self.NAME = name
         self.FIELDS = fields
         self.FILTERS = filters
+        self.ALL_FIELDS = self.FIELDS
 
         super().__init__(self.NAME, network_num)
 

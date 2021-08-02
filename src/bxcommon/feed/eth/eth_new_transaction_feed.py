@@ -32,6 +32,7 @@ class EthNewTransactionFeed(Feed[EthTransactionFeedEntry, EthRawTransaction]):
         "tx_contents.r",
         "tx_contents.s",
         "tx_contents.from",
+        "tx_contents.type",
         "local_region",
     ]
     FILTERS = {"value", "from", "to", "gas_price", "method_id", "max_priority_fee_per_gas", "max_fee_per_gas"}
