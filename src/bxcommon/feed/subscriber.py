@@ -115,6 +115,7 @@ def filter_message(message: Dict[str, Any], include_fields: List[str]) -> Dict[s
             # pyre-fixme[16]: Optional type has no attribute `get`
             if field not in sub_value:
                 continue
+            # pyre-fixme[16]: Optional type has no attribute `get`
             sub_value = sub_value.get(field)
         partial_message = partial_message.setdefault(field, sub_value)
     return output
