@@ -77,6 +77,15 @@ def raw_tx_gas_price(tx_bytes: memoryview, tx_start_index: int) -> int:
 
         _nonce, nonce_length = rlp_utils.decode_int(tx_bytes, offset)
         offset += nonce_length
+    elif transaction_type == EthTransactionType.DYNAMIC_FEE:
+        _chain_id, chain_id_length = rlp_utils.decode_int(tx_bytes, offset)
+        offset += chain_id_length
+
+        _nonce, nonce_length = rlp_utils.decode_int(tx_bytes, offset)
+        offset += nonce_length
+
+        _max_priority_fee, max_priority_fee_length = rlp_utils.decode_int(tx_bytes, offset)
+        offset += max_priority_fee_length
     else:
         # gas_price is the second field, need to skip the first field (nonce)
         _nonce, nonce_length = rlp_utils.decode_int(tx_bytes, offset)

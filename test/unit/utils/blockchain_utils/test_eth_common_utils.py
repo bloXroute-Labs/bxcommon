@@ -25,6 +25,10 @@ class TestEthCommonUtils(unittest.TestCase):
             225600000000,
             eth_common_utils.raw_tx_gas_price(memoryview(eth_fixtures.ACL_TRANSACTION), 0)
         )
+        self.assertEqual(
+            31,
+            eth_common_utils.raw_tx_gas_price(memoryview(eth_fixtures.DYNAMIC_FEE_TRANSACTION), 0)
+        )
 
     def test_block_header_number_and_difficulty(self):
         block_header_bytes = self._create_block_header_bytes(1000, 1000000)
