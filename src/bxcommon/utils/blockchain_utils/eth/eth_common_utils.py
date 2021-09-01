@@ -1,3 +1,4 @@
+import random
 from typing import Union, Tuple, Optional, Type
 from Crypto.Hash import keccak
 import blxr_rlp as rlp
@@ -9,6 +10,12 @@ from bxcommon.utils.blockchain_utils.eth import eth_common_constants, rlp_utils
 from bxcommon.utils.object_hash import Sha256Hash
 from bxcommon import constants
 
+
+def generate_message_request_id() -> int:
+    """
+    Ethereum messages after version 66 have a random 64-bit unsigned integer to mark the request ID.
+    """
+    return random.getrandbits(64)
 
 
 def raw_tx_to_bx_tx(
