@@ -61,3 +61,7 @@ class ConnectionStateError(Exception):
         super().__init__(msg)
         self.msg = msg
         self.conn = conn
+
+
+class PingTimeoutError(Exception):
+    pass

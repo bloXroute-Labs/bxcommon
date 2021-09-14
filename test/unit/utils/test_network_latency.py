@@ -4,6 +4,7 @@ import unittest
 from mock import patch
 
 from bxcommon import constants
+from bxcommon.exceptions import PingTimeoutError
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.utils import network_latency
 from bxcommon.utils.ping_latency import NodeLatencyInfo
@@ -125,7 +126,10 @@ class NetworkLatencyTests(unittest.TestCase):
             OutboundPeerModel("34.238.245.201", 1609, node_id="4", attributes={"country": "China"}),
         ]
         start = time.time()
-        network_latency.get_best_relays_by_ping_latency_one_per_country(relays, 1)
+        try:
+            network_latency.get_best_relays_by_ping_latency_one_per_country(relays, 1)
+        except PingTimeoutError:
+            pass
         end = time.time() - start
         self.assertTrue(end < constants.PING_TIMEOUT_S + 1)
 
