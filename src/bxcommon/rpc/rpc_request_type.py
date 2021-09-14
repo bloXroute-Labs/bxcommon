@@ -38,3 +38,4 @@ class RpcRequestType(SerializeableEnum):
     BACKRUN_PRIVATE_TX = 33
     ADD_MEV_CREDIT = 34
     GET_MEV_CREDIT = 35
+    ETH_SUBSCRIBE = 36
