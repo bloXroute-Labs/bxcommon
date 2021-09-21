@@ -8,7 +8,7 @@ from bxcommon.models.bdn_service_model_config_base import (
     BdnBasicServiceModel,
     BdnQuotaServiceModelConfigBase,
     BdnFeedServiceModelConfigBase, BdnPrivateRelayServiceModelConfigBase,
-)
+    BdnLightGatewayServiceModelConfigBase)
 from bxcommon import constants
 from bxcommon.rpc import rpc_constants
 from bxutils import logging
@@ -93,7 +93,7 @@ class AccountTemplate:
     private_relays: Optional[BdnPrivateRelayServiceModelConfigBase] = None
     private_transaction: Optional[BdnQuotaServiceModelConfigBase] = None
     private_transaction_fee: Optional[BdnQuotaServiceModelConfigBase] = None
-    light_gateway: Optional[BdnBasicServiceModel] = None
+    light_gateway: Optional[BdnLightGatewayServiceModelConfigBase] = None
     online_gateways: Optional[BdnQuotaServiceModelConfigBase] = None
 
 
