@@ -55,7 +55,12 @@ class AbstractFeedConnection(Generic[T], metaclass=ABCMeta):
 
     async def revive(self) -> None:
         if self.ws_client.ws is None or not self.ws_client.running:
-            logger.info("Attempting to revive websockets source feed...")
+            logger.info(
+                "Attempting to revive websockets source feed {}:{} feeds {}...",
+                self.feed_ip,
+                self.feed_port,
+                ", ".join(self.feeds_process.keys())
+            )
             await self.ws_client.connected_event.wait()
 
         if self.ws_client.ws is None or not self.ws_client.running:
