@@ -59,3 +59,4 @@ class BlockchainNetworkModel:
     enable_tx_trace: bool = False
     inject_poa: bool = False
     allowed_from_tier: str = Tiers.DEVELOPER.value
+    send_cross_geo: bool = True
