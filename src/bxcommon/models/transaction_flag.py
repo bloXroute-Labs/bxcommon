@@ -11,15 +11,12 @@ class TransactionFlag(SerializableFlag):
     RE_PROPAGATE = 8
     NONCE_TRACK = NONCE_MONITORING | STATUS_TRACK
 
-    # for professional/enterprise accounts only
-    CEN_ENABLED = 16
-
+    ENTERPRISE_SENDER = 16
     LOCAL_REGION = 32
-
     PRIVATE_TX = 64
+    ELITE_SENDER = 128
 
     # adding more flags to avoid creating new converters
-    TBD_2 = 128
     TBD_3 = 256
     TBD_4 = 512
     TBD_5 = 1024
