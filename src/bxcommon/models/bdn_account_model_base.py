@@ -46,6 +46,7 @@ class AccountTemplate:
     private_transaction: Optional[BdnQuotaServiceModelConfigBase] = None
     private_transaction_fee: Optional[BdnQuotaServiceModelConfigBase] = None
     light_gateway: Optional[BdnBasicServiceModel] = None
+    tx_trace_rate_limitation: Optional[BdnQuotaServiceModelConfigBase] = None
 
 
 @dataclass
