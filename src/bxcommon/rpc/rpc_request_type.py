@@ -40,3 +40,4 @@ class RpcRequestType(SerializeableEnum):
     GET_MEV_CREDIT = 35
     ETH_SUBSCRIBE = 36
     PRIVATE_TX_BALANCE = 37
+    BLXR_SUBMIT_MEGA_BUNDLE = 38
