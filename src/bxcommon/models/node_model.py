@@ -22,9 +22,10 @@ class NodeModel:
     # Whether node has active connection with SDN
     sdn_connection_alive: bool = False
 
-    # TODO: Remove this attribute as it's not being used anymore
     # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     network: str = None
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
+    protocol: str = None
 
     # Internal id for distinguishing nodes.
     node_id: Optional[str] = None
