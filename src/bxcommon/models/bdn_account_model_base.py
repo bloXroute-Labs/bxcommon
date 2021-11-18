@@ -74,6 +74,8 @@ class AccountInfo:
     blockchain_network: Optional[str] = None
     tier_name: Optional[str] = None
     is_miner: Optional[bool] = None
+    mev_builder: Optional[str] = None
+    mev_miner: Optional[str] = None
 
 
 @dataclass
@@ -96,6 +98,7 @@ class AccountTemplate:
     light_gateway: Optional[BdnLightGatewayServiceModelConfigBase] = None
     online_gateways: Optional[BdnQuotaServiceModelConfigBase] = None
     tx_trace_rate_limitation: Optional[BdnQuotaServiceModelConfigBase] = None
+
 
 @dataclass
 class BdnAccountModelBase(AccountTemplate, AccountInfo):
