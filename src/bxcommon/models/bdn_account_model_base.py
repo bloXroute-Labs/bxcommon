@@ -76,6 +76,7 @@ class AccountInfo:
     is_miner: Optional[bool] = None
     mev_builder: Optional[str] = None
     mev_miner: Optional[str] = None
+    metamask_rpc_to_flashbots: Optional[bool] = False
 
 
 @dataclass
