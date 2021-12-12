@@ -32,7 +32,9 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
         retry_connection: bool = False,
         queue_limit: int = constants.WS_PROVIDER_MAX_QUEUE_SIZE,
         headers: Optional[Dict] = None,
-        retry_callback: Optional[Callable[["AbstractWsProvider"], Coroutine[None, None, None]]] = None
+        retry_callback: Optional[
+            Callable[["AbstractWsProvider", Optional[Dict[str, Any]]], Coroutine[None, None, None]]
+        ] = None
     ):
         self.uri = uri
         self.retry_connection = retry_connection
@@ -340,7 +342,7 @@ class AbstractWsProvider(AbstractProvider, metaclass=ABCMeta):
 
             retry_callback = self.retry_callback
             if retry_callback:
-                await retry_callback(self)
+                await retry_callback(self, None)
 
     async def close(self) -> None:
         logger.trace("Closing websockets provider")
