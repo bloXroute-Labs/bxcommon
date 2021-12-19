@@ -62,6 +62,11 @@ class Tiers(Enum):
         except ValueError:
             return None
 
+    def tier_article_prefix(self) -> str:
+        if self in {Tiers.INTRODUCTORY, Tiers.ENTERPRISE, Tiers.ENTERPRISE_ELITE}:
+            return "an"
+        return "a"
+
 
 @dataclass
 class AccountInfo:
