@@ -130,6 +130,8 @@ class NodeModel:
     using_private_ip_connection: bool = False
 
     private_node: bool = False
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
+    relay_type: str = None
 
     def __post_init__(self):
         self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS
