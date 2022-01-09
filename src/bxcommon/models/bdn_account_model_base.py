@@ -1,15 +1,15 @@
 from dataclasses import dataclass
+from datetime import datetime, date
 from enum import Enum
 from functools import total_ordering
 from typing import Optional
-from datetime import datetime, date
 
+from bxcommon import constants
 from bxcommon.models.bdn_service_model_config_base import (
     BdnBasicServiceModel,
     BdnQuotaServiceModelConfigBase,
     BdnFeedServiceModelConfigBase, BdnPrivateRelayServiceModelConfigBase,
     BdnLightGatewayServiceModelConfigBase)
-from bxcommon import constants
 from bxcommon.rpc import rpc_constants
 from bxutils import logging
 
@@ -104,6 +104,8 @@ class AccountTemplate:
     light_gateway: Optional[BdnLightGatewayServiceModelConfigBase] = None
     online_gateways: Optional[BdnQuotaServiceModelConfigBase] = None
     tx_trace_rate_limitation: Optional[BdnQuotaServiceModelConfigBase] = None
+    unpaid_tx_rate_limit: Optional[BdnQuotaServiceModelConfigBase] = None
+    paid_tx_rate_limit: Optional[BdnQuotaServiceModelConfigBase] = None
 
 
 @dataclass
