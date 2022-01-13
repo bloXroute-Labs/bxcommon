@@ -108,6 +108,8 @@ class AccountTemplate:
     tx_trace_rate_limitation: Optional[BdnQuotaServiceModelConfigBase] = None
     unpaid_tx_rate_limit: Optional[BdnQuotaServiceModelConfigBase] = None
     paid_tx_rate_limit: Optional[BdnQuotaServiceModelConfigBase] = None
+    backbone_region_limit: Optional[BdnQuotaServiceModelConfigBase] = None
+    region_limit: Optional[BdnQuotaServiceModelConfigBase] = None
 
 
 @dataclass
