@@ -24,6 +24,7 @@ class Tiers(Enum):
     PROFESSIONAL = "Professional"
     ENTERPRISE = "Enterprise"
     ENTERPRISE_ELITE = "EnterpriseElite"
+    ULTRA = "Ultra"
 
     def __eq__(self, other):
         if not isinstance(other, Tiers):
@@ -44,7 +45,8 @@ class Tiers(Enum):
             Tiers.DEVELOPER,
             Tiers.PROFESSIONAL,
             Tiers.ENTERPRISE,
-            Tiers.ENTERPRISE_ELITE
+            Tiers.ENTERPRISE_ELITE,
+            Tiers.ULTRA
         ]
 
         return order.index(self) < order.index(other)
