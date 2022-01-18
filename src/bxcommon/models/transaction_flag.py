@@ -15,11 +15,13 @@ class TransactionFlag(SerializableFlag):
     LOCAL_REGION = 32
     PRIVATE_TX = 64
     ELITE_SENDER = 128
+    DELIVER_TO_NODE = 256
+    VALIDATORS_ONLY = 512
 
     # adding more flags to avoid creating new converters
-    TBD_3 = 256
-    TBD_4 = 512
-    TBD_5 = 1024
+    TBD_3 = 1024
+    TBD_4 = 2048
+    TBD_5 = 4096
 
     def get_quota_type(self) -> QuotaType:
         if TransactionFlag.PAID_TX in self:
