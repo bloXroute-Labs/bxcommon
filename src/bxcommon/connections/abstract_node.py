@@ -25,7 +25,7 @@ from bxcommon.network.abstract_socket_connection_protocol import AbstractSocketC
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
 from bxcommon.network.socket_connection_state import SocketConnectionStates
-from bxcommon.services import sdn_http_service
+from bxcommon.services import sdn_http_service, async_http_service
 from bxcommon.services.broadcast_service import BroadcastService, \
     BroadcastOptions
 from bxcommon.services.threaded_request_service import ThreadedRequestService
@@ -426,9 +426,12 @@ class AbstractNode:
     async def close(self):
         logger.info("Node is closing! Closing everything.")
 
-        shutdown_task = asyncio.ensure_future(self.close_all_connections())
+        shutdown_tasks = [
+            asyncio.create_task(self.close_all_connections()),
+            asyncio.create_task(async_http_service.close())
+        ]
         try:
-            await asyncio.wait_for(shutdown_task, constants.NODE_SHUTDOWN_TIMEOUT_S)
+            await asyncio.wait_for(asyncio.gather(*shutdown_tasks), constants.NODE_SHUTDOWN_TIMEOUT_S)
         except Exception as e:  # pylint: disable=broad-except
             logger.exception("Node shutdown failed due to an error: {}, force closing!", e)
         self.requester.close()
@@ -569,6 +572,7 @@ class AbstractNode:
 
     async def init(self) -> None:
         self.requester.start()
+        await async_http_service.initialize()
 
     def handle_connection_closed(
         self, should_retry: bool, peer_info: ConnectionPeerInfo, connection_state: ConnectionState
