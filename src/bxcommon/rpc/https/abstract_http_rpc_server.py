@@ -192,7 +192,7 @@ class AbstractHttpRpcServer(Generic[Node]):
 
     async def handle_get_request(self, request: Request) -> Response:
         try:
-            self.authenticate_request(request)
+            await self.authenticate_request(request)
         except HTTPUnauthorized as e:
             return format_http_error(e, self._handler.content_type)
         except RpcAccountIdError as e:
