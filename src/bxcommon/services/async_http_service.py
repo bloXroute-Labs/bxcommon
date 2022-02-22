@@ -1,6 +1,8 @@
+import asyncio
 from typing import Optional, Dict, Any
 
 import aiohttp
+from aiohttp import ServerDisconnectedError
 
 from bxcommon import constants
 from bxcommon.services import http_service
@@ -34,6 +36,20 @@ async def get_with_payload(endpoint: str, payload: Dict[str, Any]) -> Optional[J
 
 
 async def request(method: str, endpoint: str, **kwargs) -> Optional[JT]:
+    """
+    Dispatches a request to the endpoint. In the case of server disconnect errors, instead
+    raise a `asyncio.TimeoutError` for common handling.
+
+    Generally, the following assumptions can be made:
+     - JSON returned => server returned a good response
+     - None returned => server indicated a problem with the request, but was available
+     - raise asyncio.TimeoutError => server was unavailable for some reason
+
+    :param method: HTTP method
+    :param endpoint: SDN endpoint to hit
+    :param kwargs: any other arguments to pass as part of the request
+    :return:
+    """
     ssl_context = http_service.ssl_context()
     assert ssl_context is not None
 
@@ -41,16 +57,26 @@ async def request(method: str, endpoint: str, **kwargs) -> Optional[JT]:
     assert session is not None
 
     url = http_service.build_url(endpoint)
-    async with session.request(
-        method,
-        url,
-        headers=constants.HTTP_HEADERS,
-        ssl=ssl_context,
-        timeout=constants.HTTP_REQUEST_TIMEOUT,
-        **kwargs,
-    ) as response:
-        try:
-            return await response.json()
-        except Exception as e:  # pylint: disable=broad-except
-            logger.error(log_messages.HTTP_REQUEST_RETURNED_ERROR, method, url, e)
-            return None
+
+    try:
+        async with session.request(
+            method,
+            url,
+            headers=constants.HTTP_HEADERS,
+            ssl=ssl_context,
+            timeout=constants.HTTP_REQUEST_TIMEOUT,
+            **kwargs,
+        ) as response:
+            try:
+                response_json = await response.json()
+                if response.status == 200:
+                    return response_json
+                else:
+                    logger.error(log_messages.HTTP_REQUEST_RETURNED_ERROR, method, url, response_json)
+                    return None
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error(log_messages.HTTP_REQUEST_RETURNED_ERROR, method, url, e)
+                return None
+    except ServerDisconnectedError as e:
+        logger.error(log_messages.HTTP_REQUEST_RETURNED_ERROR, method, url, e)
+        raise asyncio.TimeoutError
