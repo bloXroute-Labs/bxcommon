@@ -110,7 +110,7 @@ class AccountTemplate:
     paid_tx_burst_limit: Optional[BdnQuotaServiceModelConfigBase] = None
     backbone_region_limit: Optional[BdnQuotaServiceModelConfigBase] = None
     region_limit: Optional[BdnQuotaServiceModelConfigBase] = None
-
+    relay_limit: Optional[BdnQuotaServiceModelConfigBase] = None
 
 @dataclass
 class BdnAccountModelBase(AccountTemplate, AccountInfo):
