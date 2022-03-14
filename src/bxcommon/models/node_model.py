@@ -63,6 +63,10 @@ class NodeModel:
     # pyre-fixme[8]: Attribute has type `int`; used as `None`.
     blockchain_port: int = None
 
+    # List of blockchain nodes
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
+    blockchain_peers: str = None
+
     # Nodes hostname
     # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     hostname: str = None

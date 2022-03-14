@@ -111,6 +111,8 @@ class AccountTemplate:
     backbone_region_limit: Optional[BdnQuotaServiceModelConfigBase] = None
     region_limit: Optional[BdnQuotaServiceModelConfigBase] = None
     relay_limit: Optional[BdnQuotaServiceModelConfigBase] = None
+    min_allowed_nodes: Optional[BdnQuotaServiceModelConfigBase] = None
+    max_allowed_nodes: Optional[BdnQuotaServiceModelConfigBase] = None
 
 @dataclass
 class BdnAccountModelBase(AccountTemplate, AccountInfo):
