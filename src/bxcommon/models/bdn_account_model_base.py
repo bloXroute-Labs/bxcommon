@@ -113,6 +113,7 @@ class AccountTemplate:
     relay_limit: Optional[BdnQuotaServiceModelConfigBase] = None
     min_allowed_nodes: Optional[BdnQuotaServiceModelConfigBase] = None
     max_allowed_nodes: Optional[BdnQuotaServiceModelConfigBase] = None
+    boost_mevsearcher: Optional[BdnBasicServiceModel] = None
 
 @dataclass
 class BdnAccountModelBase(AccountTemplate, AccountInfo):
