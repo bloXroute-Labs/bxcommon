@@ -3,3 +3,5 @@ mock==2.0.0
 coverage==4.3.4
 pyre-check==0.0.46
 asynctest==0.12.2
+msgpack==1.0.2
+https://github.com/bloXroute-Labs/aiofluent/archive/1.2.2d.zip
