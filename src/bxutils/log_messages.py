@@ -303,7 +303,7 @@ WS_COULD_NOT_CONNECT_AFTER_RETRIES = LogMessage(
 WS_UNEXPECTED_ERROR = LogMessage(
     "C-000058",
     CONNECTION_PROBLEM_CATEGORY,
-    "Unexpected logger connection error: {}. Retrying connection."
+    "Unexpected websockets connection error: {}. Retrying connection."
 )
 WS_COULD_NOT_PROCESS_NOTIFICATION = LogMessage(
     "C-000059",

@@ -293,6 +293,9 @@ class LegacyTransaction(Transaction):
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "Transaction":
+        if "to" not in payload:
+            payload["to"] = None
+
         return LegacyTransaction(
             int(payload["nonce"], 16),
             int(payload["gasPrice"], 16),
@@ -379,6 +382,9 @@ class AccessListTransaction(Transaction):
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "Transaction":
+        if "to" not in payload:
+            payload["to"] = None
+
         return AccessListTransaction(
             int(payload["chainId"], 16),
             int(payload["nonce"], 16),
@@ -452,6 +458,9 @@ class DynamicFeeTransaction(AccessListTransaction):
 
     @classmethod
     def from_json(cls, payload: Dict[str, Any]) -> "Transaction":
+        if "to" not in payload:
+            payload["to"] = None
+
         return DynamicFeeTransaction(
             int(payload["chainId"], 16),
             int(payload["nonce"], 16),

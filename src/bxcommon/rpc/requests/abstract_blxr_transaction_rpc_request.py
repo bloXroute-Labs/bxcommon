@@ -24,6 +24,15 @@ class AbstractBlxrTransactionRpcRequest(AbstractRpcRequest, Generic[Node]):
 
     def validate_params(self) -> None:
         params = self.params
+
+        # compatibility with geth-style RPC calls
+        if isinstance(params, list):
+            if len(params) != 1:
+                raise RpcInvalidParams(self.request_id, "Params request field is not a single length list or dict.")
+
+            params = params[0]
+            self.params = params
+
         if params is None or not isinstance(params, dict):
             raise RpcInvalidParams(
                 self.request_id,

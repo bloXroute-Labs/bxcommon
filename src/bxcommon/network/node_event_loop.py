@@ -11,7 +11,7 @@ from bxcommon import constants
 from bxcommon.connections.abstract_node import AbstractNode
 from bxcommon.connections.connection_state import ConnectionState
 from bxcommon.connections.connection_type import ConnectionType
-from bxcommon.exceptions import HighMemoryError, FeedSubscriptionTimeoutError
+from bxcommon.exceptions import HighMemoryError, FeedSubscriptionTimeoutError, PingTimeoutError
 from bxcommon.network.base_socket_connection_protocol import BaseSocketConnectionProtocol
 from bxcommon.network.ip_endpoint import IpEndpoint
 from bxcommon.network.peer_info import ConnectionPeerInfo
@@ -60,6 +60,8 @@ class NodeEventLoop:
         except HighMemoryError as e:
             raise e
         except FeedSubscriptionTimeoutError as e:
+            raise e
+        except PingTimeoutError as e:
             raise e
         except Exception as e: # pylint: disable=broad-except
             logger.exception("Unhandled error raised: {}.", e)

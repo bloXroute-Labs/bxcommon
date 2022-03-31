@@ -217,9 +217,6 @@ workflows:
       - test:
           requires:
             - initialize
-      - e2e:
-          requires:
-            - initialize
       - build:
           requires:
             - initialize

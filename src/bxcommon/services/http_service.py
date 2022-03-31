@@ -23,79 +23,50 @@ logger = logging.get_logger(__name__)
 _url = constants.SDN_ROOT_URL
 _ssl_context: Optional[SSLContext] = None
 
-METHODS_WHITELIST = frozenset(
-    ["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST", "PATCH"]
-)
+METHODS_WHITELIST = frozenset(["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST", "PATCH"])
 
 
-def set_root_url(sdn_url: str, ssl_context: Optional[SSLContext] = None):
+def set_root_url(sdn_url: str):
     # pylint: disable=global-statement
     global _url
     _url = sdn_url
-    update_http_ssl_context(ssl_context)
 
 
-def update_http_ssl_context(ssl_context: Optional[SSLContext] = None):
+def update_http_ssl_context(context: Optional[SSLContext] = None):
     # pylint: disable=global-statement
     global _ssl_context
-    _ssl_context = ssl_context
+    _ssl_context = context
+
+
+def ssl_context() -> Optional[SSLContext]:
+    return _ssl_context
 
 
 def post_json(endpoint: str, payload=None) -> Optional[JT]:
     return _http_request(
-        "POST",
-        endpoint,
-        False,
-        body=json_encoder.to_json(payload),
-        headers=constants.HTTP_HEADERS
+        "POST", endpoint, body=json_encoder.to_json(payload), headers=constants.HTTP_HEADERS
     )
 
 
 def patch_json(endpoint: str, payload=None) -> Optional[JT]:
     return _http_request(
-        "PATCH",
-        endpoint,
-        False,
-        body=json_encoder.to_json(payload),
-        headers=constants.HTTP_HEADERS
+        "PATCH", endpoint, body=json_encoder.to_json(payload), headers=constants.HTTP_HEADERS
     )
 
 
 def delete_json(endpoint: str, payload=None) -> Optional[JT]:
     return _http_request(
-        "DELETE",
-        endpoint,
-        False,
-        body=json_encoder.to_json(payload),
-        headers=constants.HTTP_HEADERS
+        "DELETE", endpoint, body=json_encoder.to_json(payload), headers=constants.HTTP_HEADERS,
     )
 
 
 def get_json(endpoint: str) -> Optional[JT]:
-    return _http_request(
-        "GET",
-        endpoint,
-        False,
-        headers=constants.HTTP_HEADERS
-    )
-
-
-def get_json_raising_timeout(endpoint: str) -> Optional[JT]:
-    return _http_request(
-        "GET",
-        endpoint,
-        True,
-        headers=constants.HTTP_HEADERS
-    )
+    return _http_request("GET", endpoint, headers=constants.HTTP_HEADERS)
 
 
 def get_json_with_payload(endpoint: str, payload=None) -> Optional[JT]:
     return _http_request(
-        "GET",
-        endpoint,
-        False,
-        body=json_encoder.to_json(payload),
-        headers=constants.HTTP_HEADERS
+        "GET", endpoint, body=json_encoder.to_json(payload), headers=constants.HTTP_HEADERS
     )
 
 
@@ -110,9 +81,7 @@ def raise_for_status(res: HTTPResponse) -> None:
         raise HTTPError(f"{res.status}:{res.reason}. {ast.literal_eval(res.data.decode('utf-8'))}")
 
 
-def _http_request(
-    method: str, endpoint: str, handle_timeout: bool, **kwargs
-) -> Optional[JT]:
+def _http_request(method: str, endpoint: str, **kwargs) -> Optional[JT]:
     url = build_url(endpoint)
     parsed_url = parse_url(url)
     pm_args = {
@@ -124,7 +93,7 @@ def _http_request(
             read=constants.HTTP_REQUEST_RETRIES_COUNT,
             redirect=constants.HTTP_REQUEST_RETRIES_COUNT,
             backoff_factor=constants.HTTP_REQUEST_BACKOFF_FACTOR,
-            method_whitelist=METHODS_WHITELIST
+            method_whitelist=METHODS_WHITELIST,
         ),
         "ssl_context": _ssl_context,
     }
@@ -134,18 +103,11 @@ def _http_request(
     try:
         logger.trace("HTTP {0} to {1}", method, url)
         response = http_pool_manager.request(
-            method=method,
-            url=parsed_url.url,
-            timeout=constants.HTTP_REQUEST_TIMEOUT,
-            **kwargs
+            method=method, url=parsed_url.url, timeout=constants.HTTP_REQUEST_TIMEOUT, **kwargs
         )
         raise_for_status(response)
     except MaxRetryError as e:
         logger.info("{} to {} failed due to: {}.", method, url, e)
-        return None
-    except TimeoutError:
-        if handle_timeout:
-            raise TimeoutError
         return None
     except Exception as e:  # pylint: disable=broad-except
         logger.error(log_messages.HTTP_REQUEST_RETURNED_ERROR, method, url, e)

@@ -47,7 +47,7 @@ class HttpRpcHandlerImpl(HttpRpcHandler):
 
 
 class HttpRpcServer(AbstractHttpRpcServer):
-    def authenticate_request(self, request: Request) -> None:
+    async def authenticate_request(self, request: Request) -> None:
         pass
 
     def request_handler(self) -> HttpRpcHandler:
