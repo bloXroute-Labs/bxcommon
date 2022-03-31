@@ -60,9 +60,7 @@ jobs:
           command: |
             cd ~/ws
             . venv/bin/activate
-            pip install -r bxcommon/requirements.txt \
-             -r bxcommon/requirements-dev.txt \
-             -r bxcommon/requirements-optional.txt
+            pip install -r bxcommon/requirements.txt
       - run:
           command: |
             sudo apt update &&
@@ -132,38 +130,6 @@ jobs:
       - store_artifacts:
           path: test-reports/
           destination: tr1
-  e2e:
-    executor: bloxroute-executor
-    steps:
-      - attach_workspace:
-          at: ~/ws
-      - checkout:
-          path:
-            "bxcommon"
-      - clone:
-          repo: bxe2e
-          folder: bxe2e
-      - clone:
-          repo: bxrelay
-          folder: bxrelay
-      - clone:
-          repo: bxgateway
-          folder: bxgateway
-      - run:
-          name: Initialize virtualenv
-          command: |
-            . venv/bin/activate
-            pip install -r bxrelay/requirements.txt \
-              -r bxrelay/requirements-dev.txt \
-              -r bxgateway/requirements.txt \
-              -r bxgateway/requirements-dev.txt
-      - run:
-          name: Integration Test
-          command: |
-            . venv/bin/activate
-            cd bxe2e/test/integration
-            PYTHONPATH=$PYTHONPATH:/home/circleci/ws/bxcommon-internal/src:/home/circleci/ws/bxe2e/src:/home/circleci/ws/bxgateway/src:/home/circleci/ws/bxrelay/src \
-            python -m unittest discover --verbose
   build:
     docker:
       - image: circleci/python:3.8
@@ -174,17 +140,6 @@ jobs:
       - run:
           name: Package
           command: 'echo "Yay build!"'
-  deploy:
-    docker:
-      - image: circleci/python:3.8
-    working_directory: ~/ws
-    steps:
-      - checkout
-      - attach_workspace:
-          at: ~/ws
-      - run:
-          name: Package
-          command: 'echo "Yay deploy!"'
 
 workflows:
   version: 2
@@ -198,18 +153,9 @@ workflows:
       - test:
           requires:
             - initialize
-      - e2e:
-          requires:
-            - initialize
       - build:
           requires:
             - initialize
           filters:
             branches:
               only: master
-      - deploy:
-          filters:
-            branches:
-              only: master
-          requires:
-            - build
