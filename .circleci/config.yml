@@ -60,8 +60,9 @@ jobs:
           command: |
             cd ~/ws
             . venv/bin/activate
-            pip install -r bxcommon/requirements.txt
-      - run:
+            pip install -r bxcommon/requirements.txt \
+                        -r bxcommon/requirements-dev.txt 
+       - run:
           command: |
             sudo apt update &&
             sudo apt install build-essential automake autogen autoconf libtool libtool-bin libssl-dev cmake linux-headers-amd64
