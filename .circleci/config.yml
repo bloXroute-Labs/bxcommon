@@ -48,7 +48,7 @@ jobs:
             cd ~/ws
             python -m virtualenv venv
       - clone:
-          repo: bxextensions-private
+          repo: bxextensions
           folder: bxextensions
       - restore_cache: # restores saved dependency cache
           key: bxextensions-{{ checksum "~/ws/bxextensions_tmp_file" }}
@@ -147,11 +147,8 @@ jobs:
           repo: bxrelay
           folder: bxrelay
       - clone:
-          repo: bxgateway-private
+          repo: bxgateway
           folder: bxgateway
-      - clone:
-          repo: bxcommon-internal
-          folder: bxcommon-internal
       - run:
           name: Initialize virtualenv
           command: |
