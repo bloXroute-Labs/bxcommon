@@ -30,7 +30,7 @@ executors:
     docker:
       - image: circleci/python:3.8
     environment:
-      PYTHONPATH: /home/circleci/ws/bxcommon/src:/home/circleci/ws/bxextensions:/home/circleci/ws/bxcommon-internal/src/
+      PYTHONPATH: /home/circleci/ws/bxcommon/src:/home/circleci/ws/bxextensions
       GIT_SSH_COMMAND: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
     working_directory: ~/ws
 
@@ -54,15 +54,13 @@ jobs:
           key: bxextensions-{{ checksum "~/ws/bxextensions_tmp_file" }}
       - restore_cache: # restores saved dependency cache
           key: "bxcommon-{{ checksum \"bxcommon/requirements.txt\" }}-\
-            {{ checksum \"bxcommon/requirements-dev.txt\" }}-\
-            {{ checksum \"bxcommon/requirements-optional.txt\" }}"
+            {{ checksum \"bxcommon/requirements-dev.txt\" }}"
       - run: # install and activate virtual environment with pip
           command: |
             cd ~/ws
             . venv/bin/activate
-            pip install -r bxcommon/requirements.txt \
-              -r bxcommon/requirements-dev.txt 
-       - run:
+            pip install -r bxcommon/requirements.txt
+      - run:
           command: |
             sudo apt update &&
             sudo apt install build-essential automake autogen autoconf libtool libtool-bin libssl-dev cmake linux-headers-amd64
@@ -71,8 +69,7 @@ jobs:
             python build_extensions.py
       - save_cache: # special step to save dependency cache
           key: "bxcommon-{{ checksum \"bxcommon/requirements.txt\" }}-\
-            {{ checksum \"bxcommon/requirements-dev.txt\" }}-\
-            {{ checksum \"bxcommon/requirements-optional.txt\" }}"
+            {{ checksum \"bxcommon/requirements-dev.txt\" }}"
           paths:
             - "venv"
       - save_cache: # special step to save dependency cache
