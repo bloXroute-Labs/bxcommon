@@ -1,6 +1,7 @@
 import blxr_rlp as rlp
 
-from bxcommon.messages.eth.serializers.transaction import LegacyTransaction, AccessListTransaction
+from bxcommon.messages.eth.serializers.transaction import LegacyTransaction, AccessListTransaction, \
+    DynamicFeeTransaction
 from bxcommon.messages.eth.serializers.transaction_type import EthTransactionType
 from bxcommon.messages.eth.serializers.transaction import Transaction
 from bxcommon.test_utils.abstract_test_case import AbstractTestCase
@@ -172,6 +173,34 @@ class TransactionTest(AbstractTestCase):
         for i, access in enumerate(eth_fixtures.ACL_TRANSACTION_JSON["accessList"]):
             self.assertEqual(access["address"], result_json["access_list"][i]["address"])
             self.assertEqual(access["storageKeys"], result_json["access_list"][i]["storage_keys"])
+
+    def test_dynamic_fee_transaction_from_bytes(self):
+        transaction: Transaction = rlp.decode(eth_fixtures.DYNAMIC_FEE_TRANSACTION, Transaction)
+        re_encoded = rlp.encode(transaction)
+
+        self.assertEqual(transaction, rlp.decode(re_encoded, Transaction))
+        self.assertEqual(EthTransactionType.DYNAMIC_FEE, transaction.transaction_type)
+        self.assertIsInstance(transaction, DynamicFeeTransaction)
+        self.assertEqual(
+            Sha256Hash.from_string(eth_fixtures.DYNAMIC_FEE_TRANSACTION_HASH), transaction.hash(),
+        )
+        self.assertEqual(eth_fixtures.DYNAMIC_FEE_FROM_ADDRESS, transaction.from_address())
+
+        self.assertEqual(0, transaction.chain_id())
+        self.assertEqual(15, transaction.max_priority_fee_per_gas)
+        self.assertEqual(31, transaction.max_fee_per_gas)
+
+        self.assertEqual(31, transaction.adjusted_gas_price(31))
+        self.assertEqual(15, transaction.adjusted_gas_price(0))
+        self.assertEqual(25, transaction.adjusted_gas_price(10))
+
+    def test_dynamic_fee_transaction_to_json(self):
+        transaction_json = rlp.decode(eth_fixtures.DYNAMIC_FEE_TRANSACTION, Transaction).to_json()
+        self.assertEqual(f"0x{eth_fixtures.DYNAMIC_FEE_TRANSACTION_HASH}", transaction_json["hash"])
+        self.assertEqual("0x2", transaction_json["type"])
+        self.assertEqual("0xf", transaction_json["max_priority_fee_per_gas"])
+        self.assertEqual("0x1f", transaction_json["max_fee_per_gas"])
+        self.assertEqual(None, transaction_json["gas_price"])
 
     def test_empty_to_serializes(self):
         sample_transactions = dict(eth_fixtures.LEGACY_TRANSACTION_JSON_FROM_WS)

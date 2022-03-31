@@ -82,7 +82,7 @@ class TestNodeRunner(AbstractTestCase):
             ),
             "log_level_overrides": {},
             "source_version": "v1.0.0",
-            "ca_cert_url": self.ssl_folder_url,
+            "ca_cert_url": f"{self.ssl_folder_url}/ca",
             "private_ssl_base_url": self.ssl_folder_url,
             "data_dir": config.get_default_data_path(),
             "log_level_fluentd": LogLevel.DEBUG,

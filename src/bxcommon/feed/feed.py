@@ -82,7 +82,7 @@ class Feed(Generic[T, S], metaclass=ABCMeta):
                     queued_message = subscriber.queue(serialized_message)
                     cached_subscription_items[subscriber] = queued_message
             except QueueFull:
-                logger.error(
+                logger.info(
                     log_messages.BAD_FEED_SUBSCRIBER, subscriber.subscription_id, self
                 )
                 bad_subscribers.append(subscriber)

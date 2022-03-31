@@ -1,4 +1,6 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, List
+
+import dataclasses
 from dataclasses import dataclass
 from datetime import datetime, date
 
@@ -35,6 +37,11 @@ class BdnQuotaServiceModelConfigBase(BdnBasicServiceModel):
 @dataclass
 class BdnFeedServiceModelConfigBase(BdnBasicServiceModel):
     feed: Optional[FeedServiceModelBase] = None
+
+
+@dataclass
+class BdnLightGatewayServiceModelConfigBase(BdnBasicServiceModel):
+    allowed_networks: List[int] = dataclasses.field(default_factory=list)
 
 
 @dataclass

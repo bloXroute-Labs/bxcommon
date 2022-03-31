@@ -49,6 +49,7 @@ class AbstractRpcHandler(Generic[Node, Req, Res]):
             request_auth_key = headers[rpc_constants.AUTHORIZATION_HEADER_KEY]
             account_cache_key = base64.b64decode(request_auth_key).decode(constants.DEFAULT_TEXT_ENCODING)
             rpc_request.account_cache_key = account_cache_key
+        rpc_request.remote_ip = getattr(request, "remote", None)
 
         request_handler = self.get_request_handler(rpc_request)
         try:

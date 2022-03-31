@@ -1,18 +1,73 @@
 from dataclasses import dataclass
-from typing import Optional
 from datetime import datetime, date
+from enum import Enum
+from functools import total_ordering
+from typing import Optional
 
+from bxcommon import constants
 from bxcommon.models.bdn_service_model_config_base import (
     BdnBasicServiceModel,
     BdnQuotaServiceModelConfigBase,
     BdnFeedServiceModelConfigBase, BdnPrivateRelayServiceModelConfigBase,
-)
-from bxcommon import constants
+    BdnLightGatewayServiceModelConfigBase)
 from bxcommon.rpc import rpc_constants
 from bxutils import logging
 
 logger = logging.get_logger(__name__)
 OPTIONAL_ACCOUNT_SERVICES = {"tx_free"}
+
+
+@total_ordering
+class Tiers(Enum):
+    INTRODUCTORY = "Introductory"
+    DEVELOPER = "Developer"
+    PROFESSIONAL = "Professional"
+    ENTERPRISE = "Enterprise"
+    ENTERPRISE_ELITE = "EnterpriseElite"
+    ULTRA = "Ultra"
+
+    def __eq__(self, other):
+        if not isinstance(other, Tiers):
+            return NotImplemented
+
+        # pylint: disable=comparison-with-callable
+        return self.value == other.value
+
+    def __hash__(self):
+        return id(self)
+
+    def __lt__(self, other):
+        if not isinstance(other, Tiers):
+            return NotImplemented
+
+        order = [
+            Tiers.INTRODUCTORY,
+            Tiers.DEVELOPER,
+            Tiers.PROFESSIONAL,
+            Tiers.ENTERPRISE,
+            Tiers.ENTERPRISE_ELITE,
+            Tiers.ULTRA
+        ]
+
+        return order.index(self) < order.index(other)
+
+    def __gt__(self, other):
+        return not self.__lt__(other)
+
+    def __ge__(self, other):
+        return self.__gt__(other) or self.__eq__(other)
+
+    @classmethod
+    def from_string(cls, value: str) -> Optional["Tiers"]:
+        try:
+            return Tiers(value)
+        except ValueError:
+            return None
+
+    def tier_article_prefix(self) -> str:
+        if self in {Tiers.INTRODUCTORY, Tiers.ENTERPRISE, Tiers.ENTERPRISE_ELITE}:
+            return "an"
+        return "a"
 
 
 @dataclass
@@ -26,6 +81,9 @@ class AccountInfo:
     blockchain_network: Optional[str] = None
     tier_name: Optional[str] = None
     is_miner: Optional[bool] = None
+    mev_builder: Optional[str] = None
+    mev_miner: Optional[str] = None
+    metamask_rpc_to_flashbots: Optional[bool] = False
 
 
 @dataclass
@@ -45,8 +103,17 @@ class AccountTemplate:
     private_relays: Optional[BdnPrivateRelayServiceModelConfigBase] = None
     private_transaction: Optional[BdnQuotaServiceModelConfigBase] = None
     private_transaction_fee: Optional[BdnQuotaServiceModelConfigBase] = None
-    light_gateway: Optional[BdnBasicServiceModel] = None
-
+    light_gateway: Optional[BdnLightGatewayServiceModelConfigBase] = None
+    online_gateways: Optional[BdnQuotaServiceModelConfigBase] = None
+    tx_trace_rate_limitation: Optional[BdnQuotaServiceModelConfigBase] = None
+    unpaid_tx_burst_limit: Optional[BdnQuotaServiceModelConfigBase] = None
+    paid_tx_burst_limit: Optional[BdnQuotaServiceModelConfigBase] = None
+    backbone_region_limit: Optional[BdnQuotaServiceModelConfigBase] = None
+    region_limit: Optional[BdnQuotaServiceModelConfigBase] = None
+    relay_limit: Optional[BdnQuotaServiceModelConfigBase] = None
+    min_allowed_nodes: Optional[BdnQuotaServiceModelConfigBase] = None
+    max_allowed_nodes: Optional[BdnQuotaServiceModelConfigBase] = None
+    boost_mevsearcher: Optional[BdnBasicServiceModel] = None
 
 @dataclass
 class BdnAccountModelBase(AccountTemplate, AccountInfo):

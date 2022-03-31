@@ -136,7 +136,7 @@ class AbstractHttpRpcServer(Generic[Node]):
             ).decode("utf-8")
 
     @abstractmethod
-    def authenticate_request(self, request: Request) -> None:
+    async def authenticate_request(self, request: Request) -> None:
         pass
 
     @abstractmethod
@@ -179,7 +179,7 @@ class AbstractHttpRpcServer(Generic[Node]):
     async def handle_request(self, request: Request) -> Response:
         try:
             self._handler.parse_content_type(request)
-            self.authenticate_request(request)
+            await self.authenticate_request(request)
             return await self._handler.handle_request(request)
         except HTTPClientError as e:
             return format_http_error(e, self._handler.content_type)
@@ -192,7 +192,7 @@ class AbstractHttpRpcServer(Generic[Node]):
 
     async def handle_get_request(self, request: Request) -> Response:
         try:
-            self.authenticate_request(request)
+            await self.authenticate_request(request)
         except HTTPUnauthorized as e:
             return format_http_error(e, self._handler.content_type)
         except RpcAccountIdError as e:
@@ -218,7 +218,7 @@ class AbstractHttpRpcServer(Generic[Node]):
 
     async def handle_ws_request(self, request: Request) -> WebSocketResponse:
         try:
-            self.authenticate_request(request)
+            await self.authenticate_request(request)
         except RpcError as e:
             websocket_response = web.WebSocketResponse()
             await websocket_response.prepare(request)

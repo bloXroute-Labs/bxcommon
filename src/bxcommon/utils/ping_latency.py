@@ -4,9 +4,9 @@ from typing import List, NamedTuple
 from bxcommon import constants
 from bxcommon.models.outbound_peer_model import OutboundPeerModel
 from bxcommon.utils.concurrency.thread_pool import ThreadPool
+from bxcommon.exceptions import PingTimeoutError
 from bxutils import log_messages
 from bxutils import logging
-
 logger = logging.get_logger(__name__)
 
 
@@ -46,4 +46,14 @@ def get_ping_latencies(outbound_peers: List[OutboundPeerModel]) -> List[NodeLate
     with ThreadPool(len(outbound_peers), "ping") as executor:
         futures = [executor.submit(get_ping_latency, ip) for ip in outbound_peers]
         results = [future.result() for future in futures]
+
+    # check if need to restart node - if all pings return timeout
+    counter = 0
+    for result in results:
+        if result.latency == constants.PING_TIMEOUT_S * 1000:
+            counter += 1
+
+    if counter == len(results):
+        raise PingTimeoutError()
+
     return results

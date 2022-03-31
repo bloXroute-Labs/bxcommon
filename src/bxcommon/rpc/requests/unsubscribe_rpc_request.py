@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, Tuple
 
 from bxcommon.feed.feed import FeedKey
 from bxcommon.rpc.bx_json_rpc_request import BxJsonRpcRequest
@@ -24,7 +24,7 @@ class UnsubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         request: BxJsonRpcRequest,
         node: "AbstractNode",
         feed_manager: FeedManager,
-        unsubscribe_handler: Callable[[str], Optional[FeedKey]]
+        unsubscribe_handler: Callable[[str], Tuple[Optional[FeedKey], Optional[str]]]
     ) -> None:
         self.feed_manager = feed_manager
         self.unsubscribe_handler = unsubscribe_handler
@@ -46,11 +46,11 @@ class UnsubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         self.subscriber_id = params[0]
 
     async def process_request(self) -> JsonRpcResponse:
-        feed_key = self.unsubscribe_handler(self.subscriber_id)
+        feed_key, account_id = self.unsubscribe_handler(self.subscriber_id)
         if feed_key is None:
             raise RpcInvalidParams(
                 self.request_id,
                 f"Subscriber {self.subscriber_id} was not found."
             )
-        self.feed_manager.unsubscribe_from_feed(feed_key, self.subscriber_id)
+        self.feed_manager.unsubscribe_from_feed(feed_key, self.subscriber_id, account_id)
         return JsonRpcResponse(self.request_id, True)

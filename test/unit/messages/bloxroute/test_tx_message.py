@@ -16,19 +16,19 @@ class TxMessageTest(AbstractTestCase):
         )
         tx_message.set_transaction_flag(
             TransactionFlag.PAID_TX
-            | TransactionFlag.CEN_ENABLED
+            | TransactionFlag.ENTERPRISE_SENDER
             | TransactionFlag.LOCAL_REGION
-            | TransactionFlag.TBD_2
+            | TransactionFlag.ELITE_SENDER
         )
         reserialized_message = self._serialize_deserialize_message(tx_message)
         self.assertTrue(
-            TransactionFlag.CEN_ENABLED in reserialized_message.transaction_flag()
+            TransactionFlag.ENTERPRISE_SENDER in reserialized_message.transaction_flag()
         )
         self.assertTrue(
             TransactionFlag.LOCAL_REGION in reserialized_message.transaction_flag()
         )
         self.assertTrue(
-            TransactionFlag.TBD_2 in reserialized_message.transaction_flag()
+            TransactionFlag.ELITE_SENDER in reserialized_message.transaction_flag()
         )
 
     def _serialize_deserialize_message(

@@ -1,6 +1,7 @@
 import fnmatch
 from typing import TYPE_CHECKING, Callable, Any, List, Optional
 
+from bxcommon import constants
 from bxcommon.feed.feed import FeedKey
 from bxcommon.feed.feed_manager import FeedManager
 from bxcommon.feed.subscriber import Subscriber
@@ -29,7 +30,7 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         '{'
         '"include": [field_1, field_2], "duplicates": false, "include_from_blockchain": true, '
         '"blockchain_network": "Mainnet", "blockchain_protocol: "Ethereum"}].\n'
-        "Available feeds: newTxs, pendingTxs, newBlocks, ethOnBlock\n"
+        "Available feeds: newTxs, pendingTxs, newBlocks, txReceipts, onBlock\n"
         "Available fields for transaction feeds: tx_hash, tx_contents (default: all)\n"
         "Available fields for block feed: hash, block (default: all)\n"
         "duplicates: false (filter out duplicates from feed, typically low fee "
@@ -43,7 +44,7 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
         request: BxJsonRpcRequest,
         node: "AbstractNode",
         feed_manager: FeedManager,
-        subscribe_handler: Callable[[Subscriber, FeedKey], None],
+        subscribe_handler: Callable[[Subscriber, FeedKey, Optional[str]], None],
         feed_network: int = 0,
         account_details: Optional[BdnAccountModelBase] = None
     ) -> None:
@@ -89,8 +90,11 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
                 "Subscribe RPC request params must be a list of length 2.",
             )
         feed_name, options = params
+        if self.feed_network == constants.ALL_NETWORK_NUM:
+            self.feed_network = self.node.network_num
         self.feed_name = feed_name
         self.feed_key = FeedKey(self.feed_name, self.feed_network)
+        logger.debug("Got new subscribe request for {}", self.feed_key)
 
         self.options = options
 
@@ -176,7 +180,12 @@ class SubscribeRpcRequest(AbstractRpcRequest["AbstractNode"]):
 
         subscriber = self.feed_manager.subscribe_to_feed(self.feed_key, self.options)
         assert subscriber is not None  # already validated
-        self.subscribe_handler(subscriber, self.feed_key)
+        account_id = None
+        if self.account_details is not None:
+            account_details = self.account_details
+            assert account_details is not None
+            account_id = account_details.account_id
+        self.subscribe_handler(subscriber, self.feed_key, account_id)
 
         return JsonRpcResponse(self.request_id, subscriber.subscription_id)
 

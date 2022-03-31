@@ -15,7 +15,8 @@ class EthTransactionFeedEntry:
     local_region: bool
 
     def __init__(
-        self, tx_hash: Sha256Hash,
+        self,
+        tx_hash: Sha256Hash,
         tx_contents: Union[memoryview, Dict[str, Any]],
         local_region: bool,
     ) -> None:
