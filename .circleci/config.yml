@@ -61,7 +61,7 @@ jobs:
             cd ~/ws
             . venv/bin/activate
             pip install -r bxcommon/requirements.txt \
-                        -r bxcommon/requirements-dev.txt 
+              -r bxcommon/requirements-dev.txt 
        - run:
           command: |
             sudo apt update &&
