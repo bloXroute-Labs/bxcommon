@@ -12,6 +12,7 @@ from bxutils.encoding.json_encoder import Case
 class BxJsonRpcRequest(JsonRpcRequest):
     method: RpcRequestType
     account_cache_key: Optional[str] = None
+    remote_ip: Optional[str] = None
 
     def __init__(
         self,

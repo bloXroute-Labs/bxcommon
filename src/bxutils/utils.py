@@ -75,14 +75,19 @@ def is_greater_or_eq_version(version1: str, version2: str) -> bool:
     :param version2: version number ex) "v1.61.12"
     :return: True if version1 >= version2 else False
     """
-    v1_list = [int(x) for x in version1.strip("v").split(".")]
-    v2_list = [int(x) for x in version2.strip("v").split(".")]
-    for i in range(min(len(v1_list), len(v2_list))):
-        if v1_list[i] > v2_list[i]:
-            return True
-        elif v1_list[i] < v2_list[i]:
-            return False
-    return True
+    if version1 is None or version2 is None:
+        return True
+    try:
+        v1_list = [int(x) for x in version1.strip("v").split(".")]
+        v2_list = [int(x) for x in version2.strip("v").split(".")]
+        for i in range(min(len(v1_list), len(v2_list))):
+            if v1_list[i] > v2_list[i]:
+                return True
+            elif v1_list[i] < v2_list[i]:
+                return False
+        return True
+    except ValueError:
+        return False
 
 
 def safe_divide(value1: float, value2: float) -> float:

@@ -25,8 +25,8 @@ class BlockHeader(rlp.Serializable):
         ("gas_used", rlp.sedes.big_endian_int),
         ("timestamp", rlp.sedes.big_endian_int),
         ("extra_data", rlp.sedes.binary),
-        ("mix_hash", rlp.sedes.binary),
-        ("nonce", rlp.sedes.binary)
+        ("mix_hash", rlp.sedes.Binary.fixed_length(eth_common_constants.BLOCK_HASH_LEN)),
+        ("nonce", rlp.sedes.Binary.fixed_length(eth_common_constants.BLOCK_NONCE_LEN)),
     ]
 
     prev_hash: bytearray
@@ -61,6 +61,17 @@ class BlockHeader(rlp.Serializable):
     def __repr__(self) -> str:
         return f"EthBlockHeader<{self.hash_object()}>"
 
+    # pylint: disable=arguments-differ
+    @classmethod
+    def deserialize(cls, serial, type_parsed: bool = False, **extra_kwargs):
+        if type_parsed:
+            return super().deserialize(serial, **extra_kwargs)
+
+        if len(serial) == len(BlockHeader.fields):
+            return super().deserialize(serial, **extra_kwargs)
+        else:
+            return LondonBlockHeader.deserialize(serial, type_parsed=True, **extra_kwargs)
+
     def get_field_value(self, field_name) -> Any:
         return getattr(self, field_name, None)
 
@@ -92,3 +103,29 @@ class BlockHeader(rlp.Serializable):
             "mix_hash": convert.bytes_to_hex_string_format(self.get_field_value("mix_hash")),
             "nonce": convert.bytes_to_hex_string_format(self.get_field_value("nonce"))
         }
+
+
+class LondonBlockHeader(BlockHeader):
+    fields = [
+        *BlockHeader.fields,
+        ("base_fee_per_gas", rlp.sedes.big_endian_int),
+    ]
+
+    base_fee_per_gas: int = 0
+
+    def __repr__(self) -> str:
+        return f"EthLondonBlockHeader<{self.hash_object()}>"
+
+    def to_json(self) -> Dict[str, Any]:
+        block_header_json = super().to_json()
+        block_header_json.update(
+            {
+                "base_fee_per_gas": self.get_field_value("base_fee_per_gas")
+            }
+        )
+        return block_header_json
+
+
+# pylint: disable=protected-access
+# RLP hack to allow proper inheritance in sequential calls
+LondonBlockHeader._sedes = rlp.sedes.List(sedes for _, sedes in LondonBlockHeader.fields)

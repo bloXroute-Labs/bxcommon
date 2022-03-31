@@ -105,10 +105,17 @@ def filter_message(message: Dict[str, Any], include_fields: List[str]) -> Dict[s
         value = message
         partial_message = output
         field_keys = key.split(".")
-        for key_element in field_keys:
-            value = value[key_element]
-            if isinstance(value, dict) and len(field_keys) > 1 and key_element != field_keys[-1]:
-                partial_message = partial_message.setdefault(key_element, {})
-            else:
-                partial_message = partial_message.setdefault(key_element, value)
+        field = field_keys[0]
+        if field not in value:
+            continue
+        sub_value = value.get(field)
+        if len(field_keys) > 1:
+            partial_message = partial_message.setdefault(field, {})
+            field = field_keys[1]
+            # pyre-fixme[16]: Optional type has no attribute `get`
+            if field not in sub_value:
+                continue
+            # pyre-fixme[16]: Optional type has no attribute `get`
+            sub_value = sub_value.get(field)
+        partial_message = partial_message.setdefault(field, sub_value)
     return output

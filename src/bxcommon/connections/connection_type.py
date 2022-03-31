@@ -13,7 +13,6 @@ class ConnectionType(SerializableFlag):
     RELAY_TRANSACTION = auto()
     RELAY_BLOCK = auto()
     RELAY_ALL = RELAY_TRANSACTION | RELAY_BLOCK
-    CROSS_RELAY = auto()
     INTERNAL_GATEWAY = auto()
     GATEWAY = INTERNAL_GATEWAY | EXTERNAL_GATEWAY
     RELAY_PROXY = auto()

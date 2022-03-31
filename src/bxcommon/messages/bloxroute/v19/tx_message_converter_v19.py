@@ -20,7 +20,7 @@ class _TxMessageConverterV19(AbstractMessageConverter):
     UNKNOWN_TRANSACTION_FLAGS = (
         TransactionFlag.LOCAL_REGION
         | TransactionFlag.PRIVATE_TX
-        | TransactionFlag.TBD_2
+        | TransactionFlag.ELITE_SENDER
         | TransactionFlag.TBD_3
         | TransactionFlag.TBD_4
         | TransactionFlag.TBD_5
@@ -28,7 +28,7 @@ class _TxMessageConverterV19(AbstractMessageConverter):
     INVERTED_UNKNOWN_TRANSACTION_FLAGS = (
         ~TransactionFlag.LOCAL_REGION
         & ~TransactionFlag.PRIVATE_TX
-        & ~TransactionFlag.TBD_2
+        & ~TransactionFlag.ELITE_SENDER
         & ~TransactionFlag.TBD_3
         & ~TransactionFlag.TBD_4
         & ~TransactionFlag.TBD_5

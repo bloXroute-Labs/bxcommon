@@ -22,9 +22,10 @@ class NodeModel:
     # Whether node has active connection with SDN
     sdn_connection_alive: bool = False
 
-    # TODO: Remove this attribute as it's not being used anymore
     # pyre-fixme[8]: Attribute has type `str`; used as `None`.
     network: str = None
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
+    protocol: str = None
 
     # Internal id for distinguishing nodes.
     node_id: Optional[str] = None
@@ -61,6 +62,10 @@ class NodeModel:
     # Port of the blockchain node
     # pyre-fixme[8]: Attribute has type `int`; used as `None`.
     blockchain_port: int = None
+
+    # List of blockchain nodes
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
+    blockchain_peers: str = None
 
     # Nodes hostname
     # pyre-fixme[8]: Attribute has type `str`; used as `None`.
@@ -129,6 +134,8 @@ class NodeModel:
     using_private_ip_connection: bool = False
 
     private_node: bool = False
+    # pyre-fixme[8]: Attribute has type `str`; used as `None`.
+    relay_type: str = None
 
     def __post_init__(self):
         self.sid_expire_time = constants.SID_EXPIRE_TIME_SECONDS

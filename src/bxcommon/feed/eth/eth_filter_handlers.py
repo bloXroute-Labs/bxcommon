@@ -1,3 +1,5 @@
+from typing import Optional
+
 from bxutils import logging
 from bxutils.logging.log_record_type import LogRecordType
 
@@ -16,7 +18,11 @@ def reformat_address(address: str) -> str:
     return address.lower()
 
 
-def reformat_gas_price(value: str) -> int:
+def reformat_gas_price(value: Optional[str]) -> int:
+    # value may be None in certain scenarios
+    # (e.g. type 2 transaction will have None gas_price, others None max_priority_fee_per_gas)
+    if value is None:
+        return -1
     return int(value, 0)
 
 

@@ -73,6 +73,6 @@ class EthBlockValidatorTest(AbstractTestCase):
             1601410624,
             helpers.generate_bytes(100),
             helpers.generate_bytes(eth_common_constants.BLOCK_HASH_LEN),
-            helpers.generate_bytes(12345)
+            int(12345).to_bytes(eth_common_constants.BLOCK_NONCE_LEN, byteorder="big")
         )
         return block_header

@@ -50,7 +50,7 @@ FLUENTD_DEFAULT_TAG = "bx"
 
 # TODO: use the data dir configurations (https://github.com/bloXroute-Labs/bxcommon-private/pull/510) after merging
 #  bxutils back into bxcommon
-DEFAULT_EXPIRATION_DATE: date = datetime.today().date() + timedelta(365)
+DEFAULT_EXPIRATION_DATE: date = datetime.today().date() + timedelta(365*10)
 SSL_FOLDER = ".ssl"
 SSL_KEY_FILE_FORMAT = "{}_key.pem"
 SSL_CERT_FILE_FORMAT = "{}_cert.pem"

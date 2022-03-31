@@ -86,8 +86,11 @@ class _TransactionStatisticsService(StatisticsEventService):
         if percent_to_log_by_tx_hash <= 0 and percent_to_log_by_sid <= 0:
             return False
 
-        last_byte_value, = struct.unpack_from("<B", tx_hash_bytes, len(tx_hash_bytes) - 1)
-        log_tx_stat_probability_value = float(last_byte_value) * 100 / constants.MAX_BYTE_VALUE
+        last_bytes_value, = struct.unpack_from(
+            ">H",
+            tx_hash_bytes, len(tx_hash_bytes) - constants.TAIL_BYTE_COUNT
+        )
+        log_tx_stat_probability_value = float(last_bytes_value) * 100 / constants.MAX_TAIL_BYTE_VALUE
         should_log_tx_hash = log_tx_stat_probability_value <= percent_to_log_by_tx_hash
 
         should_log_short_id = False

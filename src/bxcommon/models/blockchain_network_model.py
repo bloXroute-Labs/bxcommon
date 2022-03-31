@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Dict
 
 from bxcommon import constants
+from bxcommon.models.bdn_account_model_base import Tiers
 from bxcommon.models.blockchain_network_environment import BlockchainNetworkEnvironment
 from bxcommon.models.blockchain_network_type import BlockchainNetworkType
 
@@ -55,3 +56,8 @@ class BlockchainNetworkModel:
     enable_check_sender_nonce: bool = True
     allowed_time_reuse_sender_nonce: float = 0.0
     allowed_gas_price_change_reuse_sender_nonce: float = 1.1
+    enable_tx_trace: bool = False
+    inject_poa: bool = False
+    allowed_from_tier: str = Tiers.DEVELOPER.value
+    send_cross_geo: bool = True
+    deliver_to_node_percent: int = 20

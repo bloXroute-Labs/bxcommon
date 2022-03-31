@@ -8,7 +8,7 @@ from typing import Iterable, Optional, Type, Callable, List
 import uvloop
 
 from bxcommon.connections.abstract_node import AbstractNode
-from bxcommon.exceptions import TerminationError, HighMemoryError, FeedSubscriptionTimeoutError
+from bxcommon.exceptions import TerminationError, HighMemoryError, FeedSubscriptionTimeoutError, PingTimeoutError
 from bxcommon.models.node_type import NodeType
 from bxcommon.network.node_event_loop import NodeEventLoop
 from bxcommon.services import sdn_http_service
@@ -114,6 +114,11 @@ def run_node(
         logger.fatal("Node terminated")
     except HighMemoryError:
         logger.info("Restarting node due to high memory")
+        _close_handles()
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
+    except PingTimeoutError:
+        logger.info("Restarting node due to ping timeout to all relays")
         _close_handles()
         python = sys.executable
         os.execl(python, python, *sys.argv)
