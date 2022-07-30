@@ -62,7 +62,8 @@ class WsProvider(AbstractWsProvider):
         retry_connection: bool = False,
         queue_limit: int = constants.WS_PROVIDER_MAX_QUEUE_SIZE,
         headers: Optional[Dict] = None,
-        skip_ssl_cert_verify: bool = False
+        skip_ssl_cert_verify: bool = False,
+        max_message_size: Optional[int] = 2 ** 20,
     ):
         super(WsProvider, self).__init__(uri, retry_connection, queue_limit, headers)
         if uri.startswith("wss"):
@@ -71,11 +72,12 @@ class WsProvider(AbstractWsProvider):
             if skip_ssl_cert_verify:
                 ssl_context.check_hostname = False
             self.ssl_context = ssl_context
+            self.max_message_size = max_message_size
         else:
             self.ssl_context = None
 
     async def connect_websocket(self) -> websockets.WebSocketClientProtocol:
-        return await websockets.connect(self.uri, extra_headers=self.headers, ssl=self.ssl_context)
+        return await websockets.connect(self.uri, extra_headers=self.headers, ssl=self.ssl_context, max_size=self.max_message_size)
 
     async def call_bx(
         self,
