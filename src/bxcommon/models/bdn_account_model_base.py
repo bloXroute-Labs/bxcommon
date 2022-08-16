@@ -114,6 +114,8 @@ class AccountTemplate:
     min_allowed_nodes: Optional[BdnQuotaServiceModelConfigBase] = None
     max_allowed_nodes: Optional[BdnQuotaServiceModelConfigBase] = None
     boost_mevsearcher: Optional[BdnBasicServiceModel] = None
+    solana_dex_api_rate_limit: Optional[BdnBasicServiceModel] = None
+    solana_dex_api_stream_limit: Optional[BdnBasicServiceModel] = None
 
 @dataclass
 class BdnAccountModelBase(AccountTemplate, AccountInfo):
