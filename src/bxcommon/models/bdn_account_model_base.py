@@ -106,6 +106,7 @@ class AccountTemplate:
     light_gateway: Optional[BdnLightGatewayServiceModelConfigBase] = None
     online_gateways: Optional[BdnQuotaServiceModelConfigBase] = None
     online_solana_gateways: Optional[BdnQuotaServiceModelConfigBase] = None
+    solana_tx_streamers: Optional[BdnQuotaServiceModelConfigBase] = None
     tx_trace_rate_limitation: Optional[BdnQuotaServiceModelConfigBase] = None
     unpaid_tx_burst_limit: Optional[BdnQuotaServiceModelConfigBase] = None
     paid_tx_burst_limit: Optional[BdnQuotaServiceModelConfigBase] = None
